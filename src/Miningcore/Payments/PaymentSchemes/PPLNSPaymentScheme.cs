@@ -4,9 +4,11 @@ using System.Data;
 using System.Data.Common;
 using System.Linq;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 using Miningcore.Configuration;
 using Miningcore.Extensions;
+using Miningcore.Mining;
 using Miningcore.Persistence;
 using Miningcore.Persistence.Model;
 using Miningcore.Persistence.Repositories;
@@ -57,9 +59,9 @@ namespace Miningcore.Payments.PaymentSchemes
 
         #region IPayoutScheme
 
-        public async Task UpdateBalancesAsync(IDbConnection con, IDbTransaction tx, PoolConfig poolConfig,
-            IPayoutHandler payoutHandler, Block block, decimal blockReward)
+        public async Task UpdateBalancesAsync(IDbConnection con, IDbTransaction tx, IMiningPool pool, IPayoutHandler payoutHandler, Block block, decimal blockReward, CancellationToken ct)
         {
+            var poolConfig = pool.Config;
             var payoutConfig = poolConfig.PaymentProcessing.PayoutSchemeConfig;
 
             // PPLNS window (see https://bitcointalk.org/index.php?topic=39832)
@@ -68,7 +70,7 @@ namespace Miningcore.Payments.PaymentSchemes
             // calculate rewards
             var shares = new Dictionary<string, double>();
             var rewards = new Dictionary<string, decimal>();
-            var shareCutOffDate = await CalculateRewardsAsync(poolConfig, window, block, blockReward, shares, rewards);
+            var shareCutOffDate = await CalculateRewardsAsync(pool, payoutHandler, window, block, blockReward, shares, rewards, ct);
 
             // update balances
             foreach(var address in rewards.Keys)
@@ -154,9 +156,10 @@ namespace Miningcore.Payments.PaymentSchemes
 
         #endregion // IPayoutScheme
 
-        private async Task<DateTime?> CalculateRewardsAsync(PoolConfig poolConfig, decimal window, Block block, decimal blockReward,
-            Dictionary<string, double> shares, Dictionary<string, decimal> rewards)
+        private async Task<DateTime?> CalculateRewardsAsync(IMiningPool pool, IPayoutHandler payoutHandler, decimal window, Block block, decimal blockReward,
+            Dictionary<string, double> shares, Dictionary<string, decimal> rewards, CancellationToken ct)
         {
+            var poolConfig = pool.Config;
             var done = false;
             var before = block.Created;
             var inclusive = true;
@@ -165,9 +168,8 @@ namespace Miningcore.Payments.PaymentSchemes
             var accumulatedScore = 0.0m;
             var blockRewardRemaining = blockReward;
             DateTime? shareCutOffDate = null;
-            //var sw = new Stopwatch();
 
-            while(!done)
+            while(!done && ct.IsCancellationRequested)
             {
                 logger.Info(() => $"Fetching page {currentPage} of shares for pool {poolConfig.Id}, block {block.BlockHeight}");
 
@@ -190,7 +192,7 @@ namespace Miningcore.Payments.PaymentSchemes
                     else
                         shares[address] += share.Difficulty;
 
-                    var score = (decimal) (share.Difficulty / share.NetworkDifficulty);
+                    var score = (decimal) (payoutHandler.AdjustShareDifficulty(share.Difficulty) / share.NetworkDifficulty);
 
                     // if accumulated score would cross threshold, cap it to the remaining value
                     if(accumulatedScore + score >= window)

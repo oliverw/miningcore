@@ -25,6 +25,7 @@ using Miningcore.Util;
 using Newtonsoft.Json;
 using NLog;
 using Contract = Miningcore.Contracts.Contract;
+using static Miningcore.Util.ActionUtils;
 
 namespace Miningcore.Stratum
 {
@@ -48,7 +49,7 @@ namespace Miningcore.Stratum
         {
             if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                IgnoredSocketErrors = new HashSet<int>
+                ignoredSocketErrors = new HashSet<int>
                 {
                     (int) SocketError.ConnectionReset,
                     (int) SocketError.ConnectionAborted,
@@ -59,7 +60,7 @@ namespace Miningcore.Stratum
             else if(RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
                 // see: http://www.virtsync.com/c-error-codes-include-errno
-                IgnoredSocketErrors = new HashSet<int>
+                ignoredSocketErrors = new HashSet<int>
                 {
                     104, // ECONNRESET
                     125, // ECANCELED
@@ -71,69 +72,46 @@ namespace Miningcore.Stratum
         }
 
         protected readonly Dictionary<string, StratumConnection> connections = new();
-        protected static readonly ConcurrentDictionary<string, X509Certificate2> Certs = new();
-        protected static readonly HashSet<int> IgnoredSocketErrors;
-        protected static readonly MethodBase StreamWriterCtor = typeof(StreamWriter).GetConstructor(new[] { typeof(Stream), typeof(Encoding), typeof(int), typeof(bool) });
+        protected static readonly Dictionary<string, X509Certificate2> certs = new();
+        protected static readonly HashSet<int> ignoredSocketErrors;
+        protected static readonly MethodBase streamWriterCtor = typeof(StreamWriter).GetConstructor(new[] { typeof(Stream), typeof(Encoding), typeof(int), typeof(bool) });
 
         protected readonly IComponentContext ctx;
         protected readonly IMessageBus messageBus;
         protected readonly IMasterClock clock;
-        protected readonly Dictionary<int, Socket> ports = new();
         protected ClusterConfig clusterConfig;
         protected PoolConfig poolConfig;
         protected IBanManager banManager;
         protected ILogger logger;
 
-        public async Task ServeStratum(CancellationToken ct, params StratumEndpoint[] endpoints)
+        public Task RunAsync(CancellationToken ct, params StratumEndpoint[] endpoints)
         {
             Contract.RequiresNonNull(endpoints, nameof(endpoints));
 
-            // Setup sockets
-            var sockets = endpoints.Select(port =>
+            logger.Info(() => $"Stratum ports {string.Join(", ", endpoints.Select(x => $"{x.IPEndPoint.Address}:{x.IPEndPoint.Port}").ToArray())} online");
+
+            var tasks = endpoints.Select(port =>
             {
-                // Setup socket
                 var server = new Socket(SocketType.Stream, ProtocolType.Tcp);
                 server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
                 server.Bind(port.IPEndPoint);
-                server.Listen(512);
+                server.Listen();
 
-                lock(ports)
-                {
-                    ports[port.IPEndPoint.Port] = server;
-                }
-
-                return server;
+                return Listen(server, port, GetTlsCert(port), ct);
             }).ToArray();
 
-            logger.Info(() => $"Stratum ports {string.Join(", ", endpoints.Select(x => $"{x.IPEndPoint.Address}:{x.IPEndPoint.Port}").ToArray())} online");
+            return Task.WhenAll(tasks);
+        }
 
-            // Setup accept tasks
-            var tasks = sockets.Select(socket => socket.AcceptAsync()).ToArray();
-
+        private async Task Listen(Socket server, StratumEndpoint port, X509Certificate2 cert, CancellationToken ct)
+        {
             while(!ct.IsCancellationRequested)
             {
                 try
                 {
-                    // Wait incoming connection
-                    await Task.WhenAny(tasks);
+                    var socket = await server.AcceptAsync();
 
-                    // check tasks
-                    for(var i = 0; i < tasks.Length; i++)
-                    {
-                        var task = tasks[i];
-                        var port = endpoints[i];
-
-                        // skip running tasks
-                        if(!(task.IsCompleted || task.IsFaulted || task.IsCanceled))
-                            continue;
-
-                        // accept connection if successful
-                        if(task.IsCompletedSuccessfully)
-                            AcceptConnection(task.Result, port, ct);
-
-                        // Refresh task
-                        tasks[i] = sockets[i].AcceptAsync();
-                    }
+                    AcceptConnection(socket, port, cert, ct);
                 }
 
                 catch(ObjectDisposedException)
@@ -149,41 +127,35 @@ namespace Miningcore.Stratum
             }
         }
 
-        private void AcceptConnection(Socket socket, StratumEndpoint port, CancellationToken ct)
+        private void AcceptConnection(Socket socket, StratumEndpoint port, X509Certificate2 cert, CancellationToken ct)
         {
-            var remoteEndpoint = (IPEndPoint) socket.RemoteEndPoint;
-
-            // dispose of banned clients as early as possible
-            if(remoteEndpoint != null && banManager?.IsBanned(remoteEndpoint.Address) == true)
+            Task.Run(() =>
             {
-                logger.Debug(() => $"Disconnecting banned ip {remoteEndpoint.Address}");
-                socket.Close();
-                return;
-            }
+                var client = (IPEndPoint) socket.RemoteEndPoint;
 
-            var connectionId = CorrelationIdGenerator.GetNextId();
+                // dispose of banned clients as early as possible
+                if(client != null && banManager?.IsBanned(client.Address) == true)
+                {
+                    logger.Debug(() => $"Disconnecting banned ip {client.Address}");
+                    socket.Close();
+                    return;
+                }
 
-            // TLS cert loading
-            X509Certificate2 cert = null;
+                var connectionId = CorrelationIdGenerator.GetNextId();
+                var connection = new StratumConnection(logger, clock, connectionId);
+                var remoteEndpoint = (IPEndPoint) socket.RemoteEndPoint;
 
-            if(port.PoolEndpoint.Tls)
-            {
-                if(!Certs.TryGetValue(port.PoolEndpoint.TlsPfxFile, out cert))
-                    cert = AddCert(port);
-            }
+                logger.Info(() => $"[{connectionId}] Accepting connection from {remoteEndpoint.Address}:{remoteEndpoint.Port} ...");
 
-            // setup client
-            var connection = new StratumConnection(logger, clock, connectionId);
+                RegisterConnection(connection, connectionId);
+                OnConnect(connection, port.IPEndPoint);
 
-            RegisterConnection(connection, connectionId);
-            OnConnect(connection, port.IPEndPoint);
-            connection.DispatchAsync(socket, ct, port, cert, OnRequestAsync, OnConnectionComplete, OnConnectionError);
+                connection.DispatchAsync(socket, ct, port, remoteEndpoint, cert, OnRequestAsync, OnConnectionComplete, OnConnectionError);
+            }, ct);
         }
 
         protected virtual void RegisterConnection(StratumConnection connection, string connectionId)
         {
-            Contract.RequiresNonNull(connection, nameof(connection));
-
             lock(connections)
             {
                 connections[connectionId] = connection;
@@ -195,8 +167,6 @@ namespace Miningcore.Stratum
 
         protected virtual void UnregisterConnection(StratumConnection connection)
         {
-            Contract.RequiresNonNull(connection, nameof(connection));
-
             var subscriptionId = connection.ConnectionId;
 
             if(!string.IsNullOrEmpty(subscriptionId))
@@ -239,7 +209,7 @@ namespace Miningcore.Stratum
             switch(ex)
             {
                 case SocketException sockEx:
-                    if(!IgnoredSocketErrors.Contains(sockEx.ErrorCode))
+                    if(!ignoredSocketErrors.Contains(sockEx.ErrorCode))
                         logger.Error(() => $"[{connection.ConnectionId}] Connection error state: {ex}");
                     break;
 
@@ -284,7 +254,7 @@ namespace Miningcore.Stratum
                     break;
 
                 case ArgumentException argEx:
-                    if(argEx.TargetSite != StreamWriterCtor || argEx.ParamName != "stream")
+                    if(argEx.TargetSite != streamWriterCtor || argEx.ParamName != "stream")
                         logger.Error(() => $"[{connection.ConnectionId}] Connection error state: {ex}");
                     break;
 
@@ -315,20 +285,23 @@ namespace Miningcore.Stratum
             UnregisterConnection(connection);
         }
 
-        private X509Certificate2 AddCert(StratumEndpoint endpoint)
+        private X509Certificate2 GetTlsCert(StratumEndpoint port)
         {
-            try
+            if(!port.PoolEndpoint.Tls)
+                return null;
+
+            if(!certs.TryGetValue(port.PoolEndpoint.TlsPfxFile, out var cert))
             {
-                var tlsCert = new X509Certificate2(endpoint.PoolEndpoint.TlsPfxFile);
-                Certs.TryAdd(endpoint.PoolEndpoint.TlsPfxFile, tlsCert);
-                return tlsCert;
+                cert = Guard(()=> new X509Certificate2(port.PoolEndpoint.TlsPfxFile), ex =>
+                {
+                    logger.Info(() => $"Failed to load TLS certificate {port.PoolEndpoint.TlsPfxFile}: {ex.Message}");
+                    throw ex;
+                });
+
+                certs[port.PoolEndpoint.TlsPfxFile] = cert;
             }
 
-            catch(Exception ex)
-            {
-                logger.Info(() => $"Failed to load TLS certificate {endpoint.PoolEndpoint.TlsPfxFile}: {ex.Message}");
-                throw;
-            }
+            return cert;
         }
 
         protected void ForEachConnection(Action<StratumConnection> action)

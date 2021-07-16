@@ -9,6 +9,7 @@ namespace Miningcore.Persistence.Postgres.Entities
         public string Address { get; set; }
         public decimal Amount { get; set; }
         public string Usage { get; set; }
+        public string[] Tags { get; set; }
         public DateTime Created { get; set; }
     }
 }

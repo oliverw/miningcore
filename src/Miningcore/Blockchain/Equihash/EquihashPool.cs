@@ -23,6 +23,7 @@ using Miningcore.Stratum;
 using Miningcore.Time;
 using Miningcore.Util;
 using Newtonsoft.Json;
+using static Miningcore.Util.ActionUtils;
 
 namespace Miningcore.Blockchain.Equihash
 {
@@ -63,7 +64,7 @@ namespace Miningcore.Blockchain.Equihash
         protected override async Task SetupJobManager(CancellationToken ct)
         {
             manager = ctx.Resolve<EquihashJobManager>(
-                new TypedParameter(typeof(IExtraNonceProvider), new EquihashExtraNonceProvider(clusterConfig.InstanceId)));
+                new TypedParameter(typeof(IExtraNonceProvider), new EquihashExtraNonceProvider(poolConfig.Id, clusterConfig.InstanceId)));
 
             manager.Configure(poolConfig, clusterConfig);
 
@@ -72,25 +73,16 @@ namespace Miningcore.Blockchain.Equihash
             if(poolConfig.EnableInternalStratum == true)
             {
                 disposables.Add(manager.Jobs
-                    .Select(job => Observable.FromAsync(async () =>
-                    {
-                        try
-                        {
-                            await OnNewJobAsync(job);
-                        }
-
-                        catch(Exception ex)
-                        {
-                            logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}");
-                        }
-                    }))
+                    .Select(job => Observable.FromAsync(() =>
+                        Guard(()=> OnNewJobAsync(job),
+                            ex=> logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}"))))
                     .Concat()
                     .Subscribe(_ => { }, ex =>
                     {
                         logger.Debug(ex, nameof(OnNewJobAsync));
                     }));
 
-                // we need work before opening the gates
+                // start with initial blocktemplate
                 await manager.Jobs.Take(1).ToTask(ct);
             }
 
@@ -169,7 +161,20 @@ namespace Miningcore.Blockchain.Equihash
                 var staticDiff = GetStaticDiffFromPassparts(passParts);
 
                 // Nicehash support
-                staticDiff = await GetNicehashStaticMinDiff(connection, context.UserAgent, staticDiff, coin.Name, coin.GetAlgorithmName());
+                var nicehashDiff = await GetNicehashStaticMinDiff(connection, context.UserAgent, coin.Name, coin.GetAlgorithmName());
+
+                if(nicehashDiff.HasValue)
+                {
+                    if(!staticDiff.HasValue || nicehashDiff > staticDiff)
+                    {
+                        logger.Info(() => $"[{connection.ConnectionId}] Nicehash detected. Using API supplied difficulty of {nicehashDiff.Value}");
+
+                        staticDiff = nicehashDiff;
+                    }
+
+                    else
+                        logger.Info(() => $"[{connection.ConnectionId}] Nicehash detected. Using miner supplied difficulty of {staticDiff.Value}");
+                }
 
                 // Static diff
                 if(staticDiff.HasValue &&
@@ -232,7 +237,7 @@ namespace Miningcore.Blockchain.Equihash
 
                 // submit
                 var requestParams = request.ParamsAs<string[]>();
-                var poolEndpoint = poolConfig.Ports[connection.PoolEndpoint.Port];
+                var poolEndpoint = poolConfig.Ports[connection.LocalEndpoint.Port];
 
                 var share = await manager.SubmitShareAsync(connection, requestParams, poolEndpoint.Difficulty, ct);
 
@@ -262,7 +267,7 @@ namespace Miningcore.Blockchain.Equihash
 
                 // update client stats
                 context.Stats.InvalidShares++;
-                logger.Info(() => $"[{connection.ConnectionId}] Share rejected: {ex.Message}");
+                logger.Info(() => $"[{connection.ConnectionId}] Share rejected: {ex.Message} [{context.UserAgent}]");
 
                 // banning
                 ConsiderBan(connection, context, poolConfig.Banning);
@@ -287,7 +292,7 @@ namespace Miningcore.Blockchain.Equihash
                 if(System.Numerics.BigInteger.TryParse(target, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var targetBig))
                 {
                     var newDiff = (double) new BigRational(manager.ChainConfig.Diff1BValue, targetBig);
-                    var poolEndpoint = poolConfig.Ports[connection.PoolEndpoint.Port];
+                    var poolEndpoint = poolConfig.Ports[connection.LocalEndpoint.Port];
 
                     if(newDiff >= poolEndpoint.Difficulty)
                     {
@@ -358,36 +363,23 @@ namespace Miningcore.Blockchain.Equihash
 
             logger.Info(() => "Broadcasting job");
 
-            var tasks = ForEachConnection(async client =>
+            return Guard(()=> Task.WhenAll(ForEachConnection(async connection =>
             {
-                if(!client.IsAlive)
+                if(!connection.IsAlive)
                     return;
 
-                var context = client.ContextAs<BitcoinWorkerContext>();
+                var context = connection.ContextAs<BitcoinWorkerContext>();
 
-                if(context.IsSubscribed && context.IsAuthorized)
-                {
-                    // check alive
-                    var lastActivityAgo = clock.Now - context.LastActivity;
+                if(!context.IsSubscribed || !context.IsAuthorized || CloseIfDead(connection, context))
+                    return;
 
-                    if(poolConfig.ClientConnectionTimeout > 0 &&
-                        lastActivityAgo.TotalSeconds > poolConfig.ClientConnectionTimeout)
-                    {
-                        logger.Info(() => $"[{client.ConnectionId}] Booting zombie-worker (idle-timeout exceeded)");
-                        CloseConnection(client);
-                        return;
-                    }
+                // varDiff: if the client has a pending difficulty change, apply it now
+                if(context.ApplyPendingDifficulty())
+                    await connection.NotifyAsync(EquihashStratumMethods.SetTarget, new object[] { EncodeTarget(context.Difficulty) });
 
-                    // varDiff: if the client has a pending difficulty change, apply it now
-                    if(context.ApplyPendingDifficulty())
-                        await client.NotifyAsync(EquihashStratumMethods.SetTarget, new object[] { EncodeTarget(context.Difficulty) });
-
-                    // send job
-                    await client.NotifyAsync(BitcoinStratumMethods.MiningNotify, currentJobParams);
-                }
-            });
-
-            return Task.WhenAll(tasks);
+                // send job
+                await connection.NotifyAsync(BitcoinStratumMethods.MiningNotify, currentJobParams);
+            })), ex=> logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}"));
         }
 
         public override double HashrateFromShares(double shares, double interval)
@@ -398,6 +390,8 @@ namespace Miningcore.Blockchain.Equihash
             result /= hashrateDivisor;
             return result;
         }
+
+        public override double ShareMultiplier => 1;
 
         protected override async Task OnVarDiffUpdateAsync(StratumConnection connection, double newDiff)
         {
@@ -415,7 +409,7 @@ namespace Miningcore.Blockchain.Equihash
             }
         }
 
-        protected override WorkerContextBase CreateClientContext()
+        protected override WorkerContextBase CreateWorkerContext()
         {
             return new BitcoinWorkerContext();
         }

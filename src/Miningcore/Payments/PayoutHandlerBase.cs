@@ -2,12 +2,14 @@ using System;
 using System.Data;
 using System.Data.Common;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
 using Miningcore.Blockchain;
 using Miningcore.Configuration;
 using Miningcore.Extensions;
 using Miningcore.Messaging;
+using Miningcore.Mining;
 using Miningcore.Notifications.Messages;
 using Miningcore.Persistence;
 using Miningcore.Persistence.Model;
@@ -85,7 +87,7 @@ namespace Miningcore.Payments
             logger.Warn(() => $"[{LogCategory}] Retry {1} in {timeSpan} due to: {ex}");
         }
 
-        public virtual async Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, Block block, PoolConfig pool)
+        public virtual async Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, IMiningPool pool, Block block, CancellationToken ct)
         {
             var blockRewardRemaining = block.Reward;
 
@@ -150,6 +152,11 @@ namespace Miningcore.Payments
                     $"{JsonConvert.SerializeObject(balances.Where(x => x.Amount > 0).ToDictionary(x => x.Address, x => x.Amount))}");
                 throw;
             }
+        }
+
+        public virtual double AdjustShareDifficulty(double difficulty)
+        {
+            return difficulty;
         }
 
         public string FormatAmount(decimal amount)

@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Miningcore.Configuration;
+using Miningcore.Mining;
 using Miningcore.Persistence;
 using Miningcore.Persistence.Model;
 using Miningcore.Persistence.Repositories;
@@ -35,11 +37,13 @@ namespace Miningcore.Payments.PaymentSchemes
 
         #region IPayoutScheme
 
-        public async Task UpdateBalancesAsync(IDbConnection con, IDbTransaction tx, PoolConfig poolConfig, IPayoutHandler payoutHandler, Block block, decimal blockReward)
+        public async Task UpdateBalancesAsync(IDbConnection con, IDbTransaction tx, IMiningPool pool, IPayoutHandler payoutHandler, Block block, decimal blockReward, CancellationToken ct)
         {
+            var poolConfig = pool.Config;
+
             // calculate rewards
             var rewards = new Dictionary<string, decimal>();
-            var shareCutOffDate = CalculateRewards(block, blockReward, rewards);
+            var shareCutOffDate = CalculateRewards(block, blockReward, rewards, ct);
 
             // update balances
             foreach(var address in rewards.Keys)
@@ -72,7 +76,7 @@ namespace Miningcore.Payments.PaymentSchemes
 
         #endregion // IPayoutScheme
 
-        private DateTime? CalculateRewards(Block block, decimal blockReward, Dictionary<string, decimal> rewards)
+        private DateTime? CalculateRewards(Block block, decimal blockReward, Dictionary<string, decimal> rewards, CancellationToken ct)
         {
             rewards[block.Miner] = blockReward;
 

@@ -42,7 +42,7 @@ namespace Miningcore.Blockchain
 
         protected virtual async Task StartDaemonAsync(CancellationToken ct)
         {
-            while(!await AreDaemonsHealthyAsync())
+            while(!await AreDaemonsHealthyAsync(ct))
             {
                 logger.Info(() => "Waiting for daemons to come online ...");
 
@@ -51,7 +51,7 @@ namespace Miningcore.Blockchain
 
             logger.Info(() => "All daemons online");
 
-            while(!await AreDaemonsConnectedAsync())
+            while(!await AreDaemonsConnectedAsync(ct))
             {
                 logger.Info(() => "Waiting for daemons to connect to peers ...");
 
@@ -83,8 +83,8 @@ namespace Miningcore.Blockchain
             blockFoundSubject.OnNext(Unit.Default);
         }
 
-        protected abstract Task<bool> AreDaemonsHealthyAsync();
-        protected abstract Task<bool> AreDaemonsConnectedAsync();
+        protected abstract Task<bool> AreDaemonsHealthyAsync(CancellationToken ct);
+        protected abstract Task<bool> AreDaemonsConnectedAsync(CancellationToken ct);
         protected abstract Task EnsureDaemonsSynchedAsync(CancellationToken ct);
         protected abstract Task PostStartInitAsync(CancellationToken ct);
 

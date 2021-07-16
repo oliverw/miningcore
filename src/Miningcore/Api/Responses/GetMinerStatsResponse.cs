@@ -24,7 +24,7 @@ namespace Miningcore.Api.Responses
 
     public class MinerStats
     {
-        public ulong PendingShares { get; set; }
+        public double PendingShares { get; set; }
         public decimal PendingBalance { get; set; }
         public decimal TotalPaid { get; set; }
         public decimal TodayPaid { get; set; }

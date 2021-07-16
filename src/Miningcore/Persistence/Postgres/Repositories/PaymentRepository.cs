@@ -67,7 +67,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
 
         public async Task<Payment[]> PagePaymentsAsync(IDbConnection con, string poolId, string address, int page, int pageSize)
         {
-            logger.LogInvoke(new[] { poolId });
+            logger.LogInvoke(new object[] { poolId });
 
             var query = "SELECT * FROM payments WHERE poolid = @poolid ";
 
@@ -83,7 +83,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
 
         public async Task<BalanceChange[]> PageBalanceChangesAsync(IDbConnection con, string poolId, string address, int page, int pageSize)
         {
-            logger.LogInvoke(new[] { poolId });
+            logger.LogInvoke(new object[] { poolId });
 
             const string query = "SELECT * FROM balance_changes WHERE poolid = @poolid " +
                 "AND address = @address " +
@@ -96,7 +96,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
 
         public async Task<AmountByDate[]> PageMinerPaymentsByDayAsync(IDbConnection con, string poolId, string address, int page, int pageSize)
         {
-            logger.LogInvoke(new[] { poolId });
+            logger.LogInvoke(new object[] { poolId });
 
             const string query = "SELECT SUM(amount) AS amount, date_trunc('day', created) AS date FROM payments WHERE poolid = @poolid " +
                 "AND address = @address " +
@@ -109,7 +109,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
 
         public Task<uint> GetPaymentsCountAsync(IDbConnection con, string poolId, string address = null)
         {
-            logger.LogInvoke(new[] { poolId });
+            logger.LogInvoke(new object[] { poolId });
 
             string query = "SELECT COUNT(*) FROM payments WHERE poolid = @poolId";
 
@@ -122,7 +122,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
 
         public Task<uint> GetMinerPaymentsByDayCountAsync(IDbConnection con, string poolId, string address)
         {
-            logger.LogInvoke(new[] { poolId });
+            logger.LogInvoke(new object[] { poolId });
 
             const string query = "SELECT COUNT(*) FROM (SELECT SUM(amount) AS amount, date_trunc('day', created) AS date FROM payments WHERE poolid = @poolid " +
                 "AND address = @address " +
@@ -134,7 +134,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
 
         public Task<uint> GetBalanceChangesCountAsync(IDbConnection con, string poolId, string address = null)
         {
-            logger.LogInvoke(new[] { poolId });
+            logger.LogInvoke(new object[] { poolId });
 
             string query = "SELECT COUNT(*) FROM balance_changes WHERE poolid = @poolId";
 

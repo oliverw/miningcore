@@ -55,7 +55,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
 
         public async Task<Block[]> PageBlocksAsync(IDbConnection con, string poolId, BlockStatus[] status, int page, int pageSize)
         {
-            logger.LogInvoke(new[] { poolId });
+            logger.LogInvoke(new object[] { poolId });
 
             const string query = "SELECT * FROM blocks WHERE poolid = @poolid AND status = ANY(@status) " +
                 "ORDER BY created DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
@@ -67,8 +67,8 @@ namespace Miningcore.Persistence.Postgres.Repositories
                 offset = page * pageSize,
                 pageSize
             }))
-                .Select(mapper.Map<Block>)
-                .ToArray();
+            .Select(mapper.Map<Block>)
+            .ToArray();
         }
 
         public async Task<Block[]> PageBlocksAsync(IDbConnection con, BlockStatus[] status, int page, int pageSize)
@@ -82,13 +82,13 @@ namespace Miningcore.Persistence.Postgres.Repositories
                 offset = page * pageSize,
                 pageSize
             }))
-                .Select(mapper.Map<Block>)
-                .ToArray();
+            .Select(mapper.Map<Block>)
+            .ToArray();
         }
 
         public async Task<Block[]> GetPendingBlocksForPoolAsync(IDbConnection con, string poolId)
         {
-            logger.LogInvoke(new[] { poolId });
+            logger.LogInvoke(new object[] { poolId });
 
             const string query = "SELECT * FROM blocks WHERE poolid = @poolid AND status = @status";
 
@@ -99,7 +99,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
 
         public async Task<Block> GetBlockBeforeAsync(IDbConnection con, string poolId, BlockStatus[] status, DateTime before)
         {
-            logger.LogInvoke(new[] { poolId });
+            logger.LogInvoke(new object[] { poolId });
 
             const string query = "SELECT * FROM blocks WHERE poolid = @poolid AND status = ANY(@status) AND created < @before " +
                 "ORDER BY created DESC FETCH NEXT (1) ROWS ONLY";
@@ -110,13 +110,13 @@ namespace Miningcore.Persistence.Postgres.Repositories
                 before,
                 status = status.Select(x => x.ToString().ToLower()).ToArray()
             }))
-                .Select(mapper.Map<Block>)
-                .FirstOrDefault();
+            .Select(mapper.Map<Block>)
+            .FirstOrDefault();
         }
 
         public Task<uint> GetPoolBlockCountAsync(IDbConnection con, string poolId)
         {
-            logger.LogInvoke(new[] { poolId });
+            logger.LogInvoke(new object[] { poolId });
 
             const string query = "SELECT COUNT(*) FROM blocks WHERE poolid = @poolId";
 
@@ -125,7 +125,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
 
         public Task<DateTime?> GetLastPoolBlockTimeAsync(IDbConnection con, string poolId)
         {
-            logger.LogInvoke(new[] { poolId });
+            logger.LogInvoke(new object[] { poolId });
 
             const string query = "SELECT created FROM blocks WHERE poolid = @poolId ORDER BY created DESC LIMIT 1";
 

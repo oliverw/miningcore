@@ -23,6 +23,7 @@ using Miningcore.Time;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NLog;
+using static Miningcore.Util.ActionUtils;
 
 namespace Miningcore.Blockchain.Bitcoin
 {
@@ -112,7 +113,20 @@ namespace Miningcore.Blockchain.Bitcoin
                 var staticDiff = GetStaticDiffFromPassparts(passParts);
 
                 // Nicehash support
-                staticDiff = await GetNicehashStaticMinDiff(connection, context.UserAgent, staticDiff, coin.Name, coin.GetAlgorithmName());
+                var nicehashDiff = await GetNicehashStaticMinDiff(connection, context.UserAgent, coin.Name, coin.GetAlgorithmName());
+
+                if(nicehashDiff.HasValue)
+                {
+                    if(!staticDiff.HasValue || nicehashDiff > staticDiff)
+                    {
+                        logger.Info(() => $"[{connection.ConnectionId}] Nicehash detected. Using API supplied difficulty of {nicehashDiff.Value}");
+
+                        staticDiff = nicehashDiff;
+                    }
+
+                    else
+                        logger.Info(() => $"[{connection.ConnectionId}] Nicehash detected. Using miner supplied difficulty of {staticDiff.Value}");
+                }
 
                 // Static diff
                 if(staticDiff.HasValue &&
@@ -171,7 +185,7 @@ namespace Miningcore.Blockchain.Bitcoin
 
                 // submit
                 var requestParams = request.ParamsAs<string[]>();
-                var poolEndpoint = poolConfig.Ports[connection.PoolEndpoint.Port];
+                var poolEndpoint = poolConfig.Ports[connection.LocalEndpoint.Port];
 
                 var share = await manager.SubmitShareAsync(connection, requestParams, poolEndpoint.Difficulty, ct);
 
@@ -201,7 +215,7 @@ namespace Miningcore.Blockchain.Bitcoin
 
                 // update client stats
                 context.Stats.InvalidShares++;
-                logger.Info(() => $"[{connection.ConnectionId}] Share rejected: {ex.Message}");
+                logger.Info(() => $"[{connection.ConnectionId}] Share rejected: {ex.Message} [{context.UserAgent}]");
 
                 // banning
                 ConsiderBan(connection, context, poolConfig.Banning);
@@ -223,7 +237,7 @@ namespace Miningcore.Blockchain.Bitcoin
                 var requestedDiff = (double) Convert.ChangeType(request.Params, TypeCode.Double);
 
                 // client may suggest higher-than-base difficulty, but not a lower one
-                var poolEndpoint = poolConfig.Ports[connection.PoolEndpoint.Port];
+                var poolEndpoint = poolConfig.Ports[connection.LocalEndpoint.Port];
 
                 if(requestedDiff > poolEndpoint.Difficulty)
                 {
@@ -292,7 +306,7 @@ namespace Miningcore.Blockchain.Bitcoin
             var requestedDiff = extensionParams[BitcoinStratumExtensions.MinimumDiffValue].Value<double>();
 
             // client may suggest higher-than-base difficulty, but not a lower one
-            var poolEndpoint = poolConfig.Ports[connection.PoolEndpoint.Port];
+            var poolEndpoint = poolConfig.Ports[connection.LocalEndpoint.Port];
 
             if(requestedDiff > poolEndpoint.Difficulty)
             {
@@ -306,50 +320,29 @@ namespace Miningcore.Blockchain.Bitcoin
             }
         }
 
-        protected virtual async Task OnNewJobAsync(object jobParams)
+        protected virtual Task OnNewJobAsync(object jobParams)
         {
             currentJobParams = jobParams;
 
             logger.Info(() => "Broadcasting job");
 
-            var tasks = ForEachConnection(async client =>
+            return Guard(()=> Task.WhenAll(ForEachConnection(async connection =>
             {
-                if(!client.IsAlive)
+                if(!connection.IsAlive)
                     return;
 
-                var context = client.ContextAs<BitcoinWorkerContext>();
+                var context = connection.ContextAs<BitcoinWorkerContext>();
 
-                if(context.IsSubscribed && context.IsAuthorized)
-                {
-                    // check alive
-                    var lastActivityAgo = clock.Now - context.LastActivity;
+                if(!context.IsSubscribed || !context.IsAuthorized || CloseIfDead(connection, context))
+                    return;
 
-                    if(poolConfig.ClientConnectionTimeout > 0 &&
-                        lastActivityAgo.TotalSeconds > poolConfig.ClientConnectionTimeout)
-                    {
-                        logger.Info(() => $"[{client.ConnectionId}] Booting zombie-worker (idle-timeout exceeded)");
-                        CloseConnection(client);
-                        return;
-                    }
+                // varDiff: if the client has a pending difficulty change, apply it now
+                if(context.ApplyPendingDifficulty())
+                    await connection.NotifyAsync(BitcoinStratumMethods.SetDifficulty, new object[] { context.Difficulty });
 
-                    // varDiff: if the client has a pending difficulty change, apply it now
-                    if(context.ApplyPendingDifficulty())
-                        await client.NotifyAsync(BitcoinStratumMethods.SetDifficulty, new object[] { context.Difficulty });
-
-                    // send job
-                    await client.NotifyAsync(BitcoinStratumMethods.MiningNotify, currentJobParams);
-                }
-            });
-
-            try
-            {
-                await Task.WhenAll(tasks);
-            }
-
-            catch(Exception ex)
-            {
-                logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}");
-            }
+                // send job
+                await connection.NotifyAsync(BitcoinStratumMethods.MiningNotify, currentJobParams);
+            })), ex=> logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}"));
         }
 
         public override double HashrateFromShares(double shares, double interval)
@@ -361,6 +354,8 @@ namespace Miningcore.Blockchain.Bitcoin
 
             return result;
         }
+
+        public override double ShareMultiplier => coin.ShareMultiplier;
 
         #region Overrides
 
@@ -374,7 +369,7 @@ namespace Miningcore.Blockchain.Bitcoin
         protected override async Task SetupJobManager(CancellationToken ct)
         {
             manager = ctx.Resolve<BitcoinJobManager>(
-                new TypedParameter(typeof(IExtraNonceProvider), new BitcoinExtraNonceProvider(clusterConfig.InstanceId)));
+                new TypedParameter(typeof(IExtraNonceProvider), new BitcoinExtraNonceProvider(poolConfig.Id, clusterConfig.InstanceId)));
 
             manager.Configure(poolConfig, clusterConfig);
 
@@ -383,25 +378,16 @@ namespace Miningcore.Blockchain.Bitcoin
             if(poolConfig.EnableInternalStratum == true)
             {
                 disposables.Add(manager.Jobs
-                    .Select(job => Observable.FromAsync(async () =>
-                    {
-                        try
-                        {
-                            await OnNewJobAsync(job);
-                        }
-
-                        catch(Exception ex)
-                        {
-                            logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}");
-                        }
-                    }))
+                    .Select(job => Observable.FromAsync(() =>
+                        Guard(()=> OnNewJobAsync(job),
+                            ex=> logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}"))))
                     .Concat()
                     .Subscribe(_ => { }, ex =>
                     {
                         logger.Debug(ex, nameof(OnNewJobAsync));
                     }));
 
-                // we need work before opening the gates
+                // start with initial blocktemplate
                 await manager.Jobs.Take(1).ToTask(ct);
             }
 
@@ -419,7 +405,7 @@ namespace Miningcore.Blockchain.Bitcoin
             blockchainStats = manager.BlockchainStats;
         }
 
-        protected override WorkerContextBase CreateClientContext()
+        protected override WorkerContextBase CreateWorkerContext()
         {
             return new BitcoinWorkerContext();
         }
@@ -483,6 +469,7 @@ namespace Miningcore.Blockchain.Bitcoin
         protected override async Task OnVarDiffUpdateAsync(StratumConnection connection, double newDiff)
         {
             var context = connection.ContextAs<BitcoinWorkerContext>();
+
             context.EnqueueNewDifficulty(newDiff);
 
             // apply immediately and notify client

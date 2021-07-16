@@ -25,7 +25,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "x11.h"
 #include "groestl.h"
 #include "blake.h"
-#include "blake2s.h"
 #include "fugue.h"
 #include "geek.h"
 #include "qubit.h"
@@ -50,6 +49,12 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "x25x.h"
 #include "verthash/h2.h"
 #include "equi/equihashverify.h"
+
+#ifdef _WIN32
+#include "blake2/ref/blake2.h"
+#else
+#include "blake2/sse/blake2.h"
+#endif
 
 #ifdef _WIN32
 #define MODULE_API __declspec(dllexport)
@@ -134,9 +139,14 @@ extern "C" MODULE_API void blake_export(const char* input, char* output, uint32_
 	blake_hash(input, output, input_len);
 }
 
-extern "C" MODULE_API void blake2s_export(const char* input, char* output, uint32_t input_len)
+extern "C" MODULE_API void blake2s_export(const char* input, char* output, uint32_t input_len, uint32_t output_len)
 {
-    blake2s_hash(input, output, input_len);
+    blake2s(output, output_len == -1 ? BLAKE2S_OUTBYTES : output_len, input, input_len, NULL, 0);
+}
+
+extern "C" MODULE_API void blake2b_export(const char* input, char* output, uint32_t input_len, uint32_t output_len)
+{
+    blake2b(output, output_len == -1 ? BLAKE2B_OUTBYTES : output_len, input, input_len, NULL, 0);
 }
 
 extern "C" MODULE_API void dcrypt_export(const char* input, char* output, uint32_t input_len)

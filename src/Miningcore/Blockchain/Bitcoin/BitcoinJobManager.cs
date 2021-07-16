@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-using System.Reactive;
 using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
@@ -9,13 +8,10 @@ using Miningcore.Blockchain.Bitcoin.DaemonResponses;
 using Miningcore.Configuration;
 using Miningcore.Contracts;
 using Miningcore.Crypto;
-using Miningcore.Crypto.Hashing.Algorithms;
 using Miningcore.DaemonInterface;
 using Miningcore.Extensions;
 using Miningcore.JsonRpc;
 using Miningcore.Messaging;
-using Miningcore.Native;
-using Miningcore.Notifications.Messages;
 using Miningcore.Stratum;
 using Miningcore.Time;
 using Newtonsoft.Json;
@@ -52,12 +48,12 @@ namespace Miningcore.Blockchain.Bitcoin
             return result;
         }
 
-        protected async Task<DaemonResponse<BlockTemplate>> GetBlockTemplateAsync()
+        protected async Task<DaemonResponse<BlockTemplate>> GetBlockTemplateAsync(CancellationToken ct)
         {
             logger.LogInvoke();
 
             var result = await daemon.ExecuteCmdAnyAsync<BlockTemplate>(logger,
-                BitcoinCommands.GetBlockTemplate, extraPoolConfig?.GBTArgs ?? (object) GetBlockTemplateParams());
+                BitcoinCommands.GetBlockTemplate, ct, extraPoolConfig?.GBTArgs ?? (object) GetBlockTemplateParams());
 
             return result;
         }
@@ -90,7 +86,7 @@ namespace Miningcore.Blockchain.Bitcoin
             }
         }
 
-        protected override async Task<(bool IsNew, bool Force)> UpdateJob(bool forceUpdate, string via = null, string json = null)
+        protected override async Task<(bool IsNew, bool Force)> UpdateJob(CancellationToken ct, bool forceUpdate, string via = null, string json = null)
         {
             logger.LogInvoke();
 
@@ -100,7 +96,7 @@ namespace Miningcore.Blockchain.Bitcoin
                     lastJobRebroadcast = clock.Now;
 
                 var response = string.IsNullOrEmpty(json) ?
-                    await GetBlockTemplateAsync() :
+                    await GetBlockTemplateAsync(ct) :
                     GetBlockTemplateFromJson(json);
 
                 // may happen if daemon is currently not connected to peers
@@ -223,7 +219,7 @@ namespace Miningcore.Blockchain.Bitcoin
             Contract.RequiresNonNull(worker, nameof(worker));
             Contract.RequiresNonNull(submission, nameof(submission));
 
-            logger.LogInvoke(new[] { worker.ConnectionId });
+            logger.LogInvoke(new object[] { worker.ConnectionId });
 
             if(submission is not object[] submitParams)
                 throw new StratumException(StratumError.Other, "invalid params");

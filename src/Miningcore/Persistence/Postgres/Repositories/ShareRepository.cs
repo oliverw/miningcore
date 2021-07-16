@@ -76,7 +76,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
 
         public async Task<Share[]> ReadSharesBeforeCreatedAsync(IDbConnection con, string poolId, DateTime before, bool inclusive, int pageSize)
         {
-            logger.LogInvoke(new[] { poolId });
+            logger.LogInvoke(new object[] { poolId });
 
             var query = $"SELECT * FROM shares WHERE poolid = @poolId AND created {(inclusive ? " <= " : " < ")} @before " +
                 "ORDER BY created DESC FETCH NEXT (@pageSize) ROWS ONLY";
@@ -88,7 +88,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
 
         public async Task<Share[]> ReadSharesBeforeAndAfterCreatedAsync(IDbConnection con, string poolId, DateTime before, DateTime after, bool inclusive, int pageSize)
         {
-            logger.LogInvoke(new[] { poolId });
+            logger.LogInvoke(new object[] { poolId });
 
             var query = $"SELECT * FROM shares WHERE poolid = @poolId AND created {(inclusive ? " <= " : " < ")} @before " +
                 $"AND created {(inclusive ? " >= " : " > ")} @after" +
@@ -101,7 +101,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
 
         public async Task<Share[]> PageSharesBetweenCreatedAsync(IDbConnection con, string poolId, DateTime start, DateTime end, int page, int pageSize)
         {
-            logger.LogInvoke(new[] { poolId });
+            logger.LogInvoke(new object[] { poolId });
 
             var query = "SELECT * FROM shares WHERE poolid = @poolId AND created >= @start AND created <= @end " +
                 "ORDER BY created DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
@@ -113,7 +113,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
 
         public Task<long> CountSharesBeforeCreatedAsync(IDbConnection con, IDbTransaction tx, string poolId, DateTime before)
         {
-            logger.LogInvoke(new[] { poolId });
+            logger.LogInvoke(new object[] { poolId });
 
             const string query = "SELECT count(*) FROM shares WHERE poolid = @poolId AND created < @before";
 
@@ -122,7 +122,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
 
         public Task<long> CountSharesByMinerAsync(IDbConnection con, IDbTransaction tx, string poolId, string miner)
         {
-            logger.LogInvoke(new[] { poolId });
+            logger.LogInvoke(new object[] { poolId });
 
             const string query = "SELECT count(*) FROM shares WHERE poolid = @poolId AND miner = @miner";
 
@@ -131,7 +131,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
 
         public async Task DeleteSharesByMinerAsync(IDbConnection con, IDbTransaction tx, string poolId, string miner)
         {
-            logger.LogInvoke(new[] { poolId });
+            logger.LogInvoke(new object[] { poolId });
 
             const string query = "DELETE FROM shares WHERE poolid = @poolId AND miner = @miner";
 
@@ -140,7 +140,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
 
         public async Task DeleteSharesBeforeCreatedAsync(IDbConnection con, IDbTransaction tx, string poolId, DateTime before)
         {
-            logger.LogInvoke(new[] { poolId });
+            logger.LogInvoke(new object[] { poolId });
 
             const string query = "DELETE FROM shares WHERE poolid = @poolId AND created < @before";
 
@@ -149,7 +149,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
 
         public Task<long> CountSharesBetweenCreatedAsync(IDbConnection con, string poolId, string miner, DateTime? start, DateTime? end)
         {
-            logger.LogInvoke(new[] { poolId });
+            logger.LogInvoke(new object[] { poolId });
 
             var whereClause = "poolid = @poolId AND miner = @miner";
 
@@ -165,7 +165,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
 
         public Task<double?> GetAccumulatedShareDifficultyBetweenCreatedAsync(IDbConnection con, string poolId, DateTime start, DateTime end)
         {
-            logger.LogInvoke(new[] { poolId });
+            logger.LogInvoke(new object[] { poolId });
 
             const string query = "SELECT SUM(difficulty) FROM shares WHERE poolid = @poolId AND created > @start AND created < @end";
 
@@ -174,7 +174,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
 
         public async Task<MinerWorkerHashes[]> GetAccumulatedShareDifficultyTotalAsync(IDbConnection con, string poolId)
         {
-            logger.LogInvoke(new[] { (object) poolId });
+            logger.LogInvoke(new object[] { (object) poolId });
 
             const string query = "SELECT SUM(difficulty) AS sum, COUNT(difficulty) AS count, miner, worker FROM shares WHERE poolid = @poolid group by miner, worker";
 
@@ -184,7 +184,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
 
         public async Task<MinerWorkerHashes[]> GetHashAccumulationBetweenCreatedAsync(IDbConnection con, string poolId, DateTime start, DateTime end)
         {
-            logger.LogInvoke(new[] { poolId });
+            logger.LogInvoke(new object[] { poolId });
 
             const string query = "SELECT SUM(difficulty), COUNT(difficulty), MIN(created) AS firstshare, MAX(created) AS lastshare, miner, worker FROM shares " +
                 "WHERE poolid = @poolId AND created >= @start AND created <= @end " +

@@ -1,5 +1,4 @@
 using System;
-using Miningcore.Configuration;
 
 namespace Miningcore.Persistence.Model
 {

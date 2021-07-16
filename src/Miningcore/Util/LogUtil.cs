@@ -13,6 +13,11 @@ namespace Miningcore.Util
             return LogManager.GetLogger(poolConfig.Id);
         }
 
+        public static ILogger GetPoolScopedLogger(Type type, string poolId)
+        {
+            return LogManager.GetLogger(poolId);
+        }
+
         public static void ThrowLogPoolStartupException(this ILogger logger, string msg, string category = null)
         {
             var output = !string.IsNullOrEmpty(category) ? $"[{category}] {msg}" : msg;

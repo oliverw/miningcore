@@ -17,6 +17,7 @@ namespace Miningcore.Blockchain
 
     public interface IExtraNonceProvider
     {
+        int ByteSize { get; }
         string Next();
     }
 }

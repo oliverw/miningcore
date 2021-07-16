@@ -58,7 +58,7 @@ namespace Miningcore.Mining
             ContractResolver = new CamelCasePropertyNamesContractResolver()
         };
 
-        class PoolContext
+        private class PoolContext
         {
             public PoolContext(IMiningPool pool, ILogger logger)
             {
@@ -66,10 +66,10 @@ namespace Miningcore.Mining
                 Logger = logger;
             }
 
-            public readonly IMiningPool Pool;
-            public readonly ILogger Logger;
-            public DateTime? LastBlock;
-            public long BlockHeight;
+            public IMiningPool Pool { get; }
+            public ILogger Logger { get; }
+            public DateTime? LastBlock { get; set; }
+            public long BlockHeight { get; set; }
         }
 
         private void AttachPool(IMiningPool pool)
@@ -89,7 +89,7 @@ namespace Miningcore.Mining
             return Task.Run(() =>
             {
                 Thread.CurrentThread.Name = "ShareReceiver Socket Poller";
-                var timeout = TimeSpan.FromMilliseconds(1000);
+                var timeout = TimeSpan.FromMilliseconds(5000);
                 var reconnectTimeout = TimeSpan.FromSeconds(60);
 
                 var relays = clusterConfig.ShareRelays
@@ -104,7 +104,7 @@ namespace Miningcore.Mining
                     try
                     {
                         // setup sockets
-                        var sockets = relays.Select(SetupSubSocket).ToArray();
+                        var sockets = relays.Select(x=> SetupSubSocket(x)).ToArray();
 
                         using(new CompositeDisposable(sockets))
                         {
@@ -129,7 +129,7 @@ namespace Miningcore.Mining
                                         {
                                             // re-create socket
                                             sockets[i].Dispose();
-                                            sockets[i] = SetupSubSocket(relays[i]);
+                                            sockets[i] = SetupSubSocket(relays[i], true);
 
                                             // reset clock
                                             lastMessageReceived[i] = clock.Now;
@@ -140,6 +140,25 @@ namespace Miningcore.Mining
 
                                     if(error != null)
                                         logger.Error(() => $"{nameof(ShareReceiver)}: {error.Name} [{error.Name}] during receive");
+                                }
+
+                                else
+                                {
+                                    // check for timeouts
+                                    for(var i = 0; i < messages.Length; i++)
+                                    {
+                                        if(clock.Now - lastMessageReceived[i] > reconnectTimeout)
+                                        {
+                                            // re-create socket
+                                            sockets[i].Dispose();
+                                            sockets[i] = SetupSubSocket(relays[i], true);
+
+                                            // reset clock
+                                            lastMessageReceived[i] = clock.Now;
+
+                                            logger.Info(() => $"Receive timeout of {reconnectTimeout.TotalSeconds} seconds exceeded. Re-connecting to {relays[i].Url} ...");
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -156,17 +175,20 @@ namespace Miningcore.Mining
             }, ct);
         }
 
-        private static ZSocket SetupSubSocket(ShareRelayEndpointConfig relay)
+        private static ZSocket SetupSubSocket(ShareRelayEndpointConfig relay, bool silent = false)
         {
             var subSocket = new ZSocket(ZSocketType.SUB);
             subSocket.SetupCurveTlsClient(relay.SharedEncryptionKey, logger);
             subSocket.Connect(relay.Url);
             subSocket.SubscribeAll();
 
-            if(subSocket.CurveServerKey != null)
-                logger.Info($"Monitoring external stratum {relay.Url} using Curve public-key {subSocket.CurveServerKey.ToHexString()}");
-            else
-                logger.Info($"Monitoring external stratum {relay.Url}");
+            if(!silent)
+            {
+                if(subSocket.CurveServerKey != null)
+                    logger.Info($"Monitoring external stratum {relay.Url} using Curve public-key {subSocket.CurveServerKey.ToHexString()}");
+                else
+                    logger.Info($"Monitoring external stratum {relay.Url}");
+            }
 
             return subSocket;
         }
@@ -273,11 +295,9 @@ namespace Miningcore.Mining
             if(poolContext != null)
             {
                 var pool = poolContext.Pool;
+                var shareMultiplier = poolContext.Pool.ShareMultiplier;
 
-                var shareMultiplier = pool.Config.Template.Family == CoinFamily.Bitcoin ?
-                    pool.Config.Template.As<BitcoinTemplate>().ShareMultiplier : 1;
-
-                poolContext.Logger.Info(() => $"External {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}share accepted: D={Math.Round(share.Difficulty * shareMultiplier, 3)}");
+                poolContext.Logger.Info(() => $"External {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}share accepted: D={Math.Round(share.Difficulty * shareMultiplier, 4)}");
 
                 if(pool.NetworkStats != null)
                 {
@@ -297,7 +317,7 @@ namespace Miningcore.Mining
             }
 
             else
-                logger.Info(() => $"External {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}share accepted: D={Math.Round(share.Difficulty, 3)}");
+                logger.Info(() => $"External {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}share accepted: D={Math.Round(share.Difficulty, 4)}");
         }
 
         protected override async Task ExecuteAsync(CancellationToken ct)

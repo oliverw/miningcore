@@ -63,7 +63,10 @@ namespace Miningcore.Native
         public static extern void blake(byte* input, void* output, uint inputLength);
 
         [DllImport("libmultihash", EntryPoint = "blake2s_export", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void blake2s(byte* input, void* output, uint inputLength);
+        public static extern void blake2s(byte* input, void* output, uint inputLength, int outputLength = -1);
+
+        [DllImport("libmultihash", EntryPoint = "blake2b_export", CallingConvention = CallingConvention.Cdecl)]
+        public static extern void blake2b(byte* input, void* output, uint inputLength, int outputLength);
 
         [DllImport("libmultihash", EntryPoint = "dcrypt_export", CallingConvention = CallingConvention.Cdecl)]
         public static extern void dcrypt(byte* input, void* output, uint inputLength);

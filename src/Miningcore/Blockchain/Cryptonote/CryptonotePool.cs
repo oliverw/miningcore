@@ -21,6 +21,7 @@ using Miningcore.Persistence.Repositories;
 using Miningcore.Stratum;
 using Miningcore.Time;
 using Newtonsoft.Json;
+using static Miningcore.Util.ActionUtils;
 
 namespace Miningcore.Blockchain.Cryptonote
 {
@@ -93,7 +94,20 @@ namespace Miningcore.Blockchain.Cryptonote
                 var staticDiff = GetStaticDiffFromPassparts(passParts);
 
                 // Nicehash support
-                staticDiff = await GetNicehashStaticMinDiff(connection, context.UserAgent, staticDiff, manager.Coin.Name, manager.Coin.GetAlgorithmName());
+                var nicehashDiff = await GetNicehashStaticMinDiff(connection, context.UserAgent, manager.Coin.Name, manager.Coin.GetAlgorithmName());
+
+                if(nicehashDiff.HasValue)
+                {
+                    if(!staticDiff.HasValue || nicehashDiff > staticDiff)
+                    {
+                        logger.Info(() => $"[{connection.ConnectionId}] Nicehash detected. Using API supplied difficulty of {nicehashDiff.Value}");
+
+                        staticDiff = nicehashDiff;
+                    }
+
+                    else
+                        logger.Info(() => $"[{connection.ConnectionId}] Nicehash detected. Using miner supplied difficulty of {staticDiff.Value}");
+                }
 
                 // Static diff
                 if(staticDiff.HasValue &&
@@ -228,7 +242,7 @@ namespace Miningcore.Blockchain.Cryptonote
                 if(!job.Submissions.TryAdd(submitRequest.Nonce, true))
                     throw new StratumException(StratumError.MinusOne, "duplicate share");
 
-                var poolEndpoint = poolConfig.Ports[connection.PoolEndpoint.Port];
+                var poolEndpoint = poolConfig.Ports[connection.LocalEndpoint.Port];
 
                 var share = await manager.SubmitShareAsync(connection, submitRequest, job, poolEndpoint.Difficulty, ct);
                 await connection.RespondAsync(new CryptonoteResponseBase(), request.Id);
@@ -257,7 +271,7 @@ namespace Miningcore.Blockchain.Cryptonote
 
                 // update client stats
                 context.Stats.InvalidShares++;
-                logger.Info(() => $"[{connection.ConnectionId}] Share rejected: {ex.Message}");
+                logger.Info(() => $"[{connection.ConnectionId}] Share rejected: {ex.Message} [{context.UserAgent}]");
 
                 // banning
                 ConsiderBan(connection, context, poolConfig.Banning);
@@ -275,33 +289,20 @@ namespace Miningcore.Blockchain.Cryptonote
         {
             logger.Info(() => "Broadcasting job");
 
-            var tasks = ForEachConnection(async client =>
+            return Guard(()=> Task.WhenAll(ForEachConnection(async connection =>
             {
-                if(!client.IsAlive)
+                if(!connection.IsAlive)
                     return;
 
-                var context = client.ContextAs<CryptonoteWorkerContext>();
+                var context = connection.ContextAs<CryptonoteWorkerContext>();
 
-                if(context.IsSubscribed && context.IsAuthorized)
-                {
-                    // check alive
-                    var lastActivityAgo = clock.Now - context.LastActivity;
+                if(!context.IsSubscribed || !context.IsAuthorized || CloseIfDead(connection, context))
+                    return;
 
-                    if(poolConfig.ClientConnectionTimeout > 0 &&
-                        lastActivityAgo.TotalSeconds > poolConfig.ClientConnectionTimeout)
-                    {
-                        logger.Info(() => $"[[{client.ConnectionId}] Booting zombie-worker (idle-timeout exceeded)");
-                        CloseConnection(client);
-                        return;
-                    }
-
-                    // send job
-                    var job = CreateWorkerJob(client);
-                    await client.NotifyAsync(CryptonoteStratumMethods.JobNotify, job);
-                }
-            });
-
-            return Task.WhenAll(tasks);
+                // send job
+                var job = CreateWorkerJob(connection);
+                await connection.NotifyAsync(CryptonoteStratumMethods.JobNotify, job);
+            })), ex=> logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}"));
         }
 
         #region Overrides
@@ -318,25 +319,16 @@ namespace Miningcore.Blockchain.Cryptonote
                 minerAlgo = GetMinerAlgo();
 
                 disposables.Add(manager.Blocks
-                    .Select(_ => Observable.FromAsync(async () =>
-                    {
-                        try
-                        {
-                            await OnNewJobAsync();
-                        }
-
-                        catch(Exception ex)
-                        {
-                            logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}");
-                        }
-                    }))
+                    .Select(_ => Observable.FromAsync(() =>
+                        Guard(OnNewJobAsync,
+                            ex=> logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}"))))
                     .Concat()
                     .Subscribe(_ => { }, ex =>
                     {
                         logger.Debug(ex, nameof(OnNewJobAsync));
                     }));
 
-                // we need work before opening the gates
+                // start with initial blocktemplate
                 await manager.Blocks.Take(1).ToTask(ct);
             }
 
@@ -365,7 +357,7 @@ namespace Miningcore.Blockchain.Cryptonote
             blockchainStats = manager.BlockchainStats;
         }
 
-        protected override WorkerContextBase CreateClientContext()
+        protected override WorkerContextBase CreateWorkerContext()
         {
             return new CryptonoteWorkerContext();
         }
@@ -416,6 +408,8 @@ namespace Miningcore.Blockchain.Cryptonote
             var result = shares / interval;
             return result;
         }
+
+        public override double ShareMultiplier => 1;
 
         protected override async Task OnVarDiffUpdateAsync(StratumConnection connection, double newDiff)
         {

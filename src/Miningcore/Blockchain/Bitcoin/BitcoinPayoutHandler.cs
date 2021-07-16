@@ -1,8 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Data;
-using System.Globalization;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
 using AutoMapper;
@@ -12,8 +11,7 @@ using Miningcore.Configuration;
 using Miningcore.DaemonInterface;
 using Miningcore.Extensions;
 using Miningcore.Messaging;
-using Miningcore.Notifications;
-using Miningcore.Notifications.Messages;
+using Miningcore.Mining;
 using Miningcore.Payments;
 using Miningcore.Persistence;
 using Miningcore.Persistence.Model;
@@ -59,7 +57,7 @@ namespace Miningcore.Blockchain.Bitcoin
 
         #region IPayoutHandler
 
-        public virtual Task ConfigureAsync(ClusterConfig clusterConfig, PoolConfig poolConfig)
+        public virtual Task ConfigureAsync(ClusterConfig clusterConfig, PoolConfig poolConfig, CancellationToken ct)
         {
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
 
@@ -78,7 +76,7 @@ namespace Miningcore.Blockchain.Bitcoin
             return Task.FromResult(true);
         }
 
-        public virtual async Task<Block[]> ClassifyBlocksAsync(Block[] blocks)
+        public virtual async Task<Block[]> ClassifyBlocksAsync(IMiningPool pool, Block[] blocks, CancellationToken ct)
         {
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
             Contract.RequiresNonNull(blocks, nameof(blocks));
@@ -87,6 +85,12 @@ namespace Miningcore.Blockchain.Bitcoin
             var pageSize = 100;
             var pageCount = (int) Math.Ceiling(blocks.Length / (double) pageSize);
             var result = new List<Block>();
+            int minConfirmations;
+
+            if(coin is BitcoinTemplate bitcoinTemplate)
+                minConfirmations = extraPoolConfig?.MinimumConfirmations ?? bitcoinTemplate.CoinbaseMinConfimations ?? BitcoinConstants.CoinbaseMinConfimations;
+            else
+                minConfirmations = extraPoolConfig?.MinimumConfirmations ?? BitcoinConstants.CoinbaseMinConfimations;
 
             for(var i = 0; i < pageCount; i++)
             {
@@ -101,7 +105,7 @@ namespace Miningcore.Blockchain.Bitcoin
                     new[] { block.TransactionConfirmationData })).ToArray();
 
                 // execute batch
-                var results = await daemon.ExecuteBatchAnyAsync(logger, batch);
+                var results = await daemon.ExecuteBatchAnyAsync(logger, ct, batch);
 
                 for(var j = 0; j < results.Length; j++)
                 {
@@ -121,12 +125,12 @@ namespace Miningcore.Blockchain.Bitcoin
                             result.Add(block);
 
                             logger.Info(() => $"[{LogCategory}] Block {block.BlockHeight} classified as orphaned due to daemon error {cmdResult.Error.Code}");
+
+                            messageBus.NotifyBlockUnlocked(poolConfig.Id, block, coin);
                         }
 
                         else
-                        {
                             logger.Warn(() => $"[{LogCategory}] Daemon reports error '{cmdResult.Error.Message}' (Code {cmdResult.Error.Code}) for transaction {page[j].TransactionConfirmationData}");
-                        }
                     }
 
                     // missing transaction details are interpreted as "orphaned"
@@ -145,7 +149,6 @@ namespace Miningcore.Blockchain.Bitcoin
                         {
                             case "immature":
                                 // update progress
-                                var minConfirmations = extraPoolConfig?.MinimumConfirmations ?? BitcoinConstants.CoinbaseMinConfimations;
                                 block.ConfirmationProgress = Math.Min(1.0d, (double) transactionInfo.Confirmations / minConfirmations);
                                 block.Reward = transactionInfo.Amount;  // update actual block-reward from coinbase-tx
                                 result.Add(block);
@@ -182,14 +185,14 @@ namespace Miningcore.Blockchain.Bitcoin
             return result.ToArray();
         }
 
-        public virtual Task CalculateBlockEffortAsync(Block block, double accumulatedBlockShareDiff)
+        public virtual Task CalculateBlockEffortAsync(IMiningPool pool, Block block, double accumulatedBlockShareDiff, CancellationToken ct)
         {
             block.Effort = accumulatedBlockShareDiff / block.NetworkDifficulty;
 
             return Task.FromResult(true);
         }
 
-        public virtual async Task PayoutAsync(Balance[] balances)
+        public virtual async Task PayoutAsync(IMiningPool pool, Balance[] balances, CancellationToken ct)
         {
             Contract.RequiresNonNull(balances, nameof(balances));
 
@@ -201,7 +204,7 @@ namespace Miningcore.Blockchain.Bitcoin
             if(amounts.Count == 0)
                 return;
 
-            logger.Info(() => $"[{LogCategory}] Paying out {FormatAmount(balances.Sum(x => x.Amount))} to {balances.Length} addresses");
+            logger.Info(() => $"[{LogCategory}] Paying {FormatAmount(balances.Sum(x => x.Amount))} to {balances.Length} addresses");
 
             object[] args;
 
@@ -261,7 +264,7 @@ namespace Miningcore.Blockchain.Bitcoin
 
         // send command
         tryTransfer:
-            var result = await daemon.ExecuteCmdSingleAsync<string>(logger, BitcoinCommands.SendMany, args, new JsonSerializerSettings());
+            var result = await daemon.ExecuteCmdSingleAsync<string>(logger, BitcoinCommands.SendMany, ct, args, new JsonSerializerSettings());
 
             if(result.Error == null)
             {
@@ -269,7 +272,7 @@ namespace Miningcore.Blockchain.Bitcoin
                 {
                     // lock wallet
                     logger.Info(() => $"[{LogCategory}] Locking wallet");
-                    await daemon.ExecuteCmdSingleAsync<JToken>(logger, BitcoinCommands.WalletLock);
+                    await daemon.ExecuteCmdSingleAsync<JToken>(logger, BitcoinCommands.WalletLock, ct);
                 }
 
                 // check result
@@ -278,7 +281,7 @@ namespace Miningcore.Blockchain.Bitcoin
                 if(string.IsNullOrEmpty(txId))
                     logger.Error(() => $"[{LogCategory}] {BitcoinCommands.SendMany} did not return a transaction id!");
                 else
-                    logger.Info(() => $"[{LogCategory}] Payout transaction id: {txId}");
+                    logger.Info(() => $"[{LogCategory}] Payment transaction id: {txId}");
 
                 await PersistPaymentsAsync(balances, txId);
 
@@ -293,7 +296,7 @@ namespace Miningcore.Blockchain.Bitcoin
                     {
                         logger.Info(() => $"[{LogCategory}] Unlocking wallet");
 
-                        var unlockResult = await daemon.ExecuteCmdSingleAsync<JToken>(logger, BitcoinCommands.WalletPassphrase, new[]
+                        var unlockResult = await daemon.ExecuteCmdSingleAsync<JToken>(logger, BitcoinCommands.WalletPassphrase, ct, new[]
                         {
                             (object) extraPoolPaymentProcessingConfig.WalletPassword,
                             (object) 5 // unlock for N seconds

@@ -28,6 +28,7 @@ using Miningcore.VarDiff;
 using Newtonsoft.Json;
 using NLog;
 using Contract = Miningcore.Contracts.Contract;
+// ReSharper disable InconsistentlySynchronizedField
 
 namespace Miningcore.Mining
 {
@@ -75,7 +76,7 @@ namespace Miningcore.Mining
         protected readonly Dictionary<PoolEndpoint, VarDiffManager> varDiffManagers = new();
 
         protected abstract Task SetupJobManager(CancellationToken ct);
-        protected abstract WorkerContextBase CreateClientContext();
+        protected abstract WorkerContextBase CreateWorkerContext();
 
         protected double? GetStaticDiffFromPassparts(string[] parts)
         {
@@ -100,9 +101,7 @@ namespace Miningcore.Mining
 
         protected override void OnConnect(StratumConnection connection, IPEndPoint ipEndPoint)
         {
-            // client setup
-            var context = CreateClientContext();
-
+            var context = CreateWorkerContext();
             var poolEndpoint = poolConfig.Ports[ipEndPoint.Port];
             context.Init(poolConfig, poolEndpoint.Difficulty, poolConfig.EnableInternalStratum == true ? poolEndpoint.VarDiff : null, clock);
             connection.SetContext(context);
@@ -159,7 +158,7 @@ namespace Miningcore.Mining
 
                 // get or create manager
                 VarDiffManager varDiffManager;
-                var poolEndpoint = poolConfig.Ports[connection.PoolEndpoint.Port];
+                var poolEndpoint = poolConfig.Ports[connection.LocalEndpoint.Port];
 
                 lock(varDiffManagers)
                 {
@@ -226,6 +225,22 @@ namespace Miningcore.Mining
         }
 
         #endregion // VarDiff
+
+        protected bool CloseIfDead(StratumConnection connection, WorkerContextBase context)
+        {
+            var lastActivityAgo = clock.Now - context.LastActivity;
+
+            if(poolConfig.ClientConnectionTimeout > 0 &&
+               lastActivityAgo.TotalSeconds > poolConfig.ClientConnectionTimeout)
+            {
+                logger.Info(() => $"[[{connection.ConnectionId}] Booting zombie-worker (idle-timeout exceeded)");
+                CloseConnection(connection);
+
+                return true;
+            }
+
+            return false;
+        }
 
         protected void SetupBanning(ClusterConfig clusterConfig)
         {
@@ -294,29 +309,15 @@ namespace Miningcore.Mining
             }
         }
 
-        protected async Task<double?> GetNicehashStaticMinDiff(StratumConnection connection, string userAgent,
-            double? staticDiff, string coinName, string algoName)
+        protected virtual async Task<double?> GetNicehashStaticMinDiff(StratumConnection connection, string userAgent, string coinName, string algoName)
         {
             if(userAgent.Contains(NicehashConstants.NicehashUA, StringComparison.OrdinalIgnoreCase) &&
                clusterConfig.Nicehash?.EnableAutoDiff == true)
             {
-                var nicehashDiff = await nicehashService.GetStaticDiff(coinName, algoName, CancellationToken.None);
-
-                if(nicehashDiff.HasValue)
-                {
-                    if(!staticDiff.HasValue || nicehashDiff > staticDiff)
-                    {
-                        logger.Info(() => $"[{connection.ConnectionId}] Nicehash detected. Using API supplied difficulty of {nicehashDiff.Value}");
-
-                        return nicehashDiff;
-                    }
-
-                    else
-                        logger.Info(() => $"[{connection.ConnectionId}] Nicehash detected. Using custom difficulty of {staticDiff.Value}");
-                }
+                return await nicehashService.GetStaticDiff(coinName, algoName, CancellationToken.None);
             }
 
-            return staticDiff;
+            return null;
         }
 
         private StratumEndpoint PoolEndpoint2IPEndpoint(int port, PoolEndpoint pep)
@@ -364,6 +365,7 @@ Pool Fee:               {(poolConfig.RewardRecipients?.Any() == true ? poolConfi
         }
 
         public abstract double HashrateFromShares(double shares, double interval);
+        public abstract double ShareMultiplier { get; }
 
         public virtual async Task RunAsync(CancellationToken ct)
         {
@@ -388,11 +390,8 @@ Pool Fee:               {(poolConfig.RewardRecipients?.Any() == true ? poolConfi
                         .Select(port => PoolEndpoint2IPEndpoint(port, poolConfig.Ports[port]))
                         .ToArray();
 
-                    await ServeStratum(ct, ipEndpoints);
+                    await RunAsync(ct, ipEndpoints);
                 }
-
-                messageBus.NotifyPoolStatus(this, PoolStatus.Offline);
-                logger.Info(() => "Pool Offline");
             }
 
             catch(PoolStartupAbortException)

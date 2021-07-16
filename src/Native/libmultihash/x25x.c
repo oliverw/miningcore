@@ -4,7 +4,6 @@
 #include <stdint.h>
 
 #include "sha3/sph_blake.h"
-#include "sha3/sph_blake2s.h"
 #include "sha3/sph_bmw.h"
 #include "sha3/sph_groestl.h"
 #include "sha3/sph_jh.h"
@@ -27,7 +26,12 @@
 #include "sha3/SWIFFTX.h"
 #include "sha3/sph_panama.h"
 #include "lane.h"
-#include "blake2s.h"
+
+#ifdef _WIN32
+#include "blake2/ref/blake2.h"
+#else
+#include "blake2/sse/blake2.h"
+#endif
 
 #define blake2s_salt32(out, in, inlen, key32) blake2s(out, in, key32, 32, inlen, 32) /* neoscrypt */
 #define blake2s_simple(out, in, inlen) blake2s(out, in, NULL, 32, inlen, 0)
@@ -35,7 +39,7 @@
 typedef struct
 {
     unsigned char hash[64];
-} uint512; 
+} uint512;
 
 void x25x_hash(const char* input, char* output, uint32_t len)
 {

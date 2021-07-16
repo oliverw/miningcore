@@ -7,7 +7,6 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
 
-// ReSharper disable ClassNeverInstantiated.Global
 // ReSharper disable InconsistentNaming
 
 namespace Miningcore.Configuration
@@ -27,6 +26,9 @@ namespace Miningcore.Configuration
 
         [EnumMember(Value = "ethereum")]
         Ethereum,
+
+        [EnumMember(Value = "ergo")]
+        Ergo,
     }
 
     public abstract partial class CoinTemplate
@@ -97,6 +99,7 @@ namespace Miningcore.Configuration
             {CoinFamily.Equihash, typeof(EquihashCoinTemplate)},
             {CoinFamily.Cryptonote, typeof(CryptonoteCoinTemplate)},
             {CoinFamily.Ethereum, typeof(EthereumCoinTemplate)},
+            {CoinFamily.Ergo, typeof(ErgoCoinTemplate)},
         };
     }
 
@@ -162,6 +165,9 @@ namespace Miningcore.Configuration
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public Dictionary<string, BitcoinNetworkParams> Networks { get; set; }
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public int? CoinbaseMinConfimations { get; set; }
     }
 
     public enum EquihashSubfamily
@@ -336,6 +342,10 @@ namespace Miningcore.Configuration
         [DefaultValue(EthereumSubfamily.None)]
         [JsonConverter(typeof(StringEnumConverter), true)]
         public EthereumSubfamily Subfamily { get; set; }
+    }
+
+    public partial class ErgoCoinTemplate : CoinTemplate
+    {
     }
 
     #endregion // Coin Definitions
@@ -559,8 +569,6 @@ namespace Miningcore.Configuration
         public bool Enabled { get; set; }
         public string User { get; set; }
         public string Token { get; set; }
-        public bool NotifyBlockFound { get; set; }
-        public bool NotifyPaymentSuccess { get; set; }
     }
 
     public partial class AdminNotifications
@@ -594,6 +602,7 @@ namespace Miningcore.Configuration
         public string TlsPfxFile { get; set; }
         public string TlsPfxPassword { get; set; }
     }
+
 
     public partial class ApiConfig
     {
