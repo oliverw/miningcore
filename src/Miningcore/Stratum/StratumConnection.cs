@@ -109,7 +109,7 @@ namespace Miningcore.Stratum
                         {
                             ServerCertificate = cert,
                             ClientCertificateRequired = false,
-                            EnabledSslProtocols = SslProtocols.Tls11 | SslProtocols.Tls12,
+                            EnabledSslProtocols = SslProtocols.Tls11 | SslProtocols.Tls12 | SslProtocols.Tls13,
                             CertificateRevocationCheckMode = X509RevocationMode.NoCheck
                         }, cts.Token);
 
