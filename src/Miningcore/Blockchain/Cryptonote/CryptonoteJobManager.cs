@@ -345,7 +345,7 @@ namespace Miningcore.Blockchain.Cryptonote
             Contract.RequiresNonNull(worker, nameof(worker));
             Contract.RequiresNonNull(request, nameof(request));
 
-            logger.LogInvoke(new[] { worker.ConnectionId });
+            logger.LogInvoke(new object[] { worker.ConnectionId });
             var context = worker.ContextAs<CryptonoteWorkerContext>();
 
             var job = currentJob;

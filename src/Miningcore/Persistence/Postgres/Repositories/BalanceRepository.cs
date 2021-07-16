@@ -114,7 +114,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
 
         public Task<int> GetBalanceChangeCountByTagAsync(IDbConnection con, IDbTransaction tx, string poolId, string tag)
         {
-            logger.LogInvoke(new[] { poolId });
+            logger.LogInvoke(new object[] { poolId });
 
             const string query = "SELECT COUNT(*) FROM balance_changes WHERE poolid = @poolid AND @tag <@ tags";
 
@@ -123,7 +123,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
 
         public async Task<BalanceChange[]> GetBalanceChangesByTagAsync(IDbConnection con, IDbTransaction tx, string poolId, string tag)
         {
-            logger.LogInvoke(new[] { poolId });
+            logger.LogInvoke(new object[] { poolId });
 
             const string query = "SELECT * FROM balance_changes WHERE poolid = @poolid " +
                                  "AND @tag <@ tags " +
