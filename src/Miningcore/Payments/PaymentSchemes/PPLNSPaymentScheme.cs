@@ -4,6 +4,7 @@ using System.Data;
 using System.Data.Common;
 using System.Linq;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 using Miningcore.Configuration;
 using Miningcore.Extensions;
@@ -58,7 +59,7 @@ namespace Miningcore.Payments.PaymentSchemes
 
         #region IPayoutScheme
 
-        public async Task UpdateBalancesAsync(IDbConnection con, IDbTransaction tx, IMiningPool pool, IPayoutHandler payoutHandler, Block block, decimal blockReward)
+        public async Task UpdateBalancesAsync(IDbConnection con, IDbTransaction tx, IMiningPool pool, IPayoutHandler payoutHandler, Block block, decimal blockReward, CancellationToken ct)
         {
             var poolConfig = pool.Config;
             var payoutConfig = poolConfig.PaymentProcessing.PayoutSchemeConfig;
@@ -69,7 +70,7 @@ namespace Miningcore.Payments.PaymentSchemes
             // calculate rewards
             var shares = new Dictionary<string, double>();
             var rewards = new Dictionary<string, decimal>();
-            var shareCutOffDate = await CalculateRewardsAsync(pool, payoutHandler, window, block, blockReward, shares, rewards);
+            var shareCutOffDate = await CalculateRewardsAsync(pool, payoutHandler, window, block, blockReward, shares, rewards, ct);
 
             // update balances
             foreach(var address in rewards.Keys)
@@ -156,7 +157,7 @@ namespace Miningcore.Payments.PaymentSchemes
         #endregion // IPayoutScheme
 
         private async Task<DateTime?> CalculateRewardsAsync(IMiningPool pool, IPayoutHandler payoutHandler, decimal window, Block block, decimal blockReward,
-            Dictionary<string, double> shares, Dictionary<string, decimal> rewards)
+            Dictionary<string, double> shares, Dictionary<string, decimal> rewards, CancellationToken ct)
         {
             var poolConfig = pool.Config;
             var done = false;
@@ -168,7 +169,7 @@ namespace Miningcore.Payments.PaymentSchemes
             var blockRewardRemaining = blockReward;
             DateTime? shareCutOffDate = null;
 
-            while(!done)
+            while(!done && ct.IsCancellationRequested)
             {
                 logger.Info(() => $"Fetching page {currentPage} of shares for pool {poolConfig.Id}, block {block.BlockHeight}");
 

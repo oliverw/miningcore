@@ -47,14 +47,14 @@ namespace Miningcore.Blockchain.Equihash
             base.PostChainIdentifyConfigure();
         }
 
-        private async Task<DaemonResponse<EquihashBlockTemplate>> GetBlockTemplateAsync()
+        private async Task<DaemonResponse<EquihashBlockTemplate>> GetBlockTemplateAsync(CancellationToken ct)
         {
             logger.LogInvoke();
 
-            var subsidyResponse = await daemon.ExecuteCmdAnyAsync<ZCashBlockSubsidy>(logger, BitcoinCommands.GetBlockSubsidy);
+            var subsidyResponse = await daemon.ExecuteCmdAnyAsync<ZCashBlockSubsidy>(logger, BitcoinCommands.GetBlockSubsidy, ct);
 
             var result = await daemon.ExecuteCmdAnyAsync<EquihashBlockTemplate>(logger,
-                BitcoinCommands.GetBlockTemplate, extraPoolConfig?.GBTArgs ?? (object) GetBlockTemplateParams());
+                BitcoinCommands.GetBlockTemplate, ct, extraPoolConfig?.GBTArgs ?? (object) GetBlockTemplateParams());
 
             if(subsidyResponse.Error == null && result.Error == null && result.Response != null)
                 result.Response.Subsidy = subsidyResponse.Response;
@@ -101,7 +101,7 @@ namespace Miningcore.Blockchain.Equihash
             return new EquihashJob();
         }
 
-        protected override async Task<(bool IsNew, bool Force)> UpdateJob(bool forceUpdate, string via = null, string json = null)
+        protected override async Task<(bool IsNew, bool Force)> UpdateJob(CancellationToken ct, bool forceUpdate, string via = null, string json = null)
         {
             logger.LogInvoke();
 
@@ -111,7 +111,7 @@ namespace Miningcore.Blockchain.Equihash
                     lastJobRebroadcast = clock.Now;
 
                 var response = string.IsNullOrEmpty(json) ?
-                    await GetBlockTemplateAsync() :
+                    await GetBlockTemplateAsync(ct) :
                     GetBlockTemplateFromJson(json);
 
                 // may happen if daemon is currently not connected to peers

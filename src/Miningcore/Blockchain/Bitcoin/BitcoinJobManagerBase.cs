@@ -71,7 +71,7 @@ namespace Miningcore.Blockchain.Bitcoin
             };
         }
 
-        protected virtual void SetupJobUpdates()
+        protected virtual void SetupJobUpdates(CancellationToken ct)
         {
             jobRebroadcastTimeout = TimeSpan.FromSeconds(Math.Max(1, poolConfig.JobRebroadcastTimeout));
             var blockFound = blockFoundSubject.Synchronize();
@@ -99,7 +99,7 @@ namespace Miningcore.Blockchain.Bitcoin
                 {
                     logger.Info(() => $"Subscribing to ZMQ push-updates from {string.Join(", ", zmq.Values)}");
 
-                    var blockNotify = daemon.ZmqSubscribe(logger, zmq)
+                    var blockNotify = daemon.ZmqSubscribe(logger, ct, zmq)
                         .Select(msg =>
                         {
                             using(msg)
@@ -186,7 +186,7 @@ namespace Miningcore.Blockchain.Bitcoin
             }
 
             Jobs = Observable.Merge(triggers)
-                .Select(x => Observable.FromAsync(() => UpdateJob(x.Force, x.Via, x.Data)))
+                .Select(x => Observable.FromAsync(() => UpdateJob(ct, x.Force, x.Via, x.Data)))
                 .Concat()
                 .Where(x => x.IsNew || x.Force)
                 .Do(x =>
@@ -199,15 +199,15 @@ namespace Miningcore.Blockchain.Bitcoin
                 .RefCount();
         }
 
-        protected virtual async Task ShowDaemonSyncProgressAsync()
+        protected virtual async Task ShowDaemonSyncProgressAsync(CancellationToken ct)
         {
             if(hasLegacyDaemon)
             {
-                await ShowDaemonSyncProgressLegacyAsync();
+                await ShowDaemonSyncProgressLegacyAsync(ct);
                 return;
             }
 
-            var infos = await daemon.ExecuteCmdAllAsync<BlockchainInfo>(logger, BitcoinCommands.GetBlockchainInfo);
+            var infos = await daemon.ExecuteCmdAllAsync<BlockchainInfo>(logger, BitcoinCommands.GetBlockchainInfo, ct);
 
             if(infos.Length > 0)
             {
@@ -217,7 +217,7 @@ namespace Miningcore.Blockchain.Bitcoin
                 if(blockCount.HasValue)
                 {
                     // get list of peers and their highest block height to compare to ours
-                    var peerInfo = await daemon.ExecuteCmdAnyAsync<PeerInfo[]>(logger, BitcoinCommands.GetPeerInfo);
+                    var peerInfo = await daemon.ExecuteCmdAnyAsync<PeerInfo[]>(logger, BitcoinCommands.GetPeerInfo, ct);
                     var peers = peerInfo.Response;
 
                     if(peers != null && peers.Length > 0)
@@ -230,13 +230,13 @@ namespace Miningcore.Blockchain.Bitcoin
             }
         }
 
-        private async Task UpdateNetworkStatsAsync()
+        private async Task UpdateNetworkStatsAsync(CancellationToken ct)
         {
             logger.LogInvoke();
 
             try
             {
-                var results = await daemon.ExecuteBatchAnyAsync(logger,
+                var results = await daemon.ExecuteBatchAnyAsync(logger, ct,
                     new DaemonCmd(BitcoinCommands.GetMiningInfo),
                     new DaemonCmd(BitcoinCommands.GetNetworkInfo),
                     new DaemonCmd(BitcoinCommands.GetNetworkHashPS)
@@ -270,7 +270,7 @@ namespace Miningcore.Blockchain.Bitcoin
         protected virtual async Task<(bool Accepted, string CoinbaseTx)> SubmitBlockAsync(Share share, string blockHex)
         {
             // execute command batch
-            var results = await daemon.ExecuteBatchAnyAsync(logger,
+            var results = await daemon.ExecuteBatchAnyAsync(logger, CancellationToken.None,
                 hasSubmitBlockMethod
                     ? new DaemonCmd(BitcoinCommands.SubmitBlock, new[] { blockHex })
                     : new DaemonCmd(BitcoinCommands.GetBlockTemplate, new { mode = "submit", data = blockHex }),
@@ -303,9 +303,9 @@ namespace Miningcore.Blockchain.Bitcoin
             return (accepted, block?.Transactions.FirstOrDefault());
         }
 
-        protected virtual async Task<bool> AreDaemonsHealthyLegacyAsync()
+        protected virtual async Task<bool> AreDaemonsHealthyLegacyAsync(CancellationToken ct)
         {
-            var responses = await daemon.ExecuteCmdAllAsync<DaemonInfo>(logger, BitcoinCommands.GetInfo);
+            var responses = await daemon.ExecuteCmdAllAsync<DaemonInfo>(logger, BitcoinCommands.GetInfo, ct);
 
             if(responses.Where(x => x.Error?.InnerException?.GetType() == typeof(DaemonClientException))
                 .Select(x => (DaemonClientException) x.Error.InnerException)
@@ -315,16 +315,16 @@ namespace Miningcore.Blockchain.Bitcoin
             return responses.All(x => x.Error == null);
         }
 
-        protected virtual async Task<bool> AreDaemonsConnectedLegacyAsync()
+        protected virtual async Task<bool> AreDaemonsConnectedLegacyAsync(CancellationToken ct)
         {
-            var response = await daemon.ExecuteCmdAnyAsync<DaemonInfo>(logger, BitcoinCommands.GetInfo);
+            var response = await daemon.ExecuteCmdAnyAsync<DaemonInfo>(logger, BitcoinCommands.GetInfo, ct);
 
             return response.Error == null && response.Response.Connections > 0;
         }
 
-        protected virtual async Task ShowDaemonSyncProgressLegacyAsync()
+        protected virtual async Task ShowDaemonSyncProgressLegacyAsync(CancellationToken ct)
         {
-            var infos = await daemon.ExecuteCmdAllAsync<DaemonInfo>(logger, BitcoinCommands.GetInfo);
+            var infos = await daemon.ExecuteCmdAllAsync<DaemonInfo>(logger, BitcoinCommands.GetInfo, ct);
 
             if(infos.Length > 0)
             {
@@ -334,7 +334,7 @@ namespace Miningcore.Blockchain.Bitcoin
                 if(blockCount.HasValue)
                 {
                     // get list of peers and their highest block height to compare to ours
-                    var peerInfo = await daemon.ExecuteCmdAnyAsync<PeerInfo[]>(logger, BitcoinCommands.GetPeerInfo);
+                    var peerInfo = await daemon.ExecuteCmdAnyAsync<PeerInfo[]>(logger, BitcoinCommands.GetPeerInfo, ct);
                     var peers = peerInfo.Response;
 
                     if(peers != null && peers.Length > 0)
@@ -347,13 +347,13 @@ namespace Miningcore.Blockchain.Bitcoin
             }
         }
 
-        private async Task UpdateNetworkStatsLegacyAsync()
+        private async Task UpdateNetworkStatsLegacyAsync(CancellationToken ct)
         {
             logger.LogInvoke();
 
             try
             {
-                var results = await daemon.ExecuteBatchAnyAsync(logger,
+                var results = await daemon.ExecuteBatchAnyAsync(logger, ct,
                     new DaemonCmd(BitcoinCommands.GetConnectionCount)
                 );
 
@@ -389,12 +389,12 @@ namespace Miningcore.Blockchain.Bitcoin
             daemon.Configure(poolConfig.Daemons);
         }
 
-        protected override async Task<bool> AreDaemonsHealthyAsync()
+        protected override async Task<bool> AreDaemonsHealthyAsync(CancellationToken ct)
         {
             if(hasLegacyDaemon)
-                return await AreDaemonsHealthyLegacyAsync();
+                return await AreDaemonsHealthyLegacyAsync(ct);
 
-            var responses = await daemon.ExecuteCmdAllAsync<BlockchainInfo>(logger, BitcoinCommands.GetBlockchainInfo);
+            var responses = await daemon.ExecuteCmdAllAsync<BlockchainInfo>(logger, BitcoinCommands.GetBlockchainInfo, ct);
 
             if(responses.Where(x => x.Error?.InnerException?.GetType() == typeof(DaemonClientException))
                 .Select(x => (DaemonClientException) x.Error.InnerException)
@@ -404,12 +404,12 @@ namespace Miningcore.Blockchain.Bitcoin
             return responses.All(x => x.Error == null);
         }
 
-        protected override async Task<bool> AreDaemonsConnectedAsync()
+        protected override async Task<bool> AreDaemonsConnectedAsync(CancellationToken ct)
         {
             if(hasLegacyDaemon)
-                return await AreDaemonsConnectedLegacyAsync();
+                return await AreDaemonsConnectedLegacyAsync(ct);
 
-            var response = await daemon.ExecuteCmdAnyAsync<NetworkInfo>(logger, BitcoinCommands.GetNetworkInfo);
+            var response = await daemon.ExecuteCmdAnyAsync<NetworkInfo>(logger, BitcoinCommands.GetNetworkInfo, ct);
 
             return response.Error == null && response.Response?.Connections > 0;
         }
@@ -421,7 +421,7 @@ namespace Miningcore.Blockchain.Bitcoin
             while(true)
             {
                 var responses = await daemon.ExecuteCmdAllAsync<BlockTemplate>(logger,
-                    BitcoinCommands.GetBlockTemplate, GetBlockTemplateParams());
+                    BitcoinCommands.GetBlockTemplate, ct, GetBlockTemplateParams());
 
                 var isSynched = responses.All(x => x.Error == null);
 
@@ -437,7 +437,7 @@ namespace Miningcore.Blockchain.Bitcoin
                     syncPendingNotificationShown = true;
                 }
 
-                await ShowDaemonSyncProgressAsync();
+                await ShowDaemonSyncProgressAsync(ct);
 
                 // delay retry by 5s
                 await Task.Delay(5000, ct);
@@ -455,7 +455,7 @@ namespace Miningcore.Blockchain.Bitcoin
                 new DaemonCmd(BitcoinCommands.GetAddressInfo, new[] { poolConfig.Address }),
             };
 
-            var results = await daemon.ExecuteBatchAnyAsync(logger, commands);
+            var results = await daemon.ExecuteBatchAnyAsync(logger, ct, commands);
 
             if(results.Any(x => x.Error != null))
             {
@@ -528,20 +528,20 @@ namespace Miningcore.Blockchain.Bitcoin
                 logger.ThrowLogPoolStartupException("Unable detect block submission RPC method");
 
             if(!hasLegacyDaemon)
-                await UpdateNetworkStatsAsync();
+                await UpdateNetworkStatsAsync(ct);
             else
-                await UpdateNetworkStatsLegacyAsync();
+                await UpdateNetworkStatsLegacyAsync(ct);
 
             // Periodically update network stats
             Observable.Interval(TimeSpan.FromMinutes(10))
                 .Select(via => Observable.FromAsync(async () =>
-                    await Guard(()=> (!hasLegacyDaemon ? UpdateNetworkStatsAsync() : UpdateNetworkStatsLegacyAsync()),
+                    await Guard(()=> (!hasLegacyDaemon ? UpdateNetworkStatsAsync(ct) : UpdateNetworkStatsLegacyAsync(ct)),
                         ex => logger.Error(ex))))
                 .Concat()
                 .Subscribe();
 
             SetupCrypto();
-            SetupJobUpdates();
+            SetupJobUpdates(ct);
         }
 
         protected virtual IDestination AddressToDestination(string address, BitcoinAddressType? addressType)
@@ -567,7 +567,7 @@ namespace Miningcore.Blockchain.Bitcoin
 
         }
 
-        protected abstract Task<(bool IsNew, bool Force)> UpdateJob(bool forceUpdate, string via = null, string json = null);
+        protected abstract Task<(bool IsNew, bool Force)> UpdateJob(CancellationToken ct, bool forceUpdate, string via = null, string json = null);
         protected abstract object GetJobParamsForStratum(bool isNew);
 
         protected void ConfigureRewards()

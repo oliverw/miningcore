@@ -2,6 +2,7 @@ using System;
 using System.Data;
 using System.Data.Common;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
 using Miningcore.Blockchain;
@@ -86,7 +87,7 @@ namespace Miningcore.Payments
             logger.Warn(() => $"[{LogCategory}] Retry {1} in {timeSpan} due to: {ex}");
         }
 
-        public virtual async Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, IMiningPool pool, Block block)
+        public virtual async Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, IMiningPool pool, Block block, CancellationToken ct)
         {
             var blockRewardRemaining = block.Reward;
 
