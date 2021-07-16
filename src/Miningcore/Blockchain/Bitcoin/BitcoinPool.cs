@@ -185,7 +185,7 @@ namespace Miningcore.Blockchain.Bitcoin
 
                 // submit
                 var requestParams = request.ParamsAs<string[]>();
-                var poolEndpoint = poolConfig.Ports[connection.PoolEndpoint.Port];
+                var poolEndpoint = poolConfig.Ports[connection.LocalEndpoint.Port];
 
                 var share = await manager.SubmitShareAsync(connection, requestParams, poolEndpoint.Difficulty, ct);
 
@@ -237,7 +237,7 @@ namespace Miningcore.Blockchain.Bitcoin
                 var requestedDiff = (double) Convert.ChangeType(request.Params, TypeCode.Double);
 
                 // client may suggest higher-than-base difficulty, but not a lower one
-                var poolEndpoint = poolConfig.Ports[connection.PoolEndpoint.Port];
+                var poolEndpoint = poolConfig.Ports[connection.LocalEndpoint.Port];
 
                 if(requestedDiff > poolEndpoint.Difficulty)
                 {
@@ -306,7 +306,7 @@ namespace Miningcore.Blockchain.Bitcoin
             var requestedDiff = extensionParams[BitcoinStratumExtensions.MinimumDiffValue].Value<double>();
 
             // client may suggest higher-than-base difficulty, but not a lower one
-            var poolEndpoint = poolConfig.Ports[connection.PoolEndpoint.Port];
+            var poolEndpoint = poolConfig.Ports[connection.LocalEndpoint.Port];
 
             if(requestedDiff > poolEndpoint.Difficulty)
             {

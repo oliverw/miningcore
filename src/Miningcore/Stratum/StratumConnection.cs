@@ -76,13 +76,13 @@ namespace Miningcore.Stratum
         #region API-Surface
 
         public async void DispatchAsync(Socket socket, CancellationToken ct,
-            StratumEndpoint endpoint, X509Certificate2 cert,
+            StratumEndpoint endpoint, IPEndPoint remoteEndpoint, X509Certificate2 cert,
             Func<StratumConnection, JsonRpcRequest, CancellationToken, Task> onRequestAsync,
             Action<StratumConnection> onCompleted,
             Action<StratumConnection, Exception> onError)
         {
-            PoolEndpoint = endpoint.IPEndPoint;
-            RemoteEndpoint = (IPEndPoint) socket.RemoteEndPoint;
+            LocalEndpoint = endpoint.IPEndPoint;
+            RemoteEndpoint = remoteEndpoint;
 
             expectingProxyHeader = endpoint.PoolEndpoint.TcpProxyProtocol?.Enable == true;
 
@@ -94,7 +94,6 @@ namespace Miningcore.Stratum
 
                 // create stream
                 networkStream = new NetworkStream(socket, true);
-                logger.Info(() => $"[{ConnectionId}] Accepting connection from {RemoteEndpoint.Address}:{RemoteEndpoint.Port} ...");
 
                 using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
 
@@ -159,7 +158,7 @@ namespace Miningcore.Stratum
         }
 
         public string ConnectionId { get; }
-        public IPEndPoint PoolEndpoint { get; private set; }
+        public IPEndPoint LocalEndpoint { get; private set; }
         public IPEndPoint RemoteEndpoint { get; private set; }
         public DateTime? LastReceive { get; set; }
         public bool IsAlive { get; set; }

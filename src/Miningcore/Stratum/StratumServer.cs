@@ -143,11 +143,14 @@ namespace Miningcore.Stratum
 
                 var connectionId = CorrelationIdGenerator.GetNextId();
                 var connection = new StratumConnection(logger, clock, connectionId);
+                var remoteEndpoint = (IPEndPoint) socket.RemoteEndPoint;
+
+                logger.Info(() => $"[{connectionId}] Accepting connection from {remoteEndpoint.Address}:{remoteEndpoint.Port} ...");
 
                 RegisterConnection(connection, connectionId);
                 OnConnect(connection, port.IPEndPoint);
 
-                connection.DispatchAsync(socket, ct, port, cert, OnRequestAsync, OnConnectionComplete, OnConnectionError);
+                connection.DispatchAsync(socket, ct, port, remoteEndpoint, cert, OnRequestAsync, OnConnectionComplete, OnConnectionError);
             }, ct);
         }
 

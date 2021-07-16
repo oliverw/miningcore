@@ -242,7 +242,7 @@ namespace Miningcore.Blockchain.Cryptonote
                 if(!job.Submissions.TryAdd(submitRequest.Nonce, true))
                     throw new StratumException(StratumError.MinusOne, "duplicate share");
 
-                var poolEndpoint = poolConfig.Ports[connection.PoolEndpoint.Port];
+                var poolEndpoint = poolConfig.Ports[connection.LocalEndpoint.Port];
 
                 var share = await manager.SubmitShareAsync(connection, submitRequest, job, poolEndpoint.Difficulty, ct);
                 await connection.RespondAsync(new CryptonoteResponseBase(), request.Id);
