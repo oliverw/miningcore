@@ -30,6 +30,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NLog;
 using Contract = Miningcore.Contracts.Contract;
+using static Miningcore.Util.ActionUtils;
 
 namespace Miningcore.Blockchain.Cryptonote
 {
@@ -601,18 +602,9 @@ namespace Miningcore.Blockchain.Cryptonote
 
             // Periodically update network stats
             Observable.Interval(TimeSpan.FromMinutes(1))
-                .Select(via => Observable.FromAsync(async () =>
-               {
-                   try
-                   {
-                       await UpdateNetworkStatsAsync(ct);
-                   }
-
-                   catch(Exception ex)
-                   {
-                       logger.Error(ex);
-                   }
-               }))
+                .Select(via => Observable.FromAsync(() =>
+                    Guard(()=> UpdateNetworkStatsAsync(ct),
+                        ex=> logger.Error(ex))))
                 .Concat()
                 .Subscribe();
 

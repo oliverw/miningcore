@@ -30,6 +30,7 @@ using NLog;
 using Block = Miningcore.Blockchain.Ethereum.DaemonResponses.Block;
 using Contract = Miningcore.Contracts.Contract;
 using EC = Miningcore.Blockchain.Ethereum.EthCommands;
+using static Miningcore.Util.ActionUtils;
 
 namespace Miningcore.Blockchain.Ethereum
 {
@@ -473,7 +474,7 @@ namespace Miningcore.Blockchain.Ethereum
                 var responses = await daemon.ExecuteCmdAllAsync<object>(logger, EC.GetSyncState, ct);
 
                 var isSynched = responses.All(x => x.Error == null &&
-                    x.Response is bool && (bool) x.Response == false);
+                                                   x.Response is false);
 
                 if(isSynched)
                 {
@@ -530,18 +531,9 @@ namespace Miningcore.Blockchain.Ethereum
 
             // Periodically update network stats
             Observable.Interval(TimeSpan.FromMinutes(10))
-                .Select(via => Observable.FromAsync(async () =>
-                {
-                    try
-                    {
-                        await UpdateNetworkStatsAsync(ct);
-                    }
-
-                    catch(Exception ex)
-                    {
-                        logger.Error(ex);
-                    }
-                }))
+                .Select(via => Observable.FromAsync(() =>
+                    Guard(()=> UpdateNetworkStatsAsync(ct),
+                        ex=> logger.Error(ex))))
                 .Concat()
                 .Subscribe();
 

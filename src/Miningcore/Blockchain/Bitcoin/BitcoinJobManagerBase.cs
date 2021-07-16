@@ -534,8 +534,8 @@ namespace Miningcore.Blockchain.Bitcoin
 
             // Periodically update network stats
             Observable.Interval(TimeSpan.FromMinutes(10))
-                .Select(via => Observable.FromAsync(async () =>
-                    await Guard(()=> (!hasLegacyDaemon ? UpdateNetworkStatsAsync(ct) : UpdateNetworkStatsLegacyAsync(ct)),
+                .Select(via => Observable.FromAsync(() =>
+                    Guard(()=> (!hasLegacyDaemon ? UpdateNetworkStatsAsync(ct) : UpdateNetworkStatsLegacyAsync(ct)),
                         ex => logger.Error(ex))))
                 .Concat()
                 .Subscribe();
