@@ -60,29 +60,7 @@ namespace Miningcore.Blockchain.Ergo
                 blockFound.Select(x => (false, JobRefreshBy.BlockFound, (string) null))
             };
 
-            if(extraPoolConfig?.BtStream == null)
-            {
-                if(poolConfig.BlockRefreshInterval > 0)
-                {
-                    // periodically update block-template
-                    var pollingInterval = poolConfig.BlockRefreshInterval > 0 ? poolConfig.BlockRefreshInterval : 1000;
-
-                    triggers.Add(Observable.Timer(TimeSpan.FromMilliseconds(pollingInterval))
-                        .TakeUntil(pollTimerRestart)
-                        .Select(_ => (false, JobRefreshBy.Poll, (string) null))
-                        .Repeat());
-                }
-
-                else
-                {
-                    // get initial blocktemplate
-                    triggers.Add(Observable.Interval(TimeSpan.FromMilliseconds(1000))
-                        .Select(_ => (false, JobRefreshBy.Initial, (string) null))
-                        .TakeWhile(_ => !hasInitialBlockTemplate));
-                }
-            }
-
-            else
+            if(extraPoolConfig?.BtStream != null)
             {
                 var btStream = BtStreamSubscribe(extraPoolConfig.BtStream);
 
@@ -90,12 +68,20 @@ namespace Miningcore.Blockchain.Ergo
                     .Select(json => (false, JobRefreshBy.BlockTemplateStream, json))
                     .Publish()
                     .RefCount());
-
-                // get initial blocktemplate
-                triggers.Add(Observable.Interval(TimeSpan.FromMilliseconds(1000))
-                    .Select(_ => (false, JobRefreshBy.Initial, (string) null))
-                    .TakeWhile(_ => !hasInitialBlockTemplate));
             }
+
+            // periodically update block-template
+            var pollingInterval = poolConfig.BlockRefreshInterval > 0 ? poolConfig.BlockRefreshInterval : 1000;
+
+            triggers.Add(Observable.Timer(TimeSpan.FromMilliseconds(pollingInterval))
+                .TakeUntil(pollTimerRestart)
+                .Select(_ => (false, JobRefreshBy.Poll, (string) null))
+                .Repeat());
+
+            // get initial blocktemplate
+            triggers.Add(Observable.Interval(TimeSpan.FromMilliseconds(1000))
+                .Select(_ => (false, JobRefreshBy.Initial, (string) null))
+                .TakeWhile(_ => !hasInitialBlockTemplate));
 
             Jobs = Observable.Merge(triggers)
                 .Select(x => Observable.FromAsync(() => UpdateJob(x.Force, x.Via, x.Data)))
