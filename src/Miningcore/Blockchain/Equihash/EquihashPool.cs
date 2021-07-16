@@ -237,7 +237,7 @@ namespace Miningcore.Blockchain.Equihash
 
                 // submit
                 var requestParams = request.ParamsAs<string[]>();
-                var poolEndpoint = poolConfig.Ports[connection.PoolEndpoint.Port];
+                var poolEndpoint = poolConfig.Ports[connection.LocalEndpoint.Port];
 
                 var share = await manager.SubmitShareAsync(connection, requestParams, poolEndpoint.Difficulty, ct);
 
@@ -292,7 +292,7 @@ namespace Miningcore.Blockchain.Equihash
                 if(System.Numerics.BigInteger.TryParse(target, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var targetBig))
                 {
                     var newDiff = (double) new BigRational(manager.ChainConfig.Diff1BValue, targetBig);
-                    var poolEndpoint = poolConfig.Ports[connection.PoolEndpoint.Port];
+                    var poolEndpoint = poolConfig.Ports[connection.LocalEndpoint.Port];
 
                     if(newDiff >= poolEndpoint.Difficulty)
                     {

@@ -63,13 +63,13 @@ namespace Miningcore.Blockchain.Cryptonote
         private DaemonEndpointConfig[] walletDaemonEndpoints;
         private CryptonoteCoinTemplate coin;
 
-        protected async Task<bool> UpdateJob(string via = null, string json = null)
+        protected async Task<bool> UpdateJob(CancellationToken ct, string via = null, string json = null)
         {
             logger.LogInvoke();
 
             try
             {
-                var response = string.IsNullOrEmpty(json) ? await GetBlockTemplateAsync() : GetBlockTemplateFromJson(json);
+                var response = string.IsNullOrEmpty(json) ? await GetBlockTemplateAsync(ct) : GetBlockTemplateFromJson(json);
 
                 // may happen if daemon is currently not connected to peers
                 if(response.Error != null)
@@ -147,7 +147,7 @@ namespace Miningcore.Blockchain.Cryptonote
             return false;
         }
 
-        private async Task<DaemonResponse<GetBlockTemplateResponse>> GetBlockTemplateAsync()
+        private async Task<DaemonResponse<GetBlockTemplateResponse>> GetBlockTemplateAsync(CancellationToken ct)
         {
             logger.LogInvoke();
 
@@ -157,7 +157,7 @@ namespace Miningcore.Blockchain.Cryptonote
                 ReserveSize = CryptonoteConstants.ReserveSize
             };
 
-            return await daemon.ExecuteCmdAnyAsync<GetBlockTemplateResponse>(logger, CryptonoteCommands.GetBlockTemplate, request);
+            return await daemon.ExecuteCmdAnyAsync<GetBlockTemplateResponse>(logger, CryptonoteCommands.GetBlockTemplate, ct, request);
         }
 
         private DaemonResponse<GetBlockTemplateResponse> GetBlockTemplateFromJson(string json)
@@ -172,9 +172,9 @@ namespace Miningcore.Blockchain.Cryptonote
             };
         }
 
-        private async Task ShowDaemonSyncProgressAsync()
+        private async Task ShowDaemonSyncProgressAsync(CancellationToken ct)
         {
-            var infos = await daemon.ExecuteCmdAllAsync<GetInfoResponse>(logger, CryptonoteCommands.GetInfo);
+            var infos = await daemon.ExecuteCmdAllAsync<GetInfoResponse>(logger, CryptonoteCommands.GetInfo, ct);
             var firstValidResponse = infos.FirstOrDefault(x => x.Error == null && x.Response != null)?.Response;
 
             if(firstValidResponse != null)
@@ -189,13 +189,13 @@ namespace Miningcore.Blockchain.Cryptonote
             }
         }
 
-        private async Task UpdateNetworkStatsAsync()
+        private async Task UpdateNetworkStatsAsync(CancellationToken ct)
         {
             logger.LogInvoke();
 
             try
             {
-                var infoResponse = await daemon.ExecuteCmdAnyAsync(logger, CryptonoteCommands.GetInfo);
+                var infoResponse = await daemon.ExecuteCmdAnyAsync(logger, CryptonoteCommands.GetInfo, ct);
 
                 if(infoResponse.Error != null)
                     logger.Warn(() => $"Error(s) refreshing network stats: {infoResponse.Error.Message} (Code {infoResponse.Error.Code})");
@@ -217,7 +217,7 @@ namespace Miningcore.Blockchain.Cryptonote
 
         private async Task<bool> SubmitBlockAsync(Share share, string blobHex, string blobHash)
         {
-            var response = await daemon.ExecuteCmdAnyAsync<SubmitResponse>(logger, CryptonoteCommands.SubmitBlock, new[] { blobHex });
+            var response = await daemon.ExecuteCmdAnyAsync<SubmitResponse>(logger, CryptonoteCommands.SubmitBlock, CancellationToken.None, new[] { blobHex });
 
             if(response.Error != null || response?.Response?.Status != "OK")
             {
@@ -449,10 +449,10 @@ namespace Miningcore.Blockchain.Cryptonote
             }
         }
 
-        protected override async Task<bool> AreDaemonsHealthyAsync()
+        protected override async Task<bool> AreDaemonsHealthyAsync(CancellationToken ct)
         {
             // test daemons
-            var responses = await daemon.ExecuteCmdAllAsync<GetInfoResponse>(logger, CryptonoteCommands.GetInfo);
+            var responses = await daemon.ExecuteCmdAllAsync<GetInfoResponse>(logger, CryptonoteCommands.GetInfo, ct);
 
             if(responses.Where(x => x.Error?.InnerException?.GetType() == typeof(DaemonClientException))
                 .Select(x => (DaemonClientException) x.Error.InnerException)
@@ -465,7 +465,7 @@ namespace Miningcore.Blockchain.Cryptonote
             if(clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
             {
                 // test wallet daemons
-                var responses2 = await walletDaemon.ExecuteCmdAllAsync<object>(logger, CryptonoteWalletCommands.GetAddress);
+                var responses2 = await walletDaemon.ExecuteCmdAllAsync<object>(logger, CryptonoteWalletCommands.GetAddress, ct);
 
                 if(responses2.Where(x => x.Error?.InnerException?.GetType() == typeof(DaemonClientException))
                     .Select(x => (DaemonClientException) x.Error.InnerException)
@@ -478,9 +478,9 @@ namespace Miningcore.Blockchain.Cryptonote
             return true;
         }
 
-        protected override async Task<bool> AreDaemonsConnectedAsync()
+        protected override async Task<bool> AreDaemonsConnectedAsync(CancellationToken ct)
         {
-            var response = await daemon.ExecuteCmdAnyAsync<GetInfoResponse>(logger, CryptonoteCommands.GetInfo);
+            var response = await daemon.ExecuteCmdAnyAsync<GetInfoResponse>(logger, CryptonoteCommands.GetInfo, ct);
 
             return response.Error == null && response.Response != null &&
                 (response.Response.OutgoingConnectionsCount + response.Response.IncomingConnectionsCount) > 0;
@@ -499,7 +499,7 @@ namespace Miningcore.Blockchain.Cryptonote
                 };
 
                 var responses = await daemon.ExecuteCmdAllAsync<GetBlockTemplateResponse>(logger,
-                    CryptonoteCommands.GetBlockTemplate, request);
+                    CryptonoteCommands.GetBlockTemplate, ct, request);
 
                 var isSynched = responses.All(x => x.Error == null || x.Error.Code != -9);
 
@@ -515,7 +515,7 @@ namespace Miningcore.Blockchain.Cryptonote
                     syncPendingNotificationShown = true;
                 }
 
-                await ShowDaemonSyncProgressAsync();
+                await ShowDaemonSyncProgressAsync(ct);
 
                 // delay retry by 5s
                 await Task.Delay(5000, ct);
@@ -528,7 +528,7 @@ namespace Miningcore.Blockchain.Cryptonote
 
             // coin config
             var coin = poolConfig.Template.As<CryptonoteCoinTemplate>();
-            var infoResponse = await daemon.ExecuteCmdAnyAsync(logger, CryptonoteCommands.GetInfo);
+            var infoResponse = await daemon.ExecuteCmdAnyAsync(logger, CryptonoteCommands.GetInfo, ct);
 
             if(infoResponse.Error != null)
                 logger.ThrowLogPoolStartupException($"Init RPC failed: {infoResponse.Error.Message} (Code {infoResponse.Error.Code})");
@@ -597,7 +597,7 @@ namespace Miningcore.Blockchain.Cryptonote
             BlockchainStats.RewardType = "POW";
             BlockchainStats.NetworkType = networkType.ToString();
 
-            await UpdateNetworkStatsAsync();
+            await UpdateNetworkStatsAsync(ct);
 
             // Periodically update network stats
             Observable.Interval(TimeSpan.FromMinutes(1))
@@ -605,7 +605,7 @@ namespace Miningcore.Blockchain.Cryptonote
                {
                    try
                    {
-                       await UpdateNetworkStatsAsync();
+                       await UpdateNetworkStatsAsync(ct);
                    }
 
                    catch(Exception ex)
@@ -616,7 +616,7 @@ namespace Miningcore.Blockchain.Cryptonote
                 .Concat()
                 .Subscribe();
 
-            SetupJobUpdates();
+            SetupJobUpdates(ct);
         }
 
         private void SetInstanceId()
@@ -650,7 +650,7 @@ namespace Miningcore.Blockchain.Cryptonote
             }
         }
 
-        protected virtual void SetupJobUpdates()
+        protected virtual void SetupJobUpdates(CancellationToken ct)
         {
             var blockSubmission = blockFoundSubject.Synchronize();
             var pollTimerRestart = blockFoundSubject.Synchronize();
@@ -677,7 +677,7 @@ namespace Miningcore.Blockchain.Cryptonote
                 {
                     logger.Info(() => $"Subscribing to ZMQ push-updates from {string.Join(", ", zmq.Values)}");
 
-                    var blockNotify = daemon.ZmqSubscribe(logger, zmq)
+                    var blockNotify = daemon.ZmqSubscribe(logger, ct, zmq)
                         .Where(msg =>
                         {
                             bool result = false;
@@ -760,7 +760,7 @@ namespace Miningcore.Blockchain.Cryptonote
             }
 
             Blocks = Observable.Merge(triggers)
-                .Select(x => Observable.FromAsync(() => UpdateJob(x.Via, x.Data)))
+                .Select(x => Observable.FromAsync(() => UpdateJob(ct, x.Via, x.Data)))
                 .Concat()
                 .Where(isNew => isNew)
                 .Do(_ => hasInitialBlockTemplate = true)

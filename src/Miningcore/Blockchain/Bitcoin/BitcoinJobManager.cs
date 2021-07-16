@@ -48,12 +48,12 @@ namespace Miningcore.Blockchain.Bitcoin
             return result;
         }
 
-        protected async Task<DaemonResponse<BlockTemplate>> GetBlockTemplateAsync()
+        protected async Task<DaemonResponse<BlockTemplate>> GetBlockTemplateAsync(CancellationToken ct)
         {
             logger.LogInvoke();
 
             var result = await daemon.ExecuteCmdAnyAsync<BlockTemplate>(logger,
-                BitcoinCommands.GetBlockTemplate, extraPoolConfig?.GBTArgs ?? (object) GetBlockTemplateParams());
+                BitcoinCommands.GetBlockTemplate, ct, extraPoolConfig?.GBTArgs ?? (object) GetBlockTemplateParams());
 
             return result;
         }
@@ -86,7 +86,7 @@ namespace Miningcore.Blockchain.Bitcoin
             }
         }
 
-        protected override async Task<(bool IsNew, bool Force)> UpdateJob(bool forceUpdate, string via = null, string json = null)
+        protected override async Task<(bool IsNew, bool Force)> UpdateJob(CancellationToken ct, bool forceUpdate, string via = null, string json = null)
         {
             logger.LogInvoke();
 
@@ -96,7 +96,7 @@ namespace Miningcore.Blockchain.Bitcoin
                     lastJobRebroadcast = clock.Now;
 
                 var response = string.IsNullOrEmpty(json) ?
-                    await GetBlockTemplateAsync() :
+                    await GetBlockTemplateAsync(ct) :
                     GetBlockTemplateFromJson(json);
 
                 // may happen if daemon is currently not connected to peers

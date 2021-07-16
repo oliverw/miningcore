@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
 using AutoMapper;
@@ -50,33 +51,33 @@ namespace Miningcore.Blockchain.Equihash
 
         #region IPayoutHandler
 
-        public override async Task ConfigureAsync(ClusterConfig clusterConfig, PoolConfig poolConfig)
+        public override async Task ConfigureAsync(ClusterConfig clusterConfig, PoolConfig poolConfig, CancellationToken ct)
         {
-            await base.ConfigureAsync(clusterConfig, poolConfig);
+            await base.ConfigureAsync(clusterConfig, poolConfig, ct);
 
             poolExtraConfig = poolConfig.Extra.SafeExtensionDataAs<EquihashPoolConfigExtra>();
 
             // detect network
-            var blockchainInfoResponse = await daemon.ExecuteCmdSingleAsync<BlockchainInfo>(logger, BitcoinCommands.GetBlockchainInfo);
+            var blockchainInfoResponse = await daemon.ExecuteCmdSingleAsync<BlockchainInfo>(logger, BitcoinCommands.GetBlockchainInfo, ct);
 
             network = Network.GetNetwork(blockchainInfoResponse.Response.Chain.ToLower());
 
             chainConfig = poolConfig.Template.As<EquihashCoinTemplate>().GetNetwork(network.ChainName);
 
             // detect z_shieldcoinbase support
-            var response = await daemon.ExecuteCmdSingleAsync<JObject>(logger, EquihashCommands.ZShieldCoinbase);
+            var response = await daemon.ExecuteCmdSingleAsync<JObject>(logger, EquihashCommands.ZShieldCoinbase, ct);
             supportsNativeShielding = response.Error.Code != (int) BitcoinRPCErrorCode.RPC_METHOD_NOT_FOUND;
         }
 
-        public override async Task PayoutAsync(IMiningPool pool, Balance[] balances)
+        public override async Task PayoutAsync(IMiningPool pool, Balance[] balances, CancellationToken ct)
         {
             Contract.RequiresNonNull(balances, nameof(balances));
 
             // Shield first
             if(supportsNativeShielding)
-                await ShieldCoinbaseAsync();
+                await ShieldCoinbaseAsync(ct);
             else
-                await ShieldCoinbaseEmulatedAsync();
+                await ShieldCoinbaseEmulatedAsync(ct);
 
             var didUnlockWallet = false;
 
@@ -106,7 +107,7 @@ namespace Miningcore.Blockchain.Equihash
                 var pageAmount = amounts.Sum(x => x.Amount);
 
                 // check shielded balance
-                var balanceResult = await daemon.ExecuteCmdSingleAsync<object>(logger, EquihashCommands.ZGetBalance, new object[]
+                var balanceResult = await daemon.ExecuteCmdSingleAsync<object>(logger, EquihashCommands.ZGetBalance, ct, new object[]
                 {
                     poolExtraConfig.ZAddress, // default account
                     ZMinConfirmations, // only spend funds covered by this many confirmations
@@ -130,7 +131,7 @@ namespace Miningcore.Blockchain.Equihash
 
             // send command
             tryTransfer:
-                var result = await daemon.ExecuteCmdSingleAsync<string>(logger, EquihashCommands.ZSendMany, args);
+                var result = await daemon.ExecuteCmdSingleAsync<string>(logger, EquihashCommands.ZSendMany, ct, args);
 
                 if(result.Error == null)
                 {
@@ -148,7 +149,7 @@ namespace Miningcore.Blockchain.Equihash
                         while(continueWaiting)
                         {
                             var operationResultResponse = await daemon.ExecuteCmdSingleAsync<ZCashAsyncOperationStatus[]>(logger,
-                                EquihashCommands.ZGetOperationResult, new object[] { new object[] { operationId } });
+                                EquihashCommands.ZGetOperationResult, ct, new object[] { new object[] { operationId } });
 
                             if(operationResultResponse.Error == null &&
                                 operationResultResponse.Response?.Any(x => x.OperationId == operationId) == true)
@@ -197,7 +198,7 @@ namespace Miningcore.Blockchain.Equihash
                         {
                             logger.Info(() => $"[{LogCategory}] Unlocking wallet");
 
-                            var unlockResult = await daemon.ExecuteCmdSingleAsync<JToken>(logger, BitcoinCommands.WalletPassphrase, new[]
+                            var unlockResult = await daemon.ExecuteCmdSingleAsync<JToken>(logger, BitcoinCommands.WalletPassphrase, ct, new[]
                             {
                                 (object) extraPoolPaymentProcessingConfig.WalletPassword,
                                 (object) 5 // unlock for N seconds
@@ -236,7 +237,7 @@ namespace Miningcore.Blockchain.Equihash
 
             // lock wallet
             logger.Info(() => $"[{LogCategory}] Locking wallet");
-            await daemon.ExecuteCmdSingleAsync<JToken>(logger, BitcoinCommands.WalletLock);
+            await daemon.ExecuteCmdSingleAsync<JToken>(logger, BitcoinCommands.WalletLock, ct);
         }
 
         #endregion // IPayoutHandler
@@ -246,7 +247,7 @@ namespace Miningcore.Blockchain.Equihash
         /// spent to a z-addr (shielded address), and must be swept out of the t-addr
         /// in one transaction with no change.
         /// </summary>
-        private async Task ShieldCoinbaseAsync()
+        private async Task ShieldCoinbaseAsync(CancellationToken ct)
         {
             logger.Info(() => $"[{LogCategory}] Shielding ZCash Coinbase funds");
 
@@ -256,7 +257,7 @@ namespace Miningcore.Blockchain.Equihash
                 poolExtraConfig.ZAddress, // dest:   pool's z-addr
             };
 
-            var result = await daemon.ExecuteCmdSingleAsync<ZCashShieldingResponse>(logger, EquihashCommands.ZShieldCoinbase, args);
+            var result = await daemon.ExecuteCmdSingleAsync<ZCashShieldingResponse>(logger, EquihashCommands.ZShieldCoinbase, ct, args);
 
             if(result.Error != null)
             {
@@ -277,7 +278,7 @@ namespace Miningcore.Blockchain.Equihash
             while(continueWaiting)
             {
                 var operationResultResponse = await daemon.ExecuteCmdSingleAsync<ZCashAsyncOperationStatus[]>(logger,
-                    EquihashCommands.ZGetOperationResult, new object[] { new object[] { operationId } });
+                    EquihashCommands.ZGetOperationResult, ct, new object[] { new object[] { operationId } });
 
                 if(operationResultResponse.Error == null &&
                     operationResultResponse.Response?.Any(x => x.OperationId == operationId) == true)
@@ -312,12 +313,12 @@ namespace Miningcore.Blockchain.Equihash
             }
         }
 
-        private async Task ShieldCoinbaseEmulatedAsync()
+        private async Task ShieldCoinbaseEmulatedAsync(CancellationToken ct)
         {
             logger.Info(() => $"[{LogCategory}] Shielding ZCash Coinbase funds (emulated)");
 
             // get t-addr unspent balance for just the coinbase address (pool wallet)
-            var unspentResult = await daemon.ExecuteCmdSingleAsync<Utxo[]>(logger, BitcoinCommands.ListUnspent);
+            var unspentResult = await daemon.ExecuteCmdSingleAsync<Utxo[]>(logger, BitcoinCommands.ListUnspent, ct);
 
             if(unspentResult.Error != null)
             {
@@ -357,7 +358,7 @@ namespace Miningcore.Blockchain.Equihash
             };
 
             // send command
-            var sendResult = await daemon.ExecuteCmdSingleAsync<string>(logger, EquihashCommands.ZSendMany, args);
+            var sendResult = await daemon.ExecuteCmdSingleAsync<string>(logger, EquihashCommands.ZSendMany, ct, args);
 
             if(sendResult.Error != null)
             {
@@ -374,7 +375,7 @@ namespace Miningcore.Blockchain.Equihash
             while(continueWaiting)
             {
                 var operationResultResponse = await daemon.ExecuteCmdSingleAsync<ZCashAsyncOperationStatus[]>(logger,
-                    EquihashCommands.ZGetOperationResult, new object[] { new object[] { operationId } });
+                    EquihashCommands.ZGetOperationResult, ct, new object[] { new object[] { operationId } });
 
                 if(operationResultResponse.Error == null &&
                     operationResultResponse.Response?.Any(x => x.OperationId == operationId) == true)

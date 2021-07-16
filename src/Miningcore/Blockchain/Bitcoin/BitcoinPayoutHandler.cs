@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
 using AutoMapper;
@@ -56,7 +57,7 @@ namespace Miningcore.Blockchain.Bitcoin
 
         #region IPayoutHandler
 
-        public virtual Task ConfigureAsync(ClusterConfig clusterConfig, PoolConfig poolConfig)
+        public virtual Task ConfigureAsync(ClusterConfig clusterConfig, PoolConfig poolConfig, CancellationToken ct)
         {
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
 
@@ -75,7 +76,7 @@ namespace Miningcore.Blockchain.Bitcoin
             return Task.FromResult(true);
         }
 
-        public virtual async Task<Block[]> ClassifyBlocksAsync(IMiningPool pool, Block[] blocks)
+        public virtual async Task<Block[]> ClassifyBlocksAsync(IMiningPool pool, Block[] blocks, CancellationToken ct)
         {
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
             Contract.RequiresNonNull(blocks, nameof(blocks));
@@ -104,7 +105,7 @@ namespace Miningcore.Blockchain.Bitcoin
                     new[] { block.TransactionConfirmationData })).ToArray();
 
                 // execute batch
-                var results = await daemon.ExecuteBatchAnyAsync(logger, batch);
+                var results = await daemon.ExecuteBatchAnyAsync(logger, ct, batch);
 
                 for(var j = 0; j < results.Length; j++)
                 {
@@ -184,14 +185,14 @@ namespace Miningcore.Blockchain.Bitcoin
             return result.ToArray();
         }
 
-        public virtual Task CalculateBlockEffortAsync(IMiningPool pool, Block block, double accumulatedBlockShareDiff)
+        public virtual Task CalculateBlockEffortAsync(IMiningPool pool, Block block, double accumulatedBlockShareDiff, CancellationToken ct)
         {
             block.Effort = accumulatedBlockShareDiff / block.NetworkDifficulty;
 
             return Task.FromResult(true);
         }
 
-        public virtual async Task PayoutAsync(IMiningPool pool, Balance[] balances)
+        public virtual async Task PayoutAsync(IMiningPool pool, Balance[] balances, CancellationToken ct)
         {
             Contract.RequiresNonNull(balances, nameof(balances));
 
@@ -263,7 +264,7 @@ namespace Miningcore.Blockchain.Bitcoin
 
         // send command
         tryTransfer:
-            var result = await daemon.ExecuteCmdSingleAsync<string>(logger, BitcoinCommands.SendMany, args, new JsonSerializerSettings());
+            var result = await daemon.ExecuteCmdSingleAsync<string>(logger, BitcoinCommands.SendMany, ct, args, new JsonSerializerSettings());
 
             if(result.Error == null)
             {
@@ -271,7 +272,7 @@ namespace Miningcore.Blockchain.Bitcoin
                 {
                     // lock wallet
                     logger.Info(() => $"[{LogCategory}] Locking wallet");
-                    await daemon.ExecuteCmdSingleAsync<JToken>(logger, BitcoinCommands.WalletLock);
+                    await daemon.ExecuteCmdSingleAsync<JToken>(logger, BitcoinCommands.WalletLock, ct);
                 }
 
                 // check result
@@ -295,7 +296,7 @@ namespace Miningcore.Blockchain.Bitcoin
                     {
                         logger.Info(() => $"[{LogCategory}] Unlocking wallet");
 
-                        var unlockResult = await daemon.ExecuteCmdSingleAsync<JToken>(logger, BitcoinCommands.WalletPassphrase, new[]
+                        var unlockResult = await daemon.ExecuteCmdSingleAsync<JToken>(logger, BitcoinCommands.WalletPassphrase, ct, new[]
                         {
                             (object) extraPoolPaymentProcessingConfig.WalletPassword,
                             (object) 5 // unlock for N seconds

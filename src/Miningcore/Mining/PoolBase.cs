@@ -158,7 +158,7 @@ namespace Miningcore.Mining
 
                 // get or create manager
                 VarDiffManager varDiffManager;
-                var poolEndpoint = poolConfig.Ports[connection.PoolEndpoint.Port];
+                var poolEndpoint = poolConfig.Ports[connection.LocalEndpoint.Port];
 
                 lock(varDiffManagers)
                 {
