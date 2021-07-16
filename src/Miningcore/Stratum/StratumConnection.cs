@@ -105,7 +105,14 @@ namespace Miningcore.Stratum
                         disposables.Add(sslStream);
 
                         // TLS handshake
-                        await sslStream.AuthenticateAsServerAsync(cert, false, SslProtocols.Tls11 | SslProtocols.Tls12, false);
+                        await sslStream.AuthenticateAsServerAsync(new SslServerAuthenticationOptions
+                        {
+                            ServerCertificate = cert,
+                            ClientCertificateRequired = false,
+                            EnabledSslProtocols = SslProtocols.Tls11 | SslProtocols.Tls12,
+                            CertificateRevocationCheckMode = X509RevocationMode.NoCheck
+                        }, cts.Token);
+
                         networkStream = sslStream;
 
                         logger.Info(() => $"[{ConnectionId}] {sslStream.SslProtocol.ToString().ToUpper()}-{sslStream.CipherAlgorithm.ToString().ToUpper()} Connection from {RemoteEndpoint.Address}:{RemoteEndpoint.Port} accepted on port {endpoint.IPEndPoint.Port}");
@@ -117,9 +124,9 @@ namespace Miningcore.Stratum
                     // Async I/O loop(s)
                     var tasks = new[]
                     {
-                        FillReceivePipeAsync(ct),
-                        ProcessReceivePipeAsync(ct, endpoint.PoolEndpoint.TcpProxyProtocol, onRequestAsync),
-                        ProcessSendQueueAsync(ct)
+                        FillReceivePipeAsync(cts.Token),
+                        ProcessReceivePipeAsync(cts.Token, endpoint.PoolEndpoint.TcpProxyProtocol, onRequestAsync),
+                        ProcessSendQueueAsync(cts.Token)
                     };
 
                     await Task.WhenAny(tasks);
