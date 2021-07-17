@@ -169,7 +169,7 @@ namespace Miningcore.Payments.PaymentSchemes
             var blockRewardRemaining = blockReward;
             DateTime? shareCutOffDate = null;
 
-            while(!done && ct.IsCancellationRequested)
+            while(!done && !ct.IsCancellationRequested)
             {
                 logger.Info(() => $"Fetching page {currentPage} of shares for pool {poolConfig.Id}, block {block.BlockHeight}");
 
