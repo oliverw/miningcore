@@ -129,29 +129,25 @@ namespace Miningcore.Stratum
 
         private void AcceptConnection(Socket socket, StratumEndpoint port, X509Certificate2 cert, CancellationToken ct)
         {
-            Task.Run(() =>
+            Task.Run(() => Guard(() =>
             {
-                var client = (IPEndPoint) socket.RemoteEndPoint;
-
-                // dispose of banned clients as early as possible
-                if(client != null && banManager?.IsBanned(client.Address) == true)
-                {
-                    logger.Debug(() => $"Disconnecting banned ip {client.Address}");
-                    socket.Close();
-                    return;
-                }
-
-                var connectionId = CorrelationIdGenerator.GetNextId();
-                var connection = new StratumConnection(logger, clock, connectionId);
                 var remoteEndpoint = (IPEndPoint) socket.RemoteEndPoint;
 
+                // dispose of banned clients as early as possible
+                if (DisconnectIfBanned(socket, remoteEndpoint))
+                    return;
+
+                var connectionId = CorrelationIdGenerator.GetNextId();
                 logger.Info(() => $"[{connectionId}] Accepting connection from {remoteEndpoint.Address}:{remoteEndpoint.Port} ...");
+
+                // init connection
+                var connection = new StratumConnection(logger, clock, connectionId);
 
                 RegisterConnection(connection, connectionId);
                 OnConnect(connection, port.IPEndPoint);
 
                 connection.DispatchAsync(socket, ct, port, remoteEndpoint, cert, OnRequestAsync, OnConnectionComplete, OnConnectionError);
-            }, ct);
+            }, ex=> logger.Error(ex)), ct);
         }
 
         protected virtual void RegisterConnection(StratumConnection connection, string connectionId)
@@ -302,6 +298,22 @@ namespace Miningcore.Stratum
             }
 
             return cert;
+        }
+
+        private bool DisconnectIfBanned(Socket socket, IPEndPoint remoteEndpoint)
+        {
+            if(remoteEndpoint == null || banManager == null)
+                return false;
+
+            if (banManager.IsBanned(remoteEndpoint.Address))
+            {
+                logger.Debug(() => $"Disconnecting banned ip {remoteEndpoint.Address}");
+                socket.Close();
+
+                return true;
+            }
+
+            return false;
         }
 
         protected void ForEachConnection(Action<StratumConnection> action)
