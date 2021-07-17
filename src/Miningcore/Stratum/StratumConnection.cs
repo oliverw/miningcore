@@ -303,11 +303,11 @@ namespace Miningcore.Stratum
             {
                 var msg = await sendQueue.ReceiveAsync(ct);
 
-                await SendMessage(msg);
+                await SendMessage(msg, ct);
             }
         }
 
-        private async Task SendMessage(object msg)
+        private async Task SendMessage(object msg, CancellationToken ct)
         {
             logger.Debug(() => $"[{ConnectionId}] Sending: {JsonConvert.SerializeObject(msg)}");
 
@@ -315,22 +315,13 @@ namespace Miningcore.Stratum
 
             try
             {
-                var stream = new MemoryStream(buffer, true);
-
-                // serialize
-                using(var writer = new StreamWriter(stream, StratumConstants.Encoding, MaxOutboundRequestLength, true))
-                {
-                    serializer.Serialize(writer, msg);
-                }
-
-                stream.WriteByte((byte) '\n'); // terminator
-
-                // send
-                using(var ctsTimeout = new CancellationTokenSource())
+                using(var ctsTimeout = CancellationTokenSource.CreateLinkedTokenSource(ct))
                 {
                     ctsTimeout.CancelAfter(sendTimeout);
 
-                    await networkStream.WriteAsync(buffer, 0, (int) stream.Position, ctsTimeout.Token);
+                    var cb = SerializeMessage(msg, buffer);
+
+                    await networkStream.WriteAsync(buffer, 0, cb, ctsTimeout.Token);
                     await networkStream.FlushAsync(ctsTimeout.Token);
                 }
             }
@@ -339,6 +330,20 @@ namespace Miningcore.Stratum
             {
                 ArrayPool<byte>.Shared.Return(buffer);
             }
+        }
+
+        private static int SerializeMessage(object msg, byte[] buffer)
+        {
+            var stream = new MemoryStream(buffer, true);
+
+            using (var writer = new StreamWriter(stream, StratumConstants.Encoding, MaxOutboundRequestLength, true))
+            {
+                serializer.Serialize(writer, msg);
+            }
+
+            stream.WriteByte((byte) '\n'); // terminator
+
+            return (int) stream.Position;
         }
 
         private async Task ProcessRequestAsync(
