@@ -315,24 +315,23 @@ namespace Miningcore.Stratum
 
             try
             {
-                await using(var stream = new MemoryStream(buffer, true))
+                var stream = new MemoryStream(buffer, true);
+
+                // serialize
+                using(var writer = new StreamWriter(stream, StratumConstants.Encoding, MaxOutboundRequestLength, true))
                 {
-                    // serialize
-                    await using(var writer = new StreamWriter(stream, StratumConstants.Encoding, MaxOutboundRequestLength, true))
-                    {
-                        serializer.Serialize(writer, msg);
-                    }
+                    serializer.Serialize(writer, msg);
+                }
 
-                    stream.WriteByte((byte) '\n'); // terminator
+                stream.WriteByte((byte) '\n'); // terminator
 
-                    // send
-                    using(var ctsTimeout = new CancellationTokenSource())
-                    {
-                        ctsTimeout.CancelAfter(sendTimeout);
+                // send
+                using(var ctsTimeout = new CancellationTokenSource())
+                {
+                    ctsTimeout.CancelAfter(sendTimeout);
 
-                        await networkStream.WriteAsync(buffer, 0, (int) stream.Position, ctsTimeout.Token);
-                        await networkStream.FlushAsync(ctsTimeout.Token);
-                    }
+                    await networkStream.WriteAsync(buffer, 0, (int) stream.Position, ctsTimeout.Token);
+                    await networkStream.FlushAsync(ctsTimeout.Token);
                 }
             }
 
