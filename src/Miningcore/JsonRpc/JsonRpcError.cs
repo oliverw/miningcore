@@ -27,9 +27,9 @@ namespace Miningcore.JsonRpc
     /// The remainder of the space is available for application defined errors.
     /// </summary>
     [JsonObject(MemberSerialization.OptIn)]
-    public class JsonRpcException
+    public record JsonRpcError
     {
-        public JsonRpcException(int code, string message, object data, Exception inner = null)
+        public JsonRpcError(int code, string message, object data, Exception inner = null)
         {
             Code = code;
             Message = message;
@@ -38,15 +38,15 @@ namespace Miningcore.JsonRpc
         }
 
         [JsonProperty(PropertyName = "code")]
-        public int Code { get; set; }
+        public int Code { get; }
 
         [JsonProperty(PropertyName = "message")]
-        public string Message { get; set; }
+        public string Message { get; }
 
         [JsonProperty(PropertyName = "data")]
-        public object Data { get; set; }
+        public object Data { get; }
 
         [JsonIgnore]
-        public Exception InnerException { get; set; }
+        public Exception InnerException { get; }
     }
 }

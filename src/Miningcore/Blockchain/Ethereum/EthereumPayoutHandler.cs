@@ -11,8 +11,8 @@ using Miningcore.Blockchain.Ethereum.Configuration;
 using Miningcore.Blockchain.Ethereum.DaemonRequests;
 using Miningcore.Blockchain.Ethereum.DaemonResponses;
 using Miningcore.Configuration;
-using Miningcore.DaemonInterface;
 using Miningcore.Extensions;
+using Miningcore.JsonRpc;
 using Miningcore.Messaging;
 using Miningcore.Mining;
 using Miningcore.Payments;
@@ -52,7 +52,7 @@ namespace Miningcore.Blockchain.Ethereum
         }
 
         private readonly IComponentContext ctx;
-        private DaemonClient daemon;
+        private RpcClient rpcClient;
         private EthereumNetworkType networkType;
         private GethChainType chainType;
         private const int BlockSearchOffset = 50;
@@ -75,12 +75,7 @@ namespace Miningcore.Blockchain.Ethereum
             // configure standard daemon
             var jsonSerializerSettings = ctx.Resolve<JsonSerializerSettings>();
 
-            var daemonEndpoints = poolConfig.Daemons
-                .Where(x => string.IsNullOrEmpty(x.Category))
-                .ToArray();
-
-            daemon = new DaemonClient(jsonSerializerSettings, messageBus, clusterConfig.ClusterName ?? poolConfig.PoolName, poolConfig.Id);
-            daemon.Configure(daemonEndpoints);
+            rpcClient = new RpcClient(poolConfig.Daemons.First(x => string.IsNullOrEmpty(x.Category)), jsonSerializerSettings, messageBus, poolConfig.Id);
 
             await DetectChainAsync(ct);
         }
@@ -105,8 +100,8 @@ namespace Miningcore.Blockchain.Ethereum
                     .ToArray();
 
                 // get latest block
-                var latestBlockResponses = await daemon.ExecuteCmdAllAsync<DaemonResponses.Block>(logger, EC.GetBlockByNumber, ct, new[] { (object) "latest", true });
-                var latestBlockHeight = latestBlockResponses.First(x => x.Error == null && x.Response?.Height != null).Response.Height.Value;
+                var latestBlockResponse = await rpcClient.ExecuteAsync<DaemonResponses.Block>(logger, EC.GetBlockByNumber, ct, new[] { (object) "latest", true });
+                var latestBlockHeight = latestBlockResponse.Response.Height.Value;
 
                 // execute batch
                 var blockInfos = await FetchBlocks(blockCache, ct, page.Select(block => (long) block.BlockHeight).ToArray());
@@ -128,9 +123,9 @@ namespace Miningcore.Blockchain.Ethereum
                         // mature?
                         if(latestBlockHeight - block.BlockHeight >= EthereumConstants.MinConfimations)
                         {
-                            var blockHashResponses = await daemon.ExecuteCmdAllAsync<DaemonResponses.Block>(logger, EC.GetBlockByNumber, ct,
+                            var blockHashResponse = await rpcClient.ExecuteAsync<DaemonResponses.Block>(logger, EC.GetBlockByNumber, ct,
                                 new[] { (object) block.BlockHeight.ToStringHexWithPrefix(), true });
-                            var blockHash = blockHashResponses.First(x => x.Error == null && x.Response?.Hash != null).Response.Hash;
+                            var blockHash = blockHashResponse.Response.Hash;
 
                             block.Hash = blockHash;
                             block.Status = BlockStatus.Confirmed;
@@ -170,13 +165,13 @@ namespace Miningcore.Blockchain.Ethereum
                         if(blockInfo2.Uncles.Length > 0)
                         {
                             // fetch all uncles in a single RPC batch request
-                            var uncleBatch = blockInfo2.Uncles.Select((x, index) => new DaemonCmd(EC.GetUncleByBlockNumberAndIndex,
+                            var uncleBatch = blockInfo2.Uncles.Select((x, index) => new RpcRequest(EC.GetUncleByBlockNumberAndIndex,
                                     new[] { blockInfo2.Height.Value.ToStringHexWithPrefix(), index.ToStringHexWithPrefix() }))
                                 .ToArray();
 
                             logger.Info(() => $"[{LogCategory}] Fetching {blockInfo2.Uncles.Length} uncles for block {blockInfo2.Height}");
 
-                            var uncleResponses = await daemon.ExecuteBatchAnyAsync(logger, ct, uncleBatch);
+                            var uncleResponses = await rpcClient.ExecuteBatchAsync(logger, ct, uncleBatch);
 
                             logger.Info(() => $"[{LogCategory}] Fetched {uncleResponses.Count(x => x.Error == null && x.Response != null)} uncles for block {blockInfo2.Height}");
 
@@ -189,9 +184,9 @@ namespace Miningcore.Blockchain.Ethereum
                                 // mature?
                                 if(latestBlockHeight - uncle.Height.Value >= EthereumConstants.MinConfimations)
                                 {
-                                    var blockHashUncleResponses = await daemon.ExecuteCmdAllAsync<DaemonResponses.Block>(logger, EC.GetBlockByNumber, ct,
+                                    var blockHashUncleResponse = await rpcClient.ExecuteAsync<DaemonResponses.Block>(logger, EC.GetBlockByNumber, ct,
                                         new[] { (object) uncle.Height.Value.ToStringHexWithPrefix(), true });
-                                    var blockHashUncle = blockHashUncleResponses.First(x => x.Error == null && x.Response?.Hash != null).Response.Hash;
+                                    var blockHashUncle = blockHashUncleResponse.Response.Hash;
 
                                     block.Hash = blockHashUncle;
                                     block.Status = BlockStatus.Confirmed;
@@ -248,7 +243,7 @@ namespace Miningcore.Blockchain.Ethereum
         public async Task PayoutAsync(IMiningPool pool, Balance[] balances, CancellationToken ct)
         {
             // ensure we have peers
-            var infoResponse = await daemon.ExecuteCmdSingleAsync<string>(logger, EC.GetPeerCount, ct);
+            var infoResponse = await rpcClient.ExecuteAsync<string>(logger, EC.GetPeerCount, ct);
 
             if(networkType == EthereumNetworkType.Mainnet &&
                 (infoResponse.Error != null || string.IsNullOrEmpty(infoResponse.Response) ||
@@ -288,14 +283,14 @@ namespace Miningcore.Blockchain.Ethereum
 
             if(cacheMisses.Any())
             {
-                var blockBatch = cacheMisses.Select(height => new DaemonCmd(EC.GetBlockByNumber,
+                var blockBatch = cacheMisses.Select(height => new RpcRequest(EC.GetBlockByNumber,
                     new[]
                     {
                         (object) height.ToStringHexWithPrefix(),
                         true
                     })).ToArray();
 
-                var tmp = await daemon.ExecuteBatchAnyAsync(logger, ct, blockBatch);
+                var tmp = await rpcClient.ExecuteBatchAsync(logger, ct, blockBatch);
 
                 var transformed = tmp
                     .Where(x => x.Error == null && x.Response != null)
@@ -334,10 +329,10 @@ namespace Miningcore.Blockchain.Ethereum
         private async Task<decimal> GetTxRewardAsync(DaemonResponses.Block blockInfo, CancellationToken ct)
         {
             // fetch all tx receipts in a single RPC batch request
-            var batch = blockInfo.Transactions.Select(tx => new DaemonCmd(EC.GetTxReceipt, new[] { tx.Hash }))
+            var batch = blockInfo.Transactions.Select(tx => new RpcRequest(EC.GetTxReceipt, new[] { tx.Hash }))
                 .ToArray();
 
-            var results = await daemon.ExecuteBatchAnyAsync(logger, ct, batch);
+            var results = await rpcClient.ExecuteBatchAsync(logger, ct, batch);
 
             if(results.Any(x => x.Error != null))
                 throw new Exception($"Error fetching tx receipts: {string.Join(", ", results.Where(x => x.Error != null).Select(y => y.Error.Message))}");
@@ -366,10 +361,10 @@ namespace Miningcore.Blockchain.Ethereum
         {
             var commands = new[]
             {
-                new DaemonCmd(EC.GetNetVersion),
+                new RpcRequest(EC.GetNetVersion),
             };
 
-            var results = await daemon.ExecuteBatchAnyAsync(logger, ct, commands);
+            var results = await rpcClient.ExecuteBatchAsync(logger, ct, commands);
 
             if(results.Any(x => x.Error != null))
             {
@@ -398,10 +393,10 @@ namespace Miningcore.Blockchain.Ethereum
             {
                 From = poolConfig.Address,
                 To = balance.Address,
-                Value = writeHex(amount),
+                Value = amount.ToString("x").TrimStart('0'),
             };
 
-            var response = await daemon.ExecuteCmdSingleAsync<string>(logger, EC.SendTx, ct, new[] { request });
+            var response = await rpcClient.ExecuteAsync<string>(logger, EC.SendTx, ct, new[] { request });
 
             if(response.Error != null)
                 throw new Exception($"{EC.SendTx} returned error: {response.Error.Message} code {response.Error.Code}");
@@ -417,11 +412,6 @@ namespace Miningcore.Blockchain.Ethereum
 
             // done
             return txHash;
-        }
-
-        private static string writeHex(BigInteger value)
-        {
-            return (value.ToString("x").TrimStart('0'));
         }
     }
 }

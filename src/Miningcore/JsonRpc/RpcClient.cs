@@ -14,7 +14,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Miningcore.Configuration;
 using Miningcore.Extensions;
-using Miningcore.JsonRpc;
 using Miningcore.Messaging;
 using Miningcore.Notifications.Messages;
 using Miningcore.Util;
@@ -24,19 +23,20 @@ using NLog;
 using ZeroMQ;
 using Contract = Miningcore.Contracts.Contract;
 
-namespace Miningcore.DaemonInterface
+namespace Miningcore.JsonRpc
 {
     /// <summary>
-    /// Provides JsonRpc based interface to a cluster of blockchain daemons for improved fault tolerance
+    /// JsonRpc interface to blockchain node
     /// </summary>
-    public class DaemonClient
+    public class RpcClient
     {
-        public DaemonClient(JsonSerializerSettings serializerSettings, IMessageBus messageBus, string server, string poolId)
+        public RpcClient(DaemonEndpointConfig endPoint, JsonSerializerSettings serializerSettings, IMessageBus messageBus, string poolId)
         {
             Contract.RequiresNonNull(serializerSettings, nameof(serializerSettings));
             Contract.RequiresNonNull(messageBus, nameof(messageBus));
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(poolId), $"{nameof(poolId)} must not be empty");
 
+            this.endPoint = endPoint;
             this.serializerSettings = serializerSettings;
             this.messageBus = messageBus;
             this.poolId = poolId;
@@ -49,7 +49,7 @@ namespace Miningcore.DaemonInterface
 
         private readonly JsonSerializerSettings serializerSettings;
 
-        protected DaemonEndpointConfig[] endPoints;
+        protected readonly DaemonEndpointConfig endPoint;
         private readonly JsonSerializer serializer;
 
         private static readonly HttpClient httpClient = new(new HttpClientHandler
@@ -71,153 +71,62 @@ namespace Miningcore.DaemonInterface
 
         #region API-Surface
 
-        public void Configure(DaemonEndpointConfig[] endPoints)
-        {
-            Contract.RequiresNonNull(endPoints, nameof(endPoints));
-            Contract.Requires<ArgumentException>(endPoints.Length > 0, $"{nameof(endPoints)} must not be empty");
-
-            this.endPoints = endPoints;
-        }
-
-        /// <summary>
-        /// Executes the request against all configured demons and returns their responses as an array
-        /// </summary>
-        public Task<DaemonResponse<JToken>[]> ExecuteCmdAllAsync(ILogger logger, string method, CancellationToken ct)
-        {
-            return ExecuteCmdAllAsync<JToken>(logger, method, ct);
-        }
-
-        /// <summary>
-        /// Executes the request against all configured demons and returns their responses as an array
-        /// </summary>
-        public async Task<DaemonResponse<TResponse>[]> ExecuteCmdAllAsync<TResponse>(ILogger logger, string method, CancellationToken ct,
-            object payload = null, JsonSerializerSettings payloadJsonSerializerSettings = null)
+        public async Task<RpcResponse<TResponse>> ExecuteAsync<TResponse>(ILogger logger, string method, CancellationToken ct,
+            object payload = null, bool throwOnError = false)
             where TResponse : class
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(method), $"{nameof(method)} must not be empty");
 
-            logger.LogInvoke(new object[] { "\"" + method + "\"" });
-
-            var tasks = endPoints.Select(endPoint => BuildRequestTask(logger, endPoint, method, payload, CancellationToken.None, payloadJsonSerializerSettings)).ToArray();
+            logger.LogInvoke(new object[] { method });
 
             try
             {
-                await Task.WhenAll(tasks);
+                var response = await RequestAsync(logger, ct, endPoint, method, payload);
+
+                if(response.Result is JToken token)
+                    return new RpcResponse<TResponse>(token.ToObject<TResponse>(serializer), response.Error);
+
+                return new RpcResponse<TResponse>((TResponse) response.Result, response.Error);
             }
 
-            catch(Exception)
+            catch(TaskCanceledException)
             {
-                // ignored
+                return new RpcResponse<TResponse>(null, new JsonRpcError(-500, "Cancelled", null));
             }
 
-            var results = tasks.Select((x, i) => MapDaemonResponse<TResponse>(i, x))
-                .ToArray();
+            catch(Exception ex)
+            {
+                if(throwOnError)
+                    throw;
 
-            return results;
+                return new RpcResponse<TResponse>(null, new JsonRpcError(-500, ex.Message, null, ex));
+            }
         }
 
-        /// <summary>
-        /// Executes the request against all configured demons and returns the first successful response
-        /// </summary>
-        public Task<DaemonResponse<JToken>> ExecuteCmdAnyAsync(ILogger logger, string method, CancellationToken ct, bool throwOnError = false)
+        public Task<RpcResponse<JToken>> ExecuteAsync(ILogger logger, string method, CancellationToken ct, bool throwOnError = false)
         {
-            return ExecuteCmdAnyAsync<JToken>(logger, method, ct, null, null, throwOnError);
+            return ExecuteAsync<JToken>(logger, method, ct, null, throwOnError);
         }
 
-        /// <summary>
-        /// Executes the request against all configured demons and returns the first successful response
-        /// </summary>
-        public async Task<DaemonResponse<TResponse>> ExecuteCmdAnyAsync<TResponse>(ILogger logger, string method, CancellationToken ct, object payload = null,
-            JsonSerializerSettings payloadJsonSerializerSettings = null, bool throwOnError = false)
-            where TResponse : class
-        {
-            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(method), $"{nameof(method)} must not be empty");
-
-            logger.LogInvoke(new object[] { "\"" + method + "\"" });
-
-            var tasks = endPoints.Select(endPoint => BuildRequestTask(logger, endPoint, method, payload, CancellationToken.None, payloadJsonSerializerSettings)).ToArray();
-
-            var taskFirstCompleted = await Task.WhenAny(tasks);
-            var result = MapDaemonResponse<TResponse>(0, taskFirstCompleted, throwOnError);
-            return result;
-        }
-
-        /// <summary>
-        /// Executes the request against all configured demons and returns the first successful response
-        /// </summary>
-        public async Task<DaemonResponse<TResponse>> ExecuteCmdAnyAsync<TResponse>(ILogger logger, CancellationToken ct, string method, object payload = null,
-            JsonSerializerSettings payloadJsonSerializerSettings = null, bool throwOnError = false)
-            where TResponse : class
-        {
-            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(method), $"{nameof(method)} must not be empty");
-
-            logger.LogInvoke(new object[] { "\"" + method + "\"" });
-
-            var tasks = endPoints.Select(endPoint => BuildRequestTask(logger, endPoint, method, payload, ct, payloadJsonSerializerSettings)).ToArray();
-
-            var taskFirstCompleted = await Task.WhenAny(tasks);
-            var result = MapDaemonResponse<TResponse>(0, taskFirstCompleted, throwOnError);
-            return result;
-        }
-
-        /// <summary>
-        /// Executes the request against all configured demons and returns the first successful response
-        /// </summary>
-        public Task<DaemonResponse<JToken>> ExecuteCmdSingleAsync(ILogger logger, string method, CancellationToken ct)
-        {
-            return ExecuteCmdAnyAsync<JToken>(logger, method, ct);
-        }
-
-        /// <summary>
-        /// Executes the request against all configured demons and returns the first successful response
-        /// </summary>
-        public async Task<DaemonResponse<TResponse>> ExecuteCmdSingleAsync<TResponse>(ILogger logger, string method, CancellationToken ct, object payload = null,
-            JsonSerializerSettings payloadJsonSerializerSettings = null)
-            where TResponse : class
-        {
-            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(method), $"{nameof(method)} must not be empty");
-
-            logger.LogInvoke(new object[] { "\"" + method + "\"" });
-
-            var task = BuildRequestTask(logger, endPoints.First(), method, payload, CancellationToken.None, payloadJsonSerializerSettings);
-            await Task.WhenAny(task);
-
-            var result = MapDaemonResponse<TResponse>(0, task);
-            return result;
-        }
-
-        /// <summary>
-        /// Executes the request against all configured demons and returns the first successful response
-        /// </summary>
-        public async Task<DaemonResponse<TResponse>> ExecuteCmdSingleAsync<TResponse>(ILogger logger, CancellationToken ct, string method, object payload = null,
-            JsonSerializerSettings payloadJsonSerializerSettings = null)
-            where TResponse : class
-        {
-            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(method), $"{nameof(method)} must not be empty");
-
-            logger.LogInvoke(new object[] { "\"" + method + "\"" });
-
-            var task = BuildRequestTask(logger, endPoints.First(), method, payload, ct, payloadJsonSerializerSettings);
-            await Task.WhenAny(task);
-
-            var result = MapDaemonResponse<TResponse>(0, task);
-            return result;
-        }
-
-        /// <summary>
-        /// Executes the requests against all configured demons and returns the first successful response array
-        /// </summary>
-        public async Task<DaemonResponse<JToken>[]> ExecuteBatchAnyAsync(ILogger logger, CancellationToken ct, params DaemonCmd[] batch)
+        public async Task<RpcResponse<JToken>[]> ExecuteBatchAsync(ILogger logger, CancellationToken ct, params RpcRequest[] batch)
         {
             Contract.RequiresNonNull(batch, nameof(batch));
 
-            logger.LogInvoke(batch.Select(x => "\"" + x.Method + "\"").ToArray());
+            logger.LogInvoke(string.Join(", ", batch.Select(x=> x.Method)));
 
-            var tasks = endPoints.Select(endPoint => BuildBatchRequestTask(logger, ct, endPoint, batch)).ToArray();
+            try
+            {
+                var response = await BatchRequestAsync(logger, ct, endPoint, batch);
 
-            var taskFirstCompleted = await Task.WhenAny(tasks);
-            var result = MapDaemonBatchResponse(0, taskFirstCompleted);
-            return result;
+                return response
+                    .Select(x => new RpcResponse<JToken>(x.Result != null ? JToken.FromObject(x.Result) : null, x.Error))
+                    .ToArray();
+            }
+
+            catch(Exception ex)
+            {
+                return Enumerable.Repeat(new RpcResponse<JToken>(null, new JsonRpcError(-500, ex.Message, null, ex)), batch.Length).ToArray();
+            }
         }
 
         public IObservable<byte[]> WebsocketSubscribe(ILogger logger, CancellationToken ct, Dictionary<DaemonEndpointConfig,
@@ -246,8 +155,7 @@ namespace Miningcore.DaemonInterface
 
         #endregion // API-Surface
 
-        private async Task<JsonRpcResponse> BuildRequestTask(ILogger logger, DaemonEndpointConfig endPoint, string method, object payload,
-            CancellationToken ct, JsonSerializerSettings payloadJsonSerializerSettings = null)
+        private async Task<JsonRpcResponse> RequestAsync(ILogger logger, CancellationToken ct, DaemonEndpointConfig endPoint, string method, object payload)
         {
             var rpcRequestId = GetRequestId();
 
@@ -257,22 +165,22 @@ namespace Miningcore.DaemonInterface
             // build rpc request
             var rpcRequest = new JsonRpcRequest<object>(method, payload, rpcRequestId);
 
-            // build request url
-            var protocol = (endPoint.Ssl || endPoint.Http2) ? "https" : "http";
+            // build url
+            var protocol = (endPoint.Ssl || endPoint.Http2) ? Uri.UriSchemeHttps : Uri.UriSchemeHttp;
             var requestUrl = $"{protocol}://{endPoint.Host}:{endPoint.Port}";
             if(!string.IsNullOrEmpty(endPoint.HttpPath))
                 requestUrl += $"{(endPoint.HttpPath.StartsWith("/") ? string.Empty : "/")}{endPoint.HttpPath}";
 
-            // build http request
+            // build request
             using(var request = new HttpRequestMessage(HttpMethod.Post, requestUrl))
             {
-                request.Headers.ConnectionClose = false;    // enable keep-alive
-
                 if(endPoint.Http2)
                     request.Version = new Version(2, 0);
+                else
+                    request.Headers.ConnectionClose = false;    // enable keep-alive
 
-                // build request content
-                var json = JsonConvert.SerializeObject(rpcRequest, payloadJsonSerializerSettings ?? serializerSettings);
+                // build content
+                var json = JsonConvert.SerializeObject(rpcRequest, serializerSettings);
                 request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
                 // build auth header
@@ -306,7 +214,7 @@ namespace Miningcore.DaemonInterface
             }
         }
 
-        private async Task<JsonRpcResponse<JToken>[]> BuildBatchRequestTask(ILogger logger, CancellationToken ct, DaemonEndpointConfig endPoint, DaemonCmd[] batch)
+        private async Task<JsonRpcResponse<JToken>[]> BatchRequestAsync(ILogger logger, CancellationToken ct, DaemonEndpointConfig endPoint, RpcRequest[] batch)
         {
             // telemetry
             var sw = Stopwatch.StartNew();
@@ -314,19 +222,19 @@ namespace Miningcore.DaemonInterface
             // build rpc request
             var rpcRequests = batch.Select(x => new JsonRpcRequest<object>(x.Method, x.Payload, GetRequestId()));
 
-            // build request url
-            var protocol = (endPoint.Ssl || endPoint.Http2) ? "https" : "http";
+            // build url
+            var protocol = (endPoint.Ssl || endPoint.Http2) ? Uri.UriSchemeHttps : Uri.UriSchemeHttp;
             var requestUrl = $"{protocol}://{endPoint.Host}:{endPoint.Port}";
             if(!string.IsNullOrEmpty(endPoint.HttpPath))
                 requestUrl += $"{(endPoint.HttpPath.StartsWith("/") ? string.Empty : "/")}{endPoint.HttpPath}";
 
-            // build http request
+            // build request
             using(var request = new HttpRequestMessage(HttpMethod.Post, requestUrl))
             {
-                request.Headers.ConnectionClose = false;    // enable keep-alive
-
                 if(endPoint.Http2)
                     request.Version = new Version(2, 0);
+                else
+                    request.Headers.ConnectionClose = false;    // enable keep-alive
 
                 // build request content
                 var json = JsonConvert.SerializeObject(rpcRequests, serializerSettings);
@@ -366,68 +274,6 @@ namespace Miningcore.DaemonInterface
         {
             var rpcRequestId = (DateTimeOffset.UtcNow.ToUnixTimeSeconds() + StaticRandom.Next(10)).ToString();
             return rpcRequestId;
-        }
-
-        private DaemonResponse<TResponse> MapDaemonResponse<TResponse>(int i, Task<JsonRpcResponse> x, bool throwOnError = false)
-            where TResponse : class
-        {
-            var resp = new DaemonResponse<TResponse>
-            {
-                Instance = endPoints[i]
-            };
-
-            if(x.IsFaulted)
-            {
-                Exception inner;
-
-                if(x.Exception.InnerExceptions.Count == 1)
-                    inner = x.Exception.InnerException;
-                else
-                    inner = x.Exception;
-
-                if(throwOnError)
-                    throw inner;
-
-                resp.Error = new JsonRpcException(-500, x.Exception.Message, null, inner);
-            }
-
-            else if(x.IsCanceled)
-            {
-                resp.Error = new JsonRpcException(-500, "Cancelled", null);
-            }
-
-            else
-            {
-                Debug.Assert(x.IsCompletedSuccessfully);
-
-                if(x.Result?.Result is JToken token)
-                    resp.Response = token?.ToObject<TResponse>(serializer);
-                else
-                    resp.Response = (TResponse) x.Result?.Result;
-
-                resp.Error = x.Result?.Error;
-            }
-
-            return resp;
-        }
-
-        private DaemonResponse<JToken>[] MapDaemonBatchResponse(int i, Task<JsonRpcResponse<JToken>[]> x)
-        {
-            if(x.IsFaulted)
-                return x.Result?.Select(y => new DaemonResponse<JToken>
-                {
-                    Instance = endPoints[i],
-                    Error = new JsonRpcException(-500, x.Exception.Message, null)
-                }).ToArray();
-
-            Debug.Assert(x.IsCompletedSuccessfully);
-
-            return x.Result?.Select(y => new DaemonResponse<JToken>
-            {
-                Instance = endPoints[i],
-                Response = y.Result != null ? JToken.FromObject(y.Result) : null,
-                Error = y.Error
-            }).ToArray();
         }
 
         private IObservable<byte[]> WebsocketSubscribeEndpoint(ILogger logger, CancellationToken ct, NetworkEndpointConfig endPoint,

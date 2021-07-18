@@ -8,7 +8,6 @@ using Miningcore.Blockchain.Bitcoin.DaemonResponses;
 using Miningcore.Configuration;
 using Miningcore.Contracts;
 using Miningcore.Crypto;
-using Miningcore.DaemonInterface;
 using Miningcore.Extensions;
 using Miningcore.JsonRpc;
 using Miningcore.Messaging;
@@ -48,26 +47,23 @@ namespace Miningcore.Blockchain.Bitcoin
             return result;
         }
 
-        protected async Task<DaemonResponse<BlockTemplate>> GetBlockTemplateAsync(CancellationToken ct)
+        protected async Task<RpcResponse<BlockTemplate>> GetBlockTemplateAsync(CancellationToken ct)
         {
             logger.LogInvoke();
 
-            var result = await daemon.ExecuteCmdAnyAsync<BlockTemplate>(logger,
+            var result = await rpcClient.ExecuteAsync<BlockTemplate>(logger,
                 BitcoinCommands.GetBlockTemplate, ct, extraPoolConfig?.GBTArgs ?? (object) GetBlockTemplateParams());
 
             return result;
         }
 
-        protected DaemonResponse<BlockTemplate> GetBlockTemplateFromJson(string json)
+        protected RpcResponse<BlockTemplate> GetBlockTemplateFromJson(string json)
         {
             logger.LogInvoke();
 
             var result = JsonConvert.DeserializeObject<JsonRpcResponse>(json);
 
-            return new DaemonResponse<BlockTemplate>
-            {
-                Response = result.ResultAs<BlockTemplate>(),
-            };
+            return new RpcResponse<BlockTemplate>(result.ResultAs<BlockTemplate>());
         }
 
         private BitcoinJob CreateJob()

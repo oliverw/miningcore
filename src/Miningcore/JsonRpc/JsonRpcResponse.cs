@@ -14,7 +14,7 @@ namespace Miningcore.JsonRpc
         {
         }
 
-        public JsonRpcResponse(JsonRpcException ex, object id = null, object result = null) : base(ex, id, result)
+        public JsonRpcResponse(JsonRpcError ex, object id = null, object result = null) : base(ex, id, result)
         {
         }
     }
@@ -35,7 +35,7 @@ namespace Miningcore.JsonRpc
             Id = id;
         }
 
-        public JsonRpcResponse(JsonRpcException ex, object id, object result)
+        public JsonRpcResponse(JsonRpcError ex, object id, object result)
         {
             Error = ex;
             Id = id;
@@ -51,7 +51,7 @@ namespace Miningcore.JsonRpc
         public object Result { get; set; }
 
         [JsonProperty(PropertyName = "error")]
-        public JsonRpcException Error { get; set; }
+        public JsonRpcError Error { get; set; }
 
         [JsonProperty(PropertyName = "id", NullValueHandling = NullValueHandling.Ignore)]
         public object Id { get; set; }
