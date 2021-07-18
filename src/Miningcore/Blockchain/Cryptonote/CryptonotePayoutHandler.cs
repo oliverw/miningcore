@@ -442,7 +442,7 @@ namespace Miningcore.Blockchain.Cryptonote
             var coin = poolConfig.Template.As<CryptonoteCoinTemplate>();
 
 #if !DEBUG // ensure we have peers
-            var infoResponse = await daemon.ExecuteCmdAsync<GetInfoResponse>(logger, CNC.GetInfo, ct);
+            var infoResponse = await rpcClient.ExecuteAsync<GetInfoResponse>(logger, CNC.GetInfo, ct);
             if (infoResponse.Error != null || infoResponse.Response == null ||
                 infoResponse.Response.IncomingConnectionsCount + infoResponse.Response.OutgoingConnectionsCount < 3)
             {
