@@ -15,7 +15,6 @@ using Miningcore.Stratum;
 using Miningcore.Time;
 using Miningcore.Util;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Contract = Miningcore.Contracts.Contract;
 using static Miningcore.Util.ActionUtils;
 
@@ -40,7 +39,7 @@ namespace Miningcore.Blockchain.Ergo
         }
 
         private ErgoCoinTemplate coin;
-        private ErgoClient daemon;
+        private ErgoClient ergoClient;
         private string network;
         private readonly List<ErgoJob> validJobs = new();
         private int maxActiveJobs = 4;
@@ -179,7 +178,7 @@ namespace Miningcore.Blockchain.Ergo
         {
             logger.LogInvoke();
 
-            var work = await daemon.MiningRequestBlockCandidateAsync(CancellationToken.None);
+            var work = await ergoClient.MiningRequestBlockCandidateAsync(CancellationToken.None);
 
             return work;
         }
@@ -193,7 +192,7 @@ namespace Miningcore.Blockchain.Ergo
 
         private async Task ShowDaemonSyncProgressAsync()
         {
-            var info = await Guard(() => daemon.GetNodeInfoAsync(),
+            var info = await Guard(() => ergoClient.GetNodeInfoAsync(),
                 ex => logger.Debug(ex));
 
             if(info?.FullHeight.HasValue == true && info.HeadersHeight.HasValue)
@@ -229,7 +228,7 @@ namespace Miningcore.Blockchain.Ergo
         {
             try
             {
-                await daemon.MiningSubmitSolutionAsync(new PowSolutions
+                await ergoClient.MiningSubmitSolutionAsync(new PowSolutions
                 {
                     N = nonce,
                 });
@@ -363,7 +362,7 @@ namespace Miningcore.Blockchain.Ergo
             if(string.IsNullOrEmpty(address))
                 return false;
 
-            var validity = await Guard(() => daemon.CheckAddressValidityAsync(address, ct),
+            var validity = await Guard(() => ergoClient.CheckAddressValidityAsync(address, ct),
                 ex => logger.Debug(ex));
 
             return validity?.IsValid == true;
@@ -379,13 +378,13 @@ namespace Miningcore.Blockchain.Ergo
             if(string.IsNullOrEmpty(poolConfig.Address))
                 logger.ThrowLogPoolStartupException($"Pool address is not configured");
 
-            var validity = await Guard(() => daemon.CheckAddressValidityAsync(poolConfig.Address, ct),
+            var validity = await Guard(() => ergoClient.CheckAddressValidityAsync(poolConfig.Address, ct),
                 ex=> logger.ThrowLogPoolStartupException($"Error validating pool address: {ex}"));
 
             if(!validity.IsValid)
                 logger.ThrowLogPoolStartupException($"Daemon reports pool address {poolConfig.Address} as invalid: {validity.Error}");
 
-            var info = await Guard(() => daemon.GetNodeInfoAsync(ct),
+            var info = await Guard(() => ergoClient.GetNodeInfoAsync(ct),
                 ex=> logger.ThrowLogPoolStartupException($"Daemon reports: {ex.Message}"));
 
             blockVersion = info.Parameters.BlockVersion;
@@ -401,7 +400,7 @@ namespace Miningcore.Blockchain.Ergo
             if(clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
             {
                 // check configured address belongs to wallet
-                var walletAddresses = await daemon.WalletAddressesAsync(ct);
+                var walletAddresses = await ergoClient.WalletAddressesAsync(ct);
 
                 if(!walletAddresses.Contains(poolConfig.Address))
                     logger.ThrowLogPoolStartupException($"Pool address {poolConfig.Address} is not controlled by wallet");
@@ -430,12 +429,12 @@ namespace Miningcore.Blockchain.Ergo
 
         protected override void ConfigureDaemons()
         {
-            daemon = ErgoClientFactory.CreateClient(poolConfig, clusterConfig, logger);
+            ergoClient = ErgoClientFactory.CreateClient(poolConfig, clusterConfig, logger);
         }
 
         protected override async Task<bool> AreDaemonsHealthyAsync(CancellationToken ct)
         {
-            var info = await Guard(() => daemon.GetNodeInfoAsync(ct),
+            var info = await Guard(() => ergoClient.GetNodeInfoAsync(ct),
                 ex=> logger.ThrowLogPoolStartupException($"Daemon reports: {ex.Message}"));
 
             if(info?.IsMining != true)
@@ -446,7 +445,7 @@ namespace Miningcore.Blockchain.Ergo
 
         protected override async Task<bool> AreDaemonsConnectedAsync(CancellationToken ct)
         {
-            var info = await Guard(() => daemon.GetNodeInfoAsync(ct),
+            var info = await Guard(() => ergoClient.GetNodeInfoAsync(ct),
                 ex=> logger.Debug(ex));
 
             return info?.PeersCount > 0;
@@ -458,7 +457,7 @@ namespace Miningcore.Blockchain.Ergo
 
             while(true)
             {
-                var info = await Guard(() => daemon.GetNodeInfoAsync(ct),
+                var info = await Guard(() => ergoClient.GetNodeInfoAsync(ct),
                     ex=> logger.Debug(ex));
 
                 var isSynched = info?.FullHeight.HasValue == true && info?.HeadersHeight.HasValue == true &&
