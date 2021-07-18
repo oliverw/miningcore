@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Numerics;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -9262,7 +9263,7 @@ namespace Miningcore.Blockchain.Ergo
     
         /// <summary>Work target value</summary>
         [Newtonsoft.Json.JsonProperty("b", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public string B { get; set; }= default!;
+        public BigInteger B { get; set; }= default!;
         
         /// <summary>Block height</summary>
         [Newtonsoft.Json.JsonProperty("h", Required = Newtonsoft.Json.Required.Always)]

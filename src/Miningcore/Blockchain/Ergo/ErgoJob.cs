@@ -17,7 +17,7 @@ namespace Miningcore.Blockchain.Ergo
     public class ErgoJob
     {
         public WorkMessage BlockTemplate { get; private set; }
-        public double Difficulty => bTarget.Difficulty;
+        public double Difficulty { get; private set; }
         public uint Height => BlockTemplate.Height;
         public string JobId { get; protected set; }
 
@@ -27,8 +27,6 @@ namespace Miningcore.Blockchain.Ergo
         private int extraNonceSize;
 
         private static readonly uint nBase = (uint) Math.Pow(2, 26);
-        private Target bTarget;
-        private BigInteger b;
         private const uint IncreaseStart = 600 * 1024;
         private const uint IncreasePeriodForN = 50 * 1024;
         private const uint NIncreasementHeightMax = 9216000;
@@ -147,8 +145,11 @@ namespace Miningcore.Blockchain.Ergo
             var stratumDifficulty = context.Difficulty;
             var ratio = fhTarget.Difficulty / stratumDifficulty;
 
+            // check if the share meets the much harder block difficulty (block candidate)
+            var isBlockCandidate = fh < BlockTemplate.B;
+
             // test if share meets at least workers current difficulty
-            if(ratio < 0.99)
+            if(!isBlockCandidate && ratio < 0.99)
             {
                 // check if share matched the previous difficulty from before a vardiff retarget
                 if(context.VarDiff?.LastUpdate != null && context.PreviousDifficulty.HasValue)
@@ -165,9 +166,6 @@ namespace Miningcore.Blockchain.Ergo
                 else
                     throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({fhTarget.Difficulty})");
             }
-
-            // check if the share meets the much harder block difficulty (block candidate)
-            var isBlockCandidate = fh < b;
 
             var result = new Share
             {
@@ -225,9 +223,7 @@ namespace Miningcore.Blockchain.Ergo
 
             BlockTemplate = blockTemplate;
             JobId = jobId;
-
-            b = BigInteger.Parse(BlockTemplate.B, NumberStyles.Integer);
-            bTarget = new Target(b);
+            Difficulty = new Target(BlockTemplate.B).Difficulty;
 
             jobParams = new object[]
             {
