@@ -464,18 +464,18 @@ namespace Miningcore.Blockchain.Ethereum
 
         protected override async Task PostStartInitAsync(CancellationToken ct)
         {
-            var commands = new[]
+            var requests = new[]
             {
                 new RpcRequest(EC.GetNetVersion),
                 new RpcRequest(EC.GetAccounts),
                 new RpcRequest(EC.GetCoinbase),
             };
 
-            var results = await rpcClient.ExecuteBatchAsync(logger, ct, commands);
+            var responses = await rpcClient.ExecuteBatchAsync(logger, ct, requests);
 
-            if(results.Any(x => x.Error != null))
+            if(responses.Any(x => x.Error != null))
             {
-                var errors = results.Take(3).Where(x => x.Error != null)
+                var errors = responses.Take(3).Where(x => x.Error != null)
                     .ToArray();
 
                 if(errors.Any())
@@ -483,9 +483,9 @@ namespace Miningcore.Blockchain.Ethereum
             }
 
             // extract results
-            var netVersion = results[0].Response.ToObject<string>();
-            var accounts = results[1].Response.ToObject<string[]>();
-            var coinbase = results[2].Response.ToObject<string>();
+            var netVersion = responses[0].Response.ToObject<string>();
+            var accounts = responses[1].Response.ToObject<string[]>();
+            var coinbase = responses[2].Response.ToObject<string>();
             var gethChain = extraPoolConfig?.ChainTypeOverride ?? "Ethereum";
 
             EthereumUtils.DetectNetworkAndChain(netVersion, gethChain, out networkType, out chainType);

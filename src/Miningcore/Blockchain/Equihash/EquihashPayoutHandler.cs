@@ -79,15 +79,13 @@ namespace Miningcore.Blockchain.Equihash
             else
                 await ShieldCoinbaseEmulatedAsync(ct);
 
-            var didUnlockWallet = false;
-
             // send in batches with no more than 50 recipients to avoid running into tx size limits
             var pageSize = 50;
             var pageCount = (int) Math.Ceiling(balances.Length / (double) pageSize);
 
             for(var i = 0; i < pageCount; i++)
             {
-                didUnlockWallet = false;
+                var didUnlockWallet = false;
 
                 // get a page full of balances
                 var page = balances
@@ -237,6 +235,7 @@ namespace Miningcore.Blockchain.Equihash
 
             // lock wallet
             logger.Info(() => $"[{LogCategory}] Locking wallet");
+
             await rpcClient.ExecuteAsync<JToken>(logger, BitcoinCommands.WalletLock, ct);
         }
 
@@ -309,6 +308,7 @@ namespace Miningcore.Blockchain.Equihash
                 }
 
                 logger.Info(() => $"[{LogCategory}] Waiting for shielding operation completion: {operationId}");
+
                 await Task.Delay(TimeSpan.FromSeconds(10), ct);
             }
         }
@@ -407,6 +407,7 @@ namespace Miningcore.Blockchain.Equihash
                 }
 
                 logger.Info(() => $"[{LogCategory}] Waiting for shielding transfer completion: {operationId}");
+
                 await Task.Delay(TimeSpan.FromSeconds(10), ct);
             }
         }

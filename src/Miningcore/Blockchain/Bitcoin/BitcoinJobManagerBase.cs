@@ -442,14 +442,14 @@ namespace Miningcore.Blockchain.Bitcoin
                 new RpcRequest(BitcoinCommands.GetAddressInfo, new[] { poolConfig.Address }),
             };
 
-            var results = await rpcClient.ExecuteBatchAsync(logger, ct, requests);
+            var responses = await rpcClient.ExecuteBatchAsync(logger, ct, requests);
 
-            if(results.Any(x => x.Error != null))
+            if(responses.Any(x => x.Error != null))
             {
-                var resultList = results.ToList();
+                var resultList = responses.ToList();
 
                 // filter out optional RPCs
-                var errors = results
+                var errors = responses
                     .Where((x, i) => x.Error != null &&
                         requests[i].Method != BitcoinCommands.SubmitBlock &&
                         requests[i].Method != BitcoinCommands.GetAddressInfo)
@@ -460,12 +460,12 @@ namespace Miningcore.Blockchain.Bitcoin
             }
 
             // extract results
-            var validateAddressResponse = results[0].Error == null ? results[0].Response.ToObject<ValidateAddressResponse>() : null;
-            var submitBlockResponse = results[1];
-            var blockchainInfoResponse = !hasLegacyDaemon ? results[2].Response.ToObject<BlockchainInfo>() : null;
-            var daemonInfoResponse = hasLegacyDaemon ? results[2].Response.ToObject<DaemonInfo>() : null;
-            var difficultyResponse = results[3].Response.ToObject<JToken>();
-            var addressInfoResponse = results[4].Error == null ? results[4].Response.ToObject<AddressInfo>() : null;
+            var validateAddressResponse = responses[0].Error == null ? responses[0].Response.ToObject<ValidateAddressResponse>() : null;
+            var submitBlockResponse = responses[1];
+            var blockchainInfoResponse = !hasLegacyDaemon ? responses[2].Response.ToObject<BlockchainInfo>() : null;
+            var daemonInfoResponse = hasLegacyDaemon ? responses[2].Response.ToObject<DaemonInfo>() : null;
+            var difficultyResponse = responses[3].Response.ToObject<JToken>();
+            var addressInfoResponse = responses[4].Error == null ? responses[4].Response.ToObject<AddressInfo>() : null;
 
             // chain detection
             if(!hasLegacyDaemon)
