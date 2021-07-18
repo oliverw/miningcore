@@ -446,8 +446,6 @@ namespace Miningcore.Blockchain.Bitcoin
 
             if(responses.Any(x => x.Error != null))
             {
-                var resultList = responses.ToList();
-
                 // filter out optional RPCs
                 var errors = responses
                     .Where((x, i) => x.Error != null &&
@@ -497,8 +495,8 @@ namespace Miningcore.Blockchain.Bitcoin
             if(clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
             {
                 // ensure pool owns wallet
-                //if (!validateAddressResponse.IsMine)
-                //    logger.ThrowLogPoolStartupException($"Daemon does not own pool-address '{poolConfig.Address}'");
+                if(validateAddressResponse is {IsMine: false} || addressInfoResponse is {IsMine: false})
+                    logger.Warn(()=> $"Node does not own pool-address '{poolConfig.Address}'");
 
                 ConfigureRewards();
             }
