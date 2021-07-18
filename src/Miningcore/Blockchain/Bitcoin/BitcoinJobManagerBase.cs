@@ -16,7 +16,6 @@ using Miningcore.Extensions;
 using Miningcore.JsonRpc;
 using Miningcore.Messaging;
 using Miningcore.Notifications.Messages;
-using Miningcore.Stratum;
 using Miningcore.Time;
 using Miningcore.Util;
 using NBitcoin;
@@ -602,11 +601,6 @@ namespace Miningcore.Blockchain.Bitcoin
 
             return result.Response is {IsValid: true};
         }
-
-        public abstract object[] GetSubscriberData(StratumConnection worker);
-
-        public abstract ValueTask<Share> SubmitShareAsync(StratumConnection worker, object submission,
-            double stratumDifficultyBase, CancellationToken ct);
 
         #endregion // API-Surface
     }
