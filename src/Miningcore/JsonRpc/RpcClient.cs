@@ -48,9 +48,10 @@ namespace Miningcore.JsonRpc
         }
 
         private readonly JsonSerializerSettings serializerSettings;
-
         protected readonly DaemonEndpointConfig endPoint;
         private readonly JsonSerializer serializer;
+        private readonly IMessageBus messageBus;
+        private readonly string poolId;
 
         private static readonly HttpClient httpClient = new(new HttpClientHandler
         {
@@ -58,16 +59,6 @@ namespace Miningcore.JsonRpc
 
             ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true,
         });
-
-        // Telemetry
-        private readonly IMessageBus messageBus;
-
-        private readonly string poolId;
-
-        protected void PublishTelemetry(TelemetryCategory cat, TimeSpan elapsed, string info, bool? success = null, string error = null)
-        {
-            messageBus.SendMessage(new TelemetryEvent(poolId, cat, info, elapsed, success));
-        }
 
         #region API-Surface
 
@@ -157,13 +148,10 @@ namespace Miningcore.JsonRpc
 
         private async Task<JsonRpcResponse> RequestAsync(ILogger logger, CancellationToken ct, DaemonEndpointConfig endPoint, string method, object payload)
         {
-            var rpcRequestId = GetRequestId();
-
-            // telemetry
             var sw = Stopwatch.StartNew();
 
             // build rpc request
-            var rpcRequest = new JsonRpcRequest<object>(method, payload, rpcRequestId);
+            var rpcRequest = new JsonRpcRequest<object>(method, payload, GetRequestId());
 
             // build url
             var protocol = (endPoint.Ssl || endPoint.Http2) ? Uri.UriSchemeHttps : Uri.UriSchemeHttp;
@@ -204,9 +192,7 @@ namespace Miningcore.JsonRpc
                     {
                         var result = serializer.Deserialize<JsonRpcResponse>(jreader);
 
-                        // telemetry
-                        sw.Stop();
-                        PublishTelemetry(TelemetryCategory.RpcRequest, sw.Elapsed, method, response.IsSuccessStatusCode);
+                        messageBus.SendTelemetry(poolId, TelemetryCategory.RpcRequest, method, sw.Elapsed, response.IsSuccessStatusCode);
 
                         return result;
                     }
@@ -216,7 +202,6 @@ namespace Miningcore.JsonRpc
 
         private async Task<JsonRpcResponse<JToken>[]> BatchRequestAsync(ILogger logger, CancellationToken ct, DaemonEndpointConfig endPoint, RpcRequest[] batch)
         {
-            // telemetry
             var sw = Stopwatch.StartNew();
 
             // build rpc request
@@ -260,9 +245,8 @@ namespace Miningcore.JsonRpc
                     {
                         var result = serializer.Deserialize<JsonRpcResponse<JToken>[]>(jreader);
 
-                        // telemetry
-                        sw.Stop();
-                        PublishTelemetry(TelemetryCategory.RpcRequest, sw.Elapsed, string.Join(", ", batch.Select(x => x.Method)), true);
+                        messageBus.SendTelemetry(poolId, TelemetryCategory.RpcRequest, string.Join(", ", batch.Select(x => x.Method)),
+                            sw.Elapsed, response.IsSuccessStatusCode);
 
                         return result;
                     }
