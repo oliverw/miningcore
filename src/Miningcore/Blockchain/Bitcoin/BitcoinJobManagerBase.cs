@@ -496,7 +496,7 @@ namespace Miningcore.Blockchain.Bitcoin
             {
                 // ensure pool owns wallet
                 if(validateAddressResponse is {IsMine: false} || addressInfoResponse is {IsMine: false})
-                    logger.Warn(()=> $"Node does not own pool-address '{poolConfig.Address}'");
+                    logger.Warn(()=> $"Daemon does not own pool-address '{poolConfig.Address}'");
 
                 ConfigureRewards();
             }
