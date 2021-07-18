@@ -190,7 +190,7 @@ namespace Miningcore.Blockchain.Bitcoin
             base.Configure(poolConfig, clusterConfig);
         }
 
-        public override object[] GetSubscriberData(StratumConnection worker)
+        public virtual object[] GetSubscriberData(StratumConnection worker)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
 
@@ -209,7 +209,7 @@ namespace Miningcore.Blockchain.Bitcoin
             return responseData;
         }
 
-        public override async ValueTask<Share> SubmitShareAsync(StratumConnection worker, object submission,
+        public virtual async ValueTask<Share> SubmitShareAsync(StratumConnection worker, object submission,
             double stratumDifficultyBase, CancellationToken ct)
         {
             Contract.RequiresNonNull(worker, nameof(worker));

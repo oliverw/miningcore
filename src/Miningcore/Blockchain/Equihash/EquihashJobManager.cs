@@ -213,7 +213,7 @@ namespace Miningcore.Blockchain.Equihash
             return result.Response is {IsValid: true};
         }
 
-        public override object[] GetSubscriberData(StratumConnection worker)
+        public object[] GetSubscriberData(StratumConnection worker)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
 
@@ -231,7 +231,7 @@ namespace Miningcore.Blockchain.Equihash
             return responseData;
         }
 
-        public override async ValueTask<Share> SubmitShareAsync(StratumConnection worker, object submission,
+        public async ValueTask<Share> SubmitShareAsync(StratumConnection worker, object submission,
             double stratumDifficultyBase, CancellationToken ct)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
