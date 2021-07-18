@@ -15,24 +15,26 @@ namespace Miningcore.Extensions
 {
     public static class ZmqExtensions
     {
-        private static readonly ConcurrentDictionary<string, (byte[] PubKey, byte[] SecretKey)> knownKeys =
-            new();
+        private record KeyData(byte[] PubKey, byte[] SecretKey);
 
-        private static readonly Lazy<(byte[] PubKey, byte[] SecretKey)> ownKey = new(() =>
+        private static readonly ConcurrentDictionary<string, KeyData> knownKeys = new();
+
+        private static readonly Lazy<KeyData> ownKey = new(() =>
         {
             if(!ZContext.Has("curve"))
                 throw new NotSupportedException("ZMQ library does not support curve");
 
             Z85.CurveKeypair(out var pubKey, out var secretKey);
-            return (pubKey, secretKey);
+            return new KeyData(pubKey, secretKey);
         });
 
         const int PasswordIterations = 5000;
-        private static readonly byte[] NoSalt = new byte[32];
+
+        private static readonly byte[] noSalt = new byte[32];
 
         private static byte[] DeriveKey(string password, int length = 32)
         {
-            using(var kbd = new Rfc2898DeriveBytes(Encoding.UTF8.GetBytes(password), NoSalt, PasswordIterations))
+            using(var kbd = new Rfc2898DeriveBytes(Encoding.UTF8.GetBytes(password), noSalt, PasswordIterations))
             {
                 var block = kbd.GetBytes(length);
                 return block;
@@ -98,7 +100,7 @@ namespace Miningcore.Extensions
 
                 // Derive server's public-key from shared secret
                 Z85.CurvePublic(out serverPubKey, keyBytes.ToZ85Encoded());
-                knownKeys[keyPlain] = (serverPubKey, keyBytes);
+                knownKeys[keyPlain] = new KeyData(serverPubKey, keyBytes);
             }
 
             else
@@ -135,7 +137,7 @@ namespace Miningcore.Extensions
 
                 // Derive server's public-key from shared secret
                 Z85.CurvePublic(out serverPubKey, keyBytes.ToZ85Encoded());
-                knownKeys[keyPlain] = (serverPubKey, keyBytes);
+                knownKeys[keyPlain] = new KeyData(serverPubKey, keyBytes);
             }
 
             else
