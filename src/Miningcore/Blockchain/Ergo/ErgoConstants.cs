@@ -23,20 +23,8 @@ namespace Miningcore.Blockchain.Ergo
 
         public static Regex RegexChain = new("ergo-([^-]+)-.+", RegexOptions.Compiled);
 
-        public static readonly byte[] M = Enumerable.Range(0, 1024)
-            .SelectMany(x =>
-            {
-                const double max = 4294967296d;
+        public static BigInteger BigMaxValue = BigInteger.Pow(2,256);
 
-                var top = (uint) Math.Floor(x / max);
-                var rem  = (uint) (x - top * max);
-
-                var result = BitConverter.GetBytes(rem)
-                    .Concat(BitConverter.GetBytes(top))
-                    .Reverse()
-                    .ToArray();
-
-                return result;
-            }).ToArray();
+        public static byte[] M = (new byte[1024]).Select((x, y) => BitConverter.GetBytes((ulong) y).Reverse()).SelectMany(byteArr => byteArr).ToArray();
     }
 }
