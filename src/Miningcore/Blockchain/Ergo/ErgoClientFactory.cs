@@ -43,7 +43,6 @@ namespace Miningcore.Blockchain.Ergo
 
                 result.RequestHeaders["Authorization"] = new AuthenticationHeaderValue("Basic", base64).ToString();
             }
-
 #if DEBUG
             result.ReadResponseAsString = true;
 #endif
