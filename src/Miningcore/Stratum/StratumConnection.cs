@@ -188,7 +188,7 @@ namespace Miningcore.Stratum
 
         public ValueTask RespondErrorAsync(StratumError code, string message, object id, object result = null, object data = null)
         {
-            return RespondAsync(new JsonRpcResponse(new JsonRpcException((int) code, message, null), id, result));
+            return RespondAsync(new JsonRpcResponse(new JsonRpcError((int) code, message, null), id, result));
         }
 
         public ValueTask RespondAsync<T>(JsonRpcResponse<T> response)

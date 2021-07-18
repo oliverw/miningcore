@@ -14,6 +14,6 @@ namespace Miningcore.Blockchain.Equihash.DaemonResponses
 
         public string Status { get; set; }
         public JToken Result { get; set; }
-        public JsonRpcException Error { get; set; }
+        public JsonRpcError Error { get; set; }
     }
 }

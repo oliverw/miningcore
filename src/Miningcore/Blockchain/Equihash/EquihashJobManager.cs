@@ -12,7 +12,6 @@ using Miningcore.Blockchain.Equihash.DaemonResponses;
 using Miningcore.Configuration;
 using Miningcore.Contracts;
 using Miningcore.Crypto.Hashing.Equihash;
-using Miningcore.DaemonInterface;
 using Miningcore.Extensions;
 using Miningcore.JsonRpc;
 using Miningcore.Messaging;
@@ -36,8 +35,9 @@ namespace Miningcore.Blockchain.Equihash
         }
 
         private EquihashCoinTemplate coin;
-        public EquihashCoinTemplate.EquihashNetworkParams ChainConfig { get; private set; }
         private EquihashSolver solver;
+
+        public EquihashCoinTemplate.EquihashNetworkParams ChainConfig { get; private set; }
 
         protected override void PostChainIdentifyConfigure()
         {
@@ -47,33 +47,30 @@ namespace Miningcore.Blockchain.Equihash
             base.PostChainIdentifyConfigure();
         }
 
-        private async Task<DaemonResponse<EquihashBlockTemplate>> GetBlockTemplateAsync(CancellationToken ct)
+        private async Task<RpcResponse<EquihashBlockTemplate>> GetBlockTemplateAsync(CancellationToken ct)
         {
             logger.LogInvoke();
 
-            var subsidyResponse = await daemon.ExecuteCmdAnyAsync<ZCashBlockSubsidy>(logger, BitcoinCommands.GetBlockSubsidy, ct);
+            var subsidyResponse = await rpcClient.ExecuteAsync<ZCashBlockSubsidy>(logger, BitcoinCommands.GetBlockSubsidy, ct);
 
-            var result = await daemon.ExecuteCmdAnyAsync<EquihashBlockTemplate>(logger,
+            var result = await rpcClient.ExecuteAsync<EquihashBlockTemplate>(logger,
                 BitcoinCommands.GetBlockTemplate, ct, extraPoolConfig?.GBTArgs ?? (object) GetBlockTemplateParams());
 
             if(subsidyResponse.Error == null && result.Error == null && result.Response != null)
                 result.Response.Subsidy = subsidyResponse.Response;
             else if(subsidyResponse.Error?.Code != (int) BitcoinRPCErrorCode.RPC_METHOD_NOT_FOUND)
-                result.Error = new JsonRpcException(-1, $"{BitcoinCommands.GetBlockSubsidy} failed", null);
+                result = new RpcResponse<EquihashBlockTemplate>(null, new JsonRpcError(-1, $"{BitcoinCommands.GetBlockSubsidy} failed", null));
 
             return result;
         }
 
-        private DaemonResponse<EquihashBlockTemplate> GetBlockTemplateFromJson(string json)
+        private RpcResponse<EquihashBlockTemplate> GetBlockTemplateFromJson(string json)
         {
             logger.LogInvoke();
 
             var result = JsonConvert.DeserializeObject<JsonRpcResponse>(json);
 
-            return new DaemonResponse<EquihashBlockTemplate>
-            {
-                Response = result.ResultAs<EquihashBlockTemplate>(),
-            };
+            return new RpcResponse<EquihashBlockTemplate>(result.ResultAs<EquihashBlockTemplate>());
         }
 
         protected override IDestination AddressToDestination(string address, BitcoinAddressType? addressType)
@@ -210,8 +207,8 @@ namespace Miningcore.Blockchain.Equihash
                 return true;
 
             // handle z-addr
-            var result = await daemon.ExecuteCmdAnyAsync<ValidateAddressResponse>(logger, ct,
-                EquihashCommands.ZValidateAddress, new[] { address });
+            var result = await rpcClient.ExecuteAsync<ValidateAddressResponse>(logger,
+                EquihashCommands.ZValidateAddress, ct, new[] { address });
 
             return result.Response is {IsValid: true};
         }

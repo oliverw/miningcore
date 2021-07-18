@@ -12,8 +12,8 @@ using Miningcore.Blockchain.Bitcoin.Configuration;
 using Miningcore.Blockchain.Bitcoin.DaemonResponses;
 using Miningcore.Configuration;
 using Miningcore.Contracts;
-using Miningcore.DaemonInterface;
 using Miningcore.Extensions;
+using Miningcore.JsonRpc;
 using Miningcore.Messaging;
 using Miningcore.Notifications.Messages;
 using Miningcore.Stratum;
@@ -45,7 +45,7 @@ namespace Miningcore.Blockchain.Bitcoin
         }
 
         protected readonly IMasterClock clock;
-        protected DaemonClient daemon;
+        protected RpcClient rpcClient;
         protected readonly IExtraNonceProvider extraNonceProvider;
         protected const int ExtranonceBytes = 4;
         protected int maxActiveJobs = 4;
@@ -99,7 +99,7 @@ namespace Miningcore.Blockchain.Bitcoin
                 {
                     logger.Info(() => $"Subscribing to ZMQ push-updates from {string.Join(", ", zmq.Values)}");
 
-                    var blockNotify = daemon.ZmqSubscribe(logger, ct, zmq)
+                    var blockNotify = rpcClient.ZmqSubscribe(logger, ct, zmq)
                         .Select(msg =>
                         {
                             using(msg)
@@ -207,20 +207,19 @@ namespace Miningcore.Blockchain.Bitcoin
                 return;
             }
 
-            var infos = await daemon.ExecuteCmdAllAsync<BlockchainInfo>(logger, BitcoinCommands.GetBlockchainInfo, ct);
+            var info = await rpcClient.ExecuteAsync<BlockchainInfo>(logger, BitcoinCommands.GetBlockchainInfo, ct);
 
-            if(infos.Length > 0)
+            if(info != null)
             {
-                var blockCount = infos
-                    .Max(x => x.Response?.Blocks);
+                var blockCount = info.Response?.Blocks;
 
                 if(blockCount.HasValue)
                 {
                     // get list of peers and their highest block height to compare to ours
-                    var peerInfo = await daemon.ExecuteCmdAnyAsync<PeerInfo[]>(logger, BitcoinCommands.GetPeerInfo, ct);
+                    var peerInfo = await rpcClient.ExecuteAsync<PeerInfo[]>(logger, BitcoinCommands.GetPeerInfo, ct);
                     var peers = peerInfo.Response;
 
-                    if(peers != null && peers.Length > 0)
+                    if(peers is {Length: > 0})
                     {
                         var totalBlocks = peers.Max(x => x.StartingHeight);
                         var percent = totalBlocks > 0 ? (double) blockCount / totalBlocks * 100 : 0;
@@ -236,10 +235,10 @@ namespace Miningcore.Blockchain.Bitcoin
 
             try
             {
-                var results = await daemon.ExecuteBatchAnyAsync(logger, ct,
-                    new DaemonCmd(BitcoinCommands.GetMiningInfo),
-                    new DaemonCmd(BitcoinCommands.GetNetworkInfo),
-                    new DaemonCmd(BitcoinCommands.GetNetworkHashPS)
+                var results = await rpcClient.ExecuteBatchAsync(logger, ct,
+                    new RpcRequest(BitcoinCommands.GetMiningInfo),
+                    new RpcRequest(BitcoinCommands.GetNetworkInfo),
+                    new RpcRequest(BitcoinCommands.GetNetworkHashPS)
                 );
 
                 if(results.Any(x => x.Error != null))
@@ -270,11 +269,11 @@ namespace Miningcore.Blockchain.Bitcoin
         protected virtual async Task<(bool Accepted, string CoinbaseTx)> SubmitBlockAsync(Share share, string blockHex)
         {
             // execute command batch
-            var results = await daemon.ExecuteBatchAnyAsync(logger, CancellationToken.None,
+            var results = await rpcClient.ExecuteBatchAsync(logger, CancellationToken.None,
                 hasSubmitBlockMethod
-                    ? new DaemonCmd(BitcoinCommands.SubmitBlock, new[] { blockHex })
-                    : new DaemonCmd(BitcoinCommands.GetBlockTemplate, new { mode = "submit", data = blockHex }),
-                new DaemonCmd(BitcoinCommands.GetBlock, new[] { share.BlockHash }));
+                    ? new RpcRequest(BitcoinCommands.SubmitBlock, new[] { blockHex })
+                    : new RpcRequest(BitcoinCommands.GetBlockTemplate, new { mode = "submit", data = blockHex }),
+                new RpcRequest(BitcoinCommands.GetBlock, new[] { share.BlockHash }));
 
             // did submission succeed?
             var submitResult = results[0];
@@ -305,36 +304,30 @@ namespace Miningcore.Blockchain.Bitcoin
 
         protected virtual async Task<bool> AreDaemonsHealthyLegacyAsync(CancellationToken ct)
         {
-            var responses = await daemon.ExecuteCmdAllAsync<DaemonInfo>(logger, BitcoinCommands.GetInfo, ct);
+            var response = await rpcClient.ExecuteAsync<DaemonInfo>(logger, BitcoinCommands.GetInfo, ct);
 
-            if(responses.Where(x => x.Error?.InnerException?.GetType() == typeof(DaemonClientException))
-                .Select(x => (DaemonClientException) x.Error.InnerException)
-                .Any(x => x.Code == HttpStatusCode.Unauthorized))
-                logger.ThrowLogPoolStartupException("Daemon reports invalid credentials");
-
-            return responses.All(x => x.Error == null);
+            return response.Error == null;
         }
 
         protected virtual async Task<bool> AreDaemonsConnectedLegacyAsync(CancellationToken ct)
         {
-            var response = await daemon.ExecuteCmdAnyAsync<DaemonInfo>(logger, BitcoinCommands.GetInfo, ct);
+            var response = await rpcClient.ExecuteAsync<DaemonInfo>(logger, BitcoinCommands.GetInfo, ct);
 
             return response.Error == null && response.Response.Connections > 0;
         }
 
         protected virtual async Task ShowDaemonSyncProgressLegacyAsync(CancellationToken ct)
         {
-            var infos = await daemon.ExecuteCmdAllAsync<DaemonInfo>(logger, BitcoinCommands.GetInfo, ct);
+            var info = await rpcClient.ExecuteAsync<DaemonInfo>(logger, BitcoinCommands.GetInfo, ct);
 
-            if(infos.Length > 0)
+            if(info != null)
             {
-                var blockCount = infos
-                    .Max(x => x.Response?.Blocks);
+                var blockCount = info.Response?.Blocks;
 
                 if(blockCount.HasValue)
                 {
                     // get list of peers and their highest block height to compare to ours
-                    var peerInfo = await daemon.ExecuteCmdAnyAsync<PeerInfo[]>(logger, BitcoinCommands.GetPeerInfo, ct);
+                    var peerInfo = await rpcClient.ExecuteAsync<PeerInfo[]>(logger, BitcoinCommands.GetPeerInfo, ct);
                     var peers = peerInfo.Response;
 
                     if(peers != null && peers.Length > 0)
@@ -353,8 +346,8 @@ namespace Miningcore.Blockchain.Bitcoin
 
             try
             {
-                var results = await daemon.ExecuteBatchAnyAsync(logger, ct,
-                    new DaemonCmd(BitcoinCommands.GetConnectionCount)
+                var results = await rpcClient.ExecuteBatchAsync(logger, ct,
+                    new RpcRequest(BitcoinCommands.GetConnectionCount)
                 );
 
                 if(results.Any(x => x.Error != null))
@@ -385,8 +378,7 @@ namespace Miningcore.Blockchain.Bitcoin
         {
             var jsonSerializerSettings = ctx.Resolve<JsonSerializerSettings>();
 
-            daemon = new DaemonClient(jsonSerializerSettings, messageBus, clusterConfig.ClusterName ?? poolConfig.PoolName, poolConfig.Id);
-            daemon.Configure(poolConfig.Daemons);
+            rpcClient = new RpcClient(poolConfig.Daemons.First(), jsonSerializerSettings, messageBus, poolConfig.Id);
         }
 
         protected override async Task<bool> AreDaemonsHealthyAsync(CancellationToken ct)
@@ -394,14 +386,9 @@ namespace Miningcore.Blockchain.Bitcoin
             if(hasLegacyDaemon)
                 return await AreDaemonsHealthyLegacyAsync(ct);
 
-            var responses = await daemon.ExecuteCmdAllAsync<BlockchainInfo>(logger, BitcoinCommands.GetBlockchainInfo, ct);
+            var response = await rpcClient.ExecuteAsync<BlockchainInfo>(logger, BitcoinCommands.GetBlockchainInfo, ct);
 
-            if(responses.Where(x => x.Error?.InnerException?.GetType() == typeof(DaemonClientException))
-                .Select(x => (DaemonClientException) x.Error.InnerException)
-                .Any(x => x.Code == HttpStatusCode.Unauthorized))
-                logger.ThrowLogPoolStartupException("Daemon reports invalid credentials");
-
-            return responses.All(x => x.Error == null);
+            return response.Error == null;
         }
 
         protected override async Task<bool> AreDaemonsConnectedAsync(CancellationToken ct)
@@ -409,7 +396,7 @@ namespace Miningcore.Blockchain.Bitcoin
             if(hasLegacyDaemon)
                 return await AreDaemonsConnectedLegacyAsync(ct);
 
-            var response = await daemon.ExecuteCmdAnyAsync<NetworkInfo>(logger, BitcoinCommands.GetNetworkInfo, ct);
+            var response = await rpcClient.ExecuteAsync<NetworkInfo>(logger, BitcoinCommands.GetNetworkInfo, ct);
 
             return response.Error == null && response.Response?.Connections > 0;
         }
@@ -420,10 +407,10 @@ namespace Miningcore.Blockchain.Bitcoin
 
             while(true)
             {
-                var responses = await daemon.ExecuteCmdAllAsync<BlockTemplate>(logger,
+                var response = await rpcClient.ExecuteAsync<BlockTemplate>(logger,
                     BitcoinCommands.GetBlockTemplate, ct, GetBlockTemplateParams());
 
-                var isSynched = responses.All(x => x.Error == null);
+                var isSynched = response.Error == null;
 
                 if(isSynched)
                 {
@@ -446,16 +433,16 @@ namespace Miningcore.Blockchain.Bitcoin
 
         protected override async Task PostStartInitAsync(CancellationToken ct)
         {
-            var commands = new[]
+            var requests = new[]
             {
-                new DaemonCmd(BitcoinCommands.ValidateAddress, new[] { poolConfig.Address }),
-                new DaemonCmd(BitcoinCommands.SubmitBlock),
-                new DaemonCmd(!hasLegacyDaemon ? BitcoinCommands.GetBlockchainInfo : BitcoinCommands.GetInfo),
-                new DaemonCmd(BitcoinCommands.GetDifficulty),
-                new DaemonCmd(BitcoinCommands.GetAddressInfo, new[] { poolConfig.Address }),
+                new RpcRequest(BitcoinCommands.ValidateAddress, new[] { poolConfig.Address }),
+                new RpcRequest(BitcoinCommands.SubmitBlock),
+                new RpcRequest(!hasLegacyDaemon ? BitcoinCommands.GetBlockchainInfo : BitcoinCommands.GetInfo),
+                new RpcRequest(BitcoinCommands.GetDifficulty),
+                new RpcRequest(BitcoinCommands.GetAddressInfo, new[] { poolConfig.Address }),
             };
 
-            var results = await daemon.ExecuteBatchAnyAsync(logger, ct, commands);
+            var results = await rpcClient.ExecuteBatchAsync(logger, ct, requests);
 
             if(results.Any(x => x.Error != null))
             {
@@ -463,8 +450,9 @@ namespace Miningcore.Blockchain.Bitcoin
 
                 // filter out optional RPCs
                 var errors = results
-                    .Where(x => x.Error != null && commands[resultList.IndexOf(x)].Method != BitcoinCommands.SubmitBlock)
-                    .Where(x => x.Error != null && commands[resultList.IndexOf(x)].Method != BitcoinCommands.GetAddressInfo)
+                    .Where((x, i) => x.Error != null &&
+                        requests[i].Method != BitcoinCommands.SubmitBlock &&
+                        requests[i].Method != BitcoinCommands.GetAddressInfo)
                     .ToArray();
 
                 if(errors.Any())
@@ -612,8 +600,7 @@ namespace Miningcore.Blockchain.Bitcoin
             if(string.IsNullOrEmpty(address))
                 return false;
 
-            var result = await daemon.ExecuteCmdAnyAsync<ValidateAddressResponse>(logger, ct,
-                BitcoinCommands.ValidateAddress, new[] { address });
+            var result = await rpcClient.ExecuteAsync<ValidateAddressResponse>(logger, BitcoinCommands.ValidateAddress, ct, new[] { address });
 
             return result.Response is {IsValid: true};
         }
