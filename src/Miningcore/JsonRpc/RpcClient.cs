@@ -139,7 +139,7 @@ namespace Miningcore.JsonRpc
             logger.LogInvoke();
 
             return Observable.Merge(portMap.Keys
-                    .Select(endPoint => ZmqSubscribeEndpoint(logger, ct, endPoint, portMap[endPoint].Socket, portMap[endPoint].Topic)))
+                    .Select(endPoint => ZmqSubscribeEndpoint(logger, ct, portMap[endPoint].Socket, portMap[endPoint].Topic)))
                 .Publish()
                 .RefCount();
         }
@@ -154,7 +154,7 @@ namespace Miningcore.JsonRpc
             var rpcRequest = new JsonRpcRequest<object>(method, payload, GetRequestId());
 
             // build url
-            var protocol = (endPoint.Ssl || endPoint.Http2) ? Uri.UriSchemeHttps : Uri.UriSchemeHttp;
+            var protocol = endPoint.Ssl || endPoint.Http2 ? Uri.UriSchemeHttps : Uri.UriSchemeHttp;
             var requestUrl = $"{protocol}://{endPoint.Host}:{endPoint.Port}";
             if(!string.IsNullOrEmpty(endPoint.HttpPath))
                 requestUrl += $"{(endPoint.HttpPath.StartsWith("/") ? string.Empty : "/")}{endPoint.HttpPath}";
@@ -348,7 +348,7 @@ namespace Miningcore.JsonRpc
             }));
         }
 
-        private static IObservable<ZMessage> ZmqSubscribeEndpoint(ILogger logger, CancellationToken ct, DaemonEndpointConfig endPoint, string url, string topic)
+        private static IObservable<ZMessage> ZmqSubscribeEndpoint(ILogger logger, CancellationToken ct, string url, string topic)
         {
             return Observable.Defer(() => Observable.Create<ZMessage>(obs =>
             {
