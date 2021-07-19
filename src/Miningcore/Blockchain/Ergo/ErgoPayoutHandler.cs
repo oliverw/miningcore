@@ -214,13 +214,14 @@ namespace Miningcore.Blockchain.Ergo
 
                         foreach(var blockTx in fullBlock.BlockTransactions.Transactions)
                         {
+                            if(blockHandled)
+                                break;
+
                             var walletTx = await Guard(()=> ergoClient.WalletGetTransactionAsync(blockTx.Id, ct));
                             var coinbaseOutput = walletTx?.Outputs?.FirstOrDefault(x => x.Address == minerRewardsAddress.RewardAddress);
 
                             if(coinbaseOutput != null)
                             {
-logger.Info(() => $"[{LogCategory}] *** coinbase {fullBlock.Header.Height} {fullBlock.Header.Id} {blockTx.Id} worth {coinbaseOutput.Value}");
-
                                 coinbaseWalletTxFound = true;
 
                                 // enough confirmations?
@@ -230,6 +231,7 @@ logger.Info(() => $"[{LogCategory}] *** coinbase {fullBlock.Header.Height} {full
                                     block.Status = BlockStatus.Confirmed;
                                     block.ConfirmationProgress = 1;
                                     block.Reward = (decimal) (coinbaseOutput.Value / ErgoConstants.SmallestUnit);
+                                    block.Hash = fullBlock.Header.Id;
                                     result.Add(block);
 
                                     logger.Info(() => $"[{LogCategory}] Unlocked block {block.BlockHeight} worth {FormatAmount(block.Reward)}");
@@ -245,6 +247,7 @@ logger.Info(() => $"[{LogCategory}] *** coinbase {fullBlock.Header.Height} {full
                                     // update progress
                                     block.ConfirmationProgress = Math.Min(1.0d, (double) walletTx.NumConfirmations / minConfirmations);
                                     block.Reward = (decimal) (coinbaseOutput.Value / ErgoConstants.SmallestUnit);
+                                    block.Hash = fullBlock.Header.Id;
                                     result.Add(block);
 
                                     messageBus.NotifyBlockConfirmationProgress(poolConfig.Id, block, coin);
