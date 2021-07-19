@@ -22,6 +22,7 @@ namespace Miningcore.Blockchain.Ergo
         public string JobId { get; protected set; }
 
         private object[] jobParams;
+        private BigInteger n;
         private readonly ConcurrentDictionary<string, bool> submissions = new(StringComparer.OrdinalIgnoreCase);
         private static readonly IHashAlgorithm hasher = new Blake2b();
         private int extraNonceSize;
@@ -73,7 +74,7 @@ namespace Miningcore.Blockchain.Ergo
             }
         }
 
-        private BigInteger[] GenIndexes(byte[] seed, uint height)
+        private BigInteger[] GenIndexes(byte[] seed)
         {
             // hash seed
             Span<byte> hash = stackalloc byte[32];
@@ -90,8 +91,7 @@ namespace Miningcore.Blockchain.Ergo
             for(var i = 0; i < 32; i++)
             {
                 var x = BitConverter.ToUInt32(extendedHash.Slice(i, 4)).ToBigEndian();
-                var y = CalcN(height);
-                result[i] = x % y;
+                result[i] = x % n;
             }
 
             return result;
@@ -103,43 +103,84 @@ namespace Miningcore.Blockchain.Ergo
 
             // hash coinbase
             var coinbase = SerializeCoinbase(BlockTemplate.Msg, nonce);
-            Span<byte> hashResult = stackalloc byte[32];
-            hasher.Digest(coinbase, hashResult);
+            Span<byte> hash = stackalloc byte[32];
+            hasher.Digest(coinbase, hash);
 
             // calculate i
-            var slice = hashResult.Slice(24, 8);
-            var tmp2 = new BigInteger(slice, true, true) % CalcN(Height);
+            var slice = hash.Slice(24, 8);
+            var tmp2 = new BigInteger(slice, true, true) % n;
             var i = tmp2.ToByteArray(false, true).PadFront(0, 4);
 
             // calculate e
             var h = new BigInteger(Height).ToByteArray(true, true).PadFront(0, 4);
             var ihM = i.Concat(h).Concat(ErgoConstants.M).ToArray();
-            hasher.Digest(ihM, hashResult);
-            var e = hashResult[1..].ToArray();
+            hasher.Digest(ihM, hash);
+            var e = hash[1..].ToArray();
 
             // calculate j
             var eCoinbase = e.Concat(coinbase).ToArray();
-            var jTmp = GenIndexes(eCoinbase, Height);
+            var jTmp = GenIndexes(eCoinbase);
             var j = jTmp.Select(x => x.ToByteArray(true, true).PadFront(0, 4)).ToArray();
 
             // calculate f
             var f = j.Select(x =>
             {
-                var buf = x.Concat(h).Concat(ErgoConstants.M).ToArray();
+                var buf2 = x.Concat(h).Concat(ErgoConstants.M).ToArray();
 
                 // hash it
-                Span<byte> hash = stackalloc byte[32];
-                hasher.Digest(buf, hash);
+                Span<byte> tmp = stackalloc byte[32];
+                hasher.Digest(buf2, tmp);
 
                 // extract 31 bytes at end
-                return new BigInteger(hash[1..], true, true);
+                return new BigInteger(tmp[1..], true, true);
             }).Aggregate((x, y) => x + y);
 
             // calculate fH
-            var blockHash = f.ToByteArray(true, true).PadFront(0, 32);
-            hasher.Digest(blockHash, hashResult);
-            var fh = new BigInteger(hashResult, true, true);
+            var fBytes = f.ToByteArray(true, true).PadFront(0, 32);
+            hasher.Digest(fBytes, hash);
+            var blockHash = hash.ToHexString();
+            var fh = new BigInteger(hash, true, true);
             var fhTarget = new Target(fh);
+
+
+
+
+            var _h = BitConverter.GetBytes((ulong) Height).Reverse().Skip(4).ToArray();
+            var coinbaseBuffer = (BlockTemplate.Msg + nonce).HexToByteArray();
+            var _n = GetN(Height);
+
+            var firstB = new byte[32];
+            hasher.Digest(coinbaseBuffer, firstB, 32);
+            var formula = new BigInteger(firstB.Skip(24).ToArray(), true, true) % _n;
+            var _i = new byte[4];
+            Array.Copy(formula.ToByteArray(), _i, formula.ToByteArray().Length);
+            _i.ReverseInPlace();
+
+            var _e = new byte[32];
+            hasher.Digest(_i.Concat(_h).Concat(ErgoConstants.M).ToArray(), _e, 32);
+
+            var _hash = new byte[32];
+            hasher.Digest(_e.Skip(1).Concat(coinbaseBuffer).ToArray(), _hash, 32);
+            var _extendedHash = _hash.Concat(_hash);
+
+            var _f = new object[32].Select((x, y) => (new BigInteger(_extendedHash.Skip(y).Take(4).ToArray(), true, true) % _n).ToByteArray()).Select(x =>
+            {
+                var buf2 = new byte[32];
+                var item = new byte[4];
+                Array.Copy(x, item, x.Length);
+                hasher.Digest(item.Reverse().Concat(_h).Concat(ErgoConstants.M).ToArray(), buf2, 32);
+                return new BigInteger(buf2.Skip(1).ToArray(), true, true);
+            }).Aggregate((x, y) => x + y);
+
+            var _buf = new byte[32];
+            Array.Copy(_f.ToByteArray(), _buf, _f.ToByteArray().Length);
+            hasher.Digest(_buf.ReverseInPlace(), _buf);
+            var _fh = new BigInteger(_buf, true, true);
+
+
+            if(fh != _fh)
+                ;
+
 
             // diff check
             var stratumDifficulty = context.Difficulty;
@@ -178,10 +219,27 @@ namespace Miningcore.Blockchain.Ergo
             {
                 result.IsBlockCandidate = true;
 
-                result.BlockHash = blockHash.ToHexString();
+                result.BlockHash = blockHash;
             }
 
             return result;
+        }
+
+        private static BigInteger GetN(ulong height)
+        {
+            height = Math.Min(4198400, height);
+            if(height < 600 * 1024)
+            {
+                return BigInteger.Pow(2, 26);
+            }
+            else
+            {
+                var res = BigInteger.Pow(2, 26);
+                var iterationsNumber = (height - 600 * 1024) / 50 * 1024 + 1;
+                for(var i = 0ul; i < iterationsNumber; i++)
+                    res = res / new BigInteger(100) * new BigInteger(105);
+                return res;
+            }
         }
 
         public object[] GetJobParams(bool isNew)
@@ -224,6 +282,7 @@ namespace Miningcore.Blockchain.Ergo
             BlockTemplate = blockTemplate;
             JobId = jobId;
             Difficulty = new Target(BlockTemplate.B).Difficulty;
+            n = CalcN(Height);
 
             jobParams = new object[]
             {
