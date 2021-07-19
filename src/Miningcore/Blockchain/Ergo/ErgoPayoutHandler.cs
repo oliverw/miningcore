@@ -140,7 +140,7 @@ namespace Miningcore.Blockchain.Ergo
             var pageSize = 100;
             var pageCount = (int) Math.Ceiling(blocks.Length / (double) pageSize);
             var result = new List<Block>();
-            var minConfirmations = extraPoolConfig?.MinimumConfirmations ?? (network == "mainnet" ? 720 : 72);
+            var minConfirmations = extraPoolPaymentProcessingConfig?.MinimumConfirmations ?? (network == "mainnet" ? 720 : 72);
             var minerRewardsPubKey = await ergoClient.MiningReadMinerRewardPubkeyAsync(ct);
             var minerRewardsAddress = await ergoClient.MiningReadMinerRewardAddressAsync(ct);
 
