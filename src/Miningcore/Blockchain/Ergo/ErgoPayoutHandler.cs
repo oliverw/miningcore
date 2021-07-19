@@ -217,6 +217,8 @@ namespace Miningcore.Blockchain.Ergo
                             var walletTx = await Guard(()=> ergoClient.WalletGetTransactionAsync(blockTx.Id, ct));
                             var coinbaseOutput = walletTx?.Outputs?.FirstOrDefault(x => x.Address == minerRewardsAddress.RewardAddress);
 
+logger.Info(() => $"[{LogCategory}] *** coinbase {fullBlock.Header.Height} {fullBlock.Header.Id} {blockTx.Id} worth {coinbaseOutput.Value}");
+
                             if(coinbaseOutput != null)
                             {
                                 coinbaseWalletTxFound = true;
@@ -245,6 +247,7 @@ namespace Miningcore.Blockchain.Ergo
                                     block.Reward = (decimal) (coinbaseOutput.Value / ErgoConstants.SmallestUnit);
                                     block.Hash = fullBlock.Header.Id;
                                     result.Add(block);
+logger.Info(() => $"[{LogCategory}] *** coinbase 2 {coinbaseOutput.Value}");
 
                                     messageBus.NotifyBlockConfirmationProgress(poolConfig.Id, block, coin);
                                     blockHandled = true;
