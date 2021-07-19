@@ -210,6 +210,9 @@ namespace Miningcore.Blockchain.Ergo
 
                         var coinbaseWalletTxFound = false;
 
+                        // reset block reward
+                        block.Reward = 0;
+
                         foreach(var blockTx in fullBlock.BlockTransactions.Transactions)
                         {
                             var walletTx = await Guard(()=> ergoClient.WalletGetTransactionAsync(blockTx.Id, ct));
@@ -225,13 +228,9 @@ namespace Miningcore.Blockchain.Ergo
                                     // matured and spendable coinbase transaction
                                     block.Status = BlockStatus.Confirmed;
                                     block.ConfirmationProgress = 1;
-                                    block.Reward = (decimal) (coinbaseOutput.Value / ErgoConstants.SmallestUnit);
+                                    block.Reward += coinbaseOutput.Value / ErgoConstants.SmallestUnit;
                                     block.Hash = fullBlock.Header.Id;
-                                    result.Add(block);
 
-                                    logger.Info(() => $"[{LogCategory}] Unlocked block {block.BlockHeight} worth {FormatAmount(block.Reward)}");
-
-                                    messageBus.NotifyBlockUnlocked(poolConfig.Id, block, coin);
                                     blockHandled = true;
                                     break;
                                 }
@@ -240,15 +239,28 @@ namespace Miningcore.Blockchain.Ergo
                                 {
                                     // update progress
                                     block.ConfirmationProgress = Math.Min(1.0d, (double) walletTx.NumConfirmations / minConfirmations);
-                                    block.Reward = (decimal) (coinbaseOutput.Value / ErgoConstants.SmallestUnit);
+                                    block.Reward += coinbaseOutput.Value / ErgoConstants.SmallestUnit;
                                     block.Hash = fullBlock.Header.Id;
-                                    result.Add(block);
 
-                                    messageBus.NotifyBlockConfirmationProgress(poolConfig.Id, block, coin);
                                     blockHandled = true;
                                     break;
                                 }
                             }
+                        }
+
+                        if(blockHandled)
+                        {
+                            result.Add(block);
+
+                            if(block.Status == BlockStatus.Confirmed)
+                            {
+                                logger.Info(() => $"[{LogCategory}] Unlocked block {block.BlockHeight} worth {FormatAmount(block.Reward)}");
+
+                                messageBus.NotifyBlockUnlocked(poolConfig.Id, block, coin);
+                            }
+
+                            else
+                                messageBus.NotifyBlockConfirmationProgress(poolConfig.Id, block, coin);
                         }
 
                         if(!blockHandled && !coinbaseWalletTxFound)
