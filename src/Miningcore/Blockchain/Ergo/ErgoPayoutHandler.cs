@@ -222,22 +222,15 @@ namespace Miningcore.Blockchain.Ergo
                             {
                                 coinbaseWalletTxFound = true;
 
-                                // enough confirmations?
+                                block.ConfirmationProgress = Math.Min(1.0d, (double) walletTx.NumConfirmations / minConfirmations);
+                                block.Reward += coinbaseOutput.Value / ErgoConstants.SmallestUnit;
+                                block.Hash = fullBlock.Header.Id;
+
                                 if(walletTx.NumConfirmations >= minConfirmations)
                                 {
                                     // matured and spendable coinbase transaction
                                     block.Status = BlockStatus.Confirmed;
                                     block.ConfirmationProgress = 1;
-                                    block.Reward += coinbaseOutput.Value / ErgoConstants.SmallestUnit;
-                                    block.Hash = fullBlock.Header.Id;
-                                }
-
-                                else
-                                {
-                                    // update progress
-                                    block.ConfirmationProgress = Math.Min(1.0d, (double) walletTx.NumConfirmations / minConfirmations);
-                                    block.Reward += coinbaseOutput.Value / ErgoConstants.SmallestUnit;
-                                    block.Hash = fullBlock.Header.Id;
                                 }
                             }
                         }
