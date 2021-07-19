@@ -230,9 +230,6 @@ namespace Miningcore.Blockchain.Ergo
                                     block.ConfirmationProgress = 1;
                                     block.Reward += coinbaseOutput.Value / ErgoConstants.SmallestUnit;
                                     block.Hash = fullBlock.Header.Id;
-
-                                    blockHandled = true;
-                                    break;
                                 }
 
                                 else
@@ -241,12 +238,11 @@ namespace Miningcore.Blockchain.Ergo
                                     block.ConfirmationProgress = Math.Min(1.0d, (double) walletTx.NumConfirmations / minConfirmations);
                                     block.Reward += coinbaseOutput.Value / ErgoConstants.SmallestUnit;
                                     block.Hash = fullBlock.Header.Id;
-
-                                    blockHandled = true;
-                                    break;
                                 }
                             }
                         }
+
+                        blockHandled = coinbaseWalletTxFound;
 
                         if(blockHandled)
                         {
@@ -263,7 +259,7 @@ namespace Miningcore.Blockchain.Ergo
                                 messageBus.NotifyBlockConfirmationProgress(poolConfig.Id, block, coin);
                         }
 
-                        if(!blockHandled && !coinbaseWalletTxFound)
+                        else
                             coinbaseNonWalletTxCount++;
                     }
 
