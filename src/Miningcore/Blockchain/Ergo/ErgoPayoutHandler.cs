@@ -48,7 +48,6 @@ namespace Miningcore.Blockchain.Ergo
 
         protected readonly IComponentContext ctx;
         protected ErgoClient ergoClient;
-        private ErgoPoolConfigExtra extraPoolConfig;
         private string network;
         private ErgoPaymentProcessingConfigExtra extraPoolPaymentProcessingConfig;
 
@@ -118,7 +117,6 @@ namespace Miningcore.Blockchain.Ergo
             this.poolConfig = poolConfig;
             this.clusterConfig = clusterConfig;
 
-            extraPoolConfig = poolConfig.Extra.SafeExtensionDataAs<ErgoPoolConfigExtra>();
             extraPoolPaymentProcessingConfig = poolConfig.PaymentProcessing.Extra.SafeExtensionDataAs<ErgoPaymentProcessingConfigExtra>();
 
             ergoClient = ErgoClientFactory.CreateClient(poolConfig, clusterConfig, null);
