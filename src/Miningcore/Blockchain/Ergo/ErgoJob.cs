@@ -138,7 +138,6 @@ namespace Miningcore.Blockchain.Ergo
             // calculate fH
             var fBytes = f.ToByteArray(true, true).PadFront(0, 32);
             hasher.Digest(fBytes, hash);
-            var blockHash = hash.ToHexString();
             var fh = new BigInteger(hash, true, true);
             var fhTarget = new Target(fh);
 
@@ -178,28 +177,9 @@ namespace Miningcore.Blockchain.Ergo
             if(isBlockCandidate)
             {
                 result.IsBlockCandidate = true;
-
-                result.BlockHash = blockHash;
             }
 
             return result;
-        }
-
-        private static BigInteger GetN(ulong height)
-        {
-            height = Math.Min(4198400, height);
-            if(height < 600 * 1024)
-            {
-                return BigInteger.Pow(2, 26);
-            }
-            else
-            {
-                var res = BigInteger.Pow(2, 26);
-                var iterationsNumber = (height - 600 * 1024) / 50 * 1024 + 1;
-                for(var i = 0ul; i < iterationsNumber; i++)
-                    res = res / new BigInteger(100) * new BigInteger(105);
-                return res;
-            }
         }
 
         public object[] GetJobParams(bool isNew)
