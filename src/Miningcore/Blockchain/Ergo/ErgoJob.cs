@@ -142,46 +142,6 @@ namespace Miningcore.Blockchain.Ergo
             var fh = new BigInteger(hash, true, true);
             var fhTarget = new Target(fh);
 
-
-
-
-            var _h = BitConverter.GetBytes((ulong) Height).Reverse().Skip(4).ToArray();
-            var coinbaseBuffer = (BlockTemplate.Msg + nonce).HexToByteArray();
-            var _n = GetN(Height);
-
-            var firstB = new byte[32];
-            hasher.Digest(coinbaseBuffer, firstB, 32);
-            var formula = new BigInteger(firstB.Skip(24).ToArray(), true, true) % _n;
-            var _i = new byte[4];
-            Array.Copy(formula.ToByteArray(), _i, formula.ToByteArray().Length);
-            _i.ReverseInPlace();
-
-            var _e = new byte[32];
-            hasher.Digest(_i.Concat(_h).Concat(ErgoConstants.M).ToArray(), _e, 32);
-
-            var _hash = new byte[32];
-            hasher.Digest(_e.Skip(1).Concat(coinbaseBuffer).ToArray(), _hash, 32);
-            var _extendedHash = _hash.Concat(_hash);
-
-            var _f = new object[32].Select((x, y) => (new BigInteger(_extendedHash.Skip(y).Take(4).ToArray(), true, true) % _n).ToByteArray()).Select(x =>
-            {
-                var buf2 = new byte[32];
-                var item = new byte[4];
-                Array.Copy(x, item, x.Length);
-                hasher.Digest(item.Reverse().Concat(_h).Concat(ErgoConstants.M).ToArray(), buf2, 32);
-                return new BigInteger(buf2.Skip(1).ToArray(), true, true);
-            }).Aggregate((x, y) => x + y);
-
-            var _buf = new byte[32];
-            Array.Copy(_f.ToByteArray(), _buf, _f.ToByteArray().Length);
-            hasher.Digest(_buf.ReverseInPlace(), _buf);
-            var _fh = new BigInteger(_buf, true, true);
-
-
-            if(fh != _fh)
-                ;
-
-
             // diff check
             var stratumDifficulty = context.Difficulty;
             var ratio = fhTarget.Difficulty / stratumDifficulty;
