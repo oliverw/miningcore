@@ -219,6 +219,8 @@ namespace Miningcore.Blockchain.Ergo
 
                             if(coinbaseOutput != null)
                             {
+logger.Info(() => $"[{LogCategory}] *** coinbase {coinbaseOutput.TransactionId} worth {coinbaseOutput.Value}");
+
                                 coinbaseWalletTxFound = true;
 
                                 // enough confirmations?
