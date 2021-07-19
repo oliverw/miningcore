@@ -214,9 +214,6 @@ namespace Miningcore.Blockchain.Ergo
 
                         foreach(var blockTx in fullBlock.BlockTransactions.Transactions)
                         {
-                            if(blockHandled)
-                                break;
-
                             var walletTx = await Guard(()=> ergoClient.WalletGetTransactionAsync(blockTx.Id, ct));
                             var coinbaseOutput = walletTx?.Outputs?.FirstOrDefault(x => x.Address == minerRewardsAddress.RewardAddress);
 
@@ -237,7 +234,6 @@ namespace Miningcore.Blockchain.Ergo
                                     logger.Info(() => $"[{LogCategory}] Unlocked block {block.BlockHeight} worth {FormatAmount(block.Reward)}");
 
                                     messageBus.NotifyBlockUnlocked(poolConfig.Id, block, coin);
-
                                     blockHandled = true;
                                     break;
                                 }
@@ -251,6 +247,8 @@ namespace Miningcore.Blockchain.Ergo
                                     result.Add(block);
 
                                     messageBus.NotifyBlockConfirmationProgress(poolConfig.Id, block, coin);
+                                    blockHandled = true;
+                                    break;
                                 }
                             }
                         }
