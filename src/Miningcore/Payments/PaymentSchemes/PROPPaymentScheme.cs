@@ -176,14 +176,15 @@ namespace Miningcore.Payments.PaymentSchemes
                 {
                     var share = page[i];
                     var address = share.Miner;
+                    var shareDiffAdjusted = payoutHandler.AdjustShareDifficulty(share.Difficulty);
 
                     // record attributed shares for diagnostic purposes
                     if(!shares.ContainsKey(address))
-                        shares[address] = share.Difficulty;
+                        shares[address] = shareDiffAdjusted;
                     else
-                        shares[address] += share.Difficulty;
+                        shares[address] += shareDiffAdjusted;
 
-                    var score = (decimal) (payoutHandler.AdjustShareDifficulty(share.Difficulty) / share.NetworkDifficulty);
+                    var score = (decimal) (shareDiffAdjusted / share.NetworkDifficulty);
 
                     if(!scores.ContainsKey(address))
                         scores[address] = score;
