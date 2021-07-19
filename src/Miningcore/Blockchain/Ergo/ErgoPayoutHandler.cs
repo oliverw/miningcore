@@ -219,7 +219,7 @@ namespace Miningcore.Blockchain.Ergo
 
                             if(coinbaseOutput != null)
                             {
-logger.Info(() => $"[{LogCategory}] *** coinbase {coinbaseOutput.TransactionId} worth {coinbaseOutput.Value}");
+logger.Info(() => $"[{LogCategory}] *** coinbase {fullBlock.Header.Height} {fullBlock.Header.Id} {blockTx.Id} worth {coinbaseOutput.Value}");
 
                                 coinbaseWalletTxFound = true;
 
