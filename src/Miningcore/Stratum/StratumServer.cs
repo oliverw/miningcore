@@ -100,7 +100,7 @@ namespace Miningcore.Stratum
                 server.Bind(port.IPEndPoint);
                 server.Listen();
 
-                return Listen(server, port, ct);
+                return Task.Run(()=> Listen(server, port, ct), ct);
             }).ToArray();
 
             return Task.WhenAll(tasks);
