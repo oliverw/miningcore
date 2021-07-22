@@ -22,6 +22,8 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc.ActionConstraints;
+using NLog;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace Miningcore.Api.Controllers
 {
@@ -49,6 +51,8 @@ namespace Miningcore.Api.Controllers
         private readonly IMasterClock clock;
         private readonly IActionDescriptorCollectionProvider adcp;
         private readonly ConcurrentDictionary<string, IMiningPool> pools;
+
+        private static readonly NLog.ILogger logger = LogManager.GetCurrentClassLogger();
 
         #region Actions
 
@@ -609,8 +613,11 @@ namespace Miningcore.Api.Controllers
                 mapped.PoolId = pool.Id;
                 mapped.Address = address;
 
-                var result = await minerRepo.UpdateSettings(con, tx, mapped);
+                await minerRepo.UpdateSettings(con, tx, mapped);
 
+                logger.Info(()=> $"Updated settings for pool {pool.Id}, miner {address}");
+
+                var result = await minerRepo.GetSettings(con, tx, mapped.PoolId, mapped.Address);
                 return mapper.Map<Responses.MinerSettings>(result);
             });
         }
