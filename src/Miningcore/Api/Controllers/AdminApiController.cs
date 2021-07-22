@@ -87,6 +87,10 @@ namespace Miningcore.Api.Controllers
 
             // map settings
             var mapped = mapper.Map<Persistence.Model.MinerSettings>(settings);
+
+            if(pool.PaymentProcessing != null)
+                mapped.PaymentThreshold = Math.Max(mapped.PaymentThreshold, pool.PaymentProcessing.MinimumPayment);
+
             mapped.PoolId = pool.Id;
             mapped.Address = address;
 
