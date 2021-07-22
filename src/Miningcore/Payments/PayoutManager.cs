@@ -20,6 +20,7 @@ using Miningcore.Persistence;
 using Miningcore.Persistence.Model;
 using Miningcore.Persistence.Repositories;
 using NLog;
+using Org.BouncyCastle.Utilities.Net;
 using Contract = Miningcore.Contracts.Contract;
 
 namespace Miningcore.Payments
