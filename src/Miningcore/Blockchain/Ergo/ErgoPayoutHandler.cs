@@ -308,6 +308,8 @@ namespace Miningcore.Blockchain.Ergo
             if(amounts.Count == 0)
                 return;
 
+            var balancesTotal = amounts.Sum(x => x.Value);
+
             try
             {
                 logger.Info(() => $"[{LogCategory}] Paying {FormatAmount(balances.Sum(x => x.Amount))} to {balances.Length} addresses");
@@ -323,7 +325,15 @@ namespace Miningcore.Blockchain.Ergo
 
                 // get balance
                 var walletBalances = await ergoClient.WalletBalancesAsync(ct);
-                logger.Info(() => $"[{LogCategory}] Current wallet balance is {FormatAmount(walletBalances.Balance / ErgoConstants.SmallestUnit)}");
+                var walletTotal = walletBalances.Balance / ErgoConstants.SmallestUnit;
+                logger.Info(() => $"[{LogCategory}] Current wallet balance is {FormatAmount(walletTotal)}");
+
+                // bail if balance does not satisfy payments
+                if(walletTotal < balancesTotal)
+                {
+                    logger.Warn(() => $"[{LogCategory}] Wallet balance currently short of {FormatAmount(balancesTotal - walletTotal)}. Will try again.");
+                    return;
+                }
 
                 // Create request batch
                 var requests = amounts.Select(x => new PaymentRequest
