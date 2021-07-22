@@ -88,6 +88,7 @@ namespace Miningcore.Api.Controllers
             // map settings
             var mapped = mapper.Map<Persistence.Model.MinerSettings>(settings);
 
+            // clamp limit
             if(pool.PaymentProcessing != null)
                 mapped.PaymentThreshold = Math.Max(mapped.PaymentThreshold, pool.PaymentProcessing.MinimumPayment);
 

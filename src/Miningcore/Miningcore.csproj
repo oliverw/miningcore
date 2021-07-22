@@ -22,17 +22,14 @@
 
     <ItemGroup>
         <Compile Remove="Api\Notifications\**" />
-        <Compile Remove="Api\Requests\**" />
         <Compile Remove="Blockchain\Bitcoin\Transactions\**" />
         <Compile Remove="DataAccess\**" />
         <Compile Remove="Maintenance\**" />
         <EmbeddedResource Remove="Api\Notifications\**" />
-        <EmbeddedResource Remove="Api\Requests\**" />
         <EmbeddedResource Remove="Blockchain\Bitcoin\Transactions\**" />
         <EmbeddedResource Remove="DataAccess\**" />
         <EmbeddedResource Remove="Maintenance\**" />
         <None Remove="Api\Notifications\**" />
-        <None Remove="Api\Requests\**" />
         <None Remove="Blockchain\Bitcoin\Transactions\**" />
         <None Remove="DataAccess\**" />
         <None Remove="Maintenance\**" />
