@@ -7,6 +7,6 @@ namespace Miningcore.Persistence.Repositories
     public interface IMinerRepository
     {
         Task<MinerSettings> GetSettings(IDbConnection con, IDbTransaction tx, string poolId, string address);
-        Task<MinerSettings> UpdateSettings(IDbConnection con, IDbTransaction tx, MinerSettings settings);
+        Task UpdateSettings(IDbConnection con, IDbTransaction tx, MinerSettings settings);
     }
 }
