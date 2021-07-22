@@ -8,6 +8,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Threading.Tasks;
+using NLog;
 
 namespace Miningcore.Api.Controllers
 {
@@ -30,6 +31,8 @@ namespace Miningcore.Api.Controllers
         private readonly ConcurrentDictionary<string, IMiningPool> pools;
 
         private readonly Responses.AdminGcStats gcStats;
+
+        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
         #region Actions
 
@@ -95,7 +98,14 @@ namespace Miningcore.Api.Controllers
             mapped.PoolId = pool.Id;
             mapped.Address = address;
 
-            var result = await cf.RunTx((con, tx) => minerRepo.UpdateSettings(con, tx, mapped));
+            var result = await cf.RunTx(async (con, tx) =>
+            {
+                await minerRepo.UpdateSettings(con, tx, mapped);
+
+                return await minerRepo.GetSettings(con, tx, mapped.PoolId, mapped.Address);
+            });
+
+            logger.Info(()=> $"Updated settings for pool {pool.Id}, miner {address}");
 
             return mapper.Map<Responses.MinerSettings>(result);
         }

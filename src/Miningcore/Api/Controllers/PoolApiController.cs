@@ -1,5 +1,4 @@
 using Autofac;
-using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Miningcore.Api.Extensions;
@@ -8,14 +7,12 @@ using Miningcore.Blockchain;
 using Miningcore.Configuration;
 using Miningcore.Extensions;
 using Miningcore.Mining;
-using Miningcore.Persistence;
 using Miningcore.Persistence.Model;
 using Miningcore.Persistence.Model.Projections;
 using Miningcore.Persistence.Repositories;
 using Miningcore.Time;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Data;
 using System.Globalization;
 using System.Linq;
@@ -23,7 +20,6 @@ using System.Net;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc.ActionConstraints;
 using NLog;
-using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace Miningcore.Api.Controllers
 {
