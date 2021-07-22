@@ -1,5 +1,4 @@
 using Autofac;
-using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Miningcore.Api.Extensions;
@@ -8,20 +7,19 @@ using Miningcore.Blockchain;
 using Miningcore.Configuration;
 using Miningcore.Extensions;
 using Miningcore.Mining;
-using Miningcore.Persistence;
 using Miningcore.Persistence.Model;
 using Miningcore.Persistence.Model.Projections;
 using Miningcore.Persistence.Repositories;
 using Miningcore.Time;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Data;
 using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc.ActionConstraints;
+using NLog;
 
 namespace Miningcore.Api.Controllers
 {
@@ -49,6 +47,8 @@ namespace Miningcore.Api.Controllers
         private readonly IMasterClock clock;
         private readonly IActionDescriptorCollectionProvider adcp;
         private readonly ConcurrentDictionary<string, IMiningPool> pools;
+
+        private static readonly NLog.ILogger logger = LogManager.GetCurrentClassLogger();
 
         #region Actions
 
@@ -609,8 +609,11 @@ namespace Miningcore.Api.Controllers
                 mapped.PoolId = pool.Id;
                 mapped.Address = address;
 
-                var result = await minerRepo.UpdateSettings(con, tx, mapped);
+                await minerRepo.UpdateSettings(con, tx, mapped);
 
+                logger.Info(()=> $"Updated settings for pool {pool.Id}, miner {address}");
+
+                var result = await minerRepo.GetSettings(con, tx, mapped.PoolId, mapped.Address);
                 return mapper.Map<Responses.MinerSettings>(result);
             });
         }
