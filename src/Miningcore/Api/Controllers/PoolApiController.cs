@@ -558,7 +558,7 @@ namespace Miningcore.Api.Controllers
         }
 
         [HttpPost("{poolId}/miners/{address}/settings")]
-        public Task<Responses.MinerSettings> SetMinerSettingsAsync(string poolId, string address,
+        public async Task<Responses.MinerSettings> SetMinerSettingsAsync(string poolId, string address,
             [FromBody] Requests.UpdateMinerSettingsRequest request)
         {
             var pool = GetPool(poolId);
@@ -572,29 +572,29 @@ namespace Miningcore.Api.Controllers
             if(!IPAddress.TryParse(request.IpAddress, out var requestIp))
                 throw new ApiException("Invalid IP address", HttpStatusCode.BadRequest);
 
-            return cf.RunTx(async (con, tx) =>
+            // fetch recent IPs
+            var ips = await cf.Run(con=> shareRepo.GetRecentyUsedIpAddresses(con, null, poolId, address));
+
+            // any known ips?
+            if(ips == null || ips.Length == 0)
+                throw new ApiException("No recent IP addresses found", HttpStatusCode.NotFound);
+
+            // match?
+            if(!ips.Any(x=> IPAddress.TryParse(x, out var ipAddress) && ipAddress.IsEqual(requestIp)))
+                throw new ApiException("No recent IP addresses matches", HttpStatusCode.Forbidden);
+
+            // map settings
+            var mapped = mapper.Map<Persistence.Model.MinerSettings>(request.Settings);
+
+            // clamp limit
+            if(pool.PaymentProcessing != null)
+                mapped.PaymentThreshold = Math.Max(mapped.PaymentThreshold, pool.PaymentProcessing.MinimumPayment);
+
+            mapped.PoolId = pool.Id;
+            mapped.Address = address;
+
+            return await cf.RunTx(async (con, tx) =>
             {
-                // fetch recent IPs
-                var ips = await shareRepo.GetRecentyUsedIpAddresses(con, tx, poolId, address);
-
-                // any known ips?
-                if(ips == null || ips.Length == 0)
-                    throw new ApiException("No recent IP addresses found", HttpStatusCode.NotFound);
-
-                // match?
-                if(!ips.Any(x=> IPAddress.TryParse(x, out var ipAddress) && ipAddress.IsEqual(requestIp)))
-                    throw new ApiException("No recent IP addresses matches", HttpStatusCode.Forbidden);
-
-                // map settings
-                var mapped = mapper.Map<Persistence.Model.MinerSettings>(request.Settings);
-
-                // clamp limit
-                if(pool.PaymentProcessing != null)
-                    mapped.PaymentThreshold = Math.Max(mapped.PaymentThreshold, pool.PaymentProcessing.MinimumPayment);
-
-                mapped.PoolId = pool.Id;
-                mapped.Address = address;
-
                 await minerRepo.UpdateSettings(con, tx, mapped);
 
                 logger.Info(()=> $"Updated settings for pool {pool.Id}, miner {address}");
