@@ -581,19 +581,8 @@ namespace Miningcore.Api.Controllers
                 if(ips == null || ips.Length == 0)
                     throw new ApiException("No recent IP addresses found", HttpStatusCode.NotFound);
 
-                // check if at least one matches
-                var match = false;
-
-                foreach(var ip in ips)
-                {
-                    if(IPAddress.TryParse(ip, out var ipAddress) && ipAddress.IsEqual(requestIp))
-                    {
-                        match = true;
-                        break;
-                    }
-                }
-
-                if(!match)
+                // match?
+                if(!ips.Any(x=> IPAddress.TryParse(x, out var ipAddress) && ipAddress.IsEqual(requestIp)))
                     throw new ApiException("No recent IP addresses matches", HttpStatusCode.Forbidden);
 
                 // map settings
