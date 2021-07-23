@@ -577,11 +577,11 @@ namespace Miningcore.Api.Controllers
 
             // any known ips?
             if(ips == null || ips.Length == 0)
-                throw new ApiException("No recent IP addresses found", HttpStatusCode.NotFound);
+                throw new ApiException("Address not recently used for mining", HttpStatusCode.NotFound);
 
             // match?
             if(!ips.Any(x=> IPAddress.TryParse(x, out var ipAddress) && ipAddress.IsEqual(requestIp)))
-                throw new ApiException("No recent IP addresses matches", HttpStatusCode.Forbidden);
+                throw new ApiException("None of the recently used IP addresses matches the request", HttpStatusCode.Forbidden);
 
             // map settings
             var mapped = mapper.Map<Persistence.Model.MinerSettings>(request.Settings);
@@ -593,6 +593,7 @@ namespace Miningcore.Api.Controllers
             mapped.PoolId = pool.Id;
             mapped.Address = address;
 
+            // finally update the settings
             return await cf.RunTx(async (con, tx) =>
             {
                 await minerRepo.UpdateSettings(con, tx, mapped);
