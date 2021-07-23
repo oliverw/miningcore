@@ -243,19 +243,14 @@ namespace Miningcore.Blockchain.Bitcoin
             if(job == null)
                 throw new StratumException(StratumError.JobNotFound, "job not found");
 
-            // extract worker/miner/payoutid
-            var split = workerValue.Split('.');
-            var minerName = split[0];
-            var workerName = split.Length > 1 ? split[1] : null;
-
             // validate & process
             var (share, blockHex) = job.ProcessShare(worker, extraNonce2, nTime, nonce, versionBits);
 
             // enrich share with common data
             share.PoolId = poolConfig.Id;
             share.IpAddress = worker.RemoteEndpoint.Address.ToString();
-            share.Miner = minerName;
-            share.Worker = workerName;
+            share.Miner = context.Miner;
+            share.Worker = context.Worker;
             share.UserAgent = context.UserAgent;
             share.Source = clusterConfig.ClusterName;
             share.Created = clock.Now;
@@ -272,7 +267,7 @@ namespace Miningcore.Blockchain.Bitcoin
 
                 if(share.IsBlockCandidate)
                 {
-                    logger.Info(() => $"Daemon accepted block {share.BlockHeight} [{share.BlockHash}] submitted by {minerName}");
+                    logger.Info(() => $"Daemon accepted block {share.BlockHeight} [{share.BlockHash}] submitted by {context.Miner}");
 
                     OnBlockFound();
 
