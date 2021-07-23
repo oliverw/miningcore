@@ -579,20 +579,17 @@ namespace Miningcore.Api.Controllers
 
                 // any known ips?
                 if(ips == null || ips.Length == 0)
-                    throw new ApiException("No recent IP addresses found", HttpStatusCode.BadRequest);
+                    throw new ApiException("No recent IP addresses found", HttpStatusCode.NotFound);
 
                 // check if at least one matches
                 var match = false;
 
                 foreach(var ip in ips)
                 {
-                    if(IPAddress.TryParse(ip, out var ipAddress))
+                    if(IPAddress.TryParse(ip, out var ipAddress) && ipAddress.IsEqual(requestIp))
                     {
-                        if(ipAddress.IsEqual(requestIp))
-                        {
-                            match = true;
-                            break;
-                        }
+                        match = true;
+                        break;
                     }
                 }
 
