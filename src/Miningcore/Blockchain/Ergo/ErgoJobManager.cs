@@ -310,19 +310,14 @@ namespace Miningcore.Blockchain.Ergo
             if(job == null)
                 throw new StratumException(StratumError.JobNotFound, "job not found");
 
-            // extract worker/miner/payoutid
-            var split = workerValue.Split('.');
-            var minerName = split[0];
-            var workerName = split.Length > 1 ? split[1] : null;
-
             // validate & process
             var share = job.ProcessShare(worker, extraNonce2, nTime, nonce);
 
             // enrich share with common data
             share.PoolId = poolConfig.Id;
             share.IpAddress = worker.RemoteEndpoint.Address.ToString();
-            share.Miner = minerName;
-            share.Worker = workerName;
+            share.Miner = context.Miner;
+            share.Worker = context.Worker;
             share.UserAgent = context.UserAgent;
             share.Source = clusterConfig.ClusterName;
             share.Created = clock.Now;
