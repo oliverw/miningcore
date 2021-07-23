@@ -326,6 +326,7 @@ namespace Miningcore.Blockchain.Ergo
                 // get balance
                 var walletBalances = await ergoClient.WalletBalancesAsync(ct);
                 var walletTotal = walletBalances.Balance / ErgoConstants.SmallestUnit;
+
                 logger.Info(() => $"[{LogCategory}] Current wallet balance is {FormatAmount(walletTotal)}");
 
                 // bail if balance does not satisfy payments
@@ -333,6 +334,17 @@ namespace Miningcore.Blockchain.Ergo
                 {
                     logger.Warn(() => $"[{LogCategory}] Wallet balance currently short of {FormatAmount(balancesTotal - walletTotal)}. Will try again.");
                     return;
+                }
+
+                // validate addresses
+                logger.Info("Validating addresses ...");
+
+                foreach(var pair in amounts)
+                {
+                    var validity = await Guard(() => ergoClient.CheckAddressValidityAsync(pair.Key, ct));
+
+                    if(validity == null || !validity.IsValid)
+                        logger.Warn(()=> $"Address {pair.Key} is not valid!");
                 }
 
                 // Create request batch
