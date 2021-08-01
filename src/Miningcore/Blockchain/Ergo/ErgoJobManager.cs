@@ -111,7 +111,7 @@ namespace Miningcore.Blockchain.Ergo
                 var isNew = job == null ||
                             (blockTemplate != null &&
                              (job.BlockTemplate?.Msg != blockTemplate.Msg ||
-                              blockTemplate?.Height > job.BlockTemplate.Height));
+                              blockTemplate.Height > job.BlockTemplate.Height));
 
                 if(isNew)
                     messageBus.NotifyChainHeight(poolConfig.Id, blockTemplate.Height, poolConfig.Template);
