@@ -299,7 +299,7 @@ namespace Miningcore.Stratum
 
         private async Task ProcessSendQueueAsync(CancellationToken ct)
         {
-            while(true)
+            while(!ct.IsCancellationRequested)
             {
                 var msg = await sendQueue.ReceiveAsync(ct);
 
