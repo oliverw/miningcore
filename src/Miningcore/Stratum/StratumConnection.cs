@@ -231,7 +231,7 @@ namespace Miningcore.Stratum
 
         private async Task FillReceivePipeAsync(CancellationToken ct)
         {
-            while(true)
+            while(!ct.IsCancellationRequested)
             {
                 logger.Debug(() => $"[{ConnectionId}] [NET] Waiting for data ...");
 
@@ -259,7 +259,7 @@ namespace Miningcore.Stratum
             TcpProxyProtocolConfig proxyProtocol,
             Func<StratumConnection, JsonRpcRequest, CancellationToken, Task> onRequestAsync)
         {
-            while(true)
+            while(!ct.IsCancellationRequested)
             {
                 logger.Debug(() => $"[{ConnectionId}] [PIPE] Waiting for data ...");
 
