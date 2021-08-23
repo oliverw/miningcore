@@ -109,14 +109,16 @@
           }
         ],
         "paymentProcessing": {
-          "enabled": true,
-          "minimumPayment": 1,
-          "payoutScheme": "PPLNS",
-          "payoutSchemeConfig": {
-            "factor": 0.5
-          },
-          "keepUncles": false,
-          "keepTransactionFees": false
+            "enabled": true,
+            "minimumPayment": 1,
+            "payoutScheme": "PPLNS",
+            "payoutSchemeConfig": {
+                "factor": 0.5
+            },
+            "gas": 21000,
+            "maxFeePerGas": 50000000000,
+            "keepUncles": false,
+            "keepTransactionFees": false
         }
       }
     ]

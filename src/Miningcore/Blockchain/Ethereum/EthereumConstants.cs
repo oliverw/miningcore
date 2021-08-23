@@ -85,5 +85,6 @@ namespace Miningcore.Blockchain.Ethereum
         public const string SendTx = "eth_sendTransaction";
         public const string UnlockAccount = "personal_unlockAccount";
         public const string Subscribe = "eth_subscribe";
+        public const string MaxPriorityFeePerGas = "eth_maxPriorityFeePerGas";
     }
 }
