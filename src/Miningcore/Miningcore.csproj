@@ -44,7 +44,7 @@
         <PackageReference Include="AspNetCoreRateLimit" Version="4.0.1" />
         <PackageReference Include="Autofac" Version="6.2.0" />
         <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="7.1.0" />
-        <PackageReference Include="GitVersion.MsBuild" Version="5.6.10">
+        <PackageReference Include="GitVersion.MsBuild" Version="5.7.0">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
