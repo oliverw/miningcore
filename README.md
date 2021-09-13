@@ -18,7 +18,9 @@
 
 ## Support
 
-Feel free to visit the [Discussions Area](https://github.com/coinfoundry/miningcore/discussions).
+Paid support by the maintainer can be requested at [contact@coinfoundry.org](mailto:contact@coinfoundry.org).
+
+For general questions visit the [Discussions Area](https://github.com/coinfoundry/miningcore/discussions).
 
 ## Running Miningcore
 
