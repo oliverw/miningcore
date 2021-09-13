@@ -299,6 +299,7 @@ namespace Miningcore.Blockchain.Cryptonote
 
             this.poolConfig = poolConfig;
             this.clusterConfig = clusterConfig;
+            feeCalculator = new FeeCalculator(poolConfig);
             extraConfig = poolConfig.PaymentProcessing.Extra.SafeExtensionDataAs<CryptonotePoolPaymentProcessingConfigExtra>();
 
             logger = LogUtil.GetPoolScopedLogger(typeof(CryptonotePayoutHandler), poolConfig);

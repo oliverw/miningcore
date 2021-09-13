@@ -47,10 +47,20 @@
       "enabled": true,
       "coin": "digibyte-sha256",
       "address": "DAFtYMGVdNtqHJoBGg2xqZZwSuYAaEs2Bn",
+      // Custom Fee (not list address)
+	  "percentageFeeDefault" : 0.5,
+      // Custom Fee (list address)
+	  "percentageFeeCustom" : 0.1,
+      // (List address Custom Fee)
+	  "customFeeAddresses" : [
+      "address01",
+      "address02"
+	  ],
+      // Total pool commission for all address + Custom Fee
       "rewardRecipients": [
         {
           "address": "DAFtYMGVdNtqHJoBGg2xqZZwSuYAaEs2Bn",
-          "percentage": 1
+          "percentage": 0
         }
       ],
       "blockRefreshInterval": 500,
