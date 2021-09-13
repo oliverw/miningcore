@@ -773,7 +773,7 @@ namespace Miningcore
             }
             .Concat(clusterConfig.CoinTemplates != null ?
                 clusterConfig.CoinTemplates.Where(x => x != defaultTemplates) :
-                new string[0])
+                Array.Empty<string>())
             .ToArray();
 
             return CoinTemplateLoader.Load(container, clusterConfig.CoinTemplates);
