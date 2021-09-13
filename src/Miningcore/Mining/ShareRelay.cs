@@ -23,14 +23,11 @@ namespace Miningcore.Mining
     {
         public ShareRelay(
             ClusterConfig clusterConfig,
-            JsonSerializerSettings serializerSettings,
             IMessageBus messageBus)
         {
-            Contract.RequiresNonNull(serializerSettings, nameof(serializerSettings));
             Contract.RequiresNonNull(messageBus, nameof(messageBus));
 
             this.clusterConfig = clusterConfig;
-            this.serializerSettings = serializerSettings;
             this.messageBus = messageBus;
         }
 
@@ -41,7 +38,6 @@ namespace Miningcore.Mining
         private readonly int QueueSizeWarningThreshold = 1024;
         private bool hasWarnedAboutBacklogSize;
         private ZSocket pubSocket;
-        private readonly JsonSerializerSettings serializerSettings;
 
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
@@ -66,7 +62,7 @@ namespace Miningcore.Mining
 
                     try
                     {
-                        var flags = (int) WireFormat.ProtocolBuffers;
+                        const int flags = (int) WireFormat.ProtocolBuffers;
 
                         using(var msg = new ZMessage())
                         {
@@ -111,9 +107,9 @@ namespace Miningcore.Mining
             }
         }
 
-        public Task StartAsync(CancellationToken cancellationToken)
+        public Task StartAsync(CancellationToken ct)
         {
-            messageBus.Listen<StratumShare>().Subscribe(x => queue.Add(x.Share));
+            messageBus.Listen<StratumShare>().Subscribe(x => queue.Add(x.Share, ct));
 
             pubSocket = new ZSocket(ZSocketType.PUB);
 
@@ -135,6 +131,7 @@ namespace Miningcore.Mining
                     logger.ThrowLogPoolStartupException("ZeroMQ Curve is not supported in ShareRelay Connect-Mode");
 
                 pubSocket.Connect(clusterConfig.ShareRelay.PublishUrl);
+
                 logger.Info(() => $"Connected to {clusterConfig.ShareRelay.PublishUrl}");
             }
 
@@ -145,7 +142,7 @@ namespace Miningcore.Mining
             return Task.CompletedTask;
         }
 
-        public Task StopAsync(CancellationToken cancellationToken)
+        public Task StopAsync(CancellationToken ct)
         {
             pubSocket.Dispose();
 

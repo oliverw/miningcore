@@ -58,14 +58,14 @@ namespace Miningcore.Blockchain.Equihash
             poolExtraConfig = poolConfig.Extra.SafeExtensionDataAs<EquihashPoolConfigExtra>();
 
             // detect network
-            var blockchainInfoResponse = await daemon.ExecuteCmdSingleAsync<BlockchainInfo>(logger, BitcoinCommands.GetBlockchainInfo, ct);
+            var blockchainInfoResponse = await rpcClient.ExecuteAsync<BlockchainInfo>(logger, BitcoinCommands.GetBlockchainInfo, ct);
 
             network = Network.GetNetwork(blockchainInfoResponse.Response.Chain.ToLower());
 
             chainConfig = poolConfig.Template.As<EquihashCoinTemplate>().GetNetwork(network.ChainName);
 
             // detect z_shieldcoinbase support
-            var response = await daemon.ExecuteCmdSingleAsync<JObject>(logger, EquihashCommands.ZShieldCoinbase, ct);
+            var response = await rpcClient.ExecuteAsync<JObject>(logger, EquihashCommands.ZShieldCoinbase, ct);
             supportsNativeShielding = response.Error.Code != (int) BitcoinRPCErrorCode.RPC_METHOD_NOT_FOUND;
         }
 
@@ -79,15 +79,13 @@ namespace Miningcore.Blockchain.Equihash
             else
                 await ShieldCoinbaseEmulatedAsync(ct);
 
-            var didUnlockWallet = false;
-
             // send in batches with no more than 50 recipients to avoid running into tx size limits
             var pageSize = 50;
             var pageCount = (int) Math.Ceiling(balances.Length / (double) pageSize);
 
             for(var i = 0; i < pageCount; i++)
             {
-                didUnlockWallet = false;
+                var didUnlockWallet = false;
 
                 // get a page full of balances
                 var page = balances
@@ -107,13 +105,13 @@ namespace Miningcore.Blockchain.Equihash
                 var pageAmount = amounts.Sum(x => x.Amount);
 
                 // check shielded balance
-                var balanceResult = await daemon.ExecuteCmdSingleAsync<object>(logger, EquihashCommands.ZGetBalance, ct, new object[]
+                var balanceResponse = await rpcClient.ExecuteAsync<object>(logger, EquihashCommands.ZGetBalance, ct, new object[]
                 {
                     poolExtraConfig.ZAddress, // default account
                     ZMinConfirmations, // only spend funds covered by this many confirmations
                 });
 
-                if(balanceResult.Error != null || (decimal) (double) balanceResult.Response - TransferFee < pageAmount)
+                if(balanceResponse.Error != null || (decimal) (double) balanceResponse.Response - TransferFee < pageAmount)
                 {
                     logger.Info(() => $"[{LogCategory}] Insufficient shielded balance for payment of {FormatAmount(pageAmount)}");
                     return;
@@ -131,11 +129,11 @@ namespace Miningcore.Blockchain.Equihash
 
             // send command
             tryTransfer:
-                var result = await daemon.ExecuteCmdSingleAsync<string>(logger, EquihashCommands.ZSendMany, ct, args);
+                var response = await rpcClient.ExecuteAsync<string>(logger, EquihashCommands.ZSendMany, ct, args);
 
-                if(result.Error == null)
+                if(response.Error == null)
                 {
-                    var operationId = result.Response;
+                    var operationId = response.Response;
 
                     // check result
                     if(string.IsNullOrEmpty(operationId))
@@ -148,7 +146,7 @@ namespace Miningcore.Blockchain.Equihash
 
                         while(continueWaiting)
                         {
-                            var operationResultResponse = await daemon.ExecuteCmdSingleAsync<ZCashAsyncOperationStatus[]>(logger,
+                            var operationResultResponse = await rpcClient.ExecuteAsync<ZCashAsyncOperationStatus[]>(logger,
                                 EquihashCommands.ZGetOperationResult, ct, new object[] { new object[] { operationId } });
 
                             if(operationResultResponse.Error == null &&
@@ -185,26 +183,26 @@ namespace Miningcore.Blockchain.Equihash
                             }
 
                             logger.Info(() => $"[{LogCategory}] Waiting for completion: {operationId}");
-                            await Task.Delay(TimeSpan.FromSeconds(10));
+                            await Task.Delay(TimeSpan.FromSeconds(10), ct);
                         }
                     }
                 }
 
                 else
                 {
-                    if(result.Error.Code == (int) BitcoinRPCErrorCode.RPC_WALLET_UNLOCK_NEEDED && !didUnlockWallet)
+                    if(response.Error.Code == (int) BitcoinRPCErrorCode.RPC_WALLET_UNLOCK_NEEDED && !didUnlockWallet)
                     {
                         if(!string.IsNullOrEmpty(extraPoolPaymentProcessingConfig?.WalletPassword))
                         {
                             logger.Info(() => $"[{LogCategory}] Unlocking wallet");
 
-                            var unlockResult = await daemon.ExecuteCmdSingleAsync<JToken>(logger, BitcoinCommands.WalletPassphrase, ct, new[]
+                            var unlockResponse = await rpcClient.ExecuteAsync<JToken>(logger, BitcoinCommands.WalletPassphrase, ct, new[]
                             {
                                 (object) extraPoolPaymentProcessingConfig.WalletPassword,
                                 (object) 5 // unlock for N seconds
                             });
 
-                            if(unlockResult.Error == null)
+                            if(unlockResponse.Error == null)
                             {
                                 didUnlockWallet = true;
                                 goto tryTransfer;
@@ -212,8 +210,8 @@ namespace Miningcore.Blockchain.Equihash
 
                             else
                             {
-                                logger.Error(() => $"[{LogCategory}] {BitcoinCommands.WalletPassphrase} returned error: {result.Error.Message} code {result.Error.Code}");
-                                NotifyPayoutFailure(poolConfig.Id, page, $"{BitcoinCommands.WalletPassphrase} returned error: {result.Error.Message} code {result.Error.Code}", null);
+                                logger.Error(() => $"[{LogCategory}] {BitcoinCommands.WalletPassphrase} returned error: {response.Error.Message} code {response.Error.Code}");
+                                NotifyPayoutFailure(poolConfig.Id, page, $"{BitcoinCommands.WalletPassphrase} returned error: {response.Error.Message} code {response.Error.Code}", null);
                                 break;
                             }
                         }
@@ -228,16 +226,17 @@ namespace Miningcore.Blockchain.Equihash
 
                     else
                     {
-                        logger.Error(() => $"[{LogCategory}] {EquihashCommands.ZSendMany} returned error: {result.Error.Message} code {result.Error.Code}");
+                        logger.Error(() => $"[{LogCategory}] {EquihashCommands.ZSendMany} returned error: {response.Error.Message} code {response.Error.Code}");
 
-                        NotifyPayoutFailure(poolConfig.Id, page, $"{EquihashCommands.ZSendMany} returned error: {result.Error.Message} code {result.Error.Code}", null);
+                        NotifyPayoutFailure(poolConfig.Id, page, $"{EquihashCommands.ZSendMany} returned error: {response.Error.Message} code {response.Error.Code}", null);
                     }
                 }
             }
 
             // lock wallet
             logger.Info(() => $"[{LogCategory}] Locking wallet");
-            await daemon.ExecuteCmdSingleAsync<JToken>(logger, BitcoinCommands.WalletLock, ct);
+
+            await rpcClient.ExecuteAsync<JToken>(logger, BitcoinCommands.WalletLock, ct);
         }
 
         #endregion // IPayoutHandler
@@ -257,19 +256,19 @@ namespace Miningcore.Blockchain.Equihash
                 poolExtraConfig.ZAddress, // dest:   pool's z-addr
             };
 
-            var result = await daemon.ExecuteCmdSingleAsync<ZCashShieldingResponse>(logger, EquihashCommands.ZShieldCoinbase, ct, args);
+            var response = await rpcClient.ExecuteAsync<ZCashShieldingResponse>(logger, EquihashCommands.ZShieldCoinbase, ct, args);
 
-            if(result.Error != null)
+            if(response.Error != null)
             {
-                if(result.Error.Code == -6)
+                if(response.Error.Code == -6)
                     logger.Info(() => $"[{LogCategory}] No funds to shield");
                 else
-                    logger.Error(() => $"[{LogCategory}] {EquihashCommands.ZShieldCoinbase} returned error: {result.Error.Message} code {result.Error.Code}");
+                    logger.Error(() => $"[{LogCategory}] {EquihashCommands.ZShieldCoinbase} returned error: {response.Error.Message} code {response.Error.Code}");
 
                 return;
             }
 
-            var operationId = result.Response.OperationId;
+            var operationId = response.Response.OperationId;
 
             logger.Info(() => $"[{LogCategory}] {EquihashCommands.ZShieldCoinbase} operation id: {operationId}");
 
@@ -277,7 +276,7 @@ namespace Miningcore.Blockchain.Equihash
 
             while(continueWaiting)
             {
-                var operationResultResponse = await daemon.ExecuteCmdSingleAsync<ZCashAsyncOperationStatus[]>(logger,
+                var operationResultResponse = await rpcClient.ExecuteAsync<ZCashAsyncOperationStatus[]>(logger,
                     EquihashCommands.ZGetOperationResult, ct, new object[] { new object[] { operationId } });
 
                 if(operationResultResponse.Error == null &&
@@ -309,7 +308,8 @@ namespace Miningcore.Blockchain.Equihash
                 }
 
                 logger.Info(() => $"[{LogCategory}] Waiting for shielding operation completion: {operationId}");
-                await Task.Delay(TimeSpan.FromSeconds(10));
+
+                await Task.Delay(TimeSpan.FromSeconds(10), ct);
             }
         }
 
@@ -318,15 +318,15 @@ namespace Miningcore.Blockchain.Equihash
             logger.Info(() => $"[{LogCategory}] Shielding ZCash Coinbase funds (emulated)");
 
             // get t-addr unspent balance for just the coinbase address (pool wallet)
-            var unspentResult = await daemon.ExecuteCmdSingleAsync<Utxo[]>(logger, BitcoinCommands.ListUnspent, ct);
+            var unspentResponse = await rpcClient.ExecuteAsync<Utxo[]>(logger, BitcoinCommands.ListUnspent, ct);
 
-            if(unspentResult.Error != null)
+            if(unspentResponse.Error != null)
             {
-                logger.Error(() => $"[{LogCategory}] {BitcoinCommands.ListUnspent} returned error: {unspentResult.Error.Message} code {unspentResult.Error.Code}");
+                logger.Error(() => $"[{LogCategory}] {BitcoinCommands.ListUnspent} returned error: {unspentResponse.Error.Message} code {unspentResponse.Error.Code}");
                 return;
             }
 
-            var balance = unspentResult.Response
+            var balance = unspentResponse.Response
                 .Where(x => x.Spendable && x.Address == poolConfig.Address)
                 .Sum(x => x.Amount);
 
@@ -358,15 +358,15 @@ namespace Miningcore.Blockchain.Equihash
             };
 
             // send command
-            var sendResult = await daemon.ExecuteCmdSingleAsync<string>(logger, EquihashCommands.ZSendMany, ct, args);
+            var sendResponse = await rpcClient.ExecuteAsync<string>(logger, EquihashCommands.ZSendMany, ct, args);
 
-            if(sendResult.Error != null)
+            if(sendResponse.Error != null)
             {
-                logger.Error(() => $"[{LogCategory}] {EquihashCommands.ZSendMany} returned error: {unspentResult.Error.Message} code {unspentResult.Error.Code}");
+                logger.Error(() => $"[{LogCategory}] {EquihashCommands.ZSendMany} returned error: {unspentResponse.Error.Message} code {unspentResponse.Error.Code}");
                 return;
             }
 
-            var operationId = sendResult.Response;
+            var operationId = sendResponse.Response;
 
             logger.Info(() => $"[{LogCategory}] {EquihashCommands.ZSendMany} operation id: {operationId}");
 
@@ -374,7 +374,7 @@ namespace Miningcore.Blockchain.Equihash
 
             while(continueWaiting)
             {
-                var operationResultResponse = await daemon.ExecuteCmdSingleAsync<ZCashAsyncOperationStatus[]>(logger,
+                var operationResultResponse = await rpcClient.ExecuteAsync<ZCashAsyncOperationStatus[]>(logger,
                     EquihashCommands.ZGetOperationResult, ct, new object[] { new object[] { operationId } });
 
                 if(operationResultResponse.Error == null &&
@@ -407,7 +407,8 @@ namespace Miningcore.Blockchain.Equihash
                 }
 
                 logger.Info(() => $"[{LogCategory}] Waiting for shielding transfer completion: {operationId}");
-                await Task.Delay(TimeSpan.FromSeconds(10));
+
+                await Task.Delay(TimeSpan.FromSeconds(10), ct);
             }
         }
     }

@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-using System.Reactive;
 using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
@@ -12,7 +11,6 @@ using Miningcore.Blockchain.Equihash.DaemonResponses;
 using Miningcore.Configuration;
 using Miningcore.Contracts;
 using Miningcore.Crypto.Hashing.Equihash;
-using Miningcore.DaemonInterface;
 using Miningcore.Extensions;
 using Miningcore.JsonRpc;
 using Miningcore.Messaging;
@@ -36,8 +34,9 @@ namespace Miningcore.Blockchain.Equihash
         }
 
         private EquihashCoinTemplate coin;
-        public EquihashCoinTemplate.EquihashNetworkParams ChainConfig { get; private set; }
         private EquihashSolver solver;
+
+        public EquihashCoinTemplate.EquihashNetworkParams ChainConfig { get; private set; }
 
         protected override void PostChainIdentifyConfigure()
         {
@@ -47,33 +46,30 @@ namespace Miningcore.Blockchain.Equihash
             base.PostChainIdentifyConfigure();
         }
 
-        private async Task<DaemonResponse<EquihashBlockTemplate>> GetBlockTemplateAsync(CancellationToken ct)
+        private async Task<RpcResponse<EquihashBlockTemplate>> GetBlockTemplateAsync(CancellationToken ct)
         {
             logger.LogInvoke();
 
-            var subsidyResponse = await daemon.ExecuteCmdAnyAsync<ZCashBlockSubsidy>(logger, BitcoinCommands.GetBlockSubsidy, ct);
+            var subsidyResponse = await rpcClient.ExecuteAsync<ZCashBlockSubsidy>(logger, BitcoinCommands.GetBlockSubsidy, ct);
 
-            var result = await daemon.ExecuteCmdAnyAsync<EquihashBlockTemplate>(logger,
+            var result = await rpcClient.ExecuteAsync<EquihashBlockTemplate>(logger,
                 BitcoinCommands.GetBlockTemplate, ct, extraPoolConfig?.GBTArgs ?? (object) GetBlockTemplateParams());
 
             if(subsidyResponse.Error == null && result.Error == null && result.Response != null)
                 result.Response.Subsidy = subsidyResponse.Response;
             else if(subsidyResponse.Error?.Code != (int) BitcoinRPCErrorCode.RPC_METHOD_NOT_FOUND)
-                result.Error = new JsonRpcException(-1, $"{BitcoinCommands.GetBlockSubsidy} failed", null);
+                result = new RpcResponse<EquihashBlockTemplate>(null, new JsonRpcError(-1, $"{BitcoinCommands.GetBlockSubsidy} failed", null));
 
             return result;
         }
 
-        private DaemonResponse<EquihashBlockTemplate> GetBlockTemplateFromJson(string json)
+        private RpcResponse<EquihashBlockTemplate> GetBlockTemplateFromJson(string json)
         {
             logger.LogInvoke();
 
             var result = JsonConvert.DeserializeObject<JsonRpcResponse>(json);
 
-            return new DaemonResponse<EquihashBlockTemplate>
-            {
-                Response = result.ResultAs<EquihashBlockTemplate>(),
-            };
+            return new RpcResponse<EquihashBlockTemplate>(result.ResultAs<EquihashBlockTemplate>());
         }
 
         protected override IDestination AddressToDestination(string address, BitcoinAddressType? addressType)
@@ -210,13 +206,13 @@ namespace Miningcore.Blockchain.Equihash
                 return true;
 
             // handle z-addr
-            var result = await daemon.ExecuteCmdAnyAsync<ValidateAddressResponse>(logger, ct,
-                EquihashCommands.ZValidateAddress, new[] { address });
+            var result = await rpcClient.ExecuteAsync<ValidateAddressResponse>(logger,
+                EquihashCommands.ZValidateAddress, ct, new[] { address });
 
             return result.Response is {IsValid: true};
         }
 
-        public override object[] GetSubscriberData(StratumConnection worker)
+        public object[] GetSubscriberData(StratumConnection worker)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
 
@@ -234,7 +230,7 @@ namespace Miningcore.Blockchain.Equihash
             return responseData;
         }
 
-        public override async ValueTask<Share> SubmitShareAsync(StratumConnection worker, object submission,
+        public async ValueTask<Share> SubmitShareAsync(StratumConnection worker, object submission,
             double stratumDifficultyBase, CancellationToken ct)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
@@ -270,11 +266,6 @@ namespace Miningcore.Blockchain.Equihash
             if(job == null)
                 throw new StratumException(StratumError.JobNotFound, "job not found");
 
-            // extract worker/miner/payoutid
-            var split = workerValue.Split('.');
-            var minerName = split[0];
-            var workerName = split.Length > 1 ? split[1] : null;
-
             // validate & process
             var (share, blockHex) = job.ProcessShare(worker, extraNonce2, nTime, solution);
 
@@ -290,7 +281,7 @@ namespace Miningcore.Blockchain.Equihash
 
                 if(share.IsBlockCandidate)
                 {
-                    logger.Info(() => $"Daemon accepted block {share.BlockHeight} [{share.BlockHash}] submitted by {minerName}");
+                    logger.Info(() => $"Daemon accepted block {share.BlockHeight} [{share.BlockHash}] submitted by {context.Miner}");
 
                     OnBlockFound();
 
@@ -309,8 +300,8 @@ namespace Miningcore.Blockchain.Equihash
             // enrich share with common data
             share.PoolId = poolConfig.Id;
             share.IpAddress = worker.RemoteEndpoint.Address.ToString();
-            share.Miner = minerName;
-            share.Worker = workerName;
+            share.Miner = context.Miner;
+            share.Worker = context.Worker;
             share.UserAgent = context.UserAgent;
             share.Source = clusterConfig.ClusterName;
             share.NetworkDifficulty = job.Difficulty;

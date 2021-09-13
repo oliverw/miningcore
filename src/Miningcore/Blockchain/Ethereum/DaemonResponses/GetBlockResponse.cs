@@ -177,5 +177,11 @@ namespace Miningcore.Blockchain.Ethereum.DaemonResponses
         /// Array of uncle hashes.
         /// </summary>
         public string[] Uncles { get; set; }
+
+        /// <summary>
+        /// Base fee per gas.
+        /// </summary>
+        [JsonConverter(typeof(HexToIntegralTypeJsonConverter<ulong>))]
+        public ulong BaseFeePerGas { get; set; }
     }
 }

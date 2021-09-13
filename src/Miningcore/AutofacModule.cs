@@ -20,6 +20,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Module = Autofac.Module;
 using Microsoft.AspNetCore.Mvc;
+using Miningcore.Blockchain.Ergo;
 using Miningcore.Nicehash;
 using Miningcore.Pushover;
 
@@ -146,11 +147,18 @@ namespace Miningcore
             // Ethereum
 
             builder.RegisterType<EthereumJobManager>();
+            builder.RegisterType<EthereumJobManager>();
 
             //////////////////////
             // ZCash
 
             builder.RegisterType<EquihashJobManager>();
+
+            //////////////////////
+            // Ergo
+
+            builder.RegisterType<EquihashJobManager>();
+            builder.RegisterType<ErgoJobManager>();
 
             base.Load(builder);
         }

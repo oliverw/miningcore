@@ -83,13 +83,13 @@ namespace Miningcore.Notifications
                 var coin = poolConfigs[notification.PoolId].Template;
 
                 // prepare tx links
-                string[] txLinks = null;
+                var txLinks = new string[0];
 
                 if(!string.IsNullOrEmpty(coin.ExplorerTxLink))
                     txLinks = notification.TxIds.Select(txHash => string.Format(coin.ExplorerTxLink, txHash)).ToArray();
 
                 const string subject = "Payout Success Notification";
-                var message = $"Paid {FormatAmount(notification.Amount, notification.PoolId)} from pool {notification.PoolId} to {notification.RecpientsCount} recipients in Transaction(s) {txLinks}.";
+                var message = $"Paid {FormatAmount(notification.Amount, notification.PoolId)} from pool {notification.PoolId} to {notification.RecpientsCount} recipients in transaction(s) {(string.Join(", ", txLinks))}";
 
                 if(clusterConfig.Notifications?.Admin?.NotifyPaymentSuccess == true)
                 {

@@ -1493,5 +1493,13 @@
         },
         "explorerTxLink": "https://explorer.callisto.network/tx/{0}",
         "explorerAccountLink": "https://explorer.callisto.network/address/{0}"
+    },
+    "ergo": {
+        "name": "Ergo",
+        "symbol": "ERG",
+        "family": "ergo",
+        "explorerBlockLink": "https://explorer.ergoplatform.com/en/blocks/$hash$",
+        "explorerTxLink": "https://explorer.ergoplatform.com/en/transactions/{0}",
+        "explorerAccountLink": "https://explorer.ergoplatform.com/en/addresses/{0}"
     }
 }

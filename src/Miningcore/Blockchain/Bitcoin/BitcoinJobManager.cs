@@ -8,7 +8,6 @@ using Miningcore.Blockchain.Bitcoin.DaemonResponses;
 using Miningcore.Configuration;
 using Miningcore.Contracts;
 using Miningcore.Crypto;
-using Miningcore.DaemonInterface;
 using Miningcore.Extensions;
 using Miningcore.JsonRpc;
 using Miningcore.Messaging;
@@ -48,26 +47,23 @@ namespace Miningcore.Blockchain.Bitcoin
             return result;
         }
 
-        protected async Task<DaemonResponse<BlockTemplate>> GetBlockTemplateAsync(CancellationToken ct)
+        protected async Task<RpcResponse<BlockTemplate>> GetBlockTemplateAsync(CancellationToken ct)
         {
             logger.LogInvoke();
 
-            var result = await daemon.ExecuteCmdAnyAsync<BlockTemplate>(logger,
+            var result = await rpcClient.ExecuteAsync<BlockTemplate>(logger,
                 BitcoinCommands.GetBlockTemplate, ct, extraPoolConfig?.GBTArgs ?? (object) GetBlockTemplateParams());
 
             return result;
         }
 
-        protected DaemonResponse<BlockTemplate> GetBlockTemplateFromJson(string json)
+        protected RpcResponse<BlockTemplate> GetBlockTemplateFromJson(string json)
         {
             logger.LogInvoke();
 
             var result = JsonConvert.DeserializeObject<JsonRpcResponse>(json);
 
-            return new DaemonResponse<BlockTemplate>
-            {
-                Response = result.ResultAs<BlockTemplate>(),
-            };
+            return new RpcResponse<BlockTemplate>(result.ResultAs<BlockTemplate>());
         }
 
         private BitcoinJob CreateJob()
@@ -194,7 +190,7 @@ namespace Miningcore.Blockchain.Bitcoin
             base.Configure(poolConfig, clusterConfig);
         }
 
-        public override object[] GetSubscriberData(StratumConnection worker)
+        public virtual object[] GetSubscriberData(StratumConnection worker)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
 
@@ -213,7 +209,7 @@ namespace Miningcore.Blockchain.Bitcoin
             return responseData;
         }
 
-        public override async ValueTask<Share> SubmitShareAsync(StratumConnection worker, object submission,
+        public virtual async ValueTask<Share> SubmitShareAsync(StratumConnection worker, object submission,
             double stratumDifficultyBase, CancellationToken ct)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
@@ -247,19 +243,14 @@ namespace Miningcore.Blockchain.Bitcoin
             if(job == null)
                 throw new StratumException(StratumError.JobNotFound, "job not found");
 
-            // extract worker/miner/payoutid
-            var split = workerValue.Split('.');
-            var minerName = split[0];
-            var workerName = split.Length > 1 ? split[1] : null;
-
             // validate & process
             var (share, blockHex) = job.ProcessShare(worker, extraNonce2, nTime, nonce, versionBits);
 
             // enrich share with common data
             share.PoolId = poolConfig.Id;
             share.IpAddress = worker.RemoteEndpoint.Address.ToString();
-            share.Miner = minerName;
-            share.Worker = workerName;
+            share.Miner = context.Miner;
+            share.Worker = context.Worker;
             share.UserAgent = context.UserAgent;
             share.Source = clusterConfig.ClusterName;
             share.Created = clock.Now;
@@ -276,7 +267,7 @@ namespace Miningcore.Blockchain.Bitcoin
 
                 if(share.IsBlockCandidate)
                 {
-                    logger.Info(() => $"Daemon accepted block {share.BlockHeight} [{share.BlockHash}] submitted by {minerName}");
+                    logger.Info(() => $"Daemon accepted block {share.BlockHeight} [{share.BlockHash}] submitted by {context.Miner}");
 
                     OnBlockFound();
 

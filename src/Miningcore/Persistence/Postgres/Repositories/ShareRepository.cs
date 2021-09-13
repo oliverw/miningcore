@@ -193,5 +193,17 @@ namespace Miningcore.Persistence.Postgres.Repositories
             return (await con.QueryAsync<MinerWorkerHashes>(query, new { poolId, start, end }))
                 .ToArray();
         }
+
+        public async Task<string[]> GetRecentyUsedIpAddresses(IDbConnection con, IDbTransaction tx, string poolId, string miner)
+        {
+            logger.LogInvoke(new object[] { poolId });
+
+            const string query = "SELECT DISTINCT s.ipaddress FROM (SELECT * FROM shares " +
+                                 "WHERE poolid = @poolId and miner = @miner ORDER BY CREATED DESC LIMIT 100) s";
+
+            return (await con.QueryAsync<string>(query, new { poolId, miner }, tx))
+                .ToArray();
+        }
     }
 }
+

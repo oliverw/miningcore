@@ -10,8 +10,8 @@ using Miningcore.Blockchain.Cryptonote.Configuration;
 using Miningcore.Blockchain.Cryptonote.DaemonRequests;
 using Miningcore.Blockchain.Cryptonote.DaemonResponses;
 using Miningcore.Configuration;
-using Miningcore.DaemonInterface;
 using Miningcore.Extensions;
+using Miningcore.JsonRpc;
 using Miningcore.Messaging;
 using Miningcore.Mining;
 using Miningcore.Native;
@@ -52,15 +52,15 @@ namespace Miningcore.Blockchain.Cryptonote
         }
 
         private readonly IComponentContext ctx;
-        private DaemonClient daemon;
-        private DaemonClient walletDaemon;
+        private RpcClient rpcClient;
+        private RpcClient rpcClientWallet;
         private CryptonoteNetworkType? networkType;
         private CryptonotePoolPaymentProcessingConfigExtra extraConfig;
         private bool walletSupportsTransferSplit;
 
         protected override string LogCategory => "Cryptonote Payout Handler";
 
-        private async Task<bool> HandleTransferResponseAsync(DaemonResponse<TransferResponse> response, params Balance[] balances)
+        private async Task<bool> HandleTransferResponseAsync(RpcResponse<TransferResponse> response, params Balance[] balances)
         {
             var coin = poolConfig.Template.As<CryptonoteCoinTemplate>();
 
@@ -85,7 +85,7 @@ namespace Miningcore.Blockchain.Cryptonote
             }
         }
 
-        private async Task<bool> HandleTransferResponseAsync(DaemonResponse<TransferSplitResponse> response, params Balance[] balances)
+        private async Task<bool> HandleTransferResponseAsync(RpcResponse<TransferSplitResponse> response, params Balance[] balances)
         {
             var coin = poolConfig.Template.As<CryptonoteCoinTemplate>();
 
@@ -114,7 +114,7 @@ namespace Miningcore.Blockchain.Cryptonote
         {
             if(!networkType.HasValue)
             {
-                var infoResponse = await daemon.ExecuteCmdAnyAsync(logger, CNC.GetInfo, ct, true);
+                var infoResponse = await rpcClient.ExecuteAsync(logger, CNC.GetInfo, ct, true);
                 var info = infoResponse.Response.ToObject<GetInfoResponse>();
 
                 // chain detection
@@ -144,7 +144,7 @@ namespace Miningcore.Blockchain.Cryptonote
 
         private async Task<bool> EnsureBalance(decimal requiredAmount, CryptonoteCoinTemplate coin, CancellationToken ct)
         {
-            var response = await walletDaemon.ExecuteCmdSingleAsync<GetBalanceResponse>(logger, CryptonoteWalletCommands.GetBalance, ct);
+            var response = await rpcClientWallet.ExecuteAsync<GetBalanceResponse>(logger, CryptonoteWalletCommands.GetBalance, ct);
 
             if(response.Error != null)
             {
@@ -198,7 +198,7 @@ namespace Miningcore.Blockchain.Cryptonote
             logger.Info(() => $"[{LogCategory}] Paying {FormatAmount(balances.Sum(x => x.Amount))} to {balances.Length} addresses:\n{string.Join("\n", balances.OrderByDescending(x => x.Amount).Select(x => $"{FormatAmount(x.Amount)} to {x.Address}"))}");
 
             // send command
-            var transferResponse = await walletDaemon.ExecuteCmdSingleAsync<TransferResponse>(logger, CryptonoteWalletCommands.Transfer, ct, request);
+            var transferResponse = await rpcClientWallet.ExecuteAsync<TransferResponse>(logger, CryptonoteWalletCommands.Transfer, ct, request);
 
             // gracefully handle error -4 (transaction would be too large. try /transfer_split)
             if(transferResponse.Error?.Code == -4)
@@ -208,7 +208,7 @@ namespace Miningcore.Blockchain.Cryptonote
                     logger.Error(() => $"[{LogCategory}] Daemon command '{CryptonoteWalletCommands.Transfer}' returned error: {transferResponse.Error.Message} code {transferResponse.Error.Code}");
                     logger.Info(() => $"[{LogCategory}] Retrying transfer using {CryptonoteWalletCommands.TransferSplit}");
 
-                    var transferSplitResponse = await walletDaemon.ExecuteCmdSingleAsync<TransferSplitResponse>(logger, CryptonoteWalletCommands.TransferSplit, ct, request);
+                    var transferSplitResponse = await rpcClientWallet.ExecuteAsync<TransferSplitResponse>(logger, CryptonoteWalletCommands.TransferSplit, ct, request);
 
                     return await HandleTransferResponseAsync(transferSplitResponse, balances);
                 }
@@ -275,7 +275,7 @@ namespace Miningcore.Blockchain.Cryptonote
                 logger.Info(() => $"[{LogCategory}] Paying {FormatAmount(balance.Amount)} to integrated address {balance.Address}");
 
             // send command
-            var result = await walletDaemon.ExecuteCmdSingleAsync<TransferResponse>(logger, CryptonoteWalletCommands.Transfer, ct, request);
+            var result = await rpcClientWallet.ExecuteAsync<TransferResponse>(logger, CryptonoteWalletCommands.Transfer, ct, request);
 
             if(walletSupportsTransferSplit)
             {
@@ -284,7 +284,7 @@ namespace Miningcore.Blockchain.Cryptonote
                 {
                     logger.Info(() => $"[{LogCategory}] Retrying transfer using {CryptonoteWalletCommands.TransferSplit}");
 
-                    result = await walletDaemon.ExecuteCmdSingleAsync<TransferResponse>(logger, CryptonoteWalletCommands.TransferSplit, ct, request);
+                    result = await rpcClientWallet.ExecuteAsync<TransferResponse>(logger, CryptonoteWalletCommands.TransferSplit, ct, request);
                 }
             }
 
@@ -317,8 +317,7 @@ namespace Miningcore.Blockchain.Cryptonote
                 })
                 .ToArray();
 
-            daemon = new DaemonClient(jsonSerializerSettings, messageBus, clusterConfig.ClusterName ?? poolConfig.PoolName, poolConfig.Id);
-            daemon.Configure(daemonEndpoints);
+            rpcClient = new RpcClient(daemonEndpoints.First(), jsonSerializerSettings, messageBus, poolConfig.Id);
 
             // configure wallet daemon
             var walletDaemonEndpoints = poolConfig.Daemons
@@ -332,14 +331,13 @@ namespace Miningcore.Blockchain.Cryptonote
                 })
                 .ToArray();
 
-            walletDaemon = new DaemonClient(jsonSerializerSettings, messageBus, clusterConfig.ClusterName ?? poolConfig.PoolName, poolConfig.Id);
-            walletDaemon.Configure(walletDaemonEndpoints);
+            rpcClientWallet = new RpcClient(walletDaemonEndpoints.First(), jsonSerializerSettings, messageBus, poolConfig.Id);
 
             // detect network
             await UpdateNetworkTypeAsync(ct);
 
             // detect transfer_split support
-            var response = await walletDaemon.ExecuteCmdSingleAsync<TransferResponse>(logger, CryptonoteWalletCommands.TransferSplit, ct);
+            var response = await rpcClientWallet.ExecuteAsync<TransferResponse>(logger, CryptonoteWalletCommands.TransferSplit, ct);
             walletSupportsTransferSplit = response.Error.Code != CryptonoteConstants.MoneroRpcMethodNotFound;
         }
 
@@ -366,7 +364,7 @@ namespace Miningcore.Blockchain.Cryptonote
                 {
                     var block = page[j];
 
-                    var rpcResult = await daemon.ExecuteCmdAnyAsync<GetBlockHeaderResponse>(logger,
+                    var rpcResult = await rpcClient.ExecuteAsync<GetBlockHeaderResponse>(logger,
                         CNC.GetBlockHeaderByHeight, ct,
                         new GetBlockHeaderByHeightRequest
                         {
@@ -427,7 +425,8 @@ namespace Miningcore.Blockchain.Cryptonote
             return Task.FromResult(true);
         }
 
-        public override async Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, IMiningPool pool, Block block, CancellationToken ct)
+        public override async Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx,
+            IMiningPool pool, Block block, CancellationToken ct)
         {
             var blockRewardRemaining = await base.UpdateBlockRewardBalancesAsync(con, tx, pool, block, ct);
 
@@ -444,7 +443,7 @@ namespace Miningcore.Blockchain.Cryptonote
             var coin = poolConfig.Template.As<CryptonoteCoinTemplate>();
 
 #if !DEBUG // ensure we have peers
-            var infoResponse = await daemon.ExecuteCmdAnyAsync<GetInfoResponse>(logger, CNC.GetInfo, ct);
+            var infoResponse = await rpcClient.ExecuteAsync<GetInfoResponse>(logger, CNC.GetInfo, ct);
             if (infoResponse.Error != null || infoResponse.Response == null ||
                 infoResponse.Response.IncomingConnectionsCount + infoResponse.Response.OutgoingConnectionsCount < 3)
             {
@@ -467,7 +466,7 @@ namespace Miningcore.Blockchain.Cryptonote
                             if(addressPrefix != coin.AddressPrefix &&
                                 addressIntegratedPrefix != coin.AddressPrefixIntegrated)
                             {
-                                logger.Warn(() => $"[{LogCategory}] Excluding payment to invalid address {x.Address}");
+                                logger.Warn(() => $"[{LogCategory}] Excluding payment to invalid address: {x.Address}");
                                 return false;
                             }
 
@@ -477,7 +476,7 @@ namespace Miningcore.Blockchain.Cryptonote
                             if(addressPrefix != coin.AddressPrefixStagenet &&
                                addressIntegratedPrefix != coin.AddressPrefixIntegratedStagenet)
                             {
-                                logger.Warn(() => $"[{LogCategory}] Excluding payment to invalid address {x.Address}");
+                                logger.Warn(() => $"[{LogCategory}] Excluding payment to invalid address: {x.Address}");
                                 return false;
                             }
 
@@ -487,7 +486,7 @@ namespace Miningcore.Blockchain.Cryptonote
                             if(addressPrefix != coin.AddressPrefixTestnet &&
                                 addressIntegratedPrefix != coin.AddressPrefixIntegratedTestnet)
                             {
-                                logger.Warn(() => $"[{LogCategory}] Excluding payment to invalid address {x.Address}");
+                                logger.Warn(() => $"[{LogCategory}] Excluding payment to invalid address: {x.Address}");
                                 return false;
                             }
 
@@ -561,7 +560,7 @@ namespace Miningcore.Blockchain.Cryptonote
             }
 
             // save wallet
-            await walletDaemon.ExecuteCmdSingleAsync<JToken>(logger, CryptonoteWalletCommands.Store, ct);
+            await rpcClientWallet.ExecuteAsync<JToken>(logger, CryptonoteWalletCommands.Store, ct);
         }
 
         #endregion // IPayoutHandler

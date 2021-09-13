@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Net;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Security.Cryptography;
@@ -16,7 +15,6 @@ using Miningcore.Blockchain.Cryptonote.DaemonRequests;
 using Miningcore.Blockchain.Cryptonote.DaemonResponses;
 using Miningcore.Blockchain.Cryptonote.StratumRequests;
 using Miningcore.Configuration;
-using Miningcore.DaemonInterface;
 using Miningcore.Extensions;
 using Miningcore.JsonRpc;
 using Miningcore.Messaging;
@@ -51,8 +49,8 @@ namespace Miningcore.Blockchain.Cryptonote
 
         private byte[] instanceId;
         private DaemonEndpointConfig[] daemonEndpoints;
-        private DaemonClient daemon;
-        private DaemonClient walletDaemon;
+        private RpcClient rpcClient;
+        private RpcClient rpcClientWallet;
         private readonly IMasterClock clock;
         private CryptonoteNetworkType networkType;
         private CryptonotePoolConfigExtra extraPoolConfig;
@@ -148,7 +146,7 @@ namespace Miningcore.Blockchain.Cryptonote
             return false;
         }
 
-        private async Task<DaemonResponse<GetBlockTemplateResponse>> GetBlockTemplateAsync(CancellationToken ct)
+        private async Task<RpcResponse<GetBlockTemplateResponse>> GetBlockTemplateAsync(CancellationToken ct)
         {
             logger.LogInvoke();
 
@@ -158,35 +156,31 @@ namespace Miningcore.Blockchain.Cryptonote
                 ReserveSize = CryptonoteConstants.ReserveSize
             };
 
-            return await daemon.ExecuteCmdAnyAsync<GetBlockTemplateResponse>(logger, CryptonoteCommands.GetBlockTemplate, ct, request);
+            return await rpcClient.ExecuteAsync<GetBlockTemplateResponse>(logger, CryptonoteCommands.GetBlockTemplate, ct, request);
         }
 
-        private DaemonResponse<GetBlockTemplateResponse> GetBlockTemplateFromJson(string json)
+        private RpcResponse<GetBlockTemplateResponse> GetBlockTemplateFromJson(string json)
         {
             logger.LogInvoke();
 
             var result = JsonConvert.DeserializeObject<JsonRpcResponse>(json);
 
-            return new DaemonResponse<GetBlockTemplateResponse>
-            {
-                Response = result.ResultAs<GetBlockTemplateResponse>(),
-            };
+            return new RpcResponse<GetBlockTemplateResponse>(result.ResultAs<GetBlockTemplateResponse>());
         }
 
         private async Task ShowDaemonSyncProgressAsync(CancellationToken ct)
         {
-            var infos = await daemon.ExecuteCmdAllAsync<GetInfoResponse>(logger, CryptonoteCommands.GetInfo, ct);
-            var firstValidResponse = infos.FirstOrDefault(x => x.Error == null && x.Response != null)?.Response;
+            var response = await rpcClient.ExecuteAsync<GetInfoResponse>(logger, CryptonoteCommands.GetInfo, ct);
+            var info = response.Response;
 
-            if(firstValidResponse != null)
+            if(info != null)
             {
-                var lowestHeight = infos.Where(x => x.Error == null && x.Response != null)
-                    .Min(x => x.Response.Height);
+                var lowestHeight = info.Height;
 
-                var totalBlocks = firstValidResponse.TargetHeight;
+                var totalBlocks = info.TargetHeight;
                 var percent = (double) lowestHeight / totalBlocks * 100;
 
-                logger.Info(() => $"Daemons have downloaded {percent:0.00}% of blockchain from {firstValidResponse.OutgoingConnectionsCount} peers");
+                logger.Info(() => $"Daemons have downloaded {percent:0.00}% of blockchain from {info.OutgoingConnectionsCount} peers");
             }
         }
 
@@ -196,14 +190,14 @@ namespace Miningcore.Blockchain.Cryptonote
 
             try
             {
-                var infoResponse = await daemon.ExecuteCmdAnyAsync(logger, CryptonoteCommands.GetInfo, ct);
+                var response = await rpcClient.ExecuteAsync(logger, CryptonoteCommands.GetInfo, ct);
 
-                if(infoResponse.Error != null)
-                    logger.Warn(() => $"Error(s) refreshing network stats: {infoResponse.Error.Message} (Code {infoResponse.Error.Code})");
+                if(response.Error != null)
+                    logger.Warn(() => $"Error(s) refreshing network stats: {response.Error.Message} (Code {response.Error.Code})");
 
-                if(infoResponse.Response != null)
+                if(response.Response != null)
                 {
-                    var info = infoResponse.Response.ToObject<GetInfoResponse>();
+                    var info = response.Response.ToObject<GetInfoResponse>();
 
                     BlockchainStats.NetworkHashrate = info.Target > 0 ? (double) info.Difficulty / info.Target : 0;
                     BlockchainStats.ConnectedPeers = info.OutgoingConnectionsCount + info.IncomingConnectionsCount;
@@ -218,7 +212,7 @@ namespace Miningcore.Blockchain.Cryptonote
 
         private async Task<bool> SubmitBlockAsync(Share share, string blobHex, string blobHash)
         {
-            var response = await daemon.ExecuteCmdAnyAsync<SubmitResponse>(logger, CryptonoteCommands.SubmitBlock, CancellationToken.None, new[] { blobHex });
+            var response = await rpcClient.ExecuteAsync<SubmitResponse>(logger, CryptonoteCommands.SubmitBlock, CancellationToken.None, new[] { blobHex });
 
             if(response.Error != null || response?.Response?.Status != "OK")
             {
@@ -439,41 +433,29 @@ namespace Miningcore.Blockchain.Cryptonote
         {
             var jsonSerializerSettings = ctx.Resolve<JsonSerializerSettings>();
 
-            daemon = new DaemonClient(jsonSerializerSettings, messageBus, clusterConfig.ClusterName ?? poolConfig.PoolName, poolConfig.Id);
-            daemon.Configure(daemonEndpoints);
+            rpcClient = new RpcClient(daemonEndpoints.First(), jsonSerializerSettings, messageBus, poolConfig.Id);
 
             if(clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
             {
                 // also setup wallet daemon
-                walletDaemon = new DaemonClient(jsonSerializerSettings, messageBus, clusterConfig.ClusterName ?? poolConfig.PoolName, poolConfig.Id);
-                walletDaemon.Configure(walletDaemonEndpoints);
+                rpcClientWallet = new RpcClient(walletDaemonEndpoints.First(), jsonSerializerSettings, messageBus, poolConfig.Id);
             }
         }
 
         protected override async Task<bool> AreDaemonsHealthyAsync(CancellationToken ct)
         {
             // test daemons
-            var responses = await daemon.ExecuteCmdAllAsync<GetInfoResponse>(logger, CryptonoteCommands.GetInfo, ct);
+            var response = await rpcClient.ExecuteAsync<GetInfoResponse>(logger, CryptonoteCommands.GetInfo, ct);
 
-            if(responses.Where(x => x.Error?.InnerException?.GetType() == typeof(DaemonClientException))
-                .Select(x => (DaemonClientException) x.Error.InnerException)
-                .Any(x => x.Code == HttpStatusCode.Unauthorized))
-                logger.ThrowLogPoolStartupException("Daemon reports invalid credentials");
-
-            if(responses.Any(x => x.Error != null))
+            if(response.Error != null)
                 return false;
 
             if(clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
             {
                 // test wallet daemons
-                var responses2 = await walletDaemon.ExecuteCmdAllAsync<object>(logger, CryptonoteWalletCommands.GetAddress, ct);
+                var responses2 = await rpcClientWallet.ExecuteAsync<object>(logger, CryptonoteWalletCommands.GetAddress, ct);
 
-                if(responses2.Where(x => x.Error?.InnerException?.GetType() == typeof(DaemonClientException))
-                    .Select(x => (DaemonClientException) x.Error.InnerException)
-                    .Any(x => x.Code == HttpStatusCode.Unauthorized))
-                    logger.ThrowLogPoolStartupException("Wallet-Daemon reports invalid credentials");
-
-                return responses2.All(x => x.Error == null);
+                return responses2.Error == null;
             }
 
             return true;
@@ -481,7 +463,7 @@ namespace Miningcore.Blockchain.Cryptonote
 
         protected override async Task<bool> AreDaemonsConnectedAsync(CancellationToken ct)
         {
-            var response = await daemon.ExecuteCmdAnyAsync<GetInfoResponse>(logger, CryptonoteCommands.GetInfo, ct);
+            var response = await rpcClient.ExecuteAsync<GetInfoResponse>(logger, CryptonoteCommands.GetInfo, ct);
 
             return response.Error == null && response.Response != null &&
                 (response.Response.OutgoingConnectionsCount + response.Response.IncomingConnectionsCount) > 0;
@@ -499,10 +481,10 @@ namespace Miningcore.Blockchain.Cryptonote
                     ReserveSize = CryptonoteConstants.ReserveSize
                 };
 
-                var responses = await daemon.ExecuteCmdAllAsync<GetBlockTemplateResponse>(logger,
+                var response = await rpcClient.ExecuteAsync<GetBlockTemplateResponse>(logger,
                     CryptonoteCommands.GetBlockTemplate, ct, request);
 
-                var isSynched = responses.All(x => x.Error == null || x.Error.Code != -9);
+                var isSynched = response.Error is not {Code: -9};
 
                 if(isSynched)
                 {
@@ -529,14 +511,14 @@ namespace Miningcore.Blockchain.Cryptonote
 
             // coin config
             var coin = poolConfig.Template.As<CryptonoteCoinTemplate>();
-            var infoResponse = await daemon.ExecuteCmdAnyAsync(logger, CryptonoteCommands.GetInfo, ct);
+            var infoResponse = await rpcClient.ExecuteAsync(logger, CryptonoteCommands.GetInfo, ct);
 
             if(infoResponse.Error != null)
                 logger.ThrowLogPoolStartupException($"Init RPC failed: {infoResponse.Error.Message} (Code {infoResponse.Error.Code})");
 
             if(clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
             {
-                var addressResponse = await walletDaemon.ExecuteCmdAnyAsync<GetAddressResponse>(logger, ct, CryptonoteWalletCommands.GetAddress);
+                var addressResponse = await rpcClientWallet.ExecuteAsync<GetAddressResponse>(logger, CryptonoteWalletCommands.GetAddress, ct);
 
                 // ensure pool owns wallet
                 if(clusterConfig.PaymentProcessing?.Enabled == true && addressResponse.Response?.Address != poolConfig.Address)
@@ -669,7 +651,7 @@ namespace Miningcore.Blockchain.Cryptonote
                 {
                     logger.Info(() => $"Subscribing to ZMQ push-updates from {string.Join(", ", zmq.Values)}");
 
-                    var blockNotify = daemon.ZmqSubscribe(logger, ct, zmq)
+                    var blockNotify = rpcClient.ZmqSubscribe(logger, ct, zmq)
                         .Where(msg =>
                         {
                             bool result = false;

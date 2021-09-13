@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -71,10 +72,12 @@ namespace Miningcore.Stratum
             }
         }
 
-        protected readonly Dictionary<string, StratumConnection> connections = new();
-        protected static readonly Dictionary<string, X509Certificate2> certs = new();
+        protected readonly ConcurrentDictionary<string, StratumConnection> connections = new();
+        protected static readonly ConcurrentDictionary<string, X509Certificate2> certs = new();
         protected static readonly HashSet<int> ignoredSocketErrors;
-        protected static readonly MethodBase streamWriterCtor = typeof(StreamWriter).GetConstructor(new[] { typeof(Stream), typeof(Encoding), typeof(int), typeof(bool) });
+
+        protected static readonly MethodBase streamWriterCtor = typeof(StreamWriter).GetConstructor(
+            new[] { typeof(Stream), typeof(Encoding), typeof(int), typeof(bool) });
 
         protected readonly IComponentContext ctx;
         protected readonly IMessageBus messageBus;
@@ -97,14 +100,16 @@ namespace Miningcore.Stratum
                 server.Bind(port.IPEndPoint);
                 server.Listen();
 
-                return Listen(server, port, GetTlsCert(port), ct);
+                return Task.Run(()=> Listen(server, port, ct), ct);
             }).ToArray();
 
             return Task.WhenAll(tasks);
         }
 
-        private async Task Listen(Socket server, StratumEndpoint port, X509Certificate2 cert, CancellationToken ct)
+        private async Task Listen(Socket server, StratumEndpoint port, CancellationToken ct)
         {
+            var cert = GetTlsCert(port);
+
             while(!ct.IsCancellationRequested)
             {
                 try
@@ -129,55 +134,39 @@ namespace Miningcore.Stratum
 
         private void AcceptConnection(Socket socket, StratumEndpoint port, X509Certificate2 cert, CancellationToken ct)
         {
-            Task.Run(() =>
+            Task.Run(() => Guard(() =>
             {
-                var client = (IPEndPoint) socket.RemoteEndPoint;
-
-                // dispose of banned clients as early as possible
-                if(client != null && banManager?.IsBanned(client.Address) == true)
-                {
-                    logger.Debug(() => $"Disconnecting banned ip {client.Address}");
-                    socket.Close();
-                    return;
-                }
-
-                var connectionId = CorrelationIdGenerator.GetNextId();
-                var connection = new StratumConnection(logger, clock, connectionId);
                 var remoteEndpoint = (IPEndPoint) socket.RemoteEndPoint;
 
-                logger.Info(() => $"[{connectionId}] Accepting connection from {remoteEndpoint.Address}:{remoteEndpoint.Port} ...");
+                // dispose of banned clients as early as possible
+                if (DisconnectIfBanned(socket, remoteEndpoint))
+                    return;
 
-                RegisterConnection(connection, connectionId);
+                // init connection
+                var connection = new StratumConnection(logger, clock, CorrelationIdGenerator.GetNextId());
+
+                logger.Info(() => $"[{connection.ConnectionId}] Accepting connection from {remoteEndpoint.Address}:{remoteEndpoint.Port} ...");
+
+                RegisterConnection(connection);
                 OnConnect(connection, port.IPEndPoint);
 
                 connection.DispatchAsync(socket, ct, port, remoteEndpoint, cert, OnRequestAsync, OnConnectionComplete, OnConnectionError);
-            }, ct);
+            }, ex=> logger.Error(ex)), ct);
         }
 
-        protected virtual void RegisterConnection(StratumConnection connection, string connectionId)
+        protected virtual void RegisterConnection(StratumConnection connection)
         {
-            lock(connections)
-            {
-                connections[connectionId] = connection;
-            }
+            var result = connections.TryAdd(connection.ConnectionId, connection);
+            Debug.Assert(result);
 
-            // ReSharper disable once InconsistentlySynchronizedField
             PublishTelemetry(TelemetryCategory.Connections, TimeSpan.Zero, true, connections.Count);
         }
 
         protected virtual void UnregisterConnection(StratumConnection connection)
         {
-            var subscriptionId = connection.ConnectionId;
+            var result = connections.TryRemove(connection.ConnectionId, out _);
+            Debug.Assert(result);
 
-            if(!string.IsNullOrEmpty(subscriptionId))
-            {
-                lock(connections)
-                {
-                    connections.Remove(subscriptionId);
-                }
-            }
-
-            // ReSharper disable once InconsistentlySynchronizedField
             PublishTelemetry(TelemetryCategory.Connections, TimeSpan.Zero, true, connections.Count);
         }
 
@@ -282,6 +271,7 @@ namespace Miningcore.Stratum
             Contract.RequiresNonNull(connection, nameof(connection));
 
             connection.Disconnect();
+
             UnregisterConnection(connection);
         }
 
@@ -304,37 +294,25 @@ namespace Miningcore.Stratum
             return cert;
         }
 
-        protected void ForEachConnection(Action<StratumConnection> action)
+        private bool DisconnectIfBanned(Socket socket, IPEndPoint remoteEndpoint)
         {
-            StratumConnection[] tmp;
+            if(remoteEndpoint == null || banManager == null)
+                return false;
 
-            lock(connections)
+            if (banManager.IsBanned(remoteEndpoint.Address))
             {
-                tmp = connections.Values.ToArray();
+                logger.Debug(() => $"Disconnecting banned ip {remoteEndpoint.Address}");
+                socket.Close();
+
+                return true;
             }
 
-            foreach(var client in tmp)
-            {
-                try
-                {
-                    action(client);
-                }
-
-                catch(Exception ex)
-                {
-                    logger.Error(ex);
-                }
-            }
+            return false;
         }
 
         protected IEnumerable<Task> ForEachConnection(Func<StratumConnection, Task> func)
         {
-            StratumConnection[] tmp;
-
-            lock(connections)
-            {
-                tmp = connections.Values.ToArray();
-            }
+            var tmp = connections.Values.ToArray();
 
             return tmp.Select(func);
         }

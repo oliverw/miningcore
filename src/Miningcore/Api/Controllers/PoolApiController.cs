@@ -1,5 +1,4 @@
 using Autofac;
-using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Miningcore.Api.Extensions;
@@ -8,20 +7,19 @@ using Miningcore.Blockchain;
 using Miningcore.Configuration;
 using Miningcore.Extensions;
 using Miningcore.Mining;
-using Miningcore.Persistence;
 using Miningcore.Persistence.Model;
 using Miningcore.Persistence.Model.Projections;
 using Miningcore.Persistence.Repositories;
 using Miningcore.Time;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Data;
 using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc.ActionConstraints;
+using NLog;
 
 namespace Miningcore.Api.Controllers
 {
@@ -33,6 +31,8 @@ namespace Miningcore.Api.Controllers
         {
             statsRepo = ctx.Resolve<IStatsRepository>();
             blocksRepo = ctx.Resolve<IBlockRepository>();
+            minerRepo = ctx.Resolve<IMinerRepository>();
+            shareRepo = ctx.Resolve<IShareRepository>();
             paymentsRepo = ctx.Resolve<IPaymentRepository>();
             clock = ctx.Resolve<IMasterClock>();
             pools = ctx.Resolve<ConcurrentDictionary<string, IMiningPool>>();
@@ -42,9 +42,13 @@ namespace Miningcore.Api.Controllers
         private readonly IStatsRepository statsRepo;
         private readonly IBlockRepository blocksRepo;
         private readonly IPaymentRepository paymentsRepo;
+        private readonly IMinerRepository minerRepo;
+        private readonly IShareRepository shareRepo;
         private readonly IMasterClock clock;
         private readonly IActionDescriptorCollectionProvider adcp;
         private readonly ConcurrentDictionary<string, IMiningPool> pools;
+
+        private static readonly NLog.ILogger logger = LogManager.GetCurrentClassLogger();
 
         #region Actions
 
@@ -535,6 +539,70 @@ namespace Miningcore.Api.Controllers
             var result = await GetMinerPerformanceInternal(mode, pool, address);
 
             return result;
+        }
+
+        [HttpGet("{poolId}/miners/{address}/settings")]
+        public async Task<Responses.MinerSettings> GetMinerSettingsAsync(string poolId, string address)
+        {
+            var pool = GetPool(poolId);
+
+            if(string.IsNullOrEmpty(address))
+                throw new ApiException("Invalid or missing miner address", HttpStatusCode.NotFound);
+
+            var result = await cf.Run(con=> minerRepo.GetSettings(con, null, pool.Id, address));
+
+            if(result == null)
+                throw new ApiException("No settings found", HttpStatusCode.NotFound);
+
+            return mapper.Map<Responses.MinerSettings>(result);
+        }
+
+        [HttpPost("{poolId}/miners/{address}/settings")]
+        public async Task<Responses.MinerSettings> SetMinerSettingsAsync(string poolId, string address,
+            [FromBody] Requests.UpdateMinerSettingsRequest request)
+        {
+            var pool = GetPool(poolId);
+
+            if(string.IsNullOrEmpty(address))
+                throw new ApiException("Invalid or missing miner address", HttpStatusCode.NotFound);
+
+            if(request?.Settings == null)
+                throw new ApiException("Invalid or missing settings", HttpStatusCode.BadRequest);
+
+            if(!IPAddress.TryParse(request.IpAddress, out var requestIp))
+                throw new ApiException("Invalid IP address", HttpStatusCode.BadRequest);
+
+            // fetch recent IPs
+            var ips = await cf.Run(con=> shareRepo.GetRecentyUsedIpAddresses(con, null, poolId, address));
+
+            // any known ips?
+            if(ips == null || ips.Length == 0)
+                throw new ApiException("Address not recently used for mining", HttpStatusCode.NotFound);
+
+            // match?
+            if(!ips.Any(x=> IPAddress.TryParse(x, out var ipAddress) && ipAddress.IsEqual(requestIp)))
+                throw new ApiException("None of the recently used IP addresses matches the request", HttpStatusCode.Forbidden);
+
+            // map settings
+            var mapped = mapper.Map<Persistence.Model.MinerSettings>(request.Settings);
+
+            // clamp limit
+            if(pool.PaymentProcessing != null)
+                mapped.PaymentThreshold = Math.Max(mapped.PaymentThreshold, pool.PaymentProcessing.MinimumPayment);
+
+            mapped.PoolId = pool.Id;
+            mapped.Address = address;
+
+            // finally update the settings
+            return await cf.RunTx(async (con, tx) =>
+            {
+                await minerRepo.UpdateSettings(con, tx, mapped);
+
+                logger.Info(()=> $"Updated settings for pool {pool.Id}, miner {address}");
+
+                var result = await minerRepo.GetSettings(con, tx, mapped.PoolId, mapped.Address);
+                return mapper.Map<Responses.MinerSettings>(result);
+            });
         }
 
         #endregion // Actions

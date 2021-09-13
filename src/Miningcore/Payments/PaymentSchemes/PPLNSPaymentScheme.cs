@@ -92,7 +92,6 @@ namespace Miningcore.Payments.PaymentSchemes
                 if(cutOffCount > 0)
                 {
                     await LogDiscardedSharesAsync(poolConfig, block, shareCutOffDate.Value);
-
 #if !DEBUG
                     logger.Info(() => $"Deleting {cutOffCount} discarded shares before {shareCutOffDate.Value:O}");
                     await shareRepo.DeleteSharesBeforeCreatedAsync(con, tx, poolConfig.Id, shareCutOffDate.Value);
@@ -156,7 +155,7 @@ namespace Miningcore.Payments.PaymentSchemes
 
         #endregion // IPayoutScheme
 
-        private async Task<DateTime?> CalculateRewardsAsync(IMiningPool pool, IPayoutHandler payoutHandler, decimal window, Block block, decimal blockReward,
+        private async Task<DateTime?> CalculateRewardsAsync(IMiningPool pool, IPayoutHandler payoutHandler,decimal window, Block block, decimal blockReward,
             Dictionary<string, double> shares, Dictionary<string, decimal> rewards, CancellationToken ct)
         {
             var poolConfig = pool.Config;
@@ -183,16 +182,16 @@ namespace Miningcore.Payments.PaymentSchemes
                 {
                     var share = page[i];
 
-                    // build address
                     var address = share.Miner;
+                    var shareDiffAdjusted = payoutHandler.AdjustShareDifficulty(share.Difficulty);
 
                     // record attributed shares for diagnostic purposes
                     if(!shares.ContainsKey(address))
-                        shares[address] = share.Difficulty;
+                        shares[address] = shareDiffAdjusted;
                     else
-                        shares[address] += share.Difficulty;
+                        shares[address] += shareDiffAdjusted;
 
-                    var score = (decimal) (payoutHandler.AdjustShareDifficulty(share.Difficulty) / share.NetworkDifficulty);
+                    var score = (decimal) (shareDiffAdjusted / share.NetworkDifficulty);
 
                     // if accumulated score would cross threshold, cap it to the remaining value
                     if(accumulatedScore + score >= window)

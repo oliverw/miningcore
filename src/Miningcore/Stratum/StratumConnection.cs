@@ -188,7 +188,7 @@ namespace Miningcore.Stratum
 
         public ValueTask RespondErrorAsync(StratumError code, string message, object id, object result = null, object data = null)
         {
-            return RespondAsync(new JsonRpcResponse(new JsonRpcException((int) code, message, null), id, result));
+            return RespondAsync(new JsonRpcResponse(new JsonRpcError((int) code, message, null), id, result));
         }
 
         public ValueTask RespondAsync<T>(JsonRpcResponse<T> response)
@@ -231,7 +231,7 @@ namespace Miningcore.Stratum
 
         private async Task FillReceivePipeAsync(CancellationToken ct)
         {
-            while(true)
+            while(!ct.IsCancellationRequested)
             {
                 logger.Debug(() => $"[{ConnectionId}] [NET] Waiting for data ...");
 
@@ -259,7 +259,7 @@ namespace Miningcore.Stratum
             TcpProxyProtocolConfig proxyProtocol,
             Func<StratumConnection, JsonRpcRequest, CancellationToken, Task> onRequestAsync)
         {
-            while(true)
+            while(!ct.IsCancellationRequested)
             {
                 logger.Debug(() => $"[{ConnectionId}] [PIPE] Waiting for data ...");
 
@@ -299,15 +299,15 @@ namespace Miningcore.Stratum
 
         private async Task ProcessSendQueueAsync(CancellationToken ct)
         {
-            while(true)
+            while(!ct.IsCancellationRequested)
             {
                 var msg = await sendQueue.ReceiveAsync(ct);
 
-                await SendMessage(msg);
+                await SendMessage(msg, ct);
             }
         }
 
-        private async Task SendMessage(object msg)
+        private async Task SendMessage(object msg, CancellationToken ct)
         {
             logger.Debug(() => $"[{ConnectionId}] Sending: {JsonConvert.SerializeObject(msg)}");
 
@@ -315,24 +315,14 @@ namespace Miningcore.Stratum
 
             try
             {
-                await using(var stream = new MemoryStream(buffer, true))
+                using(var ctsTimeout = CancellationTokenSource.CreateLinkedTokenSource(ct))
                 {
-                    // serialize
-                    await using(var writer = new StreamWriter(stream, StratumConstants.Encoding, MaxOutboundRequestLength, true))
-                    {
-                        serializer.Serialize(writer, msg);
-                    }
+                    ctsTimeout.CancelAfter(sendTimeout);
 
-                    stream.WriteByte((byte) '\n'); // terminator
+                    var cb = SerializeMessage(msg, buffer);
 
-                    // send
-                    using(var ctsTimeout = new CancellationTokenSource())
-                    {
-                        ctsTimeout.CancelAfter(sendTimeout);
-
-                        await networkStream.WriteAsync(buffer, 0, (int) stream.Position, ctsTimeout.Token);
-                        await networkStream.FlushAsync(ctsTimeout.Token);
-                    }
+                    await networkStream.WriteAsync(buffer, 0, cb, ctsTimeout.Token);
+                    await networkStream.FlushAsync(ctsTimeout.Token);
                 }
             }
 
@@ -340,6 +330,20 @@ namespace Miningcore.Stratum
             {
                 ArrayPool<byte>.Shared.Return(buffer);
             }
+        }
+
+        private static int SerializeMessage(object msg, byte[] buffer)
+        {
+            var stream = new MemoryStream(buffer, true);
+
+            using (var writer = new StreamWriter(stream, StratumConstants.Encoding, MaxOutboundRequestLength, true))
+            {
+                serializer.Serialize(writer, msg);
+            }
+
+            stream.WriteByte((byte) '\n'); // terminator
+
+            return (int) stream.Position;
         }
 
         private async Task ProcessRequestAsync(
