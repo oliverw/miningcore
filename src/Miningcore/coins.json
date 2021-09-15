@@ -682,7 +682,7 @@
         "name": "DeVault",
         "symbol": "DVT",
         "family": "bitcoin",
-        "addressType": "CashAddr"
+        "addressType": "CashAddr",
         "coinbaseHasher": {
             "hash": "sha256d"
         },
