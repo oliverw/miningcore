@@ -673,6 +673,7 @@
          "args": [ { "hash": "sha256d" } ]
          },
         "hasCoinbaseDevReward":true,
+        "minimumConfirmations": 14400,
         "explorerBlockLink": "https://freecash.info/block?height=%7B0%7D",
         "explorerTxLink": "https://freecash.info/transaction?hash=%7B0%7D",
         "explorerAccountLink": "https://freecash.info/address?address=%7B0%7D"
@@ -681,6 +682,7 @@
         "name": "DeVault",
         "symbol": "DVT",
         "family": "bitcoin",
+        "addressType": "CashAddr"
         "coinbaseHasher": {
             "hash": "sha256d"
         },
