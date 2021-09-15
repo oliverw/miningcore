@@ -48,7 +48,7 @@ namespace Miningcore.Blockchain.Bitcoin
             return result;
         }
 
-        protected async Task<DaemonResponse<BlockTemplate>> GetBlockTemplateAsync(CancellationToken ct)
+        protected async Task<RpcResponse<BlockTemplate>> GetBlockTemplateAsync(CancellationToken ct)
         {
             logger.LogInvoke();
 
@@ -58,13 +58,13 @@ namespace Miningcore.Blockchain.Bitcoin
             return result;
         }
 
-        protected DaemonResponse<BlockTemplate> GetBlockTemplateFromJson(string json)
+        protected RpcResponse<BlockTemplate> GetBlockTemplateFromJson(string json)
         {
             logger.LogInvoke();
 
             var result = JsonConvert.DeserializeObject<JsonRpcResponse>(json);
 
-            return new DaemonResponse<BlockTemplate>
+            return new RpcResponse<BlockTemplate>
             {
                 Response = result.ResultAs<BlockTemplate>(),
             };
@@ -194,7 +194,7 @@ namespace Miningcore.Blockchain.Bitcoin
             base.Configure(poolConfig, clusterConfig);
         }
 
-        public override object[] GetSubscriberData(StratumConnection worker)
+        public virtual object[] GetSubscriberData(StratumConnection worker)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
 
@@ -213,7 +213,7 @@ namespace Miningcore.Blockchain.Bitcoin
             return responseData;
         }
 
-        public override async ValueTask<Share> SubmitShareAsync(StratumConnection worker, object submission,
+        public virtual async ValueTask<Share> SubmitShareAsync(StratumConnection worker, object submission,
             double stratumDifficultyBase, CancellationToken ct)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
@@ -258,8 +258,8 @@ namespace Miningcore.Blockchain.Bitcoin
             // enrich share with common data
             share.PoolId = poolConfig.Id;
             share.IpAddress = worker.RemoteEndpoint.Address.ToString();
-            share.Miner = minerName;
-            share.Worker = workerName;
+            share.Miner = context.Miner;
+            share.Worker = context.Worker;
             share.UserAgent = context.UserAgent;
             share.Source = clusterConfig.ClusterName;
             share.Created = clock.Now;
@@ -276,7 +276,7 @@ namespace Miningcore.Blockchain.Bitcoin
 
                 if(share.IsBlockCandidate)
                 {
-                    logger.Info(() => $"Daemon accepted block {share.BlockHeight} [{share.BlockHash}] submitted by {minerName}");
+                    logger.Info(() => $"Daemon accepted block {share.BlockHeight} [{share.BlockHash}] submitted by {context.Miner}");
 
                     OnBlockFound();
 
