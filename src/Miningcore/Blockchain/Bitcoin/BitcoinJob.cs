@@ -260,6 +260,25 @@ namespace Miningcore.Blockchain.Bitcoin
             return tx;
         }
 
+        protected virtual Transaction CreatePayeeOutputTransaction()
+        {
+            rewardToPool = new Money(BlockTemplate.CoinbaseValue, MoneyUnit.Satoshi);
+
+            var tx = Transaction.Create(network);
+
+            if(payeeParameters?.PayeeAmount > 0)
+            {
+                var payeeReward = new Money(payeeParameters.PayeeAmount.Value, MoneyUnit.Satoshi);
+                rewardToPool -= payeeReward;
+
+                tx.Outputs.Add(payeeReward, BitcoinUtils.AddressToDestination(payeeParameters.Payee, network));
+            }
+
+            tx.Outputs.Insert(0, new TxOut(rewardToPool, poolAddressDestination));
+
+            return tx;
+        }
+
         protected virtual Money CreatePayeeOutput(Transaction tx, Money reward)
         {
             if(payeeParameters?.PayeeAmount != null && payeeParameters.PayeeAmount.Value > 0)
@@ -444,9 +463,6 @@ namespace Miningcore.Blockchain.Bitcoin
 
             // outputs
             rewardToPool = CreateMasternodeOutputs(tx, blockReward);
-            //Now check if we need to pay founder fees Re PGN
-            if(coin.HasFounderFee)
-                rewardToPool = CreateFounderOutputs(tx,rewardToPool);
             // Finally distribute remaining funds to pool
             tx.Outputs.Insert(0, new TxOut(rewardToPool, poolAddressDestination));
 
