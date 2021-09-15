@@ -623,7 +623,7 @@ namespace Miningcore.Blockchain.Bitcoin
 
         protected CoinbaseDevRewardTemplateExtra CoinbaseDevRewardParams;
 
-        protected virtual Money CreateCoinbaseDevRewardOutputs(Transaction tx, Money reward)
+        protected virtual void CreateCoinbaseDevRewardOutputs(Transaction tx)
         {
             if(CoinbaseDevRewardParams.CoinbaseDevReward != null)
             {
@@ -640,7 +640,6 @@ namespace Miningcore.Blockchain.Bitcoin
                     }
                 }
             }
-            return reward;
         }
 
         #endregion // HasCoinbaseDevReward for FreeCash

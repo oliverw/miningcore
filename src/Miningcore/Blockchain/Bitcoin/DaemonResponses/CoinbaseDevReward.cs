@@ -9,7 +9,7 @@ namespace Miningcore.Blockchain.Bitcoin.DaemonResponses
     public class CoinbaseDevReward
     {
         public string Payee        { get; set; }
-        public string Scriptpubkey { get; set; }
+        public string ScriptPubKey { get; set; }
         public long   Value        { get; set; }
     }
 
