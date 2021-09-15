@@ -8,8 +8,8 @@ using AutoMapper;
 using Miningcore.Blockchain.Bitcoin.Configuration;
 using Miningcore.Blockchain.Bitcoin.DaemonResponses;
 using Miningcore.Configuration;
+using Miningcore.DaemonInterface;
 using Miningcore.Extensions;
-using Miningcore.JsonRpc;
 using Miningcore.Messaging;
 using Miningcore.Mining;
 using Miningcore.Payments;
@@ -49,7 +49,7 @@ namespace Miningcore.Blockchain.Bitcoin
         }
 
         protected readonly IComponentContext ctx;
-        protected RpcClient rpcClient;
+        protected DaemonClient daemon;
         protected BitcoinDaemonEndpointConfigExtra extraPoolConfig;
         protected BitcoinPoolPaymentProcessingConfigExtra extraPoolPaymentProcessingConfig;
 
@@ -70,7 +70,8 @@ namespace Miningcore.Blockchain.Bitcoin
             logger = LogUtil.GetPoolScopedLogger(typeof(BitcoinPayoutHandler), poolConfig);
 
             var jsonSerializerSettings = ctx.Resolve<JsonSerializerSettings>();
-            rpcClient = new RpcClient(poolConfig.Daemons.First(), jsonSerializerSettings, messageBus, poolConfig.Id);
+            daemon = new DaemonClient(jsonSerializerSettings, messageBus, clusterConfig.ClusterName ?? poolConfig.PoolName, poolConfig.Id);
+            daemon.Configure(poolConfig.Daemons);
 
             return Task.FromResult(true);
         }
@@ -100,11 +101,11 @@ namespace Miningcore.Blockchain.Bitcoin
                     .ToArray();
 
                 // build command batch (block.TransactionConfirmationData is the hash of the blocks coinbase transaction)
-                var batch = page.Select(block => new RpcRequest(BitcoinCommands.GetTransaction,
+                var batch = page.Select(block => new DaemonCmd(BitcoinCommands.GetTransaction,
                     new[] { block.TransactionConfirmationData })).ToArray();
 
                 // execute batch
-                var results = await rpcClient.ExecuteBatchAsync(logger, ct, batch);
+                var results = await daemon.ExecuteBatchAnyAsync(logger, ct, batch);
 
                 for(var j = 0; j < results.Length; j++)
                 {
@@ -194,11 +195,15 @@ namespace Miningcore.Blockchain.Bitcoin
         public virtual async Task PayoutAsync(IMiningPool pool, Balance[] balances, CancellationToken ct)
         {
             Contract.RequiresNonNull(balances, nameof(balances));
-
+            // Add roundnum for DVT
+            var roundnum = poolConfig.Template.Symbol == "DVT" ? 3:4;
             // build args
             var amounts = balances
                 .Where(x => x.Amount > 0)
-                .ToDictionary(x => x.Address, x => Math.Round(x.Amount, 4));
+                // old Dictionary
+                // .ToDictionary(x => x.Address, x => Math.Round(x.Amount, 4));
+                // New Dictionary for DVT
+                .ToDictionary(x => x.Address, x => Math.Round(x.Amount, roundnum));
 
             if(amounts.Count == 0)
                 return;
@@ -263,7 +268,7 @@ namespace Miningcore.Blockchain.Bitcoin
 
         // send command
         tryTransfer:
-            var result = await rpcClient.ExecuteAsync<string>(logger, BitcoinCommands.SendMany, ct, args);
+            var result = await daemon.ExecuteCmdSingleAsync<string>(logger, BitcoinCommands.SendMany, ct, args, new JsonSerializerSettings());
 
             if(result.Error == null)
             {
@@ -271,7 +276,7 @@ namespace Miningcore.Blockchain.Bitcoin
                 {
                     // lock wallet
                     logger.Info(() => $"[{LogCategory}] Locking wallet");
-                    await rpcClient.ExecuteAsync<JToken>(logger, BitcoinCommands.WalletLock, ct);
+                    await daemon.ExecuteCmdSingleAsync<JToken>(logger, BitcoinCommands.WalletLock, ct);
                 }
 
                 // check result
@@ -295,7 +300,7 @@ namespace Miningcore.Blockchain.Bitcoin
                     {
                         logger.Info(() => $"[{LogCategory}] Unlocking wallet");
 
-                        var unlockResult = await rpcClient.ExecuteAsync<JToken>(logger, BitcoinCommands.WalletPassphrase, ct, new[]
+                        var unlockResult = await daemon.ExecuteCmdSingleAsync<JToken>(logger, BitcoinCommands.WalletPassphrase, ct, new[]
                         {
                             (object) extraPoolPaymentProcessingConfig.WalletPassword,
                             (object) 5 // unlock for N seconds
