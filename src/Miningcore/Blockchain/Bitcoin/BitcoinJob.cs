@@ -93,8 +93,8 @@ namespace Miningcore.Blockchain.Bitcoin
                 scriptSigFinalBytes.Length);
 
             // output transaction
-            txOut = coin.HasMasterNodes ? CreateMasternodeOutputTransaction() : (coin.HasPayee ? CreatePayeeOutputTransaction() : CreateOutputTransaction());
-            if(coin.HasCoinbasePayload){
+			txOut = (coin.HasMasterNodes) ? CreateMasternodeOutputTransaction() : (coin.HasPayee ? CreatePayeeOutputTransaction() : CreateOutputTransaction());
+			if(coin.HasCoinbasePayload){
                 //Build txOut with superblock and cold reward payees for DVT
                 txOut = CreatePayloadOutputTransaction();
             }
