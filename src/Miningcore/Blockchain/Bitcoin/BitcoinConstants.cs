@@ -17,6 +17,11 @@ namespace Miningcore.Blockchain.Bitcoin
         BechSegwit,
 
         /// <summary>
+        /// Bcash custom bech encoded
+        /// </summary>
+        CashAddr,
+
+        /// <summary>
         /// Bitcoin Cash
         /// </summary>
         BCash,
