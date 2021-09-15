@@ -15,7 +15,11 @@ namespace Miningcore.Blockchain.Bitcoin
         /// Bech encoded, segwit
         /// </summary>
         BechSegwit,
-
+        // Add CashAddr for DVT
+        /// <summary>
+        /// Bcash custom bech encoded
+        /// </summary>
+        CashAddr,
         /// <summary>
         /// Bitcoin Cash
         /// </summary>

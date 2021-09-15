@@ -3,6 +3,9 @@ using System.Diagnostics;
 using System.Linq;
 using NBitcoin;
 using NBitcoin.DataEncoders;
+// Using for DVT
+using static Miningcore.Blockchain.Bitcoin.CashAddr;
+using static Miningcore.Blockchain.Bitcoin.BchAddr;
 
 namespace Miningcore.Blockchain.Bitcoin
 {
@@ -27,6 +30,16 @@ namespace Miningcore.Blockchain.Bitcoin
             return result;
         }
 
+        public static IDestination MultiSigAddressToDestination(string address, Network expectedNetwork)
+        {
+            var decoded = Encoders.Base58Check.DecodeData(address);
+            var networkVersionBytes = expectedNetwork.GetVersionBytes(Base58Type.SCRIPT_ADDRESS, true);
+            decoded = decoded.Skip(networkVersionBytes.Length).ToArray();
+            var result = new ScriptId(decoded);
+
+            return result;
+        }
+
         public static IDestination BechSegwitAddressToDestination(string address, Network expectedNetwork)
         {
             var encoder = expectedNetwork.GetBech32Encoder(Bech32Type.WITNESS_PUBKEY_ADDRESS, true);
@@ -37,6 +50,15 @@ namespace Miningcore.Blockchain.Bitcoin
             return result;
         }
 
+        // IDestination for DVT
+        public static IDestination CashAddrToDestination(string address, Network expectedNetwork,bool fP2Sh = false)
+        {
+            BchAddr.BchAddrData bchAddr = BchAddr.DecodeCashAddressWithPrefix(address);
+            if(fP2Sh)
+                return new ScriptId(bchAddr.Hash);
+            else
+                return new KeyId(bchAddr.Hash);
+        }
         public static IDestination BCashAddressToDestination(string address, Network expectedNetwork)
         {
             var bcash = NBitcoin.Altcoins.BCash.Instance.GetNetwork(expectedNetwork.ChainName);
