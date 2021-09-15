@@ -554,24 +554,13 @@ namespace Miningcore.Blockchain.Bitcoin
                 {
                     if(!string.IsNullOrEmpty(CoinbasePayee.Payee))
                     {
-						var payeeAddress = BitcoinUtils.CashAddrToDestination(CoinbasePayee.Payee, network,true);
+                        var payeeAddress = BitcoinUtils.CashAddrToDestination(CoinbasePayee.Payee, network,true);
                         var payeeReward = CoinbasePayee.Amount;
-
-                        reward -= payeeReward;
-                        rewardToPool -= payeeReward;
 
                         tx.Outputs.Add(payeeReward, payeeAddress);
                     }
                 }
             }
-            if(!string.IsNullOrEmpty(coinbasepayloadParameters.Payee))
-            {
-				var payeeAddress = BitcoinUtils.CashAddrToDestination(coinbasepayloadParameters.Payee, network);
-                var payeeReward = coinbasepayloadParameters.PayeeAmount;
-
-                tx.Outputs.Add(payeeReward, payeeAddress);
-            }
-            return reward;
         }
 
         #endregion // DevaultCoinbasePayload
