@@ -436,6 +436,23 @@ namespace Miningcore.Blockchain.Bitcoin
 
         protected MasterNodeBlockTemplateExtra masterNodeParameters;
 
+        protected virtual Transaction CreateMasternodeOutputTransaction()
+        {
+            var blockReward = new Money(BlockTemplate.CoinbaseValue, MoneyUnit.Satoshi);
+            rewardToPool = new Money(BlockTemplate.CoinbaseValue, MoneyUnit.Satoshi);
+            var tx = Transaction.Create(network);
+
+            // outputs
+            rewardToPool = CreateMasternodeOutputs(tx, blockReward);
+            //Now check if we need to pay founder fees Re PGN
+            if(coin.HasFounderFee)
+                rewardToPool = CreateFounderOutputs(tx,rewardToPool);
+            // Finally distribute remaining funds to pool
+            tx.Outputs.Insert(0, new TxOut(rewardToPool, poolAddressDestination));
+
+            return tx;
+        }
+
         protected virtual Money CreateMasternodeOutputs(Transaction tx, Money reward)
         {
             if(masterNodeParameters.Masternode != null)
