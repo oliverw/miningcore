@@ -18,7 +18,7 @@
 
 ## Support
 
-Paid support by the maintainer can be requested at [contact@coinfoundry.org](mailto:contact@coinfoundry.org).
+Commercial support directly by the maintainer is available through [contact@coinfoundry.org](mailto:contact@coinfoundry.org). There are various support packages, ranging from basic installation support to implementation of new crypto-currencies.
 
 For general questions visit the [Discussions Area](https://github.com/coinfoundry/miningcore/discussions).
 
