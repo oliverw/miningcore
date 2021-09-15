@@ -650,7 +650,7 @@ namespace Miningcore.Blockchain.Bitcoin
             JobId = jobId;
 
             var coinbaseString = !string.IsNullOrEmpty(clusterConfig.PaymentProcessing?.CoinbaseString) ?
-                clusterConfig.PaymentProcessing?.CoinbaseString.Trim() : "Core-v5.0";
+                clusterConfig.PaymentProcessing?.CoinbaseString.Trim() : "Miningcore";
 
             scriptSigFinalBytes = new Script(Op.GetPushOp(Encoding.UTF8.GetBytes(coinbaseString))).ToBytes();
 
