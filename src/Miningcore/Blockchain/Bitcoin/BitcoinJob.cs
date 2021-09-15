@@ -253,7 +253,11 @@ namespace Miningcore.Blockchain.Bitcoin
             // HasFounderFee for DVT
             if(coin.HasFounderFee)
                 rewardToPool = CreateFounderOutputs(tx,rewardToPool);
-            
+				
+            //HasCoinbaseDevReward for Freecash
+            if(coin.HasCoinbaseDevReward)
+                CreateCoinbaseDevRewardOutputs(tx);
+				
             if(coin.HasPayee)
                 rewardToPool = CreatePayeeOutput(tx, rewardToPool);
 
@@ -615,6 +619,32 @@ namespace Miningcore.Blockchain.Bitcoin
 
         #endregion // PigeoncoinDevFee
 
+        #region CoinbaseDevReward
+
+        protected CoinbaseDevRewardTemplateExtra CoinbaseDevRewardParams;
+
+        protected virtual Money CreateCoinbaseDevRewardOutputs(Transaction tx, Money reward)
+        {
+            if(CoinbaseDevRewardParams.CoinbaseDevReward != null)
+            {
+                CoinbaseDevReward[] CBRewards;
+                CBRewards = new[] { CoinbaseDevRewardParams.CoinbaseDevReward.ToObject<CoinbaseDevReward>() };
+
+                foreach(var CBReward in CBRewards)
+                {
+                    if(!string.IsNullOrEmpty(CBReward.Payee))
+                    {
+                        var payeeAddress = BitcoinUtils.AddressToDestination(CBReward.Payee, network);
+                        var payeeReward = CBReward.Value;
+                        tx.Outputs.Add(payeeReward, payeeAddress);
+                    }
+                }
+            }
+            return reward;
+        }
+
+        #endregion // HasCoinbaseDevReward for FreeCash
+
         #region API-Surface
 
         public BlockTemplate BlockTemplate { get; protected set; }
@@ -682,7 +712,10 @@ namespace Miningcore.Blockchain.Bitcoin
             
             if(coin.HasFounderFee)
                 FounderParameters = BlockTemplate.Extra.SafeExtensionDataAs<FounderBlockTemplateExtra>();
-            
+			// add for FCH
+			if(coin.HasCoinbaseDevReward)
+				CoinbaseDevRewardParams = BlockTemplate.Extra.SafeExtensionDataAs<CoinbaseDevRewardTemplateExtra>();
+
             if(coin.HasPayee)
                 payeeParameters = BlockTemplate.Extra.SafeExtensionDataAs<PayeeBlockTemplateExtra>();
 
