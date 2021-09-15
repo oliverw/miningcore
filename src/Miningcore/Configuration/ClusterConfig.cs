@@ -153,7 +153,7 @@ namespace Miningcore.Configuration
         [JsonProperty("hasCoinbasePayload")]
         public bool HasCoinbasePayload { get; set; }
 
-		[JsonProperty("hasCoinbaseDevReward")]
+        [JsonProperty("hasCoinbaseDevReward")]
         public bool HasCoinbaseDevReward { get; set; }
 
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
