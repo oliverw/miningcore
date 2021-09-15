@@ -597,7 +597,6 @@ namespace Miningcore.Blockchain.Bitcoin
                     }
                 }
             }
-            return reward;
         }
 
         #endregion // CoinbaseDevReward for FreeCash
