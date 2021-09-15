@@ -658,6 +658,44 @@
         "explorerTxLink": "http://network.flo.cash/tx/{0}",
         "explorerAccountLink": "http://network.flo.cash/address/{0}"
     },
+	"freecash": {
+        "name": "FreeCash",
+        "symbol": "FCH",
+         "family": "bitcoin",
+         "coinbaseHasher": {
+              "hash": "sha256d"
+         },
+        "headerHasher": {
+            "hash": "sha256d"
+        },
+        "blockHasher": {
+         "hash": "reverse",
+         "args": [ { "hash": "sha256d" } ]
+         },
+        "hasCoinbaseDevReward":true,
+        "explorerBlockLink": "https://freecash.info/block?height=%7B0%7D",
+        "explorerTxLink": "https://freecash.info/transaction?hash=%7B0%7D",
+        "explorerAccountLink": "https://freecash.info/address?address=%7B0%7D"
+    },
+	"devault": {
+        "name": "DeVault",
+        "symbol": "DVT",
+        "family": "bitcoin",
+        "coinbaseHasher": {
+            "hash": "sha256d"
+        },
+        "headerHasher": {
+            "hash": "sha256d"
+        },
+        "blockHasher": {
+            "hash": "reverse",
+            "args": [ { "hash": "sha256d" } ]
+        },
+        "hasCoinbasePayload" : true,
+        "explorerBlockLink": "https://exploredvt.com/block-height/$height$",
+        "explorerTxLink": "https://exploredvt.com/tx/{0}",
+        "explorerAccountLink": "https://exploredvt.com/address/{0}"
+    },
     "digibyte-sha256": {
         "name": "Digibyte-Sha256",
         "canonicalName": "Digibyte",
