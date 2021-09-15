@@ -482,8 +482,7 @@ namespace Miningcore.Blockchain.Bitcoin
             {
                 if(extraPoolConfig?.AddressType != BitcoinAddressType.Legacy)
                     logger.Info(()=> $"Interpreting pool address {poolConfig.Address} as type {extraPoolConfig?.AddressType.ToString()}");
-
-                poolAddressDestination = AddressToDestination(poolConfig.Address, extraPoolConfig?.AddressType);
+				poolAddressDestination = AddressToDestination(poolConfig.Address,extraPoolConfig?.AddressType);
             }
 
             else
@@ -493,9 +492,8 @@ namespace Miningcore.Blockchain.Bitcoin
             if(clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
             {
                 // ensure pool owns wallet
-                if(validateAddressResponse is {IsMine: false} || addressInfoResponse is {IsMine: false})
-                    logger.Warn(()=> $"Daemon does not own pool-address '{poolConfig.Address}'");
-
+				//if (!validateAddressResponse.IsMine)
+                //   logger.ThrowLogPoolStartupException($"Daemon does not own pool-address '{poolConfig.Address}'");
                 ConfigureRewards();
             }
 
@@ -536,7 +534,10 @@ namespace Miningcore.Blockchain.Bitcoin
             switch(addressType.Value)
             {
                 case BitcoinAddressType.BechSegwit:
-                    return BitcoinUtils.BechSegwitAddressToDestination(poolConfig.Address, network);
+					return BitcoinUtils.BechSegwitAddressToDestination(poolConfig.Address, network,extraPoolConfig?.BechPrefix);
+
+                case BitcoinAddressType.CashAddr:
+                    return BitcoinUtils.CashAddrToDestination(poolConfig.Address, network);
 
                 case BitcoinAddressType.BCash:
                     return BitcoinUtils.BCashAddressToDestination(poolConfig.Address, network);

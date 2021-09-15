@@ -45,7 +45,7 @@ namespace Miningcore.Blockchain.Bitcoin
         protected object currentJobParams;
         protected BitcoinJobManager manager;
         private BitcoinTemplate coin;
-
+        public int submitcount = 0;
         protected virtual async Task OnSubscribeAsync(StratumConnection connection, Timestamped<JsonRpcRequest> tsRequest)
         {
             var request = tsRequest.Value;
@@ -196,8 +196,8 @@ namespace Miningcore.Blockchain.Bitcoin
 
                 // telemetry
                 PublishTelemetry(TelemetryCategory.Share, clock.Now - tsRequest.Timestamp.UtcDateTime, true);
-
-                logger.Info(() => $"[{connection.ConnectionId}] Share accepted: D={Math.Round(share.Difficulty * coin.ShareMultiplier, 3)}");
+                submitcount+=1;
+				logger.Info(() => $"[{connection.ConnectionId}] Total Shares:{submitcount} Share accepted: D={Math.Round(share.Difficulty * coin.ShareMultiplier, 3)}");
 
                 // update pool stats
                 if(share.IsBlockCandidate)

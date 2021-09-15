@@ -194,12 +194,11 @@ namespace Miningcore.Blockchain.Bitcoin
         public virtual async Task PayoutAsync(IMiningPool pool, Balance[] balances, CancellationToken ct)
         {
             Contract.RequiresNonNull(balances, nameof(balances));
-
+			var roundnum = poolConfig.Template.Symbol == "DVT" ? 3:4;
             // build args
             var amounts = balances
                 .Where(x => x.Amount > 0)
-                .ToDictionary(x => x.Address, x => Math.Round(x.Amount, 4));
-
+				.ToDictionary(x => x.Address, x => Math.Round(x.Amount, roundnum));
             if(amounts.Count == 0)
                 return;
 
