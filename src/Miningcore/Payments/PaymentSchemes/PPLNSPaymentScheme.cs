@@ -63,7 +63,7 @@ namespace Miningcore.Payments.PaymentSchemes
         {
             var poolConfig = pool.Config;
             var payoutConfig = poolConfig.PaymentProcessing.PayoutSchemeConfig;
-
+            var feeCalculator = new FeeCalculator(poolConfig);
             // PPLNS window (see https://bitcointalk.org/index.php?topic=39832)
             var window = payoutConfig?.ToObject<Config>()?.Factor ?? 2.0m;
 
@@ -76,11 +76,11 @@ namespace Miningcore.Payments.PaymentSchemes
             foreach(var address in rewards.Keys)
             {
                 var amount = rewards[address];
-
-                if(amount > 0)
+                var fee = feeCalculator.Calculate(address, amount);
+                if(fee.CanUsed)
                 {
-                    logger.Info(() => $"Adding {payoutHandler.FormatAmount(amount)} to balance of {address} for {FormatUtil.FormatQuantity(shares[address])} ({shares[address]}) shares for block {block.BlockHeight}");
-                    await balanceRepo.AddAmountAsync(con, tx, poolConfig.Id, address, amount, $"Reward for {FormatUtil.FormatQuantity(shares[address])} shares for block {block.BlockHeight}");
+                    logger.Info(() => $"Adding {payoutHandler.FormatAmount(fee.CalculatedAmount)} (original value: {payoutHandler.FormatAmount(fee.OriginalAmount)}) to balance of {address} for {FormatUtil.FormatQuantity(shares[address])} ({shares[address]}) shares for block {block.BlockHeight}");
+                    await balanceRepo.AddAmountAsync(con, tx, poolConfig.Id, address, fee.CalculatedAmount, $"Reward for {FormatUtil.FormatQuantity(shares[address])} shares for block {block.BlockHeight}", $"{block.BlockHeight}", $"{FormatUtil.FormatQuantity(shares[address])}");
                 }
             }
 

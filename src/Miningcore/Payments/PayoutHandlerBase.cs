@@ -68,6 +68,7 @@ namespace Miningcore.Payments
 
         protected ILogger logger;
         protected PoolConfig poolConfig;
+		protected FeeCalculator feeCalculator;
         private const int RetryCount = 8;
 
         protected abstract string LogCategory { get; }

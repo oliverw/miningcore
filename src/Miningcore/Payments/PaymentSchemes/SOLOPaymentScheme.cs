@@ -40,7 +40,7 @@ namespace Miningcore.Payments.PaymentSchemes
         public async Task UpdateBalancesAsync(IDbConnection con, IDbTransaction tx, IMiningPool pool, IPayoutHandler payoutHandler, Block block, decimal blockReward, CancellationToken ct)
         {
             var poolConfig = pool.Config;
-
+            var feeCalculator = new FeeCalculator(poolConfig);
             // calculate rewards
             var rewards = new Dictionary<string, decimal>();
             var shareCutOffDate = CalculateRewards(block, blockReward, rewards, ct);
@@ -49,12 +49,11 @@ namespace Miningcore.Payments.PaymentSchemes
             foreach(var address in rewards.Keys)
             {
                 var amount = rewards[address];
-
-                if(amount > 0)
+                var fee = feeCalculator.Calculate(address, amount);
+                if(fee.CanUsed)
                 {
-                    logger.Info(() => $"Adding {payoutHandler.FormatAmount(amount)} to balance of {address} for block {block.BlockHeight}");
-
-                    await balanceRepo.AddAmountAsync(con, tx, poolConfig.Id, address, amount, $"Reward for block {block.BlockHeight}");
+                    logger.Info(() => $"Adding {payoutHandler.FormatAmount(fee.CalculatedAmount)} (original value: {payoutHandler.FormatAmount(fee.OriginalAmount)}) to balance of {address} for block {block.BlockHeight}");
+                    await balanceRepo.AddAmountAsync(con, tx, poolConfig.Id, address, fee.CalculatedAmount, $"Reward for block {block.BlockHeight}", $"{block.BlockHeight}", $"{block.BlockHeight}");
                 }
             }
 

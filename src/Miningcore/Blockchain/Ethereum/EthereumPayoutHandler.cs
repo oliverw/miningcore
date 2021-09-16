@@ -67,6 +67,7 @@ namespace Miningcore.Blockchain.Ethereum
         {
             this.poolConfig = poolConfig;
             this.clusterConfig = clusterConfig;
+            feeCalculator = new FeeCalculator(poolConfig);
             extraPoolConfig = poolConfig.Extra.SafeExtensionDataAs<EthereumPoolConfigExtra>();
             extraConfig = poolConfig.PaymentProcessing.Extra.SafeExtensionDataAs<EthereumPoolPaymentProcessingConfigExtra>();
 

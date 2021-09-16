@@ -63,7 +63,7 @@ namespace Miningcore.Blockchain.Bitcoin
 
             this.poolConfig = poolConfig;
             this.clusterConfig = clusterConfig;
-
+            this.feeCalculator = new FeeCalculator(poolConfig);
             extraPoolConfig = poolConfig.Extra.SafeExtensionDataAs<BitcoinDaemonEndpointConfigExtra>();
             extraPoolPaymentProcessingConfig = poolConfig.PaymentProcessing.Extra.SafeExtensionDataAs<BitcoinPoolPaymentProcessingConfigExtra>();
 

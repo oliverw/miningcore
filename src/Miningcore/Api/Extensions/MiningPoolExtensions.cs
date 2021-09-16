@@ -35,5 +35,18 @@ namespace Miningcore.Api.Extensions
 
             return poolInfo;
         }
+
+        public static bool IsCustomFeeAddress(this PoolConfig poolConfig, string address)
+        {
+            var result = poolConfig?.CustomFeeAddresses?.Contains(address);
+            return result ?? false;
+        }
+        
+        public static decimal GetPercentageFeeDefault(this PoolConfig poolConfig)
+        {
+            return poolConfig.PercentageFeeDefault.HasValue ?
+                poolConfig.PercentageFeeDefault.Value :
+                0m;
+        }
     }
 }
