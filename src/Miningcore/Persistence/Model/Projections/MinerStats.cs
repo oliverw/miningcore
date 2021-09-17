@@ -20,6 +20,10 @@ namespace Miningcore.Persistence.Model.Projections
         public double PendingShares { get; set; }
         public decimal PendingBalance { get; set; }
         public decimal TotalPaid { get; set; }
+        // Stats Paid
+        public decimal PaidDays { get; set; }
+        public decimal PaidWeek { get; set; }
+        public decimal PaidMonth { get; set; }
         public decimal TodayPaid { get; set; }
         public Payment LastPayment { get; set; }
         public WorkerPerformanceStatsContainer Performance { get; set; }

@@ -113,10 +113,13 @@ namespace Miningcore.Persistence.Postgres.Repositories
         {
             logger.LogInvoke(new object[] { poolId, miner });
 
-            var query = "SELECT (SELECT SUM(difficulty) FROM shares WHERE poolid = @poolId AND miner = @miner) AS pendingshares, " +
-                "(SELECT amount FROM balances WHERE poolid = @poolId AND address = @miner) AS pendingbalance, " +
-                "(SELECT SUM(amount) FROM payments WHERE poolid = @poolId and address = @miner) as totalpaid," +
-                "(SELECT SUM(amount) FROM payments WHERE poolid = @poolId and address = @miner and created >= date_trunc('day', now())) as todaypaid";
+            var query = @"SELECT (SELECT SUM(difficulty) FROM shares WHERE poolid = @poolId AND miner = @miner) AS pendingshares,
+                (SELECT amount FROM balances WHERE poolid = @poolId AND address = @miner) AS pendingbalance,
+                (SELECT SUM(amount) FROM payments WHERE poolid = @poolId and address = @miner) as totalpaid,
+                (SELECT SUM(amount) FROM payments WHERE poolid = @poolId and address = @miner and created >= date_trunc('day', now())) as todaypaid,
+                (SELECT SUM(amount) FROM payments WHERE poolid = @poolId and address = @miner and created >= now() - interval '1 DAY') as paiddays,
+                (SELECT SUM(amount) FROM payments WHERE poolid = @poolId and address = @miner and created >= now() - interval '7 DAY') as paidweek,
+                (SELECT SUM(amount) FROM payments WHERE poolid = @poolId and address = @miner and created >= now() - interval '31 DAY') as paidmonth";
 
             var result = await con.QuerySingleOrDefaultAsync<MinerStats>(query, new { poolId, miner }, tx);
 
