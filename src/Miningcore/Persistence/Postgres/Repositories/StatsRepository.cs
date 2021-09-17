@@ -169,7 +169,8 @@ namespace Miningcore.Persistence.Postgres.Repositories
                                 Hashrate = x.Hashrate,
                                 SharesPerSecond = x.SharesPerSecond
                             }),
-
+                            // totalhashrate
+                            TotalHashrate = stats.Sum(x => x.Hashrate),
                             Created = stats.First().Created
                         };
                     }
@@ -312,8 +313,15 @@ namespace Miningcore.Persistence.Postgres.Repositories
                 })
             })
             .ToArray();
-
-            return tmp;
+            // total hashrate for performanceSamples
+            var tmp2 = tmp.Select(t => new WorkerPerformanceStatsContainer
+            {
+                Created = t.Created,
+                Workers = t.Workers,
+                TotalHashrate = t.Workers.Values.Sum(x => x.Hashrate),
+            })
+            .ToArray();
+            return tmp2;
         }
 
         public async Task<WorkerPerformanceStatsContainer[]> GetMinerPerformanceBetweenDailyAsync(IDbConnection con, string poolId, string miner, DateTime start, DateTime end)

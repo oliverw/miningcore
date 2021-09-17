@@ -12,6 +12,8 @@ namespace Miningcore.Persistence.Model.Projections
     public class WorkerPerformanceStatsContainer
     {
         public DateTime Created { get; set; }
+        //totalhashrate
+        public double TotalHashrate { get; set; }
         public Dictionary<string, WorkerPerformanceStats> Workers { get; set; }
     }
 

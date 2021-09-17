@@ -19,6 +19,8 @@ namespace Miningcore.Api.Responses
     public class WorkerPerformanceStatsContainer
     {
         public DateTime Created { get; set; }
+        //totalhahsrate
+        public double TotalHashrate { get; set; }
         public Dictionary<string, WorkerPerformanceStats> Workers { get; set; }
     }
 
