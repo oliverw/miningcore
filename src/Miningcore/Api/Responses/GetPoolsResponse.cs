@@ -54,6 +54,8 @@ namespace Miningcore.Api.Responses
         public MinerPerformanceStats[] TopMiners { get; set; }
         public decimal TotalPaid { get; set; }
         public uint TotalBlocks { get; set; }
+        // add average effort
+        public double? AverageEffort { get; set; }
         public DateTime? LastPoolBlockTime { get; set; }
     }
 

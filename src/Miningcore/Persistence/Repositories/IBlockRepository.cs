@@ -16,6 +16,8 @@ namespace Miningcore.Persistence.Repositories
         Task<Block[]> GetPendingBlocksForPoolAsync(IDbConnection con, string poolId);
         Task<Block> GetBlockBeforeAsync(IDbConnection con, string poolId, BlockStatus[] status, DateTime before);
         Task<uint> GetPoolBlockCountAsync(IDbConnection con, string poolId);
+        // add average effort
+        Task<double?> GetAverageEffortCountAsync(IDbConnection con, string poolId);
         Task<DateTime?> GetLastPoolBlockTimeAsync(IDbConnection con, string poolId);
     }
 }

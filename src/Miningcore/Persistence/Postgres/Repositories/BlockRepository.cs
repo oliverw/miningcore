@@ -122,7 +122,13 @@ namespace Miningcore.Persistence.Postgres.Repositories
 
             return con.ExecuteScalarAsync<uint>(query, new { poolId });
         }
-
+        // add average effort
+        public Task<double?> GetAverageEffortCountAsync(IDbConnection con, string poolId)
+        {
+            logger.LogInvoke(new[] { poolId });
+            const string query = "SELECT AVG(effort) as avg FROM blocks WHERE poolid = @poolId LIMIT 100";
+            return con.ExecuteScalarAsync<double?>(query, new { poolId });
+        }
         public Task<DateTime?> GetLastPoolBlockTimeAsync(IDbConnection con, string poolId)
         {
             logger.LogInvoke(new object[] { poolId });

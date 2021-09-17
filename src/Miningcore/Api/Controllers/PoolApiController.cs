@@ -71,6 +71,8 @@ namespace Miningcore.Api.Controllers
                     // enrich
                     result.TotalPaid = await cf.Run(con => statsRepo.GetTotalPoolPaymentsAsync(con, config.Id));
                     result.TotalBlocks = await cf.Run(con => blocksRepo.GetPoolBlockCountAsync(con, config.Id));
+                    // add average effort
+                    result.AverageEffort = await cf.Run(con => blocksRepo.GetAverageEffortCountAsync(con, config.Id));
                     result.LastPoolBlockTime = await cf.Run(con => blocksRepo.GetLastPoolBlockTimeAsync(con, config.Id));
 
                     var from = clock.Now.AddDays(-1);
@@ -124,6 +126,8 @@ namespace Miningcore.Api.Controllers
             // enrich
             response.Pool.TotalPaid = await cf.Run(con => statsRepo.GetTotalPoolPaymentsAsync(con, pool.Id));
             response.Pool.TotalBlocks = await cf.Run(con => blocksRepo.GetPoolBlockCountAsync(con, pool.Id));
+            // add average effort
+            response.Pool.AverageEffort = await cf.Run(con => blocksRepo.GetAverageEffortCountAsync(con, pool.Id));
             response.Pool.LastPoolBlockTime = await cf.Run(con => blocksRepo.GetLastPoolBlockTimeAsync(con, pool.Id));
 
             var from = clock.Now.AddDays(-1);
