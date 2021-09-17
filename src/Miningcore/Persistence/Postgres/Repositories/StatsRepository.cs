@@ -236,11 +236,13 @@ namespace Miningcore.Persistence.Postgres.Repositories
             var tmp = entitiesByDate.Select(x => new WorkerPerformanceStatsContainer
             {
                 Created = x.Key,
-                Workers = x.ToDictionary(y => y.Worker, y => new WorkerPerformanceStats
+                Workers = x.ToDictionary(y => y.Worker ?? string.Empty, y => new WorkerPerformanceStats
                 {
                     Hashrate = y.Hashrate,
-                    SharesPerSecond = y.SharesPerSecond
-                })
+                    SharesPerSecond = y.SharesPerSecond,
+
+                }),
+
             })
             .ToArray();
 
