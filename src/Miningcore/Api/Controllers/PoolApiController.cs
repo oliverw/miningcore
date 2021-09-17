@@ -184,8 +184,9 @@ namespace Miningcore.Api.Controllers
 
             // set range
             var end = clock.Now;
-            var start = end.AddDays(-1);
-
+            // 24 hours display api for disabled miners ?!
+            // var start = end.AddDays(-1);
+            var start = end.AddMinutes(-30);
             var miners = (await cf.Run(con => statsRepo.PagePoolMinersByHashrateAsync(
                     con, pool.Id, start, page, pageSize)))
                 .Select(mapper.Map<MinerPerformanceStats>)

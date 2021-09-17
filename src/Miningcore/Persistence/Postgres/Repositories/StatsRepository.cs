@@ -278,19 +278,28 @@ namespace Miningcore.Persistence.Postgres.Repositories
                 })
             })
             .ToArray();
-
-            return tmp;
+            // total hashrate for performanceSamples
+            var tmp2 = tmp.Select(t => new WorkerPerformanceStatsContainer
+            {
+                Created = t.Created,
+                Workers = t.Workers,
+                TotalHashrate = t.Workers.Values.Sum(x => x.Hashrate),
+            })
+            .ToArray();
+            return tmp2;
         }
 
         public async Task<WorkerPerformanceStatsContainer[]> GetMinerPerformanceBetweenHourlyAsync(IDbConnection con, string poolId, string miner, DateTime start, DateTime end)
         {
             logger.LogInvoke(new object[] { poolId });
 
-            const string query = "SELECT worker, date_trunc('hour', created) AS created, AVG(hashrate) AS hashrate, " +
+            const string query = "SELECT worker, date_trunc('hour', created) + extract(minute from created)::int / 60 * interval '60' minute AS created, AVG(hashrate) AS hashrate, " +
                 "AVG(sharespersecond) AS sharespersecond FROM minerstats " +
                 "WHERE poolid = @poolId AND miner = @miner AND created >= @start AND created <= @end " +
-                "GROUP BY date_trunc('hour', created), worker " +
+                "GROUP BY date_trunc('hour', created) + extract(minute from created)::int / 60 * interval '60' minute, worker " +
                 "ORDER BY created, worker;";
+
+
 
             var entities = (await con.QueryAsync<Entities.MinerWorkerPerformanceStats>(query, new { poolId, miner, start, end }))
                 .ToArray();
@@ -348,8 +357,15 @@ namespace Miningcore.Persistence.Postgres.Repositories
                 })
             })
             .ToArray();
-
-            return tmp;
+            // total hashrate for performanceSamples
+            var tmp2 = tmp.Select(t => new WorkerPerformanceStatsContainer
+            {
+                Created = t.Created,
+                Workers = t.Workers,
+                TotalHashrate = t.Workers.Values.Sum(x => x.Hashrate),
+            })
+            .ToArray();
+            return tmp2;
         }
 
         public async Task<MinerWorkerPerformanceStats[]> PagePoolMinersByHashrateAsync(IDbConnection con, string poolId, DateTime from, int page, int pageSize)
