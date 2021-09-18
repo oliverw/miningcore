@@ -20,7 +20,7 @@
 
 ## Support
 
-Commercial support directly by the maintainer is available through [contact@coinfoundry.org](mailto:contact@coinfoundry.org). There are various support packages, ranging from basic installation support to implementation of new crypto-currencies.
+Commercial support directly by the maintainer is available through [miningcore.dev](https://miningcore.dev/).
 
 For general questions visit the [Discussions Area](https://github.com/coinfoundry/miningcore/discussions).
 
