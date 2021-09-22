@@ -41,7 +41,13 @@ namespace Miningcore
 
             builder.RegisterInstance(new JsonSerializerSettings
             {
-                ContractResolver = new CamelCasePropertyNamesContractResolver()
+                ContractResolver = new DefaultContractResolver
+                {
+                    NamingStrategy = new CamelCaseNamingStrategy
+                    {
+                        ProcessDictionaryKeys = false
+                    }
+                }
             });
 
             builder.RegisterType<MessageBus>()
