@@ -27,8 +27,7 @@ namespace Miningcore.Blockchain.Ethereum
             blockTarget = new uint256(target.HexToReverseByteArray());
         }
 
-        private readonly Dictionary<StratumConnection, HashSet<string>> workerNonces =
-             new();
+        private readonly Dictionary<string, HashSet<string>> workerNonces = new();
 
         public string Id { get; }
         public EthereumBlockTemplate BlockTemplate { get; }
@@ -39,10 +38,10 @@ namespace Miningcore.Blockchain.Ethereum
         {
             var nonceLower = nonce.ToLower();
 
-            if(!workerNonces.TryGetValue(worker, out var nonces))
+            if(!workerNonces.TryGetValue(worker.ConnectionId, out var nonces))
             {
                 nonces = new HashSet<string>(new[] { nonceLower });
-                workerNonces[worker] = nonces;
+                workerNonces[worker.ConnectionId] = nonces;
             }
 
             else
