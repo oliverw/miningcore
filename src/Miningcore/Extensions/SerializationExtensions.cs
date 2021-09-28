@@ -10,7 +10,10 @@ namespace Miningcore.Extensions
     {
         private static readonly JsonSerializer serializer = new()
         {
-            ContractResolver = new CamelCasePropertyNamesContractResolver()
+            ContractResolver = new DefaultContractResolver
+            {
+                NamingStrategy = new CamelCaseNamingStrategy()
+            }
         };
 
         public static T SafeExtensionDataAs<T>(this IDictionary<string, object> extra, string outerWrapper = null)
@@ -24,7 +27,7 @@ namespace Miningcore.Extensions
                     return JToken.FromObject(o).ToObject<T>(serializer);
                 }
 
-                catch(Exception)
+                catch
                 {
                     // ignored
                 }
