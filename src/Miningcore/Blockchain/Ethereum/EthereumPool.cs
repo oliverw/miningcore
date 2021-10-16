@@ -346,11 +346,12 @@ namespace Miningcore.Blockchain.Ethereum
                         break;
 
                     case EthereumStratumMethods.ExtraNonceSubscribe:
-                        await client.RespondErrorAsync(StratumError.Other, "not supported", request.Id, false);
+                        // Pretend to support it even though we actually do not. Some miners drop the connection upon receiving an error from this
+                        await client.RespondAsync(true, request.Id);
                         break;
 
                     default:
-                        logger.Debug(() => $"[{client.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
+                        logger.Info(() => $"[{client.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
 
                         await client.RespondErrorAsync(StratumError.Other, $"Unsupported request {request.Method}", request.Id);
                         break;
