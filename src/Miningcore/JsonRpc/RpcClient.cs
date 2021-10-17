@@ -120,16 +120,15 @@ namespace Miningcore.JsonRpc
             }
         }
 
-        public IObservable<byte[]> WebsocketSubscribe(ILogger logger, CancellationToken ct, Dictionary<DaemonEndpointConfig,
-                (int Port, string HttpPath, bool Ssl)> portMap, string method, object payload = null,
+        public IObservable<byte[]> WebsocketSubscribe(ILogger logger, CancellationToken ct, DaemonEndpointConfig endPoint,
+            string method, object payload = null,
             JsonSerializerSettings payloadJsonSerializerSettings = null)
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(method), $"{nameof(method)} must not be empty");
 
             logger.LogInvoke(new object[] { method });
 
-            return Observable.Merge(portMap.Keys
-                    .Select(endPoint => WebsocketSubscribeEndpoint(logger, ct, endPoint, portMap[endPoint], method, payload, payloadJsonSerializerSettings)))
+            return WebsocketSubscribeEndpoint(logger, ct, endPoint, method, payload, payloadJsonSerializerSettings)
                 .Publish()
                 .RefCount();
         }
@@ -260,8 +259,8 @@ namespace Miningcore.JsonRpc
             return rpcRequestId;
         }
 
-        private IObservable<byte[]> WebsocketSubscribeEndpoint(ILogger logger, CancellationToken ct, NetworkEndpointConfig endPoint,
-            (int Port, string HttpPath, bool Ssl) conf, string method, object payload = null,
+        private IObservable<byte[]> WebsocketSubscribeEndpoint(ILogger logger, CancellationToken ct,
+            DaemonEndpointConfig endPoint, string method, object payload = null,
             JsonSerializerSettings payloadJsonSerializerSettings = null)
         {
             return Observable.Defer(() => Observable.Create<byte[]>(obs =>
@@ -281,8 +280,8 @@ namespace Miningcore.JsonRpc
                                 using(var client = new ClientWebSocket())
                                 {
                                     // connect
-                                    var protocol = conf.Ssl ? "wss" : "ws";
-                                    var uri = new Uri($"{protocol}://{endPoint.Host}:{conf.Port}{conf.HttpPath}");
+                                    var protocol = endPoint.Ssl ? "wss" : "ws";
+                                    var uri = new Uri($"{protocol}://{endPoint.Host}:{endPoint.Port}{endPoint.HttpPath}");
                                     client.Options.RemoteCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
 
                                     logger.Debug(() => $"Establishing WebSocket connection to {uri}");

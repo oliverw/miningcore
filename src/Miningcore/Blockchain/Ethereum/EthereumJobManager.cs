@@ -5,9 +5,12 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Reactive.Linq;
+using System.Reactive.Threading.Tasks;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
+using Miningcore.Blockchain.Bitcoin;
 using Miningcore.Blockchain.Ethereum.Configuration;
 using Miningcore.Blockchain.Ethereum.DaemonResponses;
 using Miningcore.Configuration;
@@ -25,6 +28,8 @@ using Block = Miningcore.Blockchain.Ethereum.DaemonResponses.Block;
 using Contract = Miningcore.Contracts.Contract;
 using EC = Miningcore.Blockchain.Ethereum.EthCommands;
 using static Miningcore.Util.ActionUtils;
+using System.Reactive;
+using System.Reactive.Concurrency;
 
 namespace Miningcore.Blockchain.Ethereum
 {
@@ -65,24 +70,24 @@ namespace Miningcore.Blockchain.Ethereum
         private EthereumPoolConfigExtra extraPoolConfig;
         private readonly JsonSerializer serializer;
 
-        protected async Task<bool> UpdateJobAsync(CancellationToken ct)
+        protected async Task<bool> UpdateJob(CancellationToken ct, string via = null)
         {
             logger.LogInvoke();
 
             try
             {
-                return UpdateJob(await GetBlockTemplateAsync(ct));
+                return UpdateJob(await GetBlockTemplateAsync(ct), via);
             }
 
             catch(Exception ex)
             {
-                logger.Error(ex, () => $"Error during {nameof(UpdateJobAsync)}");
+                logger.Error(ex, () => $"Error during {nameof(UpdateJob)}");
             }
 
             return false;
         }
 
-        protected bool UpdateJob(EthereumBlockTemplate blockTemplate)
+        protected bool UpdateJob(EthereumBlockTemplate blockTemplate, string via = null)
         {
             logger.LogInvoke();
 
@@ -120,6 +125,8 @@ namespace Miningcore.Blockchain.Ethereum
                     }
 
                     currentJob = job;
+
+                    logger.Info(() => $"New work at height {currentJob.BlockTemplate.Height} and header {currentJob.BlockTemplate.Header} via [{(via ?? "Unknown")}]");
 
                     // update stats
                     BlockchainStats.LastNetworkBlockTime = clock.Now;
@@ -400,6 +407,8 @@ namespace Miningcore.Blockchain.Ethereum
                 if(share.IsBlockCandidate)
                 {
                     logger.Info(() => $"Daemon accepted block {share.BlockHeight} submitted by {context.Miner}");
+
+                    OnBlockFound();
                 }
             }
 
@@ -528,7 +537,7 @@ namespace Miningcore.Blockchain.Ethereum
 
             ConfigureRewards();
 
-            SetupJobUpdates(ct);
+            await SetupJobUpdates(ct);
         }
 
         private void ConfigureRewards()
@@ -550,18 +559,98 @@ namespace Miningcore.Blockchain.Ethereum
             }
         }
 
-        protected virtual void SetupJobUpdates(CancellationToken cancellationToken)
+        protected virtual async Task SetupJobUpdates(CancellationToken ct)
         {
             var pollingInterval = poolConfig.BlockRefreshInterval > 0 ? poolConfig.BlockRefreshInterval : 1000;
 
-            Jobs = Observable.Interval(TimeSpan.FromMilliseconds(pollingInterval))
-                .Select(_ => Observable.FromAsync(UpdateJobAsync))
-                .Concat()
-                .Do(isNew =>
+            var blockSubmission = blockFoundSubject.Synchronize();
+            var pollTimerRestart = blockFoundSubject.Synchronize();
+
+            var triggers = new List<IObservable<(string Via, string Data)>>
+            {
+                blockSubmission.Select(x => (JobRefreshBy.BlockFound, (string) null))
+            };
+
+            var enableStreaming = extraPoolConfig?.EnableDaemonWebsocketStreaming == true;
+
+            var streamingEndpoint = daemonEndpoints
+                .Where(x => x.Extra.SafeExtensionDataAs<EthereumDaemonEndpointConfigExtra>() != null)
+                .Select(x=> Tuple.Create(x, x.Extra.SafeExtensionDataAs<EthereumDaemonEndpointConfigExtra>()))
+                .FirstOrDefault();
+
+            if(enableStreaming && streamingEndpoint.Item2?.PortWs.HasValue != true)
+            {
+                logger.Warn(() => $"'{nameof(EthereumPoolConfigExtra.EnableDaemonWebsocketStreaming).ToLowerCamelCase()}' enabled but not a single daemon found with a configured websocket port ('{nameof(EthereumDaemonEndpointConfigExtra.PortWs).ToLowerCamelCase()}'). Falling back to polling.");
+                enableStreaming = false;
+            }
+
+            if(enableStreaming)
+            {
+                var (endpointConfig, extra) = streamingEndpoint;
+
+                var wsEndpointConfig = new DaemonEndpointConfig
                 {
-                    if(isNew)
-                        logger.Info(() => $"New work at height {currentJob.BlockTemplate.Height} and header {currentJob.BlockTemplate.Header} detected [{JobRefreshBy.Poll}]");
-                })
+                    Host = endpointConfig.Host,
+                    Port = extra.PortWs.Value,
+                    HttpPath = extra.HttpPathWs,
+                    Ssl = extra.SslWs
+                };
+
+                logger.Info(() => $"Subscribing to WebSocket {(wsEndpointConfig.Ssl ? "wss" : "ws")}://{wsEndpointConfig.Host}:{wsEndpointConfig.Port}");
+
+                var wsSubscription = "newHeads";
+                var isRetry = false;
+            retry:
+
+                // stream work updates
+                var getWorkObs = rpcClient.WebsocketSubscribe(logger, ct, wsEndpointConfig, EC.Subscribe, new[] { wsSubscription })
+                    .Publish()
+                    .RefCount();
+
+                // test subscription
+                var subcriptionResponse = await getWorkObs
+                    .Take(1)
+                    .Select(x => JsonConvert.DeserializeObject<JsonRpcResponse<string>>(Encoding.UTF8.GetString(x)))
+                    .ToTask(ct);
+
+                if(subcriptionResponse.Error != null)
+                {
+                    // older versions of geth only support subscriptions to "newBlocks"
+                    if(!isRetry && subcriptionResponse.Error.Code == (int) BitcoinRPCErrorCode.RPC_METHOD_NOT_FOUND)
+                    {
+                        wsSubscription = "newBlocks";
+
+                        isRetry = true;
+                        goto retry;
+                    }
+
+                    logger.ThrowLogPoolStartupException($"Unable to subscribe to geth websocket '{wsSubscription}': {subcriptionResponse.Error.Message} [{subcriptionResponse.Error.Code}]");
+                }
+
+                var blockNotify = getWorkObs.Where(x => x != null)
+                    .Do(x => Console.WriteLine("** WS"))
+                    .Publish()
+                    .RefCount();
+
+                pollTimerRestart = Observable.Merge(
+                    blockSubmission,
+                    blockNotify.Select(_ => Unit.Default))
+                .Publish()
+                .RefCount();
+
+                // Websocket
+                triggers.Add(blockNotify
+                    .Select(_ => (JobRefreshBy.WebSocket, (string) null)));
+            }
+
+            triggers.Add(Observable.Timer(TimeSpan.FromMilliseconds(pollingInterval))
+                .TakeUntil(pollTimerRestart)
+                .Select(_ => (JobRefreshBy.Poll, (string) null))
+                .Repeat());
+
+            Jobs = Observable.Merge(triggers)
+                .Select(x => Observable.FromAsync(() => UpdateJob(ct, x.Via)))
+                .Concat()
                 .Where(isNew => isNew)
                 .Select(_ => GetJobParamsForStratum(true))
                 .Publish()

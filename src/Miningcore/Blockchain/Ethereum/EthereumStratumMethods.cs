@@ -1,6 +1,6 @@
 namespace Miningcore.Blockchain.Ethereum
 {
-    public class EthereumStratumMethods
+    public static class EthereumStratumMethods
     {
         /// <summary>
         /// Used to subscribe to work from a server, required before all other communication.
