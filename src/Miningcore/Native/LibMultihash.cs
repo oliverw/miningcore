@@ -5,6 +5,9 @@ namespace Miningcore.Native
 {
     public static unsafe class LibMultihash
     {
+        [DllImport("libmultihash", EntryPoint = "gr_export", CallingConvention = CallingConvention.Cdecl)]
+        public static extern void gr(byte* input, void* output);
+        
         [DllImport("libmultihash", EntryPoint = "scrypt_export", CallingConvention = CallingConvention.Cdecl)]
         public static extern void scrypt(byte* input, void* output, uint n, uint r, uint inputLength);
 
