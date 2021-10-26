@@ -3,9 +3,9 @@
         "name": "Raptoreum",
         "canonicalName": "Raptoreum",
         "symbol": "RTM",
-        "family": "bitcoin",
+        "family": "bitcoin", // This tells miningcore to use Bitcoin headers and structure.
         "coinbaseHasher": {
-            "hash": "gr"
+            "hash": "sha256d" // This is an algorithm that I have changed that might have caused the issue.
         },
         "headerHasher": {
             "hash": "gr"
