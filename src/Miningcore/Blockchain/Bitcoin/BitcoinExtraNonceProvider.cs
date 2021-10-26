@@ -8,6 +8,7 @@ namespace Miningcore.Blockchain.Bitcoin
     {
         public BitcoinExtraNonceProvider(string poolId, byte? clusterInstanceId) : base(poolId, 4, clusterInstanceId)
         {
+
         }
     }
 }
