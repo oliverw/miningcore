@@ -15,6 +15,7 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+#include "gr.h"
 #include "bcrypt.h"
 #include "keccak.h"
 #include "quark.h"
@@ -61,6 +62,11 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #else
 #define MODULE_API
 #endif
+
+extern "C" MODULE_API void gr_export(const char* input, char* output)
+{
+    gr_hash(input, output);
+}
 
 extern "C" MODULE_API void scrypt_export(const char* input, char* output, uint32_t N, uint32_t R, uint32_t input_len)
 {
