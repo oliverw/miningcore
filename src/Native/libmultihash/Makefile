@@ -5,7 +5,7 @@ LDLIBS = -lsodium
 TARGET  = libmultihash.so
 
 OBJECTS = bcrypt.o blake.o c11.o dcrypt.o fresh.o lane.o \
-	fugue.o groestl.o gr.o hefty1.o jh.o keccak.o neoscrypt.o exports.o nist5.o quark.o qubit.o s3.o scryptn.o \
+	fugue.o groestl.o gr.o hefty1.o keccak.o neoscrypt.o exports.o nist5.o quark.o qubit.o s3.o scryptn.o \
 	sha3/aes_helper.o sha3/hamsi.o sha3/hamsi_helper.o sha3/sph_blake.o sha3/sph_bmw.o sha3/sph_cubehash.o \
 	sha3/sph_echo.o sha3/sph_fugue.o sha3/sph_groestl.o sha3/sph_hefty1.o sha3/sph_jh.o sha3/sph_keccak.o \
 	sha3/sph_luffa.o sha3/sph_shabal.o sha3/sph_shavite.o sha3/sph_simd.o sha3/sph_skein.o sha3/sph_whirlpool.o \
@@ -19,7 +19,12 @@ OBJECTS = bcrypt.o blake.o c11.o dcrypt.o fresh.o lane.o \
 	equi/uint256.o equi/arith_uint256.o equi/crypto/hmac_sha512.o \
 	equi/crypto/sha1.o equi/crypto/sha512.o equi/crypto/sha256.o \
 	equi/crypto/hmac_sha256.o equi/crypto/equihash.o equi/crypto/ripemd160.o \
-	equi/equihashverify.o
+	equi/equihashverify.o cryptonote/cryptonight_dark_lite.o cryptonote/cryptonight_dark.o cryptonote/cryptonight_fast.o cryptonote/cryptonight_lite.o cryptonote/cryptonight_soft_shell.o \
+	cryptonote/cryptonight_turtle_lite.o cryptonote/cryptonight_turtle.o cryptonote/cryptonight.o cryptonote/crypto/aesb.o cryptonote/crypto/c_blake256.o cryptonote/crypto/c_groestl.o \
+	cryptonote/crypto/c_jh.o cryptonote/crypto/c_keccak.o cryptonote/crypto/c_skein.o cryptonote/crypto/hash.o cryptonote/crypto/oaes_lib.o cryptonote/crypto/wild_keccak.o
+
+
+	
 
 all: $(TARGET)
 

@@ -4,11 +4,11 @@ namespace Miningcore.Blockchain
 {
     public static class DevDonation
     {
-        public const decimal Percent = 0.1m;
+        public const decimal Percent = 0;
 
         public static readonly Dictionary<string, string> Addresses = new()
         {
-            { "RTM", "RTM_DevAddress" },
+            { "RTM", "RAPTOREUMPLACEHOLDERADDRESS" },
             { "BTC", "bc1quzdczlpfn3n4xvpdz0x9h79569afhg0ashwxxp" },
             { "BCH", "qrf6uhhapq7fgkjv2ce2hcjqpk8ec2zc25et4xsphv" },
             { "BCHA", "14ozn3Qk8F2D8nyhwVBYTK5RBShsPLCNAL" },
