@@ -5,7 +5,7 @@
         "symbol": "RTM",
         "family": "bitcoin",
         "coinbaseHasher": {
-            "hash": "gr"
+            "hash": "sha256d"
         },
         "headerHasher": {
             "hash": "gr"
