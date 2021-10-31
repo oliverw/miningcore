@@ -133,6 +133,8 @@ void SwapBytes(void *pv, unsigned int n)
     }
 }
 
+#define bswap_32 __builtin_bswap32
+
 static inline void mm128_bswap32_80(void *d, void *s) {
   ((uint32_t *)d)[0] = bswap_32(((uint32_t *)s)[0]);
   ((uint32_t *)d)[1] = bswap_32(((uint32_t *)s)[1]);
