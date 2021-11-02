@@ -185,6 +185,7 @@ void gr_hash(const char* input, char* output) {
 	uint8_t selectedAlgoOutput[15] = {0};
 	uint8_t selectedCNAlgoOutput[14] = {0};
 	mm128_bswap32_80(in, input);  //try swapping the bytes in 32bit chunks like opt-cpuminer
+	
 
 	getAlgoString(&input[4], 64, selectedAlgoOutput, 15);
 	getAlgoString(&input[4], 64, selectedCNAlgoOutput, 14);
