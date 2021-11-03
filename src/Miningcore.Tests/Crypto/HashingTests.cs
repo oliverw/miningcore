@@ -373,7 +373,7 @@ namespace Miningcore.Tests.Crypto
             hasher.Digest(gr_test_value, hash);
             var result = hash.ToHexString();
 
-            Assert.Equal("9410166b1a340636c21afde02fd803a63897388d30d76790676a99bc93b5c214", result);
+            Assert.Equal("04d4a507827747212d3cccb460f4753d74120d76d5eb6da328877b51932f982e", result);
         }
     }
 }

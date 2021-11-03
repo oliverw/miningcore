@@ -31,7 +31,6 @@
 #include "cryptonote/cryptonight_soft_shell.h"
 #include "cryptonote/cryptonight_turtle.h"
 #include "cryptonote/cryptonight_turtle_lite.h"
-#include <stdio.h>
 
 enum Algo {
         BLAKE = 0,
@@ -54,19 +53,11 @@ enum Algo {
 
 enum CNAlgo {
 	CNDark = 0,
-	CNDarkf,
 	CNDarklite,
-	CNDarklitef,
 	CNFast,
-	CNFastf,
-	CNF,
 	CNLite,
-	CNLitef,
-	CNSoftshellf,
 	CNTurtle,
-	CNTurtlef,
 	CNTurtlelite,
-	CNTurtlelitef,
 	CN_HASH_FUNC_COUNT
 };
 
@@ -111,28 +102,6 @@ static void getAlgoString(void *mem, unsigned int size, uint8_t* selectedAlgoOut
   }
 }
 
-void print_hex_memory(void *mem, unsigned int size) {
-  int i;
-  unsigned char *p = (unsigned char *)mem;
-  unsigned int len = size/2;
-  for (i=0;i<len; i++) {
-    printf("%02x", p[(len - i - 1)]);
-  }
-  printf("\n");
-}
-
-void SwapBytes(void *pv, unsigned int n)
-{
-    char *p = pv;
-    unsigned int lo, hi;
-    for(lo=0, hi=n-1; hi>lo; lo++, hi--)
-    {
-        char tmp=p[lo];
-        p[lo] = p[hi];
-        p[hi] = tmp;
-    }
-}
-
 #define bswap_32 __builtin_bswap32
 
 static inline void mm128_bswap32_80(void *d, void *s) {
@@ -157,9 +126,12 @@ static inline void mm128_bswap32_80(void *d, void *s) {
   ((uint32_t *)d)[18] = bswap_32(((uint32_t *)s)[18]);
   ((uint32_t *)d)[19] = bswap_32(((uint32_t *)s)[19]); 
 }
+void gr_hash(const char* input, char* output, uint32_t len) {
 
-void gr_hash(const char* input, char* output) {
 	uint32_t hash[64/4];
+	char hashOrder[16] = { 0};
+	char cnHashOrder[7] = { 0};
+
 	sph_blake512_context ctx_blake;
 	sph_bmw512_context ctx_bmw;
 	sph_groestl512_context ctx_groestl;
@@ -182,16 +154,12 @@ void gr_hash(const char* input, char* output) {
 
 	void *in = (void*) input;
 	int size = 80;
+	mm128_bswap32_80(input,input);
+
 	uint8_t selectedAlgoOutput[15] = {0};
-	uint8_t selectedCNAlgoOutput[14] = {0};
-	mm128_bswap32_80(in, input);  //try swapping the bytes in 32bit chunks like opt-cpuminer
-	
-
+	uint8_t selectedCNAlgoOutput[6] = {0};
 	getAlgoString(&input[4], 64, selectedAlgoOutput, 15);
-	getAlgoString(&input[4], 64, selectedCNAlgoOutput, 14);
-
-	//printf("previous hash=");
-	//print_hex_memory(&input[4], 64);
+	getAlgoString(&input[4], 64, selectedCNAlgoOutput, 6);
 	int i;
 	for (i = 0; i < 18; i++)
 	{
@@ -234,44 +202,20 @@ void gr_hash(const char* input, char* output) {
 		 case CNDark:
 			cryptonightdark_hash(in, hash, size, 1);
 			break;
-		 case CNDarkf:
-			cryptonightdark_fast_hash(in, hash, size);
-			break;
 		 case CNDarklite:
 			cryptonightdarklite_hash(in, hash, size, 1);
-			break;
-		 case CNDarklitef:
-			cryptonightdarklite_fast_hash(in, hash, size);
 			break;
 		 case CNFast:
 			cryptonightfast_hash(in, hash, size, 1);
 			break;
-		 case CNFastf:
-			cryptonightfast_fast_hash(in, hash, size);
-			break;
-		 case CNF:
-			cryptonight_fast_hash(in, hash, size);
-			break;
 		 case CNLite:
 			cryptonightlite_hash(in, hash, size, 1);
-			break;
-		 case CNLitef:
-			cryptonightlite_fast_hash(in, hash, size);
-			break;
-		 case CNSoftshellf:
-			cryptonight_soft_shell_fast_hash(in, hash, size);
 			break;
 		 case CNTurtle:
 			cryptonightturtle_hash(in, hash, size, 1);
 			break;
-		 case CNTurtlef:
-			cryptonightturtle_fast_hash(in, hash, size);
-			break;
 		 case CNTurtlelite:
 			cryptonightturtlelite_hash(in, hash, size, 1);
-			break;
-		 case CNTurtlelitef:;
-			cryptonightturtlelite_fast_hash(in, hash, size);
 			break;
 		}
 		//selection core algo
@@ -291,6 +235,11 @@ void gr_hash(const char* input, char* output) {
 				sph_groestl512(&ctx_groestl, in, size);
 				sph_groestl512_close(&ctx_groestl, hash);
 				break;
+		case SKEIN:
+				sph_skein512_init(&ctx_skein);
+				sph_skein512(&ctx_skein, in, size);
+				sph_skein512_close(&ctx_skein, hash);
+				break;
 		case JH:
 				sph_jh512_init(&ctx_jh);
 				sph_jh512(&ctx_jh, in, size);
@@ -300,11 +249,6 @@ void gr_hash(const char* input, char* output) {
 				sph_keccak512_init(&ctx_keccak);
 				sph_keccak512(&ctx_keccak, in, size);
 				sph_keccak512_close(&ctx_keccak, hash);
-				break;
-		case SKEIN:
-				sph_skein512_init(&ctx_skein);
-				sph_skein512(&ctx_skein, in, size);
-				sph_skein512_close(&ctx_skein, hash);
 				break;
 		case LUFFA:
 				sph_luffa512_init(&ctx_luffa);
