@@ -137,14 +137,18 @@ namespace Miningcore.Blockchain.Ergo
                             logger.Info(() => $"Detected new block {job.Height} [{via}]");
                         else
                             logger.Info(() => $"Detected new block {job.Height}");
-
+                        // update stats
+                        var inode = await Guard(() => ergoClient.GetNodeInfoAsync(),
+	                        ex => logger.Debug(ex));
+                        var blockTimeAvg = 120;
+                        var DiffN = (double)inode.Difficulty;
                         // update stats
                         BlockchainStats.LastNetworkBlockTime = clock.Now;
                         BlockchainStats.BlockHeight = job.Height;
-                        BlockchainStats.NetworkDifficulty = job.Difficulty;
-
-                        var blockTimeAvg = 120;
+                        BlockchainStats.ConnectedPeers = inode.PeersCount;
+                        BlockchainStats.NetworkDifficulty = DiffN;
                         BlockchainStats.NetworkHashrate = BlockchainStats.NetworkDifficulty / blockTimeAvg;
+
                     }
 
                     else
