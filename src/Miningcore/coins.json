@@ -14,6 +14,9 @@
             "hash": "reverse",
             "args": [ { "hash": "gr" } ]
         },
+	    "shareMultiplier": 65536,
+        "hasFounderFee": true,
+        "hasMasterNodes": true,
         "explorerBlockLink": "http://explorer.raptoreum.com/block/$hash$",
         "explorerTxLink": "http://explorer.raptoreum.com/tx/{0}",
         "explorerAccountLink": "http://explorer.raptoreum.com/address/{0}"

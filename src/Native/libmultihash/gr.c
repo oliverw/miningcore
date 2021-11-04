@@ -154,8 +154,6 @@ void gr_hash(const char* input, char* output, uint32_t len) {
 
 	void *in = (void*) input;
 	int size = 80;
-	mm128_bswap32_80(input,input);
-
 	uint8_t selectedAlgoOutput[15] = {0};
 	uint8_t selectedCNAlgoOutput[6] = {0};
 	getAlgoString(&input[4], 64, selectedAlgoOutput, 15);
