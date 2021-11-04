@@ -1,7 +1,7 @@
 [![Build status](https://ci.appveyor.com/api/projects/status/nbvaa55gu3icd1q8?svg=true)](https://ci.appveyor.com/project/oliverw/miningcore)
 [![license](https://img.shields.io/github/license/mashape/apistatus.svg)]()
 
-<img src="https://github.com/coinfoundry/miningcore/raw/master/logo.png" width="150">
+<img src="https://avatars.githubusercontent.com/u/92990377?s=400&u=294c6b31823a169baba110e6b013369a6733ceab&v=4" width="150">
 
 ### Features
 
