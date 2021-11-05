@@ -345,6 +345,10 @@ namespace Miningcore.Blockchain.Ergo
 
                     if(validity == null || !validity.IsValid)
                         logger.Warn(()=> $"Address {pair.Key} is not valid!");
+
+		    // DEBUG
+                    //logger.Info("DEBUG: " + pair.Key);
+
                 }
 
                 // Create request batch

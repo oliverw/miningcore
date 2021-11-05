@@ -141,7 +141,7 @@ namespace Miningcore.Blockchain.Ergo
                         // update stats
                         BlockchainStats.LastNetworkBlockTime = clock.Now;
                         BlockchainStats.BlockHeight = job.Height;
-                        BlockchainStats.NetworkDifficulty = job.Difficulty;
+                        BlockchainStats.NetworkDifficulty = job.Difficulty * ErgoConstants.Pow2x32;
 
                         var blockTimeAvg = 120;
                         BlockchainStats.NetworkHashrate = BlockchainStats.NetworkDifficulty / blockTimeAvg;
@@ -406,6 +406,9 @@ namespace Miningcore.Blockchain.Ergo
             // update stats
             BlockchainStats.NetworkType = network;
             BlockchainStats.RewardType = "POW";
+
+	    // lost data ergo node
+	    BlockchainStats.ConnectedPeers = info.PeersCount;
 
             SetupJobUpdates();
         }
