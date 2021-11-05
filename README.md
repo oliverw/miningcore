@@ -22,7 +22,7 @@
 
 Commercial support directly by the maintainer is available through [miningcore.dev](https://miningcore.dev/).
 
-For general questions visit the [Discussions Area](https://github.com/coinfoundry/miningcore/discussions).
+For general questions visit the [Discussions Area](https://github.com/GetBlok-io/miningcore/discussions).
 
 ## Running Miningcore
 
