@@ -1,10 +1,6 @@
-using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.Text.RegularExpressions;
-using Miningcore.Configuration;
-using Miningcore.Extensions;
-using NBitcoin.BouncyCastle.Math;
+using Org.BouncyCastle.Math;
 
 namespace Miningcore.Blockchain.Cryptonote
 {

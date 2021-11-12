@@ -111,12 +111,12 @@ namespace Miningcore.Configuration
         {
             public EquihashNetworkParams()
             {
-                diff1Value = new Lazy<NBitcoin.BouncyCastle.Math.BigInteger>(() =>
+                diff1Value = new Lazy<Org.BouncyCastle.Math.BigInteger>(() =>
                 {
                     if(string.IsNullOrEmpty(Diff1))
                         throw new InvalidOperationException("Diff1 has not yet been initialized");
 
-                    return new NBitcoin.BouncyCastle.Math.BigInteger(Diff1, 16);
+                    return new Org.BouncyCastle.Math.BigInteger(Diff1, 16);
                 });
 
                 diff1BValue = new Lazy<BigInteger>(() =>
@@ -128,11 +128,11 @@ namespace Miningcore.Configuration
                 });
             }
 
-            private readonly Lazy<NBitcoin.BouncyCastle.Math.BigInteger> diff1Value;
+            private readonly Lazy<Org.BouncyCastle.Math.BigInteger> diff1Value;
             private readonly Lazy<BigInteger> diff1BValue;
 
             [JsonIgnore]
-            public NBitcoin.BouncyCastle.Math.BigInteger Diff1Value => diff1Value.Value;
+            public Org.BouncyCastle.Math.BigInteger Diff1Value => diff1Value.Value;
 
             [JsonIgnore]
             public BigInteger Diff1BValue => diff1BValue.Value;

@@ -18,7 +18,6 @@ using Miningcore.Messaging;
 using Miningcore.Notifications.Messages;
 using Miningcore.Time;
 using Miningcore.Util;
-using MoreLinq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using NLog;

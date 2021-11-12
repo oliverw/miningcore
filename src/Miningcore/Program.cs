@@ -154,7 +154,6 @@ namespace Miningcore
                             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
                             services.AddMvc(options => { options.EnableEndpointRouting = false; })
-                                .SetCompatibilityVersion(CompatibilityVersion.Latest)
                                 .AddControllersAsServices()
                                 .AddJsonOptions(options => { options.JsonSerializerOptions.WriteIndented = true; });
 

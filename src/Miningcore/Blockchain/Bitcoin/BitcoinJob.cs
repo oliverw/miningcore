@@ -521,7 +521,7 @@ namespace Miningcore.Blockchain.Bitcoin
 
             scriptSigFinalBytes = new Script(Op.GetPushOp(Encoding.UTF8.GetBytes(coinbaseString))).ToBytes();
 
-            //Difficulty = new Target(new NBitcoin.BouncyCastle.Math.BigInteger(BlockTemplate.Target, 16)).Difficulty;
+            //Difficulty = new Target(new Org.BouncyCastle.Math.BigInteger(BlockTemplate.Target, 16)).Difficulty;
             Difficulty = new Target(System.Numerics.BigInteger.Parse(BlockTemplate.Target, NumberStyles.HexNumber)).Difficulty;
 
             extraNoncePlaceHolderLength = BitcoinConstants.ExtranoncePlaceHolderLength;
