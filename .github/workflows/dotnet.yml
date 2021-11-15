@@ -20,6 +20,8 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 6.0.x
+    - name: Install Build dependencies
+      run: sudo apt-get install -y cmake build-essential libssl-dev pkg-config libboost-all-dev libsodium-dev libzmq5
     - name: Restore dependencies
       run: dotnet restore src
     - name: Build
