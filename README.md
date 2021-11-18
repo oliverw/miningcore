@@ -20,15 +20,14 @@
 
 ## Support
 
-GetBlok.io is a maintainer of this code base, implemented in the GetBlok.io world-wide pools.  Support is provided "as-is" for no cost.  You may visit the following channels to engage with us, as well as by GitHub issues and discussion channels.
+GetBlok.io is a maintainer of this code base, implemented in the GetBlok.io world-wide pools.  Support is provided "as-is" for no cost.  You may visit the following channels to engage with us, as well as by GitHub issues and discussion channels:
 
-[Telegram](https://t.me/joinchat/e26z7E8PLqkwMjFh)
-[Discord](https://discord.gg/h9uF3cNXdY)
+- Telegram: [Telegram](https://t.me/joinchat/e26z7E8PLqkwMjFh)
+- Discord: [Discord](https://discord.gg/h9uF3cNXdY)
+- For general questions visit the [Discussions Area](https://github.com/GetBlok-io/miningcore/discussions).
 
-For general questions visit the [Discussions Area](https://github.com/GetBlok-io/miningcore/discussions).
-
-PLEASE OPEN ISSUES IF YOU FIND A BUG
-[Issues](https://github.com/GetBlok-io/miningcore/issues) 
+## PLEASE OPEN ISSUES IF YOU FIND A BUG
+We are actively working on bringing the code base up to date: [Issues](https://github.com/GetBlok-io/miningcore/issues) 
 
 ## Running Miningcore
 
