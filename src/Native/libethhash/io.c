@@ -23,6 +23,15 @@
 #include <stdio.h>
 #include <errno.h>
 
+int ethash_fseek(FILE* f, size_t offset, int origin)
+{
+#ifdef _WIN32
+    return _fseeki64(f, offset, origin);
+#else
+    return fseeko(f, offset, origin);
+#endif
+}
+
 enum ethash_io_rc ethash_io_prepare(
 	char const* dirname,
 	ethash_h256_t const seedhash,
@@ -91,7 +100,7 @@ enum ethash_io_rc ethash_io_prepare(
 		goto free_memo;
 	}
 	// make sure it's of the proper size
-	if (fseek(f, (long int)(file_size + ETHASH_DAG_MAGIC_NUM_SIZE - 1), SEEK_SET) != 0) {
+    if (ethash_fseek(f, file_size + ETHASH_DAG_MAGIC_NUM_SIZE - 1, SEEK_SET) != 0) {
 		fclose(f);
 		ETHASH_CRITICAL("Could not seek to the end of DAG file: \"%s\". Insufficient space?", tmpfile);
 		goto free_memo;
