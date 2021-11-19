@@ -113,11 +113,12 @@ namespace Miningcore.Blockchain.Ergo
                              (job.BlockTemplate?.Msg != blockTemplate.Msg ||
                               blockTemplate.Height > job.BlockTemplate.Height));
                 if(job != null && blockTemplate != null){
-                    logger.Info(() => $"Updating Job: job:{job} isNew:{isNew} job.blockTemplate {job.BlockTemplate.Msg}" +
-                        $"blockTemplate.Msg:{blockTemplate.Msg} job.blockTemplate.Height:{job.BlockTemplate.Height} blockTemplate.Height:{blockTemplate.Height}");
+                    logger.Info(() => $"Updating Job: job:{job.JobId} isNew:{isNew} job.blockTemplate {job.BlockTemplate.Msg}" +
+                        $" blockTemplate.Msg:{blockTemplate.Msg} job.blockTemplate.Height:{job.BlockTemplate.Height} blockTemplate.Height:{blockTemplate.Height}");
                 }else if(job != null){
-                    logger.Info(() => $"Updating Job: job:{job} isNew:{isNew} job.blockTemplate {job.BlockTemplate.Msg}" +
-                        $"job.blockTemplate.Height:{job.BlockTemplate.Height} ");
+                    
+                    logger.Info(() => $"Updating Job: job:{job.JobId} isNew:{isNew} job.blockTemplate {job.BlockTemplate.Msg}" +
+                        $" job.blockTemplate.Height:{job.BlockTemplate.Height} ");
                 }
                 if(isNew)
                     messageBus.NotifyChainHeight(poolConfig.Id, blockTemplate.Height, poolConfig.Template);
@@ -125,9 +126,10 @@ namespace Miningcore.Blockchain.Ergo
                 if(isNew || forceUpdate)
                 {
                     job = new ErgoJob();
-
+                    
                     job.Init(blockTemplate, blockVersion, extraNonceSize, NextJobId());
-
+                    logger.Info(() => $"New Job Created: job:{job.JobId} isNew:{isNew} job.blockTemplate {job.BlockTemplate.Msg}" +
+                        $" job.blockTemplate.Height:{job.BlockTemplate.Height} ");
                     lock(jobLock)
                     {
                         validJobs.Insert(0, job);
