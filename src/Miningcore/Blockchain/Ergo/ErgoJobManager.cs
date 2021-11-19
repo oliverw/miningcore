@@ -243,12 +243,13 @@ namespace Miningcore.Blockchain.Ergo
         private async Task<bool> SubmitBlockAsync(Share share, ErgoJob job, string nonce)
         {
             try
-            {
+            {   
+                logger.Info(() => $"Block Submited Job Params - Height: {job.Height} ID: {job.JobId} bTHeight: {job.BlockTemplate.Height}");
                 await ergoClient.MiningSubmitSolutionAsync(new PowSolutions
                 {
                     N = nonce,
                 });
-
+                
                 return true;
             }
 
