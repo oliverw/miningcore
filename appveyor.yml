@@ -4,7 +4,7 @@
 
 # Build worker image (VM template)
 image:
-- Visual Studio 2019
+- Visual Studio 2022
 - Ubuntu2004
 
 #---------------------------------#
@@ -21,13 +21,13 @@ build_script:
   - sh: sudo apt-get update -y && sudo apt-get -y install cmake build-essential libssl-dev pkg-config libboost-all-dev libsodium-dev libzmq5
   - # Publish
   - cd Miningcore
-  - dotnet publish -c Release --framework net5.0
+  - dotnet publish -c Release --framework net6.0
   - # Publish Artifacts
-  - sh: (cd bin/Release/net5.0 && mkdir miningcore && cp -r publish/* miningcore && tar cf miningcore-linux-ubuntu-x64.tar.gz miningcore && appveyor PushArtifact miningcore-linux-ubuntu-x64.tar.gz)
-  - cmd: cd bin\Release\net5.0 && mkdir miningcore && xcopy publish\* miningcore /S && 7z a miningcore-win-x64.zip miningcore && appveyor PushArtifact miningcore-win-x64.zip && cd ..\..\..
+  - sh: (cd bin/Release/net6.0 && mkdir miningcore && cp -r publish/* miningcore && tar cf miningcore-linux-ubuntu-x64.tar.gz miningcore && appveyor PushArtifact miningcore-linux-ubuntu-x64.tar.gz)
+  - cmd: cd bin\Release\net6.0 && mkdir miningcore && xcopy publish\* miningcore /S && 7z a miningcore-win-x64.zip miningcore && appveyor PushArtifact miningcore-win-x64.zip && cd ..\..\..
   - # Build Tests
   - cd ../Miningcore.Tests
-  - dotnet build -c Release --framework net5.0
+  - dotnet build -c Release --framework net6.0
 
 #---------------------------------#
 #       tests configuration       #
@@ -38,7 +38,7 @@ test_script:
  - dotnet test -c Release --no-build
 
 before_test:
-  - sh: cp -v $APPVEYOR_BUILD_FOLDER/src/Miningcore/bin/Release/net5.0/publish/*.so $APPVEYOR_BUILD_FOLDER/src/Miningcore.Tests/bin/Release/net5.0/
+  - sh: cp -v $APPVEYOR_BUILD_FOLDER/src/Miningcore/bin/Release/net6.0/publish/*.so $APPVEYOR_BUILD_FOLDER/src/Miningcore.Tests/bin/Release/net6.0/
 
 #---------------------------------#
 #         notifications           #

@@ -28,7 +28,7 @@ For general questions visit the [Discussions Area](https://github.com/coinfoundr
 
 ### Linux: pre-built binaries
 
-- Install [.NET 5 Runtime](https://dotnet.microsoft.com/download/dotnet/5.0)
+- Install [.NET 6 Runtime](https://dotnet.microsoft.com/download/dotnet/6.0)
 - For Debian/Ubuntu, install these packages
   - `postgresql-11` (or higher, the higher the better)
   - `libzmq5`
@@ -42,7 +42,7 @@ For general questions visit the [Discussions Area](https://github.com/coinfoundr
 
 ### Windows: pre-built binaries
 
-- Install [.NET 5 Runtime](https://dotnet.microsoft.com/download/dotnet/5.0)
+- Install [.NET 6 Runtime](https://dotnet.microsoft.com/download/dotnet/6.0)
 - Install [PostgreSQL Database](https://www.postgresql.org/)
 - Download `miningcore-win-x64.zip` from the latest [Release](https://github.com/coinfoundry/miningcore/releases)
 - Extract the Archive
@@ -111,25 +111,25 @@ $ sudo dpkg -i packages-microsoft-prod.deb
 $ sudo apt-get update
 $ sudo apt-get install -y apt-transport-https
 $ sudo apt-get update
-$ sudo apt-get -y install dotnet-sdk-5.0 git cmake build-essential libssl-dev pkg-config libboost-all-dev libsodium-dev libzmq5
+$ sudo apt-get -y install dotnet-sdk-6.0 git cmake build-essential libssl-dev pkg-config libboost-all-dev libsodium-dev libzmq5
 $ git clone https://github.com/coinfoundry/miningcore
 $ cd miningcore/src/Miningcore
-$ dotnet publish -c Release --framework net5.0  -o ../../build
+$ dotnet publish -c Release --framework net6.0  -o ../../build
 ```
 
 ### Building on Windows
 
-Download and install the [.NET 5 SDK](https://dotnet.microsoft.com/download/dotnet/5.0)
+Download and install the [.NET 6 SDK](https://dotnet.microsoft.com/download/dotnet/6.0)
 
 ```dosbatch
 > git clone https://github.com/coinfoundry/miningcore
 > cd miningcore/src/Miningcore
-> dotnet publish -c Release --framework net5.0  -o ..\..\build
+> dotnet publish -c Release --framework net6.0  -o ..\..\build
 ```
 
 ### Building on Windows - Visual Studio
 
-- Install [Visual Studio 2019](https://www.visualstudio.com/vs/). Visual Studio Community Edition is fine.
+- Install [Visual Studio 2022](https://www.visualstudio.com/vs/). Visual Studio Community Edition is fine.
 - Open `Miningcore.sln` in Visual Studio
 
 

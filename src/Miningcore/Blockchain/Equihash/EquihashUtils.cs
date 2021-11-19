@@ -2,7 +2,7 @@
 using System.Buffers;
 using Miningcore.Configuration;
 using Miningcore.Extensions;
-using NBitcoin.BouncyCastle.Math;
+using Org.BouncyCastle.Math;
 
 namespace Miningcore.Blockchain.Equihash
 {

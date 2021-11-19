@@ -15,7 +15,6 @@ using Miningcore.Extensions;
 using Miningcore.Messaging;
 using Miningcore.Notifications.Messages;
 using Miningcore.Time;
-using MoreLinq;
 using NLog;
 using ZeroMQ;
 

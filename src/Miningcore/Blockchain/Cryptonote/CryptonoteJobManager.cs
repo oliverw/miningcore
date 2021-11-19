@@ -23,7 +23,6 @@ using Miningcore.Notifications.Messages;
 using Miningcore.Stratum;
 using Miningcore.Time;
 using Miningcore.Util;
-using MoreLinq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NLog;
@@ -79,7 +78,7 @@ namespace Miningcore.Blockchain.Cryptonote
 
                 var blockTemplate = response.Response;
                 var job = currentJob;
-                var newHash = blockTemplate.Blob.HexToByteArray().Slice(7, 32).ToHexString();
+                var newHash = blockTemplate.Blob.HexToByteArray().AsSpan().Slice(7, 32).ToHexString();
 
                 var isNew = job == null || newHash != job.PrevHash;
 

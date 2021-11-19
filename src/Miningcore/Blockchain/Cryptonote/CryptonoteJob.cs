@@ -6,7 +6,7 @@ using Miningcore.Extensions;
 using Miningcore.Native;
 using Miningcore.Stratum;
 using Miningcore.Util;
-using NBitcoin.BouncyCastle.Math;
+using Org.BouncyCastle.Math;
 using Contract = Miningcore.Contracts.Contract;
 
 namespace Miningcore.Blockchain.Cryptonote
