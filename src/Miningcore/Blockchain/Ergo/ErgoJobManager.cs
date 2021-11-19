@@ -112,7 +112,13 @@ namespace Miningcore.Blockchain.Ergo
                             (blockTemplate != null &&
                              (job.BlockTemplate?.Msg != blockTemplate.Msg ||
                               blockTemplate.Height > job.BlockTemplate.Height));
-
+                if(blockTemplate != null){
+                    logger.Info(() => $"Updating Job: job:{job} isNew:{isNew} job.blockTemplate {job.BlockTemplate.Msg}" +
+                        $"blockTemplate.Msg:{blockTemplate.Msg} job.blockTemplate.Height:{job.BlockTemplate.Height} blockTemplate.Height:{blockTemplate.Height}");
+                }else{
+                    logger.Info(() => $"Updating Job: job:{job} isNew:{isNew} job.blockTemplate {job.BlockTemplate.Msg}" +
+                        $"job.blockTemplate.Height:{job.BlockTemplate.Height} ");
+                }
                 if(isNew)
                     messageBus.NotifyChainHeight(poolConfig.Id, blockTemplate.Height, poolConfig.Template);
 
