@@ -56,7 +56,7 @@ namespace Miningcore.Blockchain.Ergo
 
             var triggers = new List<IObservable<(bool Force, string Via, string Data)>>
             {
-                blockFound.Select(x => (false, JobRefreshBy.BlockFound, (string) null))
+                blockFound.Select(_ => (false, JobRefreshBy.BlockFound, (string) null))
             };
 
             if(extraPoolConfig?.BtStream != null)
@@ -228,7 +228,7 @@ namespace Miningcore.Blockchain.Ergo
             }
         }
 
-        private async Task<bool> SubmitBlockAsync(Share share, ErgoJob job, string nonce)
+        private async Task<bool> SubmitBlockAsync(Share share, string nonce)
         {
             try
             {
@@ -243,7 +243,7 @@ namespace Miningcore.Blockchain.Ergo
             catch(ApiException<ApiError> ex)
             {
                 logger.Warn(() => $"Block {share.BlockHeight} submission failed with: {ex.Result.Detail ?? ex.Result.Reason ?? ex.Message}");
-                messageBus.SendMessage(new AdminNotification("Block submission failed", $"Pool {poolConfig.Id} {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}failed to submit block {share.BlockHeight}: {ex.Result.Detail ?? ex.Result.Reason ?? ex.Message}"));
+                messageBus.SendMessage(new AdminNotification("Block submission failed", $"Pool {poolConfig.Id} {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}failed to submit block {share.BlockHeight}: {ex.Result.Detail ?? ex.Result.Reason}"));
             }
 
             catch(Exception ex)
@@ -331,7 +331,7 @@ namespace Miningcore.Blockchain.Ergo
             {
                 logger.Info(() => $"Submitting block {share.BlockHeight} [{share.BlockHash}]");
 
-                var acceptResponse = await SubmitBlockAsync(share, job, nonce);
+                var acceptResponse = await SubmitBlockAsync(share, nonce);
 
                 // is it still a block candidate?
                 share.IsBlockCandidate = acceptResponse;
