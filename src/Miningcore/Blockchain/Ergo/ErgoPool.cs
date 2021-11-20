@@ -238,9 +238,7 @@ namespace Miningcore.Blockchain.Ergo
                 if(!context.IsSubscribed || !context.IsAuthorized || CloseIfDead(connection, context))
                     return;
 
-                // varDiff: if the client has a pending difficulty change, apply it now
-                if(context.ApplyPendingDifficulty())
-                    await SendJob(connection, context, currentJobParams);
+                await SendJob(connection, context, currentJobParams);
             })), ex=> logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}"));
         }
 
