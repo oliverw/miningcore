@@ -117,4 +117,4 @@ logs/
 src/Miningcore/config.json
 src/Miningcore/config2.json
 /src/Miningcore/coins2.json
-build/
+build/ergo1.json
