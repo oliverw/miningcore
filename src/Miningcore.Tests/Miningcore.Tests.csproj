@@ -58,7 +58,7 @@
   <!-- Copy library binaries from Miningcore build output on Windows  -->
   <Target Name="CopyLibsWin" AfterTargets="AfterBuild" Condition="'$(IsWindows)' == 'true'">
     <ItemGroup>
-      <Libs Include="$(ProjectDir)..\Miningcore\bin\$(Configuration)\netcoreapp2.2\lib*.dll" />
+      <Libs Include="$(ProjectDir)..\Miningcore\bin\$(Configuration)\net6.0\lib*.dll" />
     </ItemGroup>
 
     <Copy SourceFiles="@(Libs)" DestinationFolder="$(OutDir)" />
@@ -67,7 +67,7 @@
   <!-- Copy library binaries from Miningcore build output on Linux  -->
   <Target Name="CopyLibsLinux" AfterTargets="AfterBuild" Condition="'$(IsLinux)' == 'true'">
     <ItemGroup>
-      <Libs Include="$(ProjectDir)..\Miningcore\bin\$(Configuration)\netcoreapp2.2\lib*.so" />
+      <Libs Include="$(ProjectDir)..\Miningcore\bin\$(Configuration)\net6.0\lib*.so" />
     </ItemGroup>
 
     <Copy SourceFiles="@(Libs)" DestinationFolder="$(OutDir)" />
