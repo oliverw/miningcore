@@ -143,6 +143,12 @@ namespace Miningcore.Blockchain.Ergo
                         var blockTimeAvg = 120;
                         var DiffN = (double)inode.Difficulty;
                         // update stats
+                        var inode = await Guard(() => ergoClient.GetNodeInfoAsync(),
+	                        ex => logger.Debug(ex));
+                        var blockTimeAvg = 120;
+                        var DiffN = (double)inode.Difficulty;
+
+                        // update stats
                         BlockchainStats.LastNetworkBlockTime = clock.Now;
                         BlockchainStats.BlockHeight = job.Height;
                         BlockchainStats.ConnectedPeers = inode.PeersCount;
