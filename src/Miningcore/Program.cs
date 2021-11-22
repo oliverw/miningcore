@@ -757,7 +757,7 @@ namespace Miningcore
             // register repositories
             builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
                 .Where(t =>
-                    t.Namespace.StartsWith(typeof(ShareRepository).Namespace))
+                    t?.Namespace?.StartsWith(typeof(ShareRepository).Namespace) == true)
                 .AsImplementedInterfaces()
                 .SingleInstance();
         }
