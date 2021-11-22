@@ -259,8 +259,8 @@ namespace Miningcore.Blockchain.Ergo
             var target = new BigRational(BitcoinConstants.Diff1 * (BigInteger) (1 / context.Difficulty * 0x10000), 0x10000).GetWholePart();
             jobParamsActual[6] = target.ToString();
 
-            // send static diff of 1 since actual diff gets pre-multiplied to target
-            await connection.NotifyAsync(BitcoinStratumMethods.SetDifficulty, new object[] { 1 });
+            // send calculated diff instead of static diff
+	    await connection.NotifyAsync(BitcoinStratumMethods.SetDifficulty, new object[] { context.Difficulty * BitcoinConstants.Pow2x32 });
 
             // send target
             await connection.NotifyAsync(BitcoinStratumMethods.MiningNotify, jobParamsActual);
