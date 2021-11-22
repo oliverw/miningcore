@@ -254,7 +254,7 @@ namespace Miningcore.Blockchain.Ergo
             jobParamsActual[6] = target.ToString();
 
             // send static diff of 1 since actual diff gets pre-multiplied to target
-            await connection.NotifyAsync(BitcoinStratumMethods.SetDifficulty, new object[] { 1 });
+            await connection.NotifyAsync(BitcoinStratumMethods.SetDifficulty, new object[] { context.Difficulty * BitcoinConstants.Pow2x32 });
 
             // send target
             await connection.NotifyAsync(BitcoinStratumMethods.MiningNotify, jobParamsActual);
