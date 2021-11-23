@@ -299,9 +299,32 @@ namespace Miningcore.Blockchain.Ergo
         public virtual async Task PayoutAsync(IMiningPool pool, Balance[] balances, CancellationToken ct)
         {
             Contract.RequiresNonNull(balances, nameof(balances));
+            var pendingBlocks = await cf.Run(con => blockRepo.GetPendingBlocksForPoolAsync(con, poolConfig.Id));
+            
+            logger.Info(() => $"Initiating Payments Of Confirmed Blocks");
+            // Order balances by time to get balances in order that they were created
+            var balancesByTime = balances.OrderBy(x => x.Created);
+            Balance[] balancesToPay = {};
 
-            // build args
-            var amounts = balances
+            foreach(Block block in pendingBlocks){
+                // Only look at confirmed blocks for reference amount
+                if(block.Status == BlockStatus.Confirmed){
+                    // filter balances to ensure that only balances not in balancesToPay are analyzed
+                    var balancesToAnalyze = balancesByTime.Where(x => !balancesToPay.Contains(x));
+                    
+                    // Take first n balances of balancesToAnalyze such that these balances add up to the block reward
+                    var balancesToSum = balancesByTime.TakeWhile(x => 
+                            balancesByTime.Take(Array.IndexOf(balancesByTime.ToArray(), x)).Select(x => x.Amount).Sum() <= block.Reward
+                        );
+                    // Add these elements to balancesToPay. These elements will not be evaluated next iteration
+                    logger.Info(() => $"Payments for block {block.BlockHeight} with total value {block.Reward} have been recorded.");
+                    balancesToPay.Concat(balancesToSum);
+                }
+            }
+            
+            
+            // build args, use balancesToPay so that only balances for blocks that have been confirmed are paid.
+            var amounts = balancesToPay
                 .Where(x => x.Amount > 0)
                 .ToDictionary(x => x.Address, x => Math.Round(x.Amount, 4));
 
@@ -380,16 +403,16 @@ namespace Miningcore.Blockchain.Ergo
                 // payment successful
                 logger.Info(() => $"[{LogCategory}] Payment transaction id: {txId}");
 
-                await PersistPaymentsAsync(balances, txId);
+                await PersistPaymentsAsync(balancesToPay, txId);
 
-                NotifyPayoutSuccess(poolConfig.Id, balances, new[] {txId}, null);
+                NotifyPayoutSuccess(poolConfig.Id, balancesToPay, new[] {txId}, null);
             }
 
             catch(PaymentException ex)
             {
                 logger.Error(() => $"[{LogCategory}] {ex.Message}");
 
-                NotifyPayoutFailure(poolConfig.Id, balances, ex.Message, null);
+                NotifyPayoutFailure(poolConfig.Id, balancesToPay, ex.Message, null);
             }
 
             finally
