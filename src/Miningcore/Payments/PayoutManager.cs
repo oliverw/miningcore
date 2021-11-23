@@ -164,7 +164,7 @@ namespace Miningcore.Payments
 
             if(updatedBlocks.Any())
             {
-                foreach(var block in updatedBlocks.OrderBy(x => x.Created).Where(x => x.ConfirmationProgress == 1))
+                foreach(var block in updatedBlocks.OrderBy(x => x.Created))
                 {
                     logger.Info(() => $"Processing payments for pool {config.Id}, block {block.BlockHeight}");
 

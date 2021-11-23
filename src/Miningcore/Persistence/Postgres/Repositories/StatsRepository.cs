@@ -164,9 +164,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
                             Workers = stats.ToDictionary(x => x.Worker ?? string.Empty, x => new WorkerPerformanceStats
                             {
                                 Hashrate = x.Hashrate,
-                                SharesPerSecond = x.SharesPerSecond,
-                                ValidShares = x.ValidShares,
-                                InvalidShares = x.InvalidShares
+                                SharesPerSecond = x.SharesPerSecond
                             }),
 
                             Created = stats.First().Created
@@ -237,9 +235,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
                 Workers = x.ToDictionary(y => y.Worker, y => new WorkerPerformanceStats
                 {
                     Hashrate = y.Hashrate,
-                    SharesPerSecond = y.SharesPerSecond,
-                    ValidShares = y.ValidShares,
-                    InvalidShares = y.InvalidShares
+                    SharesPerSecond = y.SharesPerSecond
                 })
             })
             .ToArray();
@@ -274,9 +270,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
                 Workers = x.ToDictionary(y => y.Worker ?? string.Empty, y => new WorkerPerformanceStats
                 {
                     Hashrate = y.Hashrate,
-                    SharesPerSecond = y.SharesPerSecond,
-                    ValidShares = y.ValidShares,
-                    InvalidShares = y.InvalidShares
+                    SharesPerSecond = y.SharesPerSecond
                 })
             })
             .ToArray();
@@ -311,9 +305,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
                 Workers = x.ToDictionary(y => y.Worker ?? string.Empty, y => new WorkerPerformanceStats
                 {
                     Hashrate = y.Hashrate,
-                    SharesPerSecond = y.SharesPerSecond,
-                    ValidShares = y.ValidShares,
-                    InvalidShares = y.InvalidShares
+                    SharesPerSecond = y.SharesPerSecond
                 })
             })
             .ToArray();
@@ -341,9 +333,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
                 Workers = x.ToDictionary(y => y.Worker, y => new WorkerPerformanceStats
                 {
                     Hashrate = y.Hashrate,
-                    SharesPerSecond = y.SharesPerSecond,
-                    ValidShares = y.ValidShares,
-                    InvalidShares = y.InvalidShares
+                    SharesPerSecond = y.SharesPerSecond
                 })
             })
             .ToArray();

@@ -9,9 +9,6 @@ namespace Miningcore.Persistence.Model
         public string Worker { get; set; }
         public double Hashrate { get; set; }
         public double SharesPerSecond { get; set; }
-       // public double ValidShares {get; set;}
-
-       // public double InvalidShares {get; set;}
         public DateTime Created { get; set; }
     }
 }

@@ -7,8 +7,6 @@ namespace Miningcore.Persistence.Model.Projections
     {
         public double Hashrate { get; set; }
         public double SharesPerSecond { get; set; }
-        public double ValidShares {get; set;}
-        public double InvalidShares {get; set;}
     }
 
     public class WorkerPerformanceStatsContainer
