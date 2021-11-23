@@ -9,7 +9,6 @@ using Miningcore.Persistence.Model;
 using Miningcore.Persistence.Model.Projections;
 using Miningcore.Persistence.Repositories;
 using Miningcore.Time;
-using Newtonsoft.Json;
 using NLog;
 using MinerStats = Miningcore.Persistence.Model.Projections.MinerStats;
 
