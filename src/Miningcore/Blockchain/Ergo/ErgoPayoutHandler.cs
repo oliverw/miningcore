@@ -299,11 +299,13 @@ namespace Miningcore.Blockchain.Ergo
         public virtual async Task PayoutAsync(IMiningPool pool, Balance[] balances, CancellationToken ct)
         {
             Contract.RequiresNonNull(balances, nameof(balances));
-            var pendingBlocks = await cf.Run(con => blockRepo.GetPendingBlocksForPoolAsync(con, poolConfig.Id));
+            BlockStatus[] blockStatuses = {BlockStatus.Confirmed};
+            uint totalBlocks = await cf.Run(con => blockRepo.GetPoolBlockCountAsync(con, poolConfig.Id));
+            var pendingBlocks = await cf.Run(con => blockRepo.PageBlocksAsync(con, poolConfig.Id, blockStatuses, 0, (int)totalBlocks));
             
             logger.Info(() => $"Initiating Payments Of Confirmed Blocks");
             // Order balances by time to get balances in order that they were created
-            var balancesByTime = balances.OrderBy(x => x.Created);
+            var balancesByTime = balances.OrderByDescending(x => x.Created);
             Balance[] balancesToPay = {};
 
             foreach(Block block in pendingBlocks){
@@ -318,7 +320,10 @@ namespace Miningcore.Blockchain.Ergo
                         );
                     // Add these elements to balancesToPay. These elements will not be evaluated next iteration
                     logger.Info(() => $"Payments for block {block.BlockHeight} with total value {block.Reward} have been recorded.");
-                    balancesToPay.Concat(balancesToSum);
+                    balancesToPay = balancesToPay.Concat(balancesToSum).ToArray();
+                    if(balancesToPay.Length == balances.Length || balancesToAnalyze.Select(x => x.Amount).Sum() < block.Reward){
+                        break;
+                    }
                 }
             }
             
