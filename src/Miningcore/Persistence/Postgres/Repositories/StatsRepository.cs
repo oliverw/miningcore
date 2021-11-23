@@ -165,8 +165,8 @@ namespace Miningcore.Persistence.Postgres.Repositories
                             {
                                 Hashrate = x.Hashrate,
                                 SharesPerSecond = x.SharesPerSecond,
-                                ValidShares = x.ValidShares,
-                                InvalidShares = x.InvalidShares
+                                // ValidShares = x.ValidShares,
+                                // InvalidShares = x.InvalidShares
                             }),
 
                             Created = stats.First().Created
@@ -238,8 +238,8 @@ namespace Miningcore.Persistence.Postgres.Repositories
                 {
                     Hashrate = y.Hashrate,
                     SharesPerSecond = y.SharesPerSecond,
-                    ValidShares = y.ValidShares,
-                    InvalidShares = y.InvalidShares
+                    // ValidShares = y.ValidShares,
+                    // InvalidShares = y.InvalidShares
                 })
             })
             .ToArray();
@@ -275,8 +275,8 @@ namespace Miningcore.Persistence.Postgres.Repositories
                 {
                     Hashrate = y.Hashrate,
                     SharesPerSecond = y.SharesPerSecond,
-                    ValidShares = y.ValidShares,
-                    InvalidShares = y.InvalidShares
+                    // ValidShares = y.ValidShares,
+                    // InvalidShares = y.InvalidShares
                 })
             })
             .ToArray();
@@ -312,8 +312,8 @@ namespace Miningcore.Persistence.Postgres.Repositories
                 {
                     Hashrate = y.Hashrate,
                     SharesPerSecond = y.SharesPerSecond,
-                    ValidShares = y.ValidShares,
-                    InvalidShares = y.InvalidShares
+                    // ValidShares = y.ValidShares,
+                    // InvalidShares = y.InvalidShares
                 })
             })
             .ToArray();
@@ -342,8 +342,8 @@ namespace Miningcore.Persistence.Postgres.Repositories
                 {
                     Hashrate = y.Hashrate,
                     SharesPerSecond = y.SharesPerSecond,
-                    ValidShares = y.ValidShares,
-                    InvalidShares = y.InvalidShares
+                    // ValidShares = y.ValidShares,
+                    // InvalidShares = y.InvalidShares
                 })
             })
             .ToArray();
