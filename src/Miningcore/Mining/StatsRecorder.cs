@@ -207,6 +207,8 @@ namespace Miningcore.Mining
                             // set default values
                             stats.Hashrate = 0;
                             stats.SharesPerSecond = 0;
+                            stats.ValidShares = 0;
+                            stats.InvalidShares = 0;
 
                             // miner stats calculation windows
                             var timeFrameBeforeFirstShare = ((minerHashes.Min(x => x.FirstShare) - timeFrom).TotalSeconds);
@@ -232,7 +234,8 @@ namespace Miningcore.Mining
                             minerTotalHashrate += minerHashrate;
                             stats.Hashrate = minerHashrate;
                             stats.Worker = item.Worker;
-
+                            stats.ValidShares = item.Count;
+                            stats.InvalidShares = 0;
                             stats.SharesPerSecond = Math.Round(item.Count / minerHashTimeFrame, 3);
 
                             // persist
@@ -263,6 +266,8 @@ namespace Miningcore.Mining
                         // reset
                         stats.Hashrate = 0;
                         stats.SharesPerSecond = 0;
+                        stats.ValidShares = 0;
+                        stats.InvalidShares = 0;
 
                         foreach(var item in orphanedHashrateForMinerWorker)
                         {
