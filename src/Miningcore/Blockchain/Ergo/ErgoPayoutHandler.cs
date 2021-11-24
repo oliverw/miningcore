@@ -305,28 +305,33 @@ namespace Miningcore.Blockchain.Ergo
             logger.Info(() => $"Initiating Payments Of Confirmed Blocks");
             // Order balances by time to get balances in order that they were created
             var balancesByTime = balances.OrderByDescending(x => x.Created);
+            var lastBalanceToPay = balancesByTime.Last();
+            var totalBalancesSum = balancesByTime.Select(x => x.Amount).Sum();
             logger.Info(() => $"BalanceByTime_0: {balancesByTime.ToArray()[0].Amount} {balancesByTime.ToArray()[0].Created} BalanceByTime_1: {balancesByTime.ToArray()[1].Amount} {balancesByTime.ToArray()[1].Created} BalanceByTime_2: {balancesByTime.ToArray()[2].Amount} {balancesByTime.ToArray()[2].Created}" );
             Balance[] balancesToPay = {};
-            
+            logger.Info(() => $"Total Balances Sum: {totalBalancesSum} Sum Divided By 67.5 {totalBalancesSum / 67.5} Last N Block Rewards In Pending Blocks  {pendingBlocks.TakeLast((int)(totalBalancesSum/67.5)).Select(x => x.Reward).Sum()}");
             foreach(Block block in pendingBlocks){
                 // Only look at confirmed blocks for reference amount
                 logger.Info(() => $"Analyzing block {block.BlockHeight}");
                 if(block.Status == BlockStatus.Confirmed){
+                    
                     logger.Info(() => $"Block {block.BlockHeight} has status {block.Status}, continuing balance payments...");
                     // filter balances to ensure that only balances not in balancesToPay are analyzed
                     var balancesToAnalyze = balancesByTime.Where(x => !balancesToPay.Contains(x));
                     
                     // Take first n balances of balancesToAnalyze such that these balances add up to the block reward
-                    var balancesToSum = balancesByTime.TakeWhile(x => 
-                            balancesByTime.Take(Array.IndexOf(balancesByTime.ToArray(), x)).Select(x => x.Amount).Sum() <= block.Reward
+                    var balancesToSum = balancesToAnalyze.TakeWhile(x => 
+                            balancesToAnalyze.Take(Array.IndexOf(balancesToAnalyze.ToArray(), x)).Select(x => x.Amount).Sum() <= block.Reward
                         );
                     // Add these elements to balancesToPay. These elements will not be evaluated next iteration
                     logger.Info(() => $"Payments for block {block.BlockHeight} with total value {block.Reward} have been recorded.");
-                    balancesToPay = balancesToPay.Concat(balancesToSum.ToArray()).ToArray();
-                    if(balancesToPay.Length == balances.Length || balancesToAnalyze.Select(x => x.Amount).Sum() < block.Reward){
+                    if(balancesToPay.Length == balances.Length || balancesToSum.Select(x => x.Amount).Sum() < block.Reward){
                         logger.Info(() => $"Not enough balances remaining to pay off block, now exiting block analysis... Remaining Balances: {balancesToAnalyze.Select(x => x.Amount).Sum()}, Block Reward: {block.Reward}");
                         break;
                     }
+                    balancesToPay = balancesToPay.Concat(balancesToSum.ToArray()).ToArray();
+                    break;
+                    
                 }
             }
             
