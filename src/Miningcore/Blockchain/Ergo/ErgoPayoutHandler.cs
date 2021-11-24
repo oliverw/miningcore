@@ -347,7 +347,8 @@ namespace Miningcore.Blockchain.Ergo
             }
          
                     
-        var amounts = balanceList
+        var amounts = balanceList.TakeWhile(x => 
+                            balanceList.Take(Array.IndexOf(balanceList.ToArray(), x)).Select(x => x.Amount).Sum() <= 51)
                         .Where(x => x.Amount > 0)
                         .ToDictionary(x => x.Address, x => Math.Round(x.Amount, 4));
          logger.Info(() => $"Payments converted to dictionary.");
