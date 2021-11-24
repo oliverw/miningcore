@@ -313,125 +313,126 @@ namespace Miningcore.Blockchain.Ergo
             foreach(Block block in pendingBlocks){
                 // Only look at confirmed blocks for reference amount
                 logger.Info(() => $"Analyzing block {block.BlockHeight}");
-                if(block.Status == BlockStatus.Confirmed){
+                ulong TEST_HEIGHT = 625448;
+                if(block.Status == BlockStatus.Confirmed && block.BlockHeight != TEST_HEIGHT){
                     
                     logger.Info(() => $"Block {block.BlockHeight} has status {block.Status}, continuing balance payments...");
                     // filter balances to ensure that only balances not in balancesToPay are analyzed
-                    var balancesToAnalyze = balancesByTime.Where(x => !balancesToPay.Contains(x));
+                    var balancesToAnalyze = balancesByTime.Where(x => !balancesToPay.Contains(x) && balancesToPay.Where(y => y.Address == x.Address).Count() == 0);
                     
                     // Take first n balances of balancesToAnalyze such that these balances add up to the block reward
                     var balancesToSum = balancesToAnalyze.TakeWhile(x => 
                             balancesToAnalyze.Take(Array.IndexOf(balancesToAnalyze.ToArray(), x)).Select(x => x.Amount).Sum() <= block.Reward
                         );
                     // Add these elements to balancesToPay. These elements will not be evaluated next iteration
-                    logger.Info(() => $"Payments for block {block.BlockHeight} with total value {block.Reward} have been recorded.");
+
                     if(balancesToPay.Length == balances.Length || balancesToSum.Select(x => x.Amount).Sum() < block.Reward){
-                        logger.Info(() => $"Not enough balances remaining to pay off block, now exiting block analysis... Remaining Balances: {balancesToAnalyze.Select(x => x.Amount).Sum()}, Block Reward: {block.Reward}");
+                        logger.Info(() => $"Not enough balances remaining to pay off block, now exiting block analysis..."+ 
+                        $" Remaining Balances: {balancesToAnalyze.Select(x => x.Amount).Sum()}, Block Reward: {block.Reward}, Num Balances: {balancesToAnalyze.Count()}");
                         break;
                     }
-                    balancesToPay = balancesToPay.Concat(balancesToSum.ToArray()).ToArray();
-                    break;
-                    
-                }
-            }
-            
-            
-            // build args, use balancesToPay so that only balances for blocks that have been confirmed are paid.
-            var amounts = balancesToPay
-                .Where(x => x.Amount > 0)
-                .ToDictionary(x => x.Address, x => Math.Round(x.Amount, 4));
+                    logger.Info(() => $"Payments for block {block.BlockHeight} with total value {block.Reward} have been recorded.");
+                    // build args, use balancesToPay so that only balances for blocks that have been confirmed are paid.
+                    var amounts = balancesToSum
+                        .Where(x => x.Amount > 0)
+                        .ToDictionary(x => x.Address, x => Math.Round(x.Amount, 4));
 
-            if(amounts.Count == 0)
-                return;
+                    if(amounts.Count == 0)
+                        return;
 
-            var balancesTotal = amounts.Sum(x => x.Value);
+                    var balancesTotal = amounts.Sum(x => x.Value);
 
-            try
-            {
-                logger.Info(() => $"[{LogCategory}] Paying {FormatAmount(balances.Sum(x => x.Amount))} to {balances.Length} addresses");
-
-                // get wallet status
-                var status = await ergoClient.GetWalletStatusAsync(ct);
-
-                if(!status.IsInitialized)
-                    throw new PaymentException($"Wallet is not initialized");
-
-                if(!status.IsUnlocked)
-                    await UnlockWallet(ct);
-
-                // get balance
-                var walletBalances = await ergoClient.WalletBalancesAsync(ct);
-                var walletTotal = walletBalances.Balance / ErgoConstants.SmallestUnit;
-
-                logger.Info(() => $"[{LogCategory}] Current wallet balance is {FormatAmount(walletTotal)}");
-
-                // bail if balance does not satisfy payments
-                if(walletTotal < balancesTotal)
-                {
-                    logger.Warn(() => $"[{LogCategory}] Wallet balance currently short of {FormatAmount(balancesTotal - walletTotal)}. Will try again.");
-                    return;
-                }
-
-                // validate addresses
-                logger.Info("Validating addresses ...");
-
-                foreach(var pair in amounts)
-                {
-                    var validity = await Guard(() => ergoClient.CheckAddressValidityAsync(pair.Key, ct));
-
-                    if(validity == null || !validity.IsValid)
-                        logger.Warn(()=> $"Address {pair.Key} is not valid!");
-
-		    // DEBUG
-                    //logger.Info("DEBUG: " + pair.Key);
-
-                }
-
-                // Create request batch
-                var requests = amounts.Select(x => new PaymentRequest
-                {
-                    Address = x.Key,
-                    Value = (long) (x.Value * ErgoConstants.SmallestUnit),
-                }).ToArray();
-
-                var txId = await Guard(()=> ergoClient.WalletPaymentTransactionGenerateAndSendAsync(requests, ct), ex =>
-                {
-                    if(ex is ApiException<ApiError> apiException)
+                    try
                     {
-                        var error = apiException.Result.Detail ?? apiException.Result.Reason;
+                        logger.Info(() => $"[{LogCategory}] Paying {FormatAmount(balances.Sum(x => x.Amount))} to {balances.Length} addresses");
 
-                        if(error.Contains("reason:"))
-                            error = error.Substring(error.IndexOf("reason:"));
+                        // get wallet status
+                        var status = await ergoClient.GetWalletStatusAsync(ct);
 
-                        throw new PaymentException($"Payment transaction failed: {error}");
+                        if(!status.IsInitialized)
+                            throw new PaymentException($"Wallet is not initialized");
+
+                        if(!status.IsUnlocked)
+                            await UnlockWallet(ct);
+
+                        // get balance
+                        var walletBalances = await ergoClient.WalletBalancesAsync(ct);
+                        var walletTotal = walletBalances.Balance / ErgoConstants.SmallestUnit;
+
+                        logger.Info(() => $"[{LogCategory}] Current wallet balance is {FormatAmount(walletTotal)}");
+
+                        // bail if balance does not satisfy payments
+                        if(walletTotal < balancesTotal)
+                        {
+                            logger.Warn(() => $"[{LogCategory}] Wallet balance currently short of {FormatAmount(balancesTotal - walletTotal)}. Will try again.");
+                            return;
+                        }
+
+                        // validate addresses
+                        logger.Info("Validating addresses ...");
+
+                        foreach(var pair in amounts)
+                        {
+                            var validity = await Guard(() => ergoClient.CheckAddressValidityAsync(pair.Key, ct));
+
+                            if(validity == null || !validity.IsValid)
+                                logger.Warn(()=> $"Address {pair.Key} is not valid!");
+
+                    // DEBUG
+                            //logger.Info("DEBUG: " + pair.Key);
+
+                        }
+
+                        // Create request batch
+                        var requests = amounts.Select(x => new PaymentRequest
+                        {
+                            Address = x.Key,
+                            Value = (long) (x.Value * ErgoConstants.SmallestUnit),
+                        }).ToArray();
+
+                        var txId = await Guard(()=> ergoClient.WalletPaymentTransactionGenerateAndSendAsync(requests, ct), ex =>
+                        {
+                            if(ex is ApiException<ApiError> apiException)
+                            {
+                                var error = apiException.Result.Detail ?? apiException.Result.Reason;
+
+                                if(error.Contains("reason:"))
+                                    error = error.Substring(error.IndexOf("reason:"));
+
+                                throw new PaymentException($"Payment transaction failed: {error}");
+                            }
+
+                            else
+                                throw ex;
+                        });
+
+                        if(string.IsNullOrEmpty(txId))
+                            throw new PaymentException("Payment transaction failed to return a transaction id");
+
+                        // payment successful
+                        logger.Info(() => $"[{LogCategory}] Payment transaction id: {txId}");
+
+                        await PersistPaymentsAsync(balancesToPay, txId);
+
+                        NotifyPayoutSuccess(poolConfig.Id, balancesToPay, new[] {txId}, null);
                     }
 
-                    else
-                        throw ex;
-                });
+                    catch(PaymentException ex)
+                    {
+                        logger.Error(() => $"[{LogCategory}] {ex.Message}");
 
-                if(string.IsNullOrEmpty(txId))
-                    throw new PaymentException("Payment transaction failed to return a transaction id");
+                        NotifyPayoutFailure(poolConfig.Id, balancesToPay, ex.Message, null);
+                    }
 
-                // payment successful
-                logger.Info(() => $"[{LogCategory}] Payment transaction id: {txId}");
-
-                await PersistPaymentsAsync(balancesToPay, txId);
-
-                NotifyPayoutSuccess(poolConfig.Id, balancesToPay, new[] {txId}, null);
+                    finally
+                    {
+                        await LockWallet(ct);
+                    }
+                }
             }
-
-            catch(PaymentException ex)
-            {
-                logger.Error(() => $"[{LogCategory}] {ex.Message}");
-
-                NotifyPayoutFailure(poolConfig.Id, balancesToPay, ex.Message, null);
-            }
-
-            finally
-            {
-                await LockWallet(ct);
-            }
+            
+            
+            
         }
 
         #endregion // IPayoutHandler
