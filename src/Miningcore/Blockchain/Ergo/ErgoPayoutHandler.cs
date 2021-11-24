@@ -342,7 +342,7 @@ namespace Miningcore.Blockchain.Ergo
                     balancesToPay = balancesToPay.AsEnumerable().Concat(balanceList.AsEnumerable()).ToArray();
                     logger.Info(() => $"Payments for block {block.BlockHeight} with total value {block.Reward} have been recorded.");
                     // build args, use balancesToPay so that only balances for blocks that have been confirmed are paid.
-                    
+                    break;
                 }   
             }
          
@@ -359,7 +359,7 @@ namespace Miningcore.Blockchain.Ergo
 
                     try
                     {
-                        logger.Info(() => $"[{LogCategory}] Paying {FormatAmount(balances.Sum(x => x.Amount))} to {balances.Length} addresses");
+                        logger.Info(() => $"[{LogCategory}] Paying {FormatAmount(balanceList.Sum(x => x.Amount))} to {balances.Length} addresses");
 
                         // get wallet status
                         var status = await ergoClient.GetWalletStatusAsync(ct);
@@ -427,7 +427,7 @@ namespace Miningcore.Blockchain.Ergo
                         // payment successful
                         logger.Info(() => $"[{LogCategory}] Payment transaction id: {txId}");
 
-                        await PersistPaymentsAsync(balancesToPay, txId);
+                        await PersistPaymentsAsync(balanceList, txId);
 
                         NotifyPayoutSuccess(poolConfig.Id, balancesToPay, new[] {txId}, null);
                     }
@@ -436,7 +436,7 @@ namespace Miningcore.Blockchain.Ergo
                     {
                         logger.Error(() => $"[{LogCategory}] {ex.Message}");
 
-                        NotifyPayoutFailure(poolConfig.Id, balancesToPay, ex.Message, null);
+                        NotifyPayoutFailure(poolConfig.Id, balanceList, ex.Message, null);
                     }
 
                     finally
