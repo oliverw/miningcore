@@ -266,17 +266,17 @@ namespace Miningcore.Blockchain.Ergo
                             orphanReason = "nonce mismatch";
                         else if(coinbaseNonWalletTxCount == blockBatch.Length)
                             orphanReason = "no related coinbase tx found in wallet";
+                        continue;
+                        // if(!string.IsNullOrEmpty(orphanReason))
+                        // {
+                        //     block.Status = BlockStatus.Orphaned;
+                        //     block.Reward = 0;
+                        //     result.Add(block);
 
-                        if(!string.IsNullOrEmpty(orphanReason))
-                        {
-                            block.Status = BlockStatus.Orphaned;
-                            block.Reward = 0;
-                            result.Add(block);
+                        //     logger.Info(() => $"[{LogCategory}] Block {block.BlockHeight} classified as orphaned due to {orphanReason}");
 
-                            logger.Info(() => $"[{LogCategory}] Block {block.BlockHeight} classified as orphaned due to {orphanReason}");
-
-                            messageBus.NotifyBlockUnlocked(poolConfig.Id, block, coin);
-                        }
+                        //     messageBus.NotifyBlockUnlocked(poolConfig.Id, block, coin);
+                        // }
                     }
                 }
             }
@@ -306,11 +306,14 @@ namespace Miningcore.Blockchain.Ergo
             logger.Info(() => $"Initiating Payments Of Confirmed Blocks");
             // Order balances by time to get balances in order that they were created
             var balancesByTime = balances.OrderByDescending(x => x.Created);
+            logger.Info(() => $"BalanceByTime_0: {balancesByTime[0].Amount} {balancesByTime[0].Created} BalanceByTime_1: {balancesByTime[1].Amount} {balancesByTime[1].Created} BalanceByTime_2: {balancesByTime[2].Amount} {balancesByTime[2].Created}" );
             Balance[] balancesToPay = {};
-
+            
             foreach(Block block in pendingBlocks){
                 // Only look at confirmed blocks for reference amount
+                logger.Info(() => $"Analyzing block {block.BlockHeight}");
                 if(block.Status == BlockStatus.Confirmed){
+                    logger.Info(() => $"Block {block.BlockHeight} has status {block.Status}, continuing balance payments...");
                     // filter balances to ensure that only balances not in balancesToPay are analyzed
                     var balancesToAnalyze = balancesByTime.Where(x => !balancesToPay.Contains(x));
                     
@@ -322,6 +325,7 @@ namespace Miningcore.Blockchain.Ergo
                     logger.Info(() => $"Payments for block {block.BlockHeight} with total value {block.Reward} have been recorded.");
                     balancesToPay = balancesToPay.Concat(balancesToSum).ToArray();
                     if(balancesToPay.Length == balances.Length || balancesToAnalyze.Select(x => x.Amount).Sum() < block.Reward){
+                        logger.Info(() => $"Not enough balances remaining to pay off block, now exiting block analysis... Remaining Balances: {balancesToAnalyze.Select(x => x.Amount).Sum()}, Block Reward: {block.Reward}");
                         break;
                     }
                 }
