@@ -266,17 +266,16 @@ namespace Miningcore.Blockchain.Ergo
                             orphanReason = "nonce mismatch";
                         else if(coinbaseNonWalletTxCount == blockBatch.Length)
                             orphanReason = "no related coinbase tx found in wallet";
-                        continue;
-                        // if(!string.IsNullOrEmpty(orphanReason))
-                        // {
-                        //     block.Status = BlockStatus.Orphaned;
-                        //     block.Reward = 0;
-                        //     result.Add(block);
+                        
+                        if(!string.IsNullOrEmpty(orphanReason))
+                        {
+                            block.Status = BlockStatus.Pending;
+                            //result.Add(block);
 
-                        //     logger.Info(() => $"[{LogCategory}] Block {block.BlockHeight} classified as orphaned due to {orphanReason}");
+                            logger.Info(() => $"[{LogCategory}] Block {block.BlockHeight} classified as orphaned due to {orphanReason}. Status kept as Pending until admin oversight.");
 
-                        //     messageBus.NotifyBlockUnlocked(poolConfig.Id, block, coin);
-                        // }
+                           // messageBus.NotifyBlockUnlocked(poolConfig.Id, block, coin);
+                        }
                     }
                 }
             }
