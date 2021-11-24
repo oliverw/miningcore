@@ -314,7 +314,7 @@ namespace Miningcore.Blockchain.Ergo
             foreach(Block block in pendingBlocks){
                 // Only look at confirmed blocks for reference amount
                 logger.Info(() => $"Analyzing block {block.BlockHeight}");
-                if(block.Status == BlockStatus.Confirmed){
+                if(block.Status == BlockStatus.Confirmed && block.BlockHeight == 625448){
                     
                     logger.Info(() => $"Block {block.BlockHeight} has status {block.Status}, continuing balance payments...");
                     // filter balances to ensure that only balances not in balancesToPay are analyzed and unique addresses are ensured
