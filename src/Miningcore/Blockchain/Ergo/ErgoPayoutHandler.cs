@@ -305,7 +305,7 @@ namespace Miningcore.Blockchain.Ergo
             logger.Info(() => $"Initiating Payments Of Confirmed Blocks");
             // Order balances by time to get balances in order that they were created
             var balancesByTime = balances.OrderByDescending(x => x.Created);
-            logger.Info(() => $"BalanceByTime_0: {balancesByTime[0].Amount} {balancesByTime[0].Created} BalanceByTime_1: {balancesByTime[1].Amount} {balancesByTime[1].Created} BalanceByTime_2: {balancesByTime[2].Amount} {balancesByTime[2].Created}" );
+            logger.Info(() => $"BalanceByTime_0: {balancesByTime.ToArray()[0].Amount} {balancesByTime.ToArray()[0].Created} BalanceByTime_1: {balancesByTime.ToArray()[1].Amount} {balancesByTime.ToArray()[1].Created} BalanceByTime_2: {balancesByTime.ToArray()[2].Amount} {balancesByTime.ToArray()[2].Created}" );
             Balance[] balancesToPay = {};
             
             foreach(Block block in pendingBlocks){
