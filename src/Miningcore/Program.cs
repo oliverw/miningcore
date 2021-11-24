@@ -733,6 +733,8 @@ namespace Miningcore
             if(string.IsNullOrEmpty(pgConfig.User))
                 logger.ThrowLogPoolStartupException("Postgres configuration: invalid or missing 'user'");
 
+            //AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
             // build connection string
             var connectionString = $"Server={pgConfig.Host};Port={pgConfig.Port};Database={pgConfig.Database};User Id={pgConfig.User};Password={pgConfig.Password};CommandTimeout=900;";
 
@@ -757,7 +759,7 @@ namespace Miningcore
             // register repositories
             builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
                 .Where(t =>
-                    t.Namespace.StartsWith(typeof(ShareRepository).Namespace))
+                    t?.Namespace?.StartsWith(typeof(ShareRepository).Namespace) == true)
                 .AsImplementedInterfaces()
                 .SingleInstance();
         }
