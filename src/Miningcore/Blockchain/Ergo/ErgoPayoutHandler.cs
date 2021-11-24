@@ -350,7 +350,7 @@ namespace Miningcore.Blockchain.Ergo
         var amounts = balanceList
                         .Where(x => x.Amount > 0)
                         .ToDictionary(x => x.Address, x => Math.Round(x.Amount, 4));
-         logger.Info(() => $"Payments for block {block.BlockHeight} converted to dictionary.");
+         logger.Info(() => $"Payments converted to dictionary.");
                     if(amounts.Count == 0)
                         return;
 
