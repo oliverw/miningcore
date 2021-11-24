@@ -310,37 +310,41 @@ namespace Miningcore.Blockchain.Ergo
             logger.Info(() => $"BalanceByTime_0: {balancesByTime.ToArray()[0].Amount} {balancesByTime.ToArray()[0].Created} BalanceByTime_1: {balancesByTime.ToArray()[1].Amount} {balancesByTime.ToArray()[1].Created} BalanceByTime_2: {balancesByTime.ToArray()[2].Amount} {balancesByTime.ToArray()[2].Created}" );
             Balance[] balancesToPay = {};
             logger.Info(() => $"Total Balances Sum: {totalBalancesSum} Sum Divided By 67.5 {totalBalancesSum / ((decimal)67.5)} Last N Block Rewards In Pending Blocks  {pendingBlocks.TakeLast((int)(totalBalancesSum/((decimal)67.5))).Select(x => x.Reward).Sum()}");
-            foreach(Block block in pendingBlocks){
-                // Only look at confirmed blocks for reference amount
-                logger.Info(() => $"Analyzing block {block.BlockHeight}");
-                if(block.Status == BlockStatus.Confirmed){
+            // foreach(Block block in pendingBlocks){
+            //     // Only look at confirmed blocks for reference amount
+            //     logger.Info(() => $"Analyzing block {block.BlockHeight}");
+            //     if(block.Status == BlockStatus.Confirmed){
                     
-                    logger.Info(() => $"Block {block.BlockHeight} has status {block.Status}, continuing balance payments...");
-                    // filter balances to ensure that only balances not in balancesToPay are analyzed and unique addresses are ensured
-                    // var balancesToAnalyze = balancesByTime.Where(x => !balancesToPay.Contains(x) && balancesToPay.Where(y => y.Address == x.Address).Count() == 0);
-                     Balance[] balanceList = {};
+            //         logger.Info(() => $"Block {block.BlockHeight} has status {block.Status}, continuing balance payments...");
+            //         // filter balances to ensure that only balances not in balancesToPay are analyzed and unique addresses are ensured
+            //         // var balancesToAnalyze = balancesByTime.Where(x => !balancesToPay.Contains(x) && balancesToPay.Where(y => y.Address == x.Address).Count() == 0);
+                    
+            //         // Take first n balances of balancesToAnalyze such that these balances add up to the block reward
+            //         // var balancesToSum = balancesToAnalyze.TakeWhile(x => 
+            //         //         balancesToAnalyze.Take(Array.IndexOf(balancesToAnalyze.ToArray(), x)).Select(x => x.Amount).Sum() <= block.Reward*5
+            //         //     );
+                        
+            //         // // Add these elements to balancesToPay. These elements will not be evaluated next iteration
+
+            //         // if(balancesToPay.Length == balances.Length || balancesToSum.Select(x => x.Amount).Sum() < 0){
+            //         //     logger.Info(() => $"Not enough balances remaining to pay off block, now exiting block analysis..."+ 
+            //         //     $" Remaining Balances: {balancesToAnalyze.Select(x => x.Amount).Sum()}, Block Reward: {block.Reward}, Num Balances: {balancesToAnalyze.Count()}");
+            //         //     break;
+            //         // }
+            //         balancesToPay = balancesToPay.AsEnumerable().Concat(balanceList.AsEnumerable()).ToArray();
+            //         logger.Info(() => $"Payments for block {block.BlockHeight} with total value {block.Reward} have been recorded.");
+            //         // build args, use balancesToPay so that only balances for blocks that have been confirmed are paid.
+                    
+            //     }   
+            // }
+         Balance[] balanceList = {};
                     foreach (Balance bal in balancesByTime){
                         var balToFind = balanceList.Where(b => b.Address == bal.Address);
-                        if(balToFind.Count() != 1){
+                        if(balToFind.Count() < 1){
                              balanceList = balanceList.AsEnumerable().Append(bal).ToArray();
                         }
                     }
-                    // Take first n balances of balancesToAnalyze such that these balances add up to the block reward
-                    // var balancesToSum = balancesToAnalyze.TakeWhile(x => 
-                    //         balancesToAnalyze.Take(Array.IndexOf(balancesToAnalyze.ToArray(), x)).Select(x => x.Amount).Sum() <= block.Reward*5
-                    //     );
-                        
-                    // // Add these elements to balancesToPay. These elements will not be evaluated next iteration
-
-                    // if(balancesToPay.Length == balances.Length || balancesToSum.Select(x => x.Amount).Sum() < 0){
-                    //     logger.Info(() => $"Not enough balances remaining to pay off block, now exiting block analysis..."+ 
-                    //     $" Remaining Balances: {balancesToAnalyze.Select(x => x.Amount).Sum()}, Block Reward: {block.Reward}, Num Balances: {balancesToAnalyze.Count()}");
-                    //     break;
-                    // }
-                    balancesToPay = balancesToPay.AsEnumerable().Concat(balanceList.AsEnumerable()).ToArray();
-                    logger.Info(() => $"Payments for block {block.BlockHeight} with total value {block.Reward} have been recorded.");
-                    // build args, use balancesToPay so that only balances for blocks that have been confirmed are paid.
-                    var amounts = balanceList
+        var amounts = balanceList
                         .Where(x => x.Amount > 0)
                         .ToDictionary(x => x.Address, x => Math.Round(x.Amount, 4));
 
@@ -436,12 +440,6 @@ namespace Miningcore.Blockchain.Ergo
                         await LockWallet(ct);
                     }
                 }
-            }
-            
-            
-            
-        }
-
         #endregion // IPayoutHandler
     }
 }
