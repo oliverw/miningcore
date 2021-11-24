@@ -309,7 +309,7 @@ namespace Miningcore.Blockchain.Ergo
             var totalBalancesSum = balancesByTime.Select(x => x.Amount).Sum();
             logger.Info(() => $"BalanceByTime_0: {balancesByTime.ToArray()[0].Amount} {balancesByTime.ToArray()[0].Created} BalanceByTime_1: {balancesByTime.ToArray()[1].Amount} {balancesByTime.ToArray()[1].Created} BalanceByTime_2: {balancesByTime.ToArray()[2].Amount} {balancesByTime.ToArray()[2].Created}" );
             Balance[] balancesToPay = {};
-            logger.Info(() => $"Total Balances Sum: {totalBalancesSum} Sum Divided By 67.5 {totalBalancesSum / ((decimal)67.5)} Last N Block Rewards In Pending Blocks  {pendingBlocks.TakeLast((int)(totalBalancesSum/67.5)).Select(x => x.Reward).Sum()}");
+            logger.Info(() => $"Total Balances Sum: {totalBalancesSum} Sum Divided By 67.5 {totalBalancesSum / ((decimal)67.5)} Last N Block Rewards In Pending Blocks  {pendingBlocks.TakeLast((int)(totalBalancesSum/((decimal)67.5))).Select(x => x.Reward).Sum()}");
             foreach(Block block in pendingBlocks){
                 // Only look at confirmed blocks for reference amount
                 logger.Info(() => $"Analyzing block {block.BlockHeight}");
