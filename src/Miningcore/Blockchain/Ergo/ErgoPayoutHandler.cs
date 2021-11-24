@@ -313,20 +313,19 @@ namespace Miningcore.Blockchain.Ergo
             foreach(Block block in pendingBlocks){
                 // Only look at confirmed blocks for reference amount
                 logger.Info(() => $"Analyzing block {block.BlockHeight}");
-                ulong TEST_HEIGHT = 625448;
-                if(block.Status == BlockStatus.Confirmed && block.BlockHeight != TEST_HEIGHT){
+                if(block.Status == BlockStatus.Confirmed){
                     
                     logger.Info(() => $"Block {block.BlockHeight} has status {block.Status}, continuing balance payments...");
-                    // filter balances to ensure that only balances not in balancesToPay are analyzed
+                    // filter balances to ensure that only balances not in balancesToPay are analyzed and unique addresses are ensured
                     var balancesToAnalyze = balancesByTime.Where(x => !balancesToPay.Contains(x) && balancesToPay.Where(y => y.Address == x.Address).Count() == 0);
                     
                     // Take first n balances of balancesToAnalyze such that these balances add up to the block reward
                     var balancesToSum = balancesToAnalyze.TakeWhile(x => 
-                            balancesToAnalyze.Take(Array.IndexOf(balancesToAnalyze.ToArray(), x)).Select(x => x.Amount).Sum() <= block.Reward
+                            balancesToAnalyze.Take(Array.IndexOf(balancesToAnalyze.ToArray(), x)).Select(x => x.Amount).Sum() <= block.Reward*5
                         );
                     // Add these elements to balancesToPay. These elements will not be evaluated next iteration
 
-                    if(balancesToPay.Length == balances.Length || balancesToSum.Select(x => x.Amount).Sum() < block.Reward){
+                    if(balancesToPay.Length == balances.Length || balancesToSum.Select(x => x.Amount).Sum() < 0){
                         logger.Info(() => $"Not enough balances remaining to pay off block, now exiting block analysis..."+ 
                         $" Remaining Balances: {balancesToAnalyze.Select(x => x.Amount).Sum()}, Block Reward: {block.Reward}, Num Balances: {balancesToAnalyze.Count()}");
                         break;
