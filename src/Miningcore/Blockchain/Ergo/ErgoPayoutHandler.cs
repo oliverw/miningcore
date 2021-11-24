@@ -331,6 +331,7 @@ namespace Miningcore.Blockchain.Ergo
                         $" Remaining Balances: {balancesToAnalyze.Select(x => x.Amount).Sum()}, Block Reward: {block.Reward}, Num Balances: {balancesToAnalyze.Count()}");
                         break;
                     }
+                    balancesToPay = balancesToPay.Concat(balancesToSum.ToArray()).ToArray();
                     logger.Info(() => $"Payments for block {block.BlockHeight} with total value {block.Reward} have been recorded.");
                     // build args, use balancesToPay so that only balances for blocks that have been confirmed are paid.
                     var amounts = balancesToSum
