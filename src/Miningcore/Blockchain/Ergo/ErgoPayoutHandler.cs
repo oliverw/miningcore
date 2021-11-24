@@ -322,7 +322,7 @@ namespace Miningcore.Blockchain.Ergo
                         );
                     // Add these elements to balancesToPay. These elements will not be evaluated next iteration
                     logger.Info(() => $"Payments for block {block.BlockHeight} with total value {block.Reward} have been recorded.");
-                    balancesToPay = balancesToPay.Concat(balancesToSum).ToArray();
+                    balancesToPay = balancesToPay.Concat(balancesToSum.ToArray()).ToArray();
                     if(balancesToPay.Length == balances.Length || balancesToAnalyze.Select(x => x.Amount).Sum() < block.Reward){
                         logger.Info(() => $"Not enough balances remaining to pay off block, now exiting block analysis... Remaining Balances: {balancesToAnalyze.Select(x => x.Amount).Sum()}, Block Reward: {block.Reward}");
                         break;
