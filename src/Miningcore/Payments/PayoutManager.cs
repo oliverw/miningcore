@@ -178,10 +178,18 @@ namespace Miningcore.Payments
                             case BlockStatus.Confirmed:
                                 // blockchains that do not support block-reward payments via coinbase Tx
                                 // must generate balance records for all reward recipients instead
-                                var blockReward = await handler.UpdateBlockRewardBalancesAsync(con, tx, pool, block, ct);
+                                if(block.ConfirmationProgress == 1)
+                                {
+                                    var blockReward = await handler.UpdateBlockRewardBalancesAsync(con, tx, pool, block, ct);
 
-                                await scheme.UpdateBalancesAsync(con, tx, pool, handler, block, blockReward, ct);
-                                await blockRepo.UpdateBlockAsync(con, tx, block);
+                                    await scheme.UpdateBalancesAsync(con, tx, pool, handler, block, blockReward, ct);
+                                    await blockRepo.UpdateBlockAsync(con, tx, block);
+                                }
+                                else
+                                {
+                                    logger.Warn(() => $"Block has status {block.Status} but has a ConfirmationProgress equal to {block.ConfirmationProgress}!");
+                                    await blockRepo.UpdateBlockAsync(con, tx, block);
+                                }
                                 break;
 
                             case BlockStatus.Orphaned:
