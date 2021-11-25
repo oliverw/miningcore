@@ -71,8 +71,23 @@ namespace Miningcore.Api.Controllers
                     // enrich
                     result.TotalPaid = await cf.Run(con => statsRepo.GetTotalPoolPaymentsAsync(con, config.Id));
                     result.TotalBlocks = await cf.Run(con => blocksRepo.GetPoolBlockCountAsync(con, config.Id));
-                    result.LastPoolBlockTime = await cf.Run(con => blocksRepo.GetLastPoolBlockTimeAsync(con, config.Id));
+                    var lastBlockTime = await cf.Run(con => blocksRepo.GetLastPoolBlockTimeAsync(con, config.Id));
+                    result.LastPoolBlockTime = lastBlockTime;
 
+                    if(lastBlockTime.HasValue) {
+                        DateTime startTime = lastBlockTime.Value;
+                        var sharesList = await cf.Run(con => shareRepo.PageSharesBetweenCreatedAsync(con, config.Id, startTime, clock.Now, 0, 0));
+                        var totalShareDiff = await cf.Run(con => shareRepo.GetAccumulatedShareDifficultyBetweenCreatedAsync(con, config.Id, startTime, clock.Now));
+                        var poolEffort = (totalShareDiff.Value * 256) / (stats.NetworkDifficulty);
+                        result.RoundShares = sharesList.Length;
+                        result.PoolEffort = poolEffort;
+                    }
+                    else
+                    {
+                        result.RoundShares = 0;
+                        result.PoolEffort = 0;
+                    }
+                    //result.RoundShares = 
                     var from = clock.Now.AddDays(-1);
 
                     var minersByHashrate = await cf.Run(con => statsRepo.PagePoolMinersByHashrateAsync(con, config.Id, from, 0, 15));
@@ -124,7 +139,23 @@ namespace Miningcore.Api.Controllers
             // enrich
             response.Pool.TotalPaid = await cf.Run(con => statsRepo.GetTotalPoolPaymentsAsync(con, pool.Id));
             response.Pool.TotalBlocks = await cf.Run(con => blocksRepo.GetPoolBlockCountAsync(con, pool.Id));
-            response.Pool.LastPoolBlockTime = await cf.Run(con => blocksRepo.GetLastPoolBlockTimeAsync(con, pool.Id));
+            var lastBlockTime = await cf.Run(con => blocksRepo.GetLastPoolBlockTimeAsync(con, pool.Id));
+            response.Pool.LastPoolBlockTime = lastBlockTime;
+
+            if(lastBlockTime.HasValue)
+            {
+                DateTime startTime = lastBlockTime.Value;
+                var sharesList = await cf.Run(con => shareRepo.PageSharesBetweenCreatedAsync(con, pool.Id, startTime, clock.Now, 0, 0));
+                var totalShareDiff = await cf.Run(con => shareRepo.GetAccumulatedShareDifficultyBetweenCreatedAsync(con, pool.Id, startTime, clock.Now));
+                var poolEffort = (totalShareDiff.Value * 256) / (stats.NetworkDifficulty);
+                response.Pool.RoundShares = sharesList.Length;
+                response.Pool.PoolEffort = poolEffort;
+            }
+            else
+            {
+                response.Pool.RoundShares = 0;
+                response.Pool.PoolEffort = 0;
+            }
 
             var from = clock.Now.AddDays(-1);
 
