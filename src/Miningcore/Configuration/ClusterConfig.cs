@@ -453,6 +453,11 @@ namespace Miningcore.Configuration
         /// PKCS certificate file
         /// </summary>
         public string TlsPfxFile { get; set; }
+
+        /// <summary>
+        /// Certificate file password
+        /// </summary>
+        public string TlsPfxPassword { get; set; }
     }
 
     public partial class VarDiffConfig
