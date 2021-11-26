@@ -76,6 +76,7 @@ namespace Miningcore.Api.Controllers
 
                     if(lastBlockTime.HasValue) {
                         DateTime startTime = lastBlockTime.Value;
+                        logger.Info(() => "[API] Creating Pool Effort and Round Shares For API Response");
                         var sharesList = await cf.Run(con => shareRepo.PageSharesBetweenCreatedAsync(con, config.Id, startTime, clock.Now, 0, 0));
                         var totalShareDiff = await cf.Run(con => shareRepo.GetAccumulatedShareDifficultyBetweenCreatedAsync(con, config.Id, startTime, clock.Now));
                         var poolEffort = (totalShareDiff.Value * 256) / (stats.NetworkDifficulty);
@@ -84,9 +85,23 @@ namespace Miningcore.Api.Controllers
                     }
                     else
                     {
+                        logger.Warn(() => "[API] API failed to generate pool effort and round shares stats! These stats shall be displayed as 0.");
                         result.RoundShares = 0;
                         result.PoolEffort = 0;
                     }
+                    result.PaymentProcessing.Extra = null;
+                    foreach(PoolEndpoint poolEP in result.Ports.Values)
+                    {
+                        if(poolEP.Tls == true || poolEP.Tls == false)
+                        {
+                            poolEP.Tls = false;
+                        }
+                        if(!String.IsNullOrEmpty(poolEP.TlsPfxFile))
+                        {
+                            poolEP.TlsPfxFile = null;
+                        }
+                    }
+                    
                     //result.RoundShares = 
                     var from = clock.Now.AddDays(-1);
 
@@ -145,6 +160,7 @@ namespace Miningcore.Api.Controllers
             if(lastBlockTime.HasValue)
             {
                 DateTime startTime = lastBlockTime.Value;
+                logger.Info(() => "[API] Creating Pool Effort and Round Shares For API Response");
                 var sharesList = await cf.Run(con => shareRepo.PageSharesBetweenCreatedAsync(con, pool.Id, startTime, clock.Now, 0, 0));
                 var totalShareDiff = await cf.Run(con => shareRepo.GetAccumulatedShareDifficultyBetweenCreatedAsync(con, pool.Id, startTime, clock.Now));
                 var poolEffort = (totalShareDiff.Value * 256) / (stats.NetworkDifficulty);
@@ -153,10 +169,22 @@ namespace Miningcore.Api.Controllers
             }
             else
             {
+                logger.Warn(() => "[API] API failed to generate pool effort and round shares stats! These stats shall be displayed as 0.");
                 response.Pool.RoundShares = 0;
                 response.Pool.PoolEffort = 0;
             }
-
+            response.Pool.PaymentProcessing.Extra = null;
+            foreach(PoolEndpoint poolEP in response.Pool.Ports.Values)
+            {
+                if(poolEP.Tls == true || poolEP.Tls == false)
+                {
+                    poolEP.Tls = false;
+                }
+                if(!String.IsNullOrEmpty(poolEP.TlsPfxFile))
+                {
+                    poolEP.TlsPfxFile = null;
+                }
+            }
             var from = clock.Now.AddDays(-1);
 
             response.Pool.TopMiners = (await cf.Run(con => statsRepo.PagePoolMinersByHashrateAsync(
