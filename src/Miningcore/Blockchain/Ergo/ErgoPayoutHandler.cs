@@ -375,15 +375,15 @@ namespace Miningcore.Blockchain.Ergo
                         // payment successful
                         logger.Info(() => $"[{LogCategory}] Payment transaction id: {txId}");
 
-                        await PersistPaymentsAsync(balanceList, txId);
+                        await PersistPaymentsAsync(balances, txId);
 
-                        NotifyPayoutSuccess(poolConfig.Id, balancesToPay, new[] {txId}, null);
+                        NotifyPayoutSuccess(poolConfig.Id, balances, new[] {txId}, null);
                     }
                     catch(PaymentException ex)
                     {
                         logger.Error(() => $"[{LogCategory}] {ex.Message}");
 
-                        NotifyPayoutFailure(poolConfig.Id, balanceList, ex.Message, null);
+                        NotifyPayoutFailure(poolConfig.Id, balances, ex.Message, null);
                     }
 
                     finally
