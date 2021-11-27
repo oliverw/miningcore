@@ -162,6 +162,21 @@ namespace Miningcore.Persistence.Postgres.Repositories
 
             return con.QuerySingleAsync<long>(query, new { poolId, miner, start, end });
         }
+        public Task<long> CountAllSharesBetweenCreatedAsync(IDbConnection con, string poolId, DateTime? start, DateTime? end)
+        {
+            logger.LogInvoke(new object[] { poolId });
+
+            var whereClause = "poolid = @poolId";
+
+            if(start.HasValue)
+                whereClause += " AND created >= @start ";
+            if(end.HasValue)
+                whereClause += " AND created <= @end";
+
+            var query = $"SELECT count(*) FROM shares WHERE {whereClause}";
+
+            return con.QuerySingleAsync<long>(query, new { poolId, start, end });
+        }
 
         public Task<double?> GetAccumulatedShareDifficultyBetweenCreatedAsync(IDbConnection con, string poolId, DateTime start, DateTime end)
         {
@@ -170,6 +185,14 @@ namespace Miningcore.Persistence.Postgres.Repositories
             const string query = "SELECT SUM(difficulty) FROM shares WHERE poolid = @poolId AND created > @start AND created < @end";
 
             return con.QuerySingleAsync<double?>(query, new { poolId, start, end });
+        }
+        public Task<double?> GetEffortBetweenCreatedAsync(IDbConnection con, string poolId, double shareConst, DateTime start, DateTime end)
+        {
+            logger.LogInvoke(new object[] { poolId });
+
+            const string query = "SELECT SUM((difficulty*@shareConst)/(networkdifficulty)) FROM shares WHERE poolid = @poolId AND created > @start AND created < @end";
+
+            return con.QuerySingleAsync<double?>(query, new { poolId, shareConst, start, end });
         }
 
         public async Task<MinerWorkerHashes[]> GetAccumulatedShareDifficultyTotalAsync(IDbConnection con, string poolId)

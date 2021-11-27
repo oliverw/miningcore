@@ -77,11 +77,10 @@ namespace Miningcore.Api.Controllers
                     if(lastBlockTime.HasValue) {
                         DateTime startTime = lastBlockTime.Value;
                         logger.Info(() => "[API] Creating Pool Effort and Round Shares For API Response");
-                        var sharesList = await cf.Run(con => shareRepo.PageSharesBetweenCreatedAsync(con, config.Id, startTime, clock.Now, 0, 0));
-                        var totalShareDiff = await cf.Run(con => shareRepo.GetAccumulatedShareDifficultyBetweenCreatedAsync(con, config.Id, startTime, clock.Now));
-                        var poolEffort = (totalShareDiff.Value * 256) / (stats.NetworkDifficulty);
-                        result.RoundShares = sharesList.Length;
-                        result.PoolEffort = poolEffort;
+                        var totalRoundShares = await cf.Run(con => shareRepo.CountAllSharesBetweenCreatedAsync(con, config.Id, startTime, clock.Now));
+                        var poolEffort = await cf.Run(con => shareRepo.GetEffortBetweenCreatedAsync(con, config.Id, pool.ShareMultiplier, startTime, clock.Now));
+                        result.RoundShares = totalRoundShares;
+                        result.PoolEffort = poolEffort.Value;
                     }
                     else
                     {
@@ -161,11 +160,10 @@ namespace Miningcore.Api.Controllers
             {
                 DateTime startTime = lastBlockTime.Value;
                 logger.Info(() => "[API] Creating Pool Effort and Round Shares For API Response");
-                var sharesList = await cf.Run(con => shareRepo.PageSharesBetweenCreatedAsync(con, pool.Id, startTime, clock.Now, 0, 0));
-                var totalShareDiff = await cf.Run(con => shareRepo.GetAccumulatedShareDifficultyBetweenCreatedAsync(con, pool.Id, startTime, clock.Now));
-                var poolEffort = (totalShareDiff.Value * 256) / (stats.NetworkDifficulty);
-                response.Pool.RoundShares = sharesList.Length;
-                response.Pool.PoolEffort = poolEffort;
+                var totalRoundShares = await cf.Run(con => shareRepo.CountAllSharesBetweenCreatedAsync(con, pool.Id, startTime, clock.Now));
+                var poolEffort = await cf.Run(con => shareRepo.GetEffortBetweenCreatedAsync(con, pool.Id, poolInstance.ShareMultiplier, startTime, clock.Now));
+                response.Pool.RoundShares = totalRoundShares;
+                response.Pool.PoolEffort = poolEffort.Value;
             }
             else
             {
