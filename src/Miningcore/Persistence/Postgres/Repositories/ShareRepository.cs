@@ -194,6 +194,14 @@ namespace Miningcore.Persistence.Postgres.Repositories
 
             return con.QuerySingleAsync<double?>(query, new { poolId, shareConst, start, end });
         }
+        public Task<double?> GetTotalShareDiffBetweenCreatedAsync(IDbConnection con, string poolId, double shareConst, DateTime start, DateTime end)
+        {
+            logger.LogInvoke(new object[] { poolId });
+
+            const string query = "SELECT SUM((difficulty*@shareConst)) FROM shares WHERE poolid = @poolId AND created > @start AND created < @end";
+
+            return con.QuerySingleAsync<double?>(query, new { poolId, shareConst, start, end });
+        }
 
         public async Task<MinerWorkerHashes[]> GetAccumulatedShareDifficultyTotalAsync(IDbConnection con, string poolId)
         {

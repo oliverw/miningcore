@@ -57,6 +57,7 @@ namespace Miningcore.Api.Responses
         public DateTime? LastPoolBlockTime { get; set; }
         public double RoundShares { get; set;}
         public double PoolEffort { get; set; }
+        public double RoundHashes { get; set; }
     }
 
     public class GetPoolsResponse
