@@ -308,7 +308,7 @@ namespace Miningcore.Blockchain.Ergo
             var balancesTotal = amounts.Sum(x => x.Value);
                     try
                     {
-                        logger.Info(() => $"[{LogCategory}] Paying {FormatAmount(balanceList.Sum(x => x.Amount))} to {balances.Length} addresses");
+                        logger.Info(() => $"[{LogCategory}] Paying {FormatAmount(balancesTotal)} to {balances.Length} addresses");
 
                         // get wallet status
                         var status = await ergoClient.GetWalletStatusAsync(ct);
