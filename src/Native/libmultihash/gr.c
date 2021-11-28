@@ -126,7 +126,7 @@ static inline void mm128_bswap32_80(void *d, void *s) {
   ((uint32_t *)d)[18] = bswap_32(((uint32_t *)s)[18]);
   ((uint32_t *)d)[19] = bswap_32(((uint32_t *)s)[19]); 
 }
-void gr_hash(const char* input, char* output, uint32_t len) {
+void gr_hash(const char* input, char* output) {
 
 	uint32_t hash[64/4];
 	char hashOrder[16] = { 0};
