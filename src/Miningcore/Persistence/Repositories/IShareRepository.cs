@@ -12,6 +12,7 @@ namespace Miningcore.Persistence.Repositories
         Task InsertAsync(IDbConnection con, IDbTransaction tx, Share share);
         Task BatchInsertAsync(IDbConnection con, IDbTransaction tx, IEnumerable<Share> shares);
         Task<Share[]> ReadSharesBeforeCreatedAsync(IDbConnection con, string poolId, DateTime before, bool inclusive, int pageSize);
+        Task<Share[]> ReadMinerSharesBeforeCreatedAsync(IDbConnection con, string poolId, string miner, DateTime before, bool inclusive, int pageSize);
         Task<Share[]> ReadSharesBeforeAndAfterCreatedAsync(IDbConnection con, string poolId, DateTime before, DateTime after, bool inclusive, int pageSize);
         Task<Share[]> PageSharesBetweenCreatedAsync(IDbConnection con, string poolId, DateTime start, DateTime end, int page, int pageSize);
 

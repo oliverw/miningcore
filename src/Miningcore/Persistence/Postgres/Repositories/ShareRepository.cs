@@ -85,6 +85,20 @@ namespace Miningcore.Persistence.Postgres.Repositories
                 .Select(mapper.Map<Share>)
                 .ToArray();
         }
+        /*
+         Get last pageSize shares from before certain date, then select all shares from this query and return only the shares of the current miner.
+         */
+        public async Task<Share[]> ReadMinerSharesBeforeCreatedAsync(IDbConnection con, string poolId, string miner, DateTime before, bool inclusive, int pageSize)
+        {
+            logger.LogInvoke(new object[] { poolId });
+
+            var query = $"SELECT * FROM (SELECT * FROM shares WHERE poolid = @poolId AND created {(inclusive ? " <= " : " < ")} @before" +
+                "ORDER BY created DESC FETCH NEXT (@pageSize) ROWS ONLY) AS lastPageShares WHERE miner = @miner";
+
+            return (await con.QueryAsync<Entities.Share>(query, new { poolId, before, pageSize }))
+                .Select(mapper.Map<Share>)
+                .ToArray();
+        }
 
         public async Task<Share[]> ReadSharesBeforeAndAfterCreatedAsync(IDbConnection con, string poolId, DateTime before, DateTime after, bool inclusive, int pageSize)
         {

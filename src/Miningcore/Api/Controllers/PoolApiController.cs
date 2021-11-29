@@ -427,7 +427,7 @@ namespace Miningcore.Api.Controllers
                     if(!string.IsNullOrEmpty(baseUrl))
                         stats.LastPaymentLink = string.Format(baseUrl, statsResult.LastPayment.TransactionConfirmationData);
                 }
-
+                stats.EstimatedBalance = await GetPPLNSMinerEstimatedPayment(pool.Id, address);
                 stats.PerformanceSamples = await GetMinerPerformanceInternal(perfMode, pool, address);
             }
 
@@ -720,6 +720,70 @@ namespace Miningcore.Api.Controllers
             // map
             var result = mapper.Map<Responses.WorkerPerformanceStatsContainer[]>(stats);
             return result;
+        }
+        private async Task<decimal> GetPPLNSMinerEstimatedPayment(string poolId, string address)
+        {
+            var pendingBlocks = await cf.Run(con => blocksRepo.GetPendingBlocksForPoolAsync(con, poolId));
+            var totalEstPayment = 0.0m;
+            var pool = GetPool(poolId);
+            var shareDiffConstant = 1;
+            var window = 2.0m;
+            // Some ugly constants for our specific ergo pool
+            if(pool.Template.Name.Equals("Ergo"))
+            {
+                shareDiffConstant = 256;
+                window = 0.5m;
+            }
+            foreach(Persistence.Model.Block block in pendingBlocks)
+            {
+                var estBlockPayment = 0.0m;
+                var estBlockScore = 0.0m;
+                var done = false;
+                if(block.Reward > 0)
+                {
+                    var blockReward = EstimateRewardAfterPoolFees(pool, block.Reward);
+                    var pplnsShares = await cf.Run(con => shareRepo.ReadMinerSharesBeforeCreatedAsync(con, poolId, address, block.Created, false, 50000));
+                    var blockRewardRemaining = blockReward;
+
+                    foreach(Persistence.Model.Share minerShare in pplnsShares)
+                    {
+                        var shareScore = (decimal) ((minerShare.Difficulty * shareDiffConstant) / minerShare.NetworkDifficulty);
+                        if(estBlockScore + shareScore >= window)
+                        {
+                            shareScore = window - estBlockScore;
+                            done = true;
+                        }
+                        var reward = shareScore * blockReward / window;
+                        estBlockScore += shareScore;
+                        blockRewardRemaining -= reward;
+
+                        // This should not be called
+                        if(blockRewardRemaining <= 0 && !done)
+                            throw new OverflowException("blockRewardRemaining < 0");
+
+                        if(reward > 0)
+                        {
+                            estBlockPayment += reward;
+                        }
+
+                        if(done)
+                            break;
+                    }
+                    totalEstPayment += estBlockPayment;
+                }
+            }
+            return totalEstPayment;
+        }
+        private decimal EstimateRewardAfterPoolFees(PoolConfig poolConfig, decimal blockReward)
+        {
+            var blockRewardRemaining = blockReward;
+            foreach(var recipient in poolConfig.RewardRecipients.Where(x => x.Percentage > 0))
+            {
+                var amount = blockReward * (recipient.Percentage / 100.0m);
+
+                blockRewardRemaining -= amount;
+            }
+            return blockRewardRemaining;
         }
     }
 }
