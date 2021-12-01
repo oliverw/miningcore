@@ -93,7 +93,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
             logger.LogInvoke(new object[] { poolId });
 
             var query = $"SELECT * FROM (SELECT * FROM shares WHERE poolid = @poolId AND created {(inclusive ? " <= " : " < ")} @before" +
-                "ORDER BY created DESC FETCH NEXT (@pageSize) ROWS ONLY) AS lastPageShares WHERE miner = @miner";
+                " ORDER BY created DESC FETCH NEXT (@pageSize) ROWS ONLY) AS lastPageShares WHERE miner = @miner";
 
             return (await con.QueryAsync<Entities.Share>(query, new { poolId, before, pageSize }))
                 .Select(mapper.Map<Share>)
