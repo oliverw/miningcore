@@ -30,8 +30,8 @@ namespace Miningcore.Api.Responses
         public decimal TodayPaid { get; set; }
         public DateTime? LastPayment { get; set; }
         public string LastPaymentLink { get; set; }
-        public decimal EstimatedBalance { get; set; }
         public WorkerPerformanceStatsContainer Performance { get; set; }
         public WorkerPerformanceStatsContainer[] PerformanceSamples { get; set; }
+        public decimal EstimatedBalance { get; set; }
     }
 }

@@ -410,7 +410,7 @@ namespace Miningcore.Api.Controllers
             Responses.MinerStats stats = null;
 
             if(statsResult != null)
-            {
+            {   
                 stats = mapper.Map<Responses.MinerStats>(statsResult);
                 int shareConst = 1;
                 if(pool.Template.Name.Equals("Ergo"))
@@ -427,8 +427,11 @@ namespace Miningcore.Api.Controllers
                     if(!string.IsNullOrEmpty(baseUrl))
                         stats.LastPaymentLink = string.Format(baseUrl, statsResult.LastPayment.TransactionConfirmationData);
                 }
-                stats.EstimatedBalance = await GetPPLNSMinerEstimatedPayment(pool.Id, address);
+
+
                 stats.PerformanceSamples = await GetMinerPerformanceInternal(perfMode, pool, address);
+                logger.Info(() => $"[API] Estimating balance for miner {address}");
+                stats.EstimatedBalance = await GetPPLNSMinerEstimatedPayment(pool.Id, address);
             }
 
             return stats;
