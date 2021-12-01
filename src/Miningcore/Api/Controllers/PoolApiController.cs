@@ -738,15 +738,16 @@ namespace Miningcore.Api.Controllers
                 shareDiffConstant = 256;
                 window = 0.5m;
             }
+            logger.Info(() => $"[API] Estimating balance for miner {address} for {pendingBlocks.Length} pending blocks");
             foreach(Persistence.Model.Block block in pendingBlocks)
             {
-                
+
                 var estBlockPayment = 0.0m;
                 var estBlockScore = 0.0m;
                 var done = false;
                 if(block.Reward > 0)
                 {
-                    logger.Info(() => $"[API] Estimating balance for miner {address} for block {block.BlockHeight}");
+                    
                     var blockReward = EstimateRewardAfterPoolFees(pool, block.Reward);
                     var pplnsShares = await cf.Run(con => shareRepo.ReadMinerSharesBeforeCreatedAsync(con, poolId, address, block.Created, false, 50000));
                     var blockRewardRemaining = blockReward;
@@ -776,7 +777,7 @@ namespace Miningcore.Api.Controllers
                             break;
                     }
                     totalEstPayment += estBlockPayment;
-                    logger.Info(() => $"[API] Estimated balance for miner {address} for block {block.BlockHeight}: {estBlockPayment}");
+                   // logger.Info(() => $"[API] Estimated balance for miner {address} for block {block.BlockHeight}: {estBlockPayment}");
                 }
             }
             logger.Info(() => $"[API] Total Estimated balance for miner {address}: {totalEstPayment}");
