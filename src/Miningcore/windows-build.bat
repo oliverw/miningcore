@@ -1,1 +1,1 @@
-dotnet publish -c Release --framework net5.0  -o ../../build
+dotnet publish -c Release --framework net6.0  -o ../../build
