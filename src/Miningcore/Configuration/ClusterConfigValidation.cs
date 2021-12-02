@@ -82,11 +82,11 @@ namespace Miningcore.Configuration
                 .WithMessage(j => $"Pool Endpoint: {j.TlsPfxFile} does not exist");
 
             RuleFor(j => j.TlsPfxFile)
-                .Must(j =>
+                .Must((j, h, c) =>
                 {
                     try
                     {
-                        var tlsCert = new X509Certificate2(j);
+                        var tlsCert = new X509Certificate2(h, j.TlsPfxPassword);
                         return tlsCert.HasPrivateKey;
                     }
                     catch

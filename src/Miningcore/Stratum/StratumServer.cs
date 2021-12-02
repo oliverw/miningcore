@@ -282,7 +282,7 @@ namespace Miningcore.Stratum
 
             if(!certs.TryGetValue(port.PoolEndpoint.TlsPfxFile, out var cert))
             {
-                cert = Guard(()=> new X509Certificate2(port.PoolEndpoint.TlsPfxFile), ex =>
+                cert = Guard(()=> new X509Certificate2(port.PoolEndpoint.TlsPfxFile, port.PoolEndpoint.TlsPfxPassword), ex =>
                 {
                     logger.Info(() => $"Failed to load TLS certificate {port.PoolEndpoint.TlsPfxFile}: {ex.Message}");
                     throw ex;
