@@ -102,6 +102,10 @@ namespace Miningcore.Api.Controllers
                         {
                             poolEP.TlsPfxFile = null;
                         }
+                        if(!String.IsNullOrEmpty(poolEP.TlsPfxPassword))
+                        {
+                            poolEP.TlsPfxPassword = null;
+                        }
                     }
                     
                     //result.RoundShares = 
