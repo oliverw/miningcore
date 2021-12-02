@@ -13,6 +13,7 @@ using Miningcore.Persistence.Repositories;
 using Miningcore.Time;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Data;
 using System.Globalization;
 using System.Linq;
@@ -92,22 +93,40 @@ namespace Miningcore.Api.Controllers
                         result.PoolEffort = 0;
                     }
                     result.PaymentProcessing.Extra = null;
-                    foreach(PoolEndpoint poolEP in result.Ports.Values)
+                    // Copy ports to hide info without changing Config
+                    Dictionary<int, PoolEndpoint> portsCopy = new Dictionary<int, PoolEndpoint>();
+                    foreach(int key in result.Ports.Keys)
                     {
-                        if(poolEP.Tls == true || poolEP.Tls == false)
+                        PoolEndpoint poolEP = result.Ports[key];
+                        
+                        var newPoolEP = new PoolEndpoint
                         {
-                            poolEP.Tls = false;
+                            Name = poolEP.Name,
+                            VarDiff = poolEP.VarDiff,
+                            TlsPfxPassword = poolEP.TlsPfxPassword,
+                            TlsPfxFile = poolEP.TlsPfxFile,
+                            ListenAddress = poolEP.ListenAddress,
+                            Tls = poolEP.Tls,
+                            TcpProxyProtocol = poolEP.TcpProxyProtocol,
+                            Difficulty = poolEP.Difficulty,
+                          
+                        };
+
+                        if(newPoolEP.Tls == true || newPoolEP.Tls == false)
+                        {
+                            newPoolEP.Tls = false;
                         }
                         if(!String.IsNullOrEmpty(poolEP.TlsPfxFile))
                         {
-                            poolEP.TlsPfxFile = null;
+                            newPoolEP.TlsPfxFile = null;
                         }
                         if(!String.IsNullOrEmpty(poolEP.TlsPfxPassword))
                         {
-                            poolEP.TlsPfxPassword = null;
+                            newPoolEP.TlsPfxPassword = null;
                         }
+                        portsCopy.Add(key, newPoolEP);
                     }
-                    
+                    result.Ports = portsCopy;
                     //result.RoundShares = 
                     var from = clock.Now.AddDays(-1);
 
@@ -183,17 +202,40 @@ namespace Miningcore.Api.Controllers
                 response.Pool.PoolEffort = 0;
             }
             response.Pool.PaymentProcessing.Extra = null;
-            foreach(PoolEndpoint poolEP in response.Pool.Ports.Values)
+            // Copy ports to hide info without changing Config
+            Dictionary<int, PoolEndpoint> portsCopy = new Dictionary<int, PoolEndpoint>();
+            foreach(int key in response.Pool.Ports.Keys)
             {
-                if(poolEP.Tls == true || poolEP.Tls == false)
+                PoolEndpoint poolEP = response.Pool.Ports[key];
+
+                var newPoolEP = new PoolEndpoint
                 {
-                    poolEP.Tls = false;
+                    Name = poolEP.Name,
+                    VarDiff = poolEP.VarDiff,
+                    TlsPfxPassword = poolEP.TlsPfxPassword,
+                    TlsPfxFile = poolEP.TlsPfxFile,
+                    ListenAddress = poolEP.ListenAddress,
+                    Tls = poolEP.Tls,
+                    TcpProxyProtocol = poolEP.TcpProxyProtocol,
+                    Difficulty = poolEP.Difficulty,
+
+                };
+
+                if(newPoolEP.Tls == true || newPoolEP.Tls == false)
+                {
+                    newPoolEP.Tls = false;
                 }
                 if(!String.IsNullOrEmpty(poolEP.TlsPfxFile))
                 {
-                    poolEP.TlsPfxFile = null;
+                    newPoolEP.TlsPfxFile = null;
                 }
+                if(!String.IsNullOrEmpty(poolEP.TlsPfxPassword))
+                {
+                    newPoolEP.TlsPfxPassword = null;
+                }
+                portsCopy.Add(key, newPoolEP);
             }
+            response.Pool.Ports = portsCopy;
             var from = clock.Now.AddDays(-1);
 
             response.Pool.TopMiners = (await cf.Run(con => statsRepo.PagePoolMinersByHashrateAsync(
