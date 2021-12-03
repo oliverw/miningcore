@@ -1,17 +1,15 @@
 using Miningcore.Mining;
-using Miningcore.Persistence.Model;
 
-namespace Miningcore.Notifications.Messages
+namespace Miningcore.Notifications.Messages;
+
+public enum PoolStatus
 {
-    public enum PoolStatus
-    {
-        Online,
-        Offline
-    }
+    Online,
+    Offline
+}
 
-    public record PoolStatusNotification
-    {
-        public IMiningPool Pool { get; set; }
-        public PoolStatus Status { get; set; }
-    }
+public record PoolStatusNotification
+{
+    public IMiningPool Pool { get; set; }
+    public PoolStatus Status { get; set; }
 }

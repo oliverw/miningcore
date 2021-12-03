@@ -1,67 +1,66 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace Miningcore.JsonRpc
+namespace Miningcore.JsonRpc;
+
+[JsonObject(MemberSerialization.OptIn)]
+public class JsonRpcResponse : JsonRpcResponse<object>
 {
-    [JsonObject(MemberSerialization.OptIn)]
-    public class JsonRpcResponse : JsonRpcResponse<object>
+    public JsonRpcResponse()
     {
-        public JsonRpcResponse()
-        {
-        }
-
-        public JsonRpcResponse(object result, object id = null) : base(result, id)
-        {
-        }
-
-        public JsonRpcResponse(JsonRpcError ex, object id = null, object result = null) : base(ex, id, result)
-        {
-        }
     }
 
-    /// <summary>
-    /// Represents a Json Rpc Response
-    /// </summary>
-    [JsonObject(MemberSerialization.OptIn)]
-    public class JsonRpcResponse<T>
+    public JsonRpcResponse(object result, object id = null) : base(result, id)
     {
-        public JsonRpcResponse()
-        {
-        }
+    }
 
-        public JsonRpcResponse(T result, object id = null)
-        {
-            Result = result;
-            Id = id;
-        }
+    public JsonRpcResponse(JsonRpcError ex, object id = null, object result = null) : base(ex, id, result)
+    {
+    }
+}
 
-        public JsonRpcResponse(JsonRpcError ex, object id, object result)
-        {
-            Error = ex;
-            Id = id;
+/// <summary>
+/// Represents a Json Rpc Response
+/// </summary>
+[JsonObject(MemberSerialization.OptIn)]
+public class JsonRpcResponse<T>
+{
+    public JsonRpcResponse()
+    {
+    }
 
-            if(result != null)
-                Result = JToken.FromObject(result);
-        }
+    public JsonRpcResponse(T result, object id = null)
+    {
+        Result = result;
+        Id = id;
+    }
 
-        //[JsonProperty(PropertyName = "jsonrpc")]
-        //public string JsonRpc => "2.0";
+    public JsonRpcResponse(JsonRpcError ex, object id, object result)
+    {
+        Error = ex;
+        Id = id;
 
-        [JsonProperty(PropertyName = "result", NullValueHandling = NullValueHandling.Ignore)]
-        public object Result { get; set; }
+        if(result != null)
+            Result = JToken.FromObject(result);
+    }
 
-        [JsonProperty(PropertyName = "error")]
-        public JsonRpcError Error { get; set; }
+    //[JsonProperty(PropertyName = "jsonrpc")]
+    //public string JsonRpc => "2.0";
 
-        [JsonProperty(PropertyName = "id", NullValueHandling = NullValueHandling.Ignore)]
-        public object Id { get; set; }
+    [JsonProperty(PropertyName = "result", NullValueHandling = NullValueHandling.Ignore)]
+    public object Result { get; set; }
 
-        public TParam ResultAs<TParam>() where TParam : class
-        {
-            if(Result is JToken)
-                return ((JToken) Result)?.ToObject<TParam>();
+    [JsonProperty(PropertyName = "error")]
+    public JsonRpcError Error { get; set; }
 
-            return (TParam) Result;
-        }
+    [JsonProperty(PropertyName = "id", NullValueHandling = NullValueHandling.Ignore)]
+    public object Id { get; set; }
+
+    public TParam ResultAs<TParam>() where TParam : class
+    {
+        if(Result is JToken)
+            return ((JToken) Result)?.ToObject<TParam>();
+
+        return (TParam) Result;
     }
 }

@@ -1,13 +1,12 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 
-namespace Miningcore.Tests.Util
+namespace Miningcore.Tests.Util;
+
+public class Globals
 {
-    public class Globals
+    public static readonly JsonSerializerSettings JsonSerializerSettings = new JsonSerializerSettings
     {
-        public static readonly JsonSerializerSettings JsonSerializerSettings = new JsonSerializerSettings
-        {
-            ContractResolver = new CamelCasePropertyNamesContractResolver()
-        };
-    }
+        ContractResolver = new CamelCasePropertyNamesContractResolver()
+    };
 }

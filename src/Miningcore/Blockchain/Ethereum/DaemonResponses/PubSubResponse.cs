@@ -1,8 +1,7 @@
-namespace Miningcore.Blockchain.Ethereum.DaemonResponses
+namespace Miningcore.Blockchain.Ethereum.DaemonResponses;
+
+public class PubSubParams<T>
 {
-    public class PubSubParams<T>
-    {
-        public string Subscription { get; set; }
-        public T Result { get; set; }
-    }
+    public string Subscription { get; set; }
+    public T Result { get; set; }
 }

@@ -1,7 +1,6 @@
-namespace Miningcore.Api.Responses
+namespace Miningcore.Api.Responses;
+
+public class GetPoolResponse
 {
-    public class GetPoolResponse
-    {
-        public PoolInfo Pool { get; set; }
-    }
+    public PoolInfo Pool { get; set; }
 }

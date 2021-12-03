@@ -1,6 +1,3 @@
-using Miningcore.Configuration;
+namespace Miningcore.JsonRpc;
 
-namespace Miningcore.JsonRpc
-{
-    public record RpcResponse<T>(T Response, JsonRpcError Error = null);
-}
+public record RpcResponse<T>(T Response, JsonRpcError Error = null);

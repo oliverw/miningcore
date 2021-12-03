@@ -1,40 +1,37 @@
-﻿using Microsoft.AspNetCore.Http;
-using System;
-using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 
-namespace Miningcore.Api.Middlewares
+namespace Miningcore.Api.Middlewares;
+
+public class ApiExceptionHandlingMiddleware
 {
-    public class ApiExceptionHandlingMiddleware
+    private readonly RequestDelegate next;
+
+    public ApiExceptionHandlingMiddleware(RequestDelegate next)
     {
-        private readonly RequestDelegate next;
+        this.next = next ?? throw new ArgumentNullException(nameof(next));
+    }
 
-        public ApiExceptionHandlingMiddleware(RequestDelegate next)
+    public async Task InvokeAsync(HttpContext context)
+    {
+        try
         {
-            this.next = next ?? throw new ArgumentNullException(nameof(next));
+            await next(context);
         }
 
-        public async Task InvokeAsync(HttpContext context)
+        catch(ApiException ex)
         {
-            try
-            {
-                await next(context);
-            }
-
-            catch(ApiException ex)
-            {
-                await HandleResponseOverrideExceptionAsync(context, ex);
-            }
+            await HandleResponseOverrideExceptionAsync(context, ex);
         }
+    }
 
-        private static async Task HandleResponseOverrideExceptionAsync(HttpContext context, ApiException ex)
-        {
-            var response = context.Response;
-            response.ContentType = "application/json";
+    private static async Task HandleResponseOverrideExceptionAsync(HttpContext context, ApiException ex)
+    {
+        var response = context.Response;
+        response.ContentType = "application/json";
 
-            if(ex.ResponseStatusCode.HasValue)
-                response.StatusCode = ex.ResponseStatusCode.Value;
+        if(ex.ResponseStatusCode.HasValue)
+            response.StatusCode = ex.ResponseStatusCode.Value;
 
-            await response.WriteAsync(ex.Message).ConfigureAwait(false);
-        }
+        await response.WriteAsync(ex.Message).ConfigureAwait(false);
     }
 }

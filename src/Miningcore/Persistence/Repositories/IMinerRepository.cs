@@ -1,12 +1,10 @@
 using System.Data;
-using System.Threading.Tasks;
 using Miningcore.Persistence.Model;
 
-namespace Miningcore.Persistence.Repositories
+namespace Miningcore.Persistence.Repositories;
+
+public interface IMinerRepository
 {
-    public interface IMinerRepository
-    {
-        Task<MinerSettings> GetSettings(IDbConnection con, IDbTransaction tx, string poolId, string address);
-        Task UpdateSettings(IDbConnection con, IDbTransaction tx, MinerSettings settings);
-    }
+    Task<MinerSettings> GetSettings(IDbConnection con, IDbTransaction tx, string poolId, string address);
+    Task UpdateSettings(IDbConnection con, IDbTransaction tx, MinerSettings settings);
 }

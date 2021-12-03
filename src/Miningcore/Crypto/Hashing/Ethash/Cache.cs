@@ -1,81 +1,78 @@
-using System;
-using System.Threading.Tasks;
 using Miningcore.Blockchain.Ethereum;
 using Miningcore.Contracts;
 using Miningcore.Extensions;
 using Miningcore.Native;
 using NLog;
 
-namespace Miningcore.Crypto.Hashing.Ethash
+namespace Miningcore.Crypto.Hashing.Ethash;
+
+public class Cache : IDisposable
 {
-    public class Cache : IDisposable
+    public Cache(ulong epoch)
     {
-        public Cache(ulong epoch)
+        Epoch = epoch;
+        LastUsed = DateTime.Now;
+    }
+
+    private IntPtr handle = IntPtr.Zero;
+    private bool isGenerated = false;
+    private readonly object genLock = new();
+
+    public ulong Epoch { get; }
+    public DateTime LastUsed { get; set; }
+
+    public void Dispose()
+    {
+        if(handle != IntPtr.Zero)
         {
-            Epoch = epoch;
-            LastUsed = DateTime.Now;
+            LibEthhash.ethash_light_delete(handle);
+            handle = IntPtr.Zero;
         }
+    }
 
-        private IntPtr handle = IntPtr.Zero;
-        private bool isGenerated = false;
-        private readonly object genLock = new();
-
-        public ulong Epoch { get; }
-        public DateTime LastUsed { get; set; }
-
-        public void Dispose()
+    public async Task GenerateAsync(ILogger logger)
+    {
+        await Task.Run(() =>
         {
-            if(handle != IntPtr.Zero)
+            lock(genLock)
             {
-                LibEthhash.ethash_light_delete(handle);
-                handle = IntPtr.Zero;
-            }
-        }
-
-        public async Task GenerateAsync(ILogger logger)
-        {
-            await Task.Run(() =>
-            {
-                lock(genLock)
+                if(!isGenerated)
                 {
-                    if(!isGenerated)
-                    {
-                        var started = DateTime.Now;
-                        logger.Debug(() => $"Generating cache for epoch {Epoch}");
+                    var started = DateTime.Now;
+                    logger.Debug(() => $"Generating cache for epoch {Epoch}");
 
-                        var block = Epoch * EthereumConstants.EpochLength;
-                        handle = LibEthhash.ethash_light_new(block);
+                    var block = Epoch * EthereumConstants.EpochLength;
+                    handle = LibEthhash.ethash_light_new(block);
 
-                        logger.Debug(() => $"Done generating cache for epoch {Epoch} after {DateTime.Now - started}");
-                        isGenerated = true;
-                    }
+                    logger.Debug(() => $"Done generating cache for epoch {Epoch} after {DateTime.Now - started}");
+                    isGenerated = true;
                 }
-            });
-        }
+            }
+        });
+    }
 
-        public unsafe bool Compute(ILogger logger, byte[] hash, ulong nonce, out byte[] mixDigest, out byte[] result)
+    public unsafe bool Compute(ILogger logger, byte[] hash, ulong nonce, out byte[] mixDigest, out byte[] result)
+    {
+        Contract.RequiresNonNull(hash, nameof(hash));
+
+        logger.LogInvoke();
+
+        mixDigest = null;
+        result = null;
+
+        var value = new LibEthhash.ethash_return_value();
+
+        fixed (byte* input = hash)
         {
-            Contract.RequiresNonNull(hash, nameof(hash));
-
-            logger.LogInvoke();
-
-            mixDigest = null;
-            result = null;
-
-            var value = new LibEthhash.ethash_return_value();
-
-            fixed (byte* input = hash)
-            {
-                LibEthhash.ethash_light_compute(handle, input, nonce, ref value);
-            }
-
-            if(value.success)
-            {
-                mixDigest = value.mix_hash.value;
-                result = value.result.value;
-            }
-
-            return value.success;
+            LibEthhash.ethash_light_compute(handle, input, nonce, ref value);
         }
+
+        if(value.success)
+        {
+            mixDigest = value.mix_hash.value;
+            result = value.result.value;
+        }
+
+        return value.success;
     }
 }

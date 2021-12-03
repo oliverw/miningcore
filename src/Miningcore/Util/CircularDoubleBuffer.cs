@@ -1,34 +1,31 @@
-using System.Linq;
+namespace Miningcore.Util;
 
-namespace Miningcore.Util
+public class CircularDoubleBuffer : CircularBuffer<double>
 {
-    public class CircularDoubleBuffer : CircularBuffer<double>
+    public CircularDoubleBuffer(int capacity) : base(capacity)
     {
-        public CircularDoubleBuffer(int capacity) : base(capacity)
-        {
-        }
+    }
 
-        public CircularDoubleBuffer(int capacity, double[] items) : base(capacity, items)
-        {
-        }
+    public CircularDoubleBuffer(int capacity, double[] items) : base(capacity, items)
+    {
+    }
 
-        public double Average()
-        {
-            return ToArray().Average();
-        }
+    public double Average()
+    {
+        return ToArray().Average();
+    }
 
-        public double Sum()
+    public double Sum()
+    {
+        double sum = 0;
+        using(var enumerator = GetEnumerator())
         {
-            double sum = 0;
-            using(var enumerator = GetEnumerator())
+            while(enumerator.MoveNext())
             {
-                while(enumerator.MoveNext())
-                {
-                    sum += enumerator.Current;
-                }
+                sum += enumerator.Current;
             }
-
-            return sum;
         }
+
+        return sum;
     }
 }

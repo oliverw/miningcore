@@ -1,282 +1,275 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Web;
 using Miningcore.Contracts;
 
-namespace Miningcore.Rest
+namespace Miningcore.Rest;
+
+public class SimpleRestClient
 {
-    public class SimpleRestClient
+    public SimpleRestClient(IHttpClientFactory factory, string baseUrl)
     {
-        public SimpleRestClient(IHttpClientFactory factory, string baseUrl)
-        {
-            this.baseUrl = baseUrl;
+        this.baseUrl = baseUrl;
 
-            httpClient = factory.CreateClient();
+        httpClient = factory.CreateClient();
+    }
+
+    protected virtual IEnumerable<KeyValuePair<string, string>> PrepareQueryParams(
+        IEnumerable<KeyValuePair<string, string>> queryParams)
+    {
+        return queryParams;
+    }
+
+    protected virtual void PrepareRequest(HttpRequestMessage request,
+        IEnumerable<KeyValuePair<string, string>> headers)
+    {
+        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+        if (headers != null)
+        {
+            foreach (var header in headers)
+                request.Headers.Add(header.Key, header.Value);
+        }
+    }
+
+    protected readonly HttpClient httpClient;
+    protected readonly string baseUrl;
+
+    protected JsonSerializerOptions jsonSerializerOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        PropertyNameCaseInsensitive = true,
+        NumberHandling = JsonNumberHandling.AllowReadingFromString
+    };
+
+    public class ResponseContent<T> : IDisposable
+    {
+        public ResponseContent(HttpResponseMessage response, T content)
+        {
+            Response = response;
+            Content = content;
         }
 
-        protected virtual IEnumerable<KeyValuePair<string, string>> PrepareQueryParams(
-            IEnumerable<KeyValuePair<string, string>> queryParams)
+        public HttpResponseMessage Response { get; }
+        public T Content { get; }
+
+        public void Dispose()
         {
-            return queryParams;
+            Response?.Dispose();
         }
+    }
 
-        protected virtual void PrepareRequest(HttpRequestMessage request,
-            IEnumerable<KeyValuePair<string, string>> headers)
+    protected string BuildRequestUri(string path, IEnumerable<KeyValuePair<string, string>> queryParams = null)
+    {
+        var sb = new StringBuilder(baseUrl);
+
+        if (!baseUrl.EndsWith('/') && !path.StartsWith('/'))
+            sb.Append('/');
+
+        sb.Append(path);
+
+        var qp = queryParams?.ToArray();
+
+        if (qp?.Length > 0)
         {
-            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            sb.Append('?');
 
-            if (headers != null)
+            for(var i=0;i<qp.Length;i++)
             {
-                foreach (var header in headers)
-                    request.Headers.Add(header.Key, header.Value);
+                var pair = qp[i];
+                var isLast = i == qp.Length - 1;
+
+                sb.Append(pair.Key);
+                sb.Append('=');
+                sb.Append(HttpUtility.UrlEncode(pair.Value));
+
+                if(!isLast)
+                    sb.Append('&');
             }
         }
 
-        protected readonly HttpClient httpClient;
-        protected readonly string baseUrl;
+        return sb.ToString();
+    }
 
-        protected JsonSerializerOptions jsonSerializerOptions = new()
+    protected virtual string Serialize<T>(T value)
+    {
+        return JsonSerializer.Serialize(value, jsonSerializerOptions);
+    }
+
+    protected virtual T Deserialize<T>(string value)
+    {
+        return JsonSerializer.Deserialize<T>(value, jsonSerializerOptions);
+    }
+
+    private StringContent GetJsonContent(object data)
+    {
+        var json = Serialize(data);
+
+        return new StringContent(json, Encoding.UTF8, "application/json");
+    }
+
+    public async Task<T> Send<T>(HttpRequestMessage request, CancellationToken ct)
+    {
+        Contract.RequiresNonNull(request, nameof(request));
+
+        PrepareRequest(request, null);
+
+        using var response = await httpClient.SendAsync(request, ct);
+        var msg = await response.Content.ReadAsStringAsync(ct);
+
+        if(!response.IsSuccessStatusCode)
+            throw new HttpRequestException(msg, null, response.StatusCode);
+
+        return Deserialize<T>(msg);
+    }
+
+    public async Task<ResponseContent<T>> SendWithResponse<T>(HttpRequestMessage request, CancellationToken ct)
+    {
+        Contract.RequiresNonNull(request, nameof(request));
+
+        PrepareRequest(request, null);
+
+        using var response = await httpClient.SendAsync(request, ct);
+        var msg = await response.Content.ReadAsStringAsync(ct);
+
+        if(!response.IsSuccessStatusCode)
+            throw new HttpRequestException(msg, null, response.StatusCode);
+
+        return new ResponseContent<T>(response, Deserialize<T>(msg));
+    }
+
+    public async Task<T> Get<T>(string path, CancellationToken ct,
+        IEnumerable<KeyValuePair<string, string>> queryParams = null,
+        IEnumerable<KeyValuePair<string, string>> headers = null)
+    {
+        var requestUri = BuildRequestUri(path, PrepareQueryParams(queryParams));
+        var request = new HttpRequestMessage(HttpMethod.Get, requestUri);
+
+        PrepareRequest(request, headers);
+
+        using var response = await httpClient.SendAsync(request, ct);
+        var msg = await response.Content.ReadAsStringAsync(ct);
+
+        if(!response.IsSuccessStatusCode)
+            throw new HttpRequestException(msg, null, response.StatusCode);
+
+        return Deserialize<T>(msg);
+    }
+
+    public async Task<HttpResponseMessage> PostWithResponse(string path, object data, CancellationToken ct,
+        IEnumerable<KeyValuePair<string, string>> queryParams = null,
+        IEnumerable<KeyValuePair<string, string>> headers = null)
+    {
+        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(path), $"{nameof(path)} must not be empty");
+
+        var requestUri = BuildRequestUri(path, PrepareQueryParams(queryParams));
+
+        var request = new HttpRequestMessage(HttpMethod.Post, requestUri)
         {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-            PropertyNameCaseInsensitive = true,
-            NumberHandling = JsonNumberHandling.AllowReadingFromString
+            Content = GetJsonContent(data)
         };
 
-        public class ResponseContent<T> : IDisposable
+        PrepareRequest(request, headers);
+
+        return await httpClient.SendAsync(request, ct);
+    }
+
+    public async Task<T> Post<T>(string path, object data, CancellationToken ct,
+        IEnumerable<KeyValuePair<string, string>> queryParams = null,
+        IEnumerable<KeyValuePair<string, string>> headers = null) where T: class
+    {
+        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(path), $"{nameof(path)} must not be empty");
+
+        var requestUri = BuildRequestUri(path, PrepareQueryParams(queryParams));
+
+        var request = new HttpRequestMessage(HttpMethod.Post, requestUri)
         {
-            public ResponseContent(HttpResponseMessage response, T content)
-            {
-                Response = response;
-                Content = content;
-            }
+            Content = GetJsonContent(data)
+        };
 
-            public HttpResponseMessage Response { get; }
-            public T Content { get; }
+        PrepareRequest(request, headers);
 
-            public void Dispose()
-            {
-                Response?.Dispose();
-            }
-        }
+        using var response = await httpClient.SendAsync(request, ct);
+        var msg = await response.Content.ReadAsStringAsync(ct);
 
-        protected string BuildRequestUri(string path, IEnumerable<KeyValuePair<string, string>> queryParams = null)
+        if(!response.IsSuccessStatusCode)
+            throw new HttpRequestException(msg, null, response.StatusCode);
+
+        return Deserialize<T>(msg);
+    }
+
+    public async Task<ResponseContent<T>> PostWithResponse<T>(string path, object data, CancellationToken ct,
+        IEnumerable<KeyValuePair<string, string>> queryParams = null,
+        IEnumerable<KeyValuePair<string, string>> headers = null)
+    {
+        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(path), $"{nameof(path)} must not be empty");
+
+        var requestUri = BuildRequestUri(path, PrepareQueryParams(queryParams));
+
+        var request = new HttpRequestMessage(HttpMethod.Post, requestUri)
         {
-            var sb = new StringBuilder(baseUrl);
+            Content = GetJsonContent(data)
+        };
 
-            if (!baseUrl.EndsWith('/') && !path.StartsWith('/'))
-                sb.Append('/');
+        PrepareRequest(request, headers);
 
-            sb.Append(path);
+        var response = await httpClient.SendAsync(request, ct);
+        var msg = await response.Content.ReadAsStringAsync(ct);
 
-            var qp = queryParams?.ToArray();
+        return new ResponseContent<T>(response, Deserialize<T>(msg));
+    }
 
-            if (qp?.Length > 0)
-            {
-                sb.Append('?');
+    public async Task<HttpResponseMessage> DeleteWithResponse(string path, CancellationToken ct,
+        IEnumerable<KeyValuePair<string, string>> queryParams = null,
+        IEnumerable<KeyValuePair<string, string>> headers = null)
+    {
+        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(path), $"{nameof(path)} must not be empty");
 
-                for(var i=0;i<qp.Length;i++)
-                {
-                    var pair = qp[i];
-                    var isLast = i == qp.Length - 1;
+        var requestUri = BuildRequestUri(path, PrepareQueryParams(queryParams));
+        var request = new HttpRequestMessage(HttpMethod.Delete, requestUri);
 
-                    sb.Append(pair.Key);
-                    sb.Append('=');
-                    sb.Append(HttpUtility.UrlEncode(pair.Value));
+        PrepareRequest(request, headers);
 
-                    if(!isLast)
-                        sb.Append('&');
-                }
-            }
+        return await httpClient.SendAsync(request, ct);
+    }
 
-            return sb.ToString();
-        }
+    public async Task<T> Delete<T>(string path, CancellationToken ct,
+        IEnumerable<KeyValuePair<string, string>> queryParams = null,
+        IEnumerable<KeyValuePair<string, string>> headers = null)
+    {
+        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(path), $"{nameof(path)} must not be empty");
 
-        protected virtual string Serialize<T>(T value)
-        {
-            return JsonSerializer.Serialize(value, jsonSerializerOptions);
-        }
+        var requestUri = BuildRequestUri(path, PrepareQueryParams(queryParams));
+        var request = new HttpRequestMessage(HttpMethod.Delete, requestUri);
 
-        protected virtual T Deserialize<T>(string value)
-        {
-            return JsonSerializer.Deserialize<T>(value, jsonSerializerOptions);
-        }
+        PrepareRequest(request, headers);
 
-        private StringContent GetJsonContent(object data)
-        {
-            var json = Serialize(data);
+        using var response = await httpClient.SendAsync(request, ct);
+        var msg = await response.Content.ReadAsStringAsync(ct);
 
-            return new StringContent(json, Encoding.UTF8, "application/json");
-        }
+        if(!response.IsSuccessStatusCode)
+            throw new HttpRequestException(msg, null, response.StatusCode);
 
-        public async Task<T> Send<T>(HttpRequestMessage request, CancellationToken ct)
-        {
-            Contract.RequiresNonNull(request, nameof(request));
+        return Deserialize<T>(msg);
+    }
 
-            PrepareRequest(request, null);
+    public async Task<ResponseContent<T>> DeleteWithResponse<T>(string path, CancellationToken ct,
+        IEnumerable<KeyValuePair<string, string>> queryParams = null,
+        IEnumerable<KeyValuePair<string, string>> headers = null)
+    {
+        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(path), $"{nameof(path)} must not be empty");
 
-            using var response = await httpClient.SendAsync(request, ct);
-            var msg = await response.Content.ReadAsStringAsync(ct);
+        var requestUri = BuildRequestUri(path, PrepareQueryParams(queryParams));
+        var request = new HttpRequestMessage(HttpMethod.Delete, requestUri);
 
-            if(!response.IsSuccessStatusCode)
-                throw new HttpRequestException(msg, null, response.StatusCode);
+        PrepareRequest(request, headers);
 
-            return Deserialize<T>(msg);
-        }
+        var response = await httpClient.SendAsync(request, ct);
+        var msg = await response.Content.ReadAsStringAsync(ct);
 
-        public async Task<ResponseContent<T>> SendWithResponse<T>(HttpRequestMessage request, CancellationToken ct)
-        {
-            Contract.RequiresNonNull(request, nameof(request));
-
-            PrepareRequest(request, null);
-
-            using var response = await httpClient.SendAsync(request, ct);
-            var msg = await response.Content.ReadAsStringAsync(ct);
-
-            if(!response.IsSuccessStatusCode)
-                throw new HttpRequestException(msg, null, response.StatusCode);
-
-            return new ResponseContent<T>(response, Deserialize<T>(msg));
-        }
-
-        public async Task<T> Get<T>(string path, CancellationToken ct,
-            IEnumerable<KeyValuePair<string, string>> queryParams = null,
-            IEnumerable<KeyValuePair<string, string>> headers = null)
-        {
-            var requestUri = BuildRequestUri(path, PrepareQueryParams(queryParams));
-            var request = new HttpRequestMessage(HttpMethod.Get, requestUri);
-
-            PrepareRequest(request, headers);
-
-            using var response = await httpClient.SendAsync(request, ct);
-            var msg = await response.Content.ReadAsStringAsync(ct);
-
-            if(!response.IsSuccessStatusCode)
-                throw new HttpRequestException(msg, null, response.StatusCode);
-
-            return Deserialize<T>(msg);
-        }
-
-        public async Task<HttpResponseMessage> PostWithResponse(string path, object data, CancellationToken ct,
-            IEnumerable<KeyValuePair<string, string>> queryParams = null,
-            IEnumerable<KeyValuePair<string, string>> headers = null)
-        {
-            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(path), $"{nameof(path)} must not be empty");
-
-            var requestUri = BuildRequestUri(path, PrepareQueryParams(queryParams));
-
-            var request = new HttpRequestMessage(HttpMethod.Post, requestUri)
-            {
-                Content = GetJsonContent(data)
-            };
-
-            PrepareRequest(request, headers);
-
-            return await httpClient.SendAsync(request, ct);
-        }
-
-        public async Task<T> Post<T>(string path, object data, CancellationToken ct,
-            IEnumerable<KeyValuePair<string, string>> queryParams = null,
-            IEnumerable<KeyValuePair<string, string>> headers = null) where T: class
-        {
-            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(path), $"{nameof(path)} must not be empty");
-
-            var requestUri = BuildRequestUri(path, PrepareQueryParams(queryParams));
-
-            var request = new HttpRequestMessage(HttpMethod.Post, requestUri)
-            {
-                Content = GetJsonContent(data)
-            };
-
-            PrepareRequest(request, headers);
-
-            using var response = await httpClient.SendAsync(request, ct);
-            var msg = await response.Content.ReadAsStringAsync(ct);
-
-            if(!response.IsSuccessStatusCode)
-                throw new HttpRequestException(msg, null, response.StatusCode);
-
-            return Deserialize<T>(msg);
-        }
-
-        public async Task<ResponseContent<T>> PostWithResponse<T>(string path, object data, CancellationToken ct,
-            IEnumerable<KeyValuePair<string, string>> queryParams = null,
-            IEnumerable<KeyValuePair<string, string>> headers = null)
-        {
-            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(path), $"{nameof(path)} must not be empty");
-
-            var requestUri = BuildRequestUri(path, PrepareQueryParams(queryParams));
-
-            var request = new HttpRequestMessage(HttpMethod.Post, requestUri)
-            {
-                Content = GetJsonContent(data)
-            };
-
-            PrepareRequest(request, headers);
-
-            var response = await httpClient.SendAsync(request, ct);
-            var msg = await response.Content.ReadAsStringAsync(ct);
-
-            return new ResponseContent<T>(response, Deserialize<T>(msg));
-        }
-
-        public async Task<HttpResponseMessage> DeleteWithResponse(string path, CancellationToken ct,
-            IEnumerable<KeyValuePair<string, string>> queryParams = null,
-            IEnumerable<KeyValuePair<string, string>> headers = null)
-        {
-            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(path), $"{nameof(path)} must not be empty");
-
-            var requestUri = BuildRequestUri(path, PrepareQueryParams(queryParams));
-            var request = new HttpRequestMessage(HttpMethod.Delete, requestUri);
-
-            PrepareRequest(request, headers);
-
-            return await httpClient.SendAsync(request, ct);
-        }
-
-        public async Task<T> Delete<T>(string path, CancellationToken ct,
-            IEnumerable<KeyValuePair<string, string>> queryParams = null,
-            IEnumerable<KeyValuePair<string, string>> headers = null)
-        {
-            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(path), $"{nameof(path)} must not be empty");
-
-            var requestUri = BuildRequestUri(path, PrepareQueryParams(queryParams));
-            var request = new HttpRequestMessage(HttpMethod.Delete, requestUri);
-
-            PrepareRequest(request, headers);
-
-            using var response = await httpClient.SendAsync(request, ct);
-            var msg = await response.Content.ReadAsStringAsync(ct);
-
-            if(!response.IsSuccessStatusCode)
-                throw new HttpRequestException(msg, null, response.StatusCode);
-
-            return Deserialize<T>(msg);
-        }
-
-        public async Task<ResponseContent<T>> DeleteWithResponse<T>(string path, CancellationToken ct,
-            IEnumerable<KeyValuePair<string, string>> queryParams = null,
-            IEnumerable<KeyValuePair<string, string>> headers = null)
-        {
-            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(path), $"{nameof(path)} must not be empty");
-
-            var requestUri = BuildRequestUri(path, PrepareQueryParams(queryParams));
-            var request = new HttpRequestMessage(HttpMethod.Delete, requestUri);
-
-            PrepareRequest(request, headers);
-
-            var response = await httpClient.SendAsync(request, ct);
-            var msg = await response.Content.ReadAsStringAsync(ct);
-
-            return new ResponseContent<T>(response, Deserialize<T>(msg));
-        }
+        return new ResponseContent<T>(response, Deserialize<T>(msg));
     }
 }

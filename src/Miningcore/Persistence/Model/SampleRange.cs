@@ -1,13 +1,8 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
+namespace Miningcore.Persistence.Repositories;
 
-namespace Miningcore.Persistence.Repositories
+public enum SampleRange
 {
-    public enum SampleRange
-    {
-        Day = 1,
-        Month,
-        Hour,
-    }
+    Day = 1,
+    Month,
+    Hour,
 }

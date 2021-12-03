@@ -1,10 +1,8 @@
 using System.Data;
-using System.Threading.Tasks;
 
-namespace Miningcore.Persistence
+namespace Miningcore.Persistence;
+
+public interface IConnectionFactory
 {
-    public interface IConnectionFactory
-    {
-        Task<IDbConnection> OpenConnectionAsync();
-    }
+    Task<IDbConnection> OpenConnectionAsync();
 }

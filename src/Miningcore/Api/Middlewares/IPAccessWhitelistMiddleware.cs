@@ -1,44 +1,39 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using NLog;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using System.Threading.Tasks;
 
-namespace Miningcore.Api.Middlewares
+namespace Miningcore.Api.Middlewares;
+
+public class IPAccessWhitelistMiddleware
 {
-    public class IPAccessWhitelistMiddleware
+    public IPAccessWhitelistMiddleware(RequestDelegate next, string[] locations, IPAddress[] whitelist)
     {
-        public IPAccessWhitelistMiddleware(RequestDelegate next, string[] locations, IPAddress[] whitelist)
-        {
-            this.whitelist = whitelist;
-            this.next = next;
-            this.locations = locations;
-        }
+        this.whitelist = whitelist;
+        this.next = next;
+        this.locations = locations;
+    }
 
-        private readonly RequestDelegate next;
-        private readonly ILogger logger = LogManager.GetCurrentClassLogger();
-        private readonly IPAddress[] whitelist;
-        private readonly string[] locations;
+    private readonly RequestDelegate next;
+    private readonly ILogger logger = LogManager.GetCurrentClassLogger();
+    private readonly IPAddress[] whitelist;
+    private readonly string[] locations;
 
-        public async Task Invoke(HttpContext context)
+    public async Task Invoke(HttpContext context)
+    {
+        if(locations.Any(x => context.Request.Path.Value.StartsWith(x)))
         {
-            if(locations.Any(x => context.Request.Path.Value.StartsWith(x)))
+            var remoteAddress = context.Connection.RemoteIpAddress;
+
+            if(!whitelist.Any(x => x.Equals(remoteAddress)))
             {
-                var remoteAddress = context.Connection.RemoteIpAddress;
+                logger.Info(() => $"Unauthorized request attempt to {context.Request.Path.Value} from {remoteAddress}");
 
-                if(!whitelist.Any(x => x.Equals(remoteAddress)))
-                {
-                    logger.Info(() => $"Unauthorized request attempt to {context.Request.Path.Value} from {remoteAddress}");
-
-                    context.Response.StatusCode = (int) HttpStatusCode.Forbidden;
-                    await context.Response.WriteAsync("You are not in my access list. Good Bye.\n");
-                    return;
-                }
+                context.Response.StatusCode = (int) HttpStatusCode.Forbidden;
+                await context.Response.WriteAsync("You are not in my access list. Good Bye.\n");
+                return;
             }
-
-            await next.Invoke(context);
         }
+
+        await next.Invoke(context);
     }
 }

@@ -1,7 +1,6 @@
-namespace Miningcore.Blockchain.Cryptonote.DaemonRequests
+namespace Miningcore.Blockchain.Cryptonote.DaemonRequests;
+
+public class GetBlockHeaderByHeightRequest
 {
-    public class GetBlockHeaderByHeightRequest
-    {
-        public ulong Height { get; set; }
-    }
+    public ulong Height { get; set; }
 }

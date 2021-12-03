@@ -1,60 +1,57 @@
 using NLog;
-using System;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
-using System.Threading;
 
-namespace Miningcore.Extensions
+namespace Miningcore.Extensions;
+
+public static class ObservableExtensions
 {
-    public static class ObservableExtensions
+    public static IObservable<T> Spy<T>(this IObservable<T> source, string opName = "IObservable")
     {
-        public static IObservable<T> Spy<T>(this IObservable<T> source, string opName = "IObservable")
+        Console.WriteLine("{0}: Observable obtained on Thread: {1}", opName, Thread.CurrentThread.ManagedThreadId);
+
+        return Observable.Create<T>(obs =>
         {
-            Console.WriteLine("{0}: Observable obtained on Thread: {1}", opName, Thread.CurrentThread.ManagedThreadId);
+            Console.WriteLine("{0}: Subscribed to on Thread: {1}", opName, Thread.CurrentThread.ManagedThreadId);
 
-            return Observable.Create<T>(obs =>
+            try
             {
-                Console.WriteLine("{0}: Subscribed to on Thread: {1}", opName, Thread.CurrentThread.ManagedThreadId);
+                var subscription = source
+                    .Do(
+                        x => Console.WriteLine("{0}: OnNext({1}) on Thread: {2}", opName, x,
+                            Thread.CurrentThread.ManagedThreadId),
+                        ex => Console.WriteLine("{0}: OnError({1}) on Thread: {2}", opName, ex,
+                            Thread.CurrentThread.ManagedThreadId),
+                        () => Console.WriteLine("{0}: OnCompleted() on Thread: {1}", opName,
+                            Thread.CurrentThread.ManagedThreadId))
+                    .Subscribe(obs);
 
-                try
-                {
-                    var subscription = source
-                        .Do(
-                            x => Console.WriteLine("{0}: OnNext({1}) on Thread: {2}", opName, x,
-                                Thread.CurrentThread.ManagedThreadId),
-                            ex => Console.WriteLine("{0}: OnError({1}) on Thread: {2}", opName, ex,
-                                Thread.CurrentThread.ManagedThreadId),
-                            () => Console.WriteLine("{0}: OnCompleted() on Thread: {1}", opName,
-                                Thread.CurrentThread.ManagedThreadId))
-                        .Subscribe(obs);
+                return new CompositeDisposable(
+                    subscription,
+                    Disposable.Create(() => Console.WriteLine("{0}: Cleaned up on Thread: {1}", opName,
+                        Thread.CurrentThread.ManagedThreadId)));
+            }
 
-                    return new CompositeDisposable(
-                        subscription,
-                        Disposable.Create(() => Console.WriteLine("{0}: Cleaned up on Thread: {1}", opName,
-                            Thread.CurrentThread.ManagedThreadId)));
-                }
+            finally
+            {
+                Console.WriteLine("{0}: Subscription completed.", opName);
+            }
+        });
+    }
 
-                finally
-                {
-                    Console.WriteLine("{0}: Subscription completed.", opName);
-                }
-            });
-        }
-
-        public static IObservable<T> DoSafe<T>(this IObservable<T> source, Action<T> action, ILogger logger)
+    public static IObservable<T> DoSafe<T>(this IObservable<T> source, Action<T> action, ILogger logger)
+    {
+        return source.Do(x =>
         {
-            return source.Do(x =>
+            try
             {
-                try
-                {
-                    action(x);
-                }
+                action(x);
+            }
 
-                catch(Exception ex)
-                {
-                    logger.Error(ex);
-                }
-            });
-        }
+            catch(Exception ex)
+            {
+                logger.Error(ex);
+            }
+        });
     }
 }

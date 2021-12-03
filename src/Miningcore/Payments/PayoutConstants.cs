@@ -1,11 +1,6 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
+namespace Miningcore.Payments;
 
-namespace Miningcore.Payments
+public static class PayoutConstants
 {
-    public static class PayoutConstants
-    {
-        public const char PayoutInfoSeperator = '.';
-    }
+    public const char PayoutInfoSeperator = '.';
 }

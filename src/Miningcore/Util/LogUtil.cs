@@ -1,38 +1,35 @@
-using System;
-using System.Runtime.CompilerServices;
 using Miningcore.Configuration;
 using Miningcore.Mining;
 using NLog;
 
-namespace Miningcore.Util
+namespace Miningcore.Util;
+
+public static class LogUtil
 {
-    public static class LogUtil
+    public static ILogger GetPoolScopedLogger(Type type, PoolConfig poolConfig)
     {
-        public static ILogger GetPoolScopedLogger(Type type, PoolConfig poolConfig)
-        {
-            return LogManager.GetLogger(poolConfig.Id);
-        }
+        return LogManager.GetLogger(poolConfig.Id);
+    }
 
-        public static ILogger GetPoolScopedLogger(Type type, string poolId)
-        {
-            return LogManager.GetLogger(poolId);
-        }
+    public static ILogger GetPoolScopedLogger(Type type, string poolId)
+    {
+        return LogManager.GetLogger(poolId);
+    }
 
-        public static void ThrowLogPoolStartupException(this ILogger logger, string msg, string category = null)
-        {
-            var output = !string.IsNullOrEmpty(category) ? $"[{category}] {msg}" : msg;
-            logger.Error(output);
+    public static void ThrowLogPoolStartupException(this ILogger logger, string msg, string category = null)
+    {
+        var output = !string.IsNullOrEmpty(category) ? $"[{category}] {msg}" : msg;
+        logger.Error(output);
 
-            throw new PoolStartupAbortException(msg);
-        }
+        throw new PoolStartupAbortException(msg);
+    }
 
-        public static void ThrowLogPoolStartupException(this ILogger logger, Exception ex, string msg,
-            string category = null)
-        {
-            var output = !string.IsNullOrEmpty(category) ? $"[{category}] {msg}" : msg;
-            logger.Error(ex, output);
+    public static void ThrowLogPoolStartupException(this ILogger logger, Exception ex, string msg,
+        string category = null)
+    {
+        var output = !string.IsNullOrEmpty(category) ? $"[{category}] {msg}" : msg;
+        logger.Error(ex, output);
 
-            throw new PoolStartupAbortException(msg);
-        }
+        throw new PoolStartupAbortException(msg);
     }
 }

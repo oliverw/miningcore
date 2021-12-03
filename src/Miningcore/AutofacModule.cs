@@ -1,4 +1,3 @@
-using System.Linq;
 using System.Reflection;
 using Autofac;
 using Miningcore.Api;
@@ -24,149 +23,148 @@ using Miningcore.Blockchain.Ergo;
 using Miningcore.Nicehash;
 using Miningcore.Pushover;
 
-namespace Miningcore
+namespace Miningcore;
+
+public class AutofacModule : Module
 {
-    public class AutofacModule : Module
+    /// <summary>
+    /// Override to add registrations to the container.
+    /// </summary>
+    /// <remarks>
+    /// Note that the ContainerBuilder parameter is unique to this module.
+    /// </remarks>
+    /// <param name="builder">The builder through which components can be registered.</param>
+    protected override void Load(ContainerBuilder builder)
     {
-        /// <summary>
-        /// Override to add registrations to the container.
-        /// </summary>
-        /// <remarks>
-        /// Note that the ContainerBuilder parameter is unique to this module.
-        /// </remarks>
-        /// <param name="builder">The builder through which components can be registered.</param>
-        protected override void Load(ContainerBuilder builder)
+        var thisAssembly = typeof(AutofacModule).GetTypeInfo().Assembly;
+
+        builder.RegisterInstance(new JsonSerializerSettings
         {
-            var thisAssembly = typeof(AutofacModule).GetTypeInfo().Assembly;
-
-            builder.RegisterInstance(new JsonSerializerSettings
+            ContractResolver = new DefaultContractResolver
             {
-                ContractResolver = new DefaultContractResolver
+                NamingStrategy = new CamelCaseNamingStrategy
                 {
-                    NamingStrategy = new CamelCaseNamingStrategy
-                    {
-                        ProcessDictionaryKeys = false
-                    }
+                    ProcessDictionaryKeys = false
                 }
-            });
+            }
+        });
 
-            builder.RegisterType<MessageBus>()
-                .AsImplementedInterfaces()
-                .SingleInstance();
+        builder.RegisterType<MessageBus>()
+            .AsImplementedInterfaces()
+            .SingleInstance();
 
-            builder.RegisterType<StandardClock>()
-                .AsImplementedInterfaces()
-                .SingleInstance();
+        builder.RegisterType<StandardClock>()
+            .AsImplementedInterfaces()
+            .SingleInstance();
 
-            builder.RegisterType<IntegratedBanManager>()
-                .Keyed<IBanManager>(BanManagerKind.Integrated)
-                .SingleInstance();
+        builder.RegisterType<IntegratedBanManager>()
+            .Keyed<IBanManager>(BanManagerKind.Integrated)
+            .SingleInstance();
 
-            builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
-                .Where(t => t.GetCustomAttributes<CoinFamilyAttribute>().Any() && t.GetInterfaces()
-                    .Any(i =>
-                        i.IsAssignableFrom(typeof(IMiningPool)) ||
-                        i.IsAssignableFrom(typeof(IPayoutHandler)) ||
-                        i.IsAssignableFrom(typeof(IPayoutScheme))))
-                .WithMetadataFrom<CoinFamilyAttribute>()
-                .AsImplementedInterfaces();
+        builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
+            .Where(t => t.GetCustomAttributes<CoinFamilyAttribute>().Any() && t.GetInterfaces()
+                .Any(i =>
+                    i.IsAssignableFrom(typeof(IMiningPool)) ||
+                    i.IsAssignableFrom(typeof(IPayoutHandler)) ||
+                    i.IsAssignableFrom(typeof(IPayoutScheme))))
+            .WithMetadataFrom<CoinFamilyAttribute>()
+            .AsImplementedInterfaces();
 
-            builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
-                .Where(t => t.GetInterfaces().Any(i => i.IsAssignableFrom(typeof(IHashAlgorithm))))
-                .PropertiesAutowired()
-                .AsSelf();
+        builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
+            .Where(t => t.GetInterfaces().Any(i => i.IsAssignableFrom(typeof(IHashAlgorithm))))
+            .PropertiesAutowired()
+            .AsSelf();
 
-            builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
-                .Where(t => t.IsAssignableTo<EquihashSolver>())
-                .PropertiesAutowired()
-                .AsSelf();
+        builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
+            .Where(t => t.IsAssignableTo<EquihashSolver>())
+            .PropertiesAutowired()
+            .AsSelf();
 
-            builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
-                .Where(t => t.IsAssignableTo<ControllerBase>())
-                .PropertiesAutowired()
-                .AsSelf();
+        builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
+            .Where(t => t.IsAssignableTo<ControllerBase>())
+            .PropertiesAutowired()
+            .AsSelf();
 
-            builder.RegisterType<WebSocketNotificationsRelay>()
-                .PropertiesAutowired()
-                .AsSelf()
-                .SingleInstance();
+        builder.RegisterType<WebSocketNotificationsRelay>()
+            .PropertiesAutowired()
+            .AsSelf()
+            .SingleInstance();
 
-            builder.RegisterType<NicehashService>()
-                .SingleInstance();
+        builder.RegisterType<NicehashService>()
+            .SingleInstance();
 
-            builder.RegisterType<PushoverClient>()
-                .SingleInstance();
+        builder.RegisterType<PushoverClient>()
+            .SingleInstance();
 
-            //////////////////////
-            // Background services
+        //////////////////////
+        // Background services
 
-            builder.RegisterType<PayoutManager>()
-                .SingleInstance();
+        builder.RegisterType<PayoutManager>()
+            .SingleInstance();
 
-            builder.RegisterType<ShareRecorder>()
-                .SingleInstance();
+        builder.RegisterType<ShareRecorder>()
+            .SingleInstance();
 
-            builder.RegisterType<ShareReceiver>()
-                .SingleInstance();
+        builder.RegisterType<ShareReceiver>()
+            .SingleInstance();
 
-            builder.RegisterType<BtStreamReceiver>()
-                .SingleInstance();
+        builder.RegisterType<BtStreamReceiver>()
+            .SingleInstance();
 
-            builder.RegisterType<ShareRelay>()
-                .SingleInstance();
+        builder.RegisterType<ShareRelay>()
+            .SingleInstance();
 
-            builder.RegisterType<StatsRecorder>()
-                .SingleInstance();
+        builder.RegisterType<StatsRecorder>()
+            .SingleInstance();
 
-            builder.RegisterType<NotificationService>()
-                .SingleInstance();
+        builder.RegisterType<NotificationService>()
+            .SingleInstance();
 
-            builder.RegisterType<MetricsPublisher>()
-                .SingleInstance();
+        builder.RegisterType<MetricsPublisher>()
+            .SingleInstance();
 
-            //////////////////////
-            // Payment Schemes
+        //////////////////////
+        // Payment Schemes
 
-            builder.RegisterType<PPLNSPaymentScheme>()
-                .Keyed<IPayoutScheme>(PayoutScheme.PPLNS)
-                .SingleInstance();
+        builder.RegisterType<PPLNSPaymentScheme>()
+            .Keyed<IPayoutScheme>(PayoutScheme.PPLNS)
+            .SingleInstance();
 
-            builder.RegisterType<SOLOPaymentScheme>()
-                .Keyed<IPayoutScheme>(PayoutScheme.SOLO)
-                .SingleInstance();
+        builder.RegisterType<SOLOPaymentScheme>()
+            .Keyed<IPayoutScheme>(PayoutScheme.SOLO)
+            .SingleInstance();
 
-            builder.RegisterType<PROPPaymentScheme>()
-                .Keyed<IPayoutScheme>(PayoutScheme.PROP)
-                .SingleInstance();
+        builder.RegisterType<PROPPaymentScheme>()
+            .Keyed<IPayoutScheme>(PayoutScheme.PROP)
+            .SingleInstance();
 
-            //////////////////////
-            // Bitcoin and family
+        //////////////////////
+        // Bitcoin and family
 
-            builder.RegisterType<BitcoinJobManager>();
+        builder.RegisterType<BitcoinJobManager>();
 
-            //////////////////////
-            // Cryptonote
+        //////////////////////
+        // Cryptonote
 
-            builder.RegisterType<CryptonoteJobManager>();
+        builder.RegisterType<CryptonoteJobManager>();
 
-            //////////////////////
-            // Ethereum
+        //////////////////////
+        // Ethereum
 
-            builder.RegisterType<EthereumJobManager>();
-            builder.RegisterType<EthereumJobManager>();
+        builder.RegisterType<EthereumJobManager>();
+        builder.RegisterType<EthereumJobManager>();
 
-            //////////////////////
-            // ZCash
+        //////////////////////
+        // ZCash
 
-            builder.RegisterType<EquihashJobManager>();
+        builder.RegisterType<EquihashJobManager>();
 
-            //////////////////////
-            // Ergo
+        //////////////////////
+        // Ergo
 
-            builder.RegisterType<EquihashJobManager>();
-            builder.RegisterType<ErgoJobManager>();
+        builder.RegisterType<EquihashJobManager>();
+        builder.RegisterType<ErgoJobManager>();
 
-            base.Load(builder);
-        }
+        base.Load(builder);
     }
 }

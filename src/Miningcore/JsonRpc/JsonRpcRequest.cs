@@ -1,52 +1,51 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace Miningcore.JsonRpc
-{
-    [JsonObject(MemberSerialization.OptIn)]
-    public class JsonRpcRequest : JsonRpcRequest<object>
-    {
-        public JsonRpcRequest()
-        {
-        }
+namespace Miningcore.JsonRpc;
 
-        public JsonRpcRequest(string method, object parameters, object id) : base(method, parameters, id)
-        {
-        }
+[JsonObject(MemberSerialization.OptIn)]
+public class JsonRpcRequest : JsonRpcRequest<object>
+{
+    public JsonRpcRequest()
+    {
     }
 
-    [JsonObject(MemberSerialization.OptIn)]
-    public class JsonRpcRequest<T>
+    public JsonRpcRequest(string method, object parameters, object id) : base(method, parameters, id)
     {
-        public JsonRpcRequest()
-        {
-        }
+    }
+}
 
-        public JsonRpcRequest(string method, T parameters, object id)
-        {
-            Method = method;
-            Params = parameters;
-            Id = id;
-        }
+[JsonObject(MemberSerialization.OptIn)]
+public class JsonRpcRequest<T>
+{
+    public JsonRpcRequest()
+    {
+    }
 
-        [JsonProperty("jsonrpc")]
-        public string JsonRpc => "2.0";
+    public JsonRpcRequest(string method, T parameters, object id)
+    {
+        Method = method;
+        Params = parameters;
+        Id = id;
+    }
 
-        [JsonProperty("method", NullValueHandling = NullValueHandling.Ignore)]
-        public string Method { get; set; }
+    [JsonProperty("jsonrpc")]
+    public string JsonRpc => "2.0";
 
-        [JsonProperty("params")]
-        public object Params { get; set; }
+    [JsonProperty("method", NullValueHandling = NullValueHandling.Ignore)]
+    public string Method { get; set; }
 
-        [JsonProperty("id")]
-        public object Id { get; set; }
+    [JsonProperty("params")]
+    public object Params { get; set; }
 
-        public TParam ParamsAs<TParam>() where TParam : class
-        {
-            if(Params is JToken)
-                return ((JToken) Params)?.ToObject<TParam>();
+    [JsonProperty("id")]
+    public object Id { get; set; }
 
-            return (TParam) Params;
-        }
+    public TParam ParamsAs<TParam>() where TParam : class
+    {
+        if(Params is JToken)
+            return ((JToken) Params)?.ToObject<TParam>();
+
+        return (TParam) Params;
     }
 }

@@ -1,11 +1,9 @@
-using System;
 using System.Net;
 
-namespace Miningcore.Banning
+namespace Miningcore.Banning;
+
+public interface IBanManager
 {
-    public interface IBanManager
-    {
-        bool IsBanned(IPAddress address);
-        void Ban(IPAddress address, TimeSpan duration);
-    }
+    bool IsBanned(IPAddress address);
+    void Ban(IPAddress address, TimeSpan duration);
 }

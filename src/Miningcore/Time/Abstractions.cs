@@ -1,9 +1,6 @@
-using System;
+namespace Miningcore.Time;
 
-namespace Miningcore.Time
+public interface IMasterClock
 {
-    public interface IMasterClock
-    {
-        DateTime Now { get; }
-    }
+    DateTime Now { get; }
 }

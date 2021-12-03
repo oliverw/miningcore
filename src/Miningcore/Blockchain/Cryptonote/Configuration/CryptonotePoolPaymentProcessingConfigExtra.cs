@@ -1,11 +1,6 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
+namespace Miningcore.Blockchain.Cryptonote.Configuration;
 
-namespace Miningcore.Blockchain.Cryptonote.Configuration
+public class CryptonotePoolPaymentProcessingConfigExtra
 {
-    public class CryptonotePoolPaymentProcessingConfigExtra
-    {
-        public decimal MinimumPaymentToPaymentId { get; set; }
-    }
+    public decimal MinimumPaymentToPaymentId { get; set; }
 }

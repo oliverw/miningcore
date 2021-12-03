@@ -1,7 +1,6 @@
-namespace Miningcore.Blockchain.Cryptonote.DaemonResponses
+namespace Miningcore.Blockchain.Cryptonote.DaemonResponses;
+
+public class GetAddressResponse
 {
-    public class GetAddressResponse
-    {
-        public string Address { get; set; }
-    }
+    public string Address { get; set; }
 }

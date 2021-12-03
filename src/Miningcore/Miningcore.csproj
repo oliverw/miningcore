@@ -6,6 +6,7 @@
         <RootNamespace>Miningcore</RootNamespace>
         <ServerGarbageCollection>true</ServerGarbageCollection>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <ImplicitUsings>true</ImplicitUsings>
     </PropertyGroup>
 
     <PropertyGroup>

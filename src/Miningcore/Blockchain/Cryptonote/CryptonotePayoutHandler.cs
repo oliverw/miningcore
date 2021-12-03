@@ -1,9 +1,4 @@
-using System;
-using System.Collections.Generic;
 using System.Data;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Autofac;
 using AutoMapper;
 using Miningcore.Blockchain.Cryptonote.Configuration;
@@ -26,421 +21,421 @@ using Contract = Miningcore.Contracts.Contract;
 using CNC = Miningcore.Blockchain.Cryptonote.CryptonoteCommands;
 using Newtonsoft.Json.Linq;
 
-namespace Miningcore.Blockchain.Cryptonote
+namespace Miningcore.Blockchain.Cryptonote;
+
+[CoinFamily(CoinFamily.Cryptonote)]
+public class CryptonotePayoutHandler : PayoutHandlerBase,
+    IPayoutHandler
 {
-    [CoinFamily(CoinFamily.Cryptonote)]
-    public class CryptonotePayoutHandler : PayoutHandlerBase,
-        IPayoutHandler
+    public CryptonotePayoutHandler(
+        IComponentContext ctx,
+        IConnectionFactory cf,
+        IMapper mapper,
+        IShareRepository shareRepo,
+        IBlockRepository blockRepo,
+        IBalanceRepository balanceRepo,
+        IPaymentRepository paymentRepo,
+        IMasterClock clock,
+        IMessageBus messageBus) :
+        base(cf, mapper, shareRepo, blockRepo, balanceRepo, paymentRepo, clock, messageBus)
     {
-        public CryptonotePayoutHandler(
-            IComponentContext ctx,
-            IConnectionFactory cf,
-            IMapper mapper,
-            IShareRepository shareRepo,
-            IBlockRepository blockRepo,
-            IBalanceRepository balanceRepo,
-            IPaymentRepository paymentRepo,
-            IMasterClock clock,
-            IMessageBus messageBus) :
-            base(cf, mapper, shareRepo, blockRepo, balanceRepo, paymentRepo, clock, messageBus)
+        Contract.RequiresNonNull(ctx, nameof(ctx));
+        Contract.RequiresNonNull(balanceRepo, nameof(balanceRepo));
+        Contract.RequiresNonNull(paymentRepo, nameof(paymentRepo));
+
+        this.ctx = ctx;
+    }
+
+    private readonly IComponentContext ctx;
+    private RpcClient rpcClient;
+    private RpcClient rpcClientWallet;
+    private CryptonoteNetworkType? networkType;
+    private CryptonotePoolPaymentProcessingConfigExtra extraConfig;
+    private bool walletSupportsTransferSplit;
+
+    protected override string LogCategory => "Cryptonote Payout Handler";
+
+    private async Task<bool> HandleTransferResponseAsync(RpcResponse<TransferResponse> response, params Balance[] balances)
+    {
+        var coin = poolConfig.Template.As<CryptonoteCoinTemplate>();
+
+        if(response.Error == null)
         {
-            Contract.RequiresNonNull(ctx, nameof(ctx));
-            Contract.RequiresNonNull(balanceRepo, nameof(balanceRepo));
-            Contract.RequiresNonNull(paymentRepo, nameof(paymentRepo));
+            var txHash = response.Response.TxHash;
+            var txFee = (decimal) response.Response.Fee / coin.SmallestUnit;
 
-            this.ctx = ctx;
-        }
+            logger.Info(() => $"[{LogCategory}] Payment transaction id: {txHash}, TxFee {FormatAmount(txFee)}, TxKey {response.Response.TxKey}");
 
-        private readonly IComponentContext ctx;
-        private RpcClient rpcClient;
-        private RpcClient rpcClientWallet;
-        private CryptonoteNetworkType? networkType;
-        private CryptonotePoolPaymentProcessingConfigExtra extraConfig;
-        private bool walletSupportsTransferSplit;
-
-        protected override string LogCategory => "Cryptonote Payout Handler";
-
-        private async Task<bool> HandleTransferResponseAsync(RpcResponse<TransferResponse> response, params Balance[] balances)
-        {
-            var coin = poolConfig.Template.As<CryptonoteCoinTemplate>();
-
-            if(response.Error == null)
-            {
-                var txHash = response.Response.TxHash;
-                var txFee = (decimal) response.Response.Fee / coin.SmallestUnit;
-
-                logger.Info(() => $"[{LogCategory}] Payment transaction id: {txHash}, TxFee {FormatAmount(txFee)}, TxKey {response.Response.TxKey}");
-
-                await PersistPaymentsAsync(balances, txHash);
-                NotifyPayoutSuccess(poolConfig.Id, balances, new[] { txHash }, txFee);
-                return true;
-            }
-
-            else
-            {
-                logger.Error(() => $"[{LogCategory}] Daemon command '{CryptonoteWalletCommands.Transfer}' returned error: {response.Error.Message} code {response.Error.Code}");
-
-                NotifyPayoutFailure(poolConfig.Id, balances, $"Daemon command '{CryptonoteWalletCommands.Transfer}' returned error: {response.Error.Message} code {response.Error.Code}", null);
-                return false;
-            }
-        }
-
-        private async Task<bool> HandleTransferResponseAsync(RpcResponse<TransferSplitResponse> response, params Balance[] balances)
-        {
-            var coin = poolConfig.Template.As<CryptonoteCoinTemplate>();
-
-            if(response.Error == null)
-            {
-                var txHashes = response.Response.TxHashList;
-                var txFees = response.Response.FeeList.Select(x => (decimal) x / coin.SmallestUnit).ToArray();
-
-                logger.Info(() => $"[{LogCategory}] Split-Payment transaction ids: {string.Join(", ", txHashes)}, Corresponding TxFees were {string.Join(", ", txFees.Select(FormatAmount))}");
-
-                await PersistPaymentsAsync(balances, txHashes.First());
-                NotifyPayoutSuccess(poolConfig.Id, balances, txHashes, txFees.Sum());
-                return true;
-            }
-
-            else
-            {
-                logger.Error(() => $"[{LogCategory}] Daemon command '{CryptonoteWalletCommands.TransferSplit}' returned error: {response.Error.Message} code {response.Error.Code}");
-
-                NotifyPayoutFailure(poolConfig.Id, balances, $"Daemon command '{CryptonoteWalletCommands.TransferSplit}' returned error: {response.Error.Message} code {response.Error.Code}", null);
-                return false;
-            }
-        }
-
-        private async Task UpdateNetworkTypeAsync(CancellationToken ct)
-        {
-            if(!networkType.HasValue)
-            {
-                var infoResponse = await rpcClient.ExecuteAsync(logger, CNC.GetInfo, ct, true);
-                var info = infoResponse.Response.ToObject<GetInfoResponse>();
-
-                // chain detection
-                if(!string.IsNullOrEmpty(info.NetType))
-                {
-                    switch(info.NetType.ToLower())
-                    {
-                        case "mainnet":
-                            networkType = CryptonoteNetworkType.Main;
-                            break;
-                        case "stagenet":
-                            networkType = CryptonoteNetworkType.Stage;
-                            break;
-                        case "testnet":
-                            networkType = CryptonoteNetworkType.Test;
-                            break;
-                        default:
-                            logger.ThrowLogPoolStartupException($"Unsupport net type '{info.NetType}'");
-                            break;
-                    }
-                }
-
-                else
-                    networkType = info.IsTestnet ? CryptonoteNetworkType.Test : CryptonoteNetworkType.Main;
-            }
-        }
-
-        private async Task<bool> EnsureBalance(decimal requiredAmount, CryptonoteCoinTemplate coin, CancellationToken ct)
-        {
-            var response = await rpcClientWallet.ExecuteAsync<GetBalanceResponse>(logger, CryptonoteWalletCommands.GetBalance, ct);
-
-            if(response.Error != null)
-            {
-                logger.Error(() => $"[{LogCategory}] Daemon command '{CryptonoteWalletCommands.GetBalance}' returned error: {response.Error.Message} code {response.Error.Code}");
-                return false;
-            }
-
-            var unlockedBalance = Math.Floor(response.Response.UnlockedBalance / coin.SmallestUnit);
-            var balance = Math.Floor(response.Response.Balance / coin.SmallestUnit);
-
-            if(unlockedBalance < requiredAmount)
-            {
-                logger.Info(() => $"[{LogCategory}] {FormatAmount(requiredAmount)} unlocked balance required for payment, but only have {FormatAmount(unlockedBalance)} of {FormatAmount(balance)} available yet. Will try again.");
-                return false;
-            }
-
-            logger.Info(() => $"[{LogCategory}] Current balance is {FormatAmount(unlockedBalance)}");
+            await PersistPaymentsAsync(balances, txHash);
+            NotifyPayoutSuccess(poolConfig.Id, balances, new[] { txHash }, txFee);
             return true;
         }
 
-        private async Task<bool> PayoutBatch(Balance[] balances, CancellationToken ct)
+        else
         {
-            var coin = poolConfig.Template.As<CryptonoteCoinTemplate>();
+            logger.Error(() => $"[{LogCategory}] Daemon command '{CryptonoteWalletCommands.Transfer}' returned error: {response.Error.Message} code {response.Error.Code}");
 
-            // ensure there's enough balance
-            if(!await EnsureBalance(balances.Sum(x => x.Amount), coin, ct))
-                return false;
+            NotifyPayoutFailure(poolConfig.Id, balances, $"Daemon command '{CryptonoteWalletCommands.Transfer}' returned error: {response.Error.Message} code {response.Error.Code}", null);
+            return false;
+        }
+    }
 
-            // build request
-            var request = new TransferRequest
-            {
-                Destinations = balances
-                    .Where(x => x.Amount > 0)
-                    .Select(x =>
-                    {
-                        ExtractAddressAndPaymentId(x.Address, out var address, out var paymentId);
+    private async Task<bool> HandleTransferResponseAsync(RpcResponse<TransferSplitResponse> response, params Balance[] balances)
+    {
+        var coin = poolConfig.Template.As<CryptonoteCoinTemplate>();
 
-                        return new TransferDestination
-                        {
-                            Address = address,
-                            Amount = (ulong) Math.Floor(x.Amount * coin.SmallestUnit)
-                        };
-                    }).ToArray(),
+        if(response.Error == null)
+        {
+            var txHashes = response.Response.TxHashList;
+            var txFees = response.Response.FeeList.Select(x => (decimal) x / coin.SmallestUnit).ToArray();
 
-                GetTxKey = true
-            };
+            logger.Info(() => $"[{LogCategory}] Split-Payment transaction ids: {string.Join(", ", txHashes)}, Corresponding TxFees were {string.Join(", ", txFees.Select(FormatAmount))}");
 
-            if(request.Destinations.Length == 0)
-                return true;
-
-            logger.Info(() => $"[{LogCategory}] Paying {FormatAmount(balances.Sum(x => x.Amount))} to {balances.Length} addresses:\n{string.Join("\n", balances.OrderByDescending(x => x.Amount).Select(x => $"{FormatAmount(x.Amount)} to {x.Address}"))}");
-
-            // send command
-            var transferResponse = await rpcClientWallet.ExecuteAsync<TransferResponse>(logger, CryptonoteWalletCommands.Transfer, ct, request);
-
-            // gracefully handle error -4 (transaction would be too large. try /transfer_split)
-            if(transferResponse.Error?.Code == -4)
-            {
-                if(walletSupportsTransferSplit)
-                {
-                    logger.Error(() => $"[{LogCategory}] Daemon command '{CryptonoteWalletCommands.Transfer}' returned error: {transferResponse.Error.Message} code {transferResponse.Error.Code}");
-                    logger.Info(() => $"[{LogCategory}] Retrying transfer using {CryptonoteWalletCommands.TransferSplit}");
-
-                    var transferSplitResponse = await rpcClientWallet.ExecuteAsync<TransferSplitResponse>(logger, CryptonoteWalletCommands.TransferSplit, ct, request);
-
-                    return await HandleTransferResponseAsync(transferSplitResponse, balances);
-                }
-            }
-
-            return await HandleTransferResponseAsync(transferResponse, balances);
+            await PersistPaymentsAsync(balances, txHashes.First());
+            NotifyPayoutSuccess(poolConfig.Id, balances, txHashes, txFees.Sum());
+            return true;
         }
 
-        private void ExtractAddressAndPaymentId(string input, out string address, out string paymentId)
+        else
         {
-            paymentId = null;
-            var index = input.IndexOf(PayoutConstants.PayoutInfoSeperator);
+            logger.Error(() => $"[{LogCategory}] Daemon command '{CryptonoteWalletCommands.TransferSplit}' returned error: {response.Error.Message} code {response.Error.Code}");
 
-            if(index != -1)
+            NotifyPayoutFailure(poolConfig.Id, balances, $"Daemon command '{CryptonoteWalletCommands.TransferSplit}' returned error: {response.Error.Message} code {response.Error.Code}", null);
+            return false;
+        }
+    }
+
+    private async Task UpdateNetworkTypeAsync(CancellationToken ct)
+    {
+        if(!networkType.HasValue)
+        {
+            var infoResponse = await rpcClient.ExecuteAsync(logger, CNC.GetInfo, ct, true);
+            var info = infoResponse.Response.ToObject<GetInfoResponse>();
+
+            // chain detection
+            if(!string.IsNullOrEmpty(info.NetType))
             {
-                address = input[..index];
-
-                if(index + 1 < input.Length)
+                switch(info.NetType.ToLower())
                 {
-                    paymentId = input[(index + 1)..];
-
-                    // ignore invalid payment ids
-                    if(paymentId.Length != CryptonoteConstants.PaymentIdHexLength)
-                        paymentId = null;
+                    case "mainnet":
+                        networkType = CryptonoteNetworkType.Main;
+                        break;
+                    case "stagenet":
+                        networkType = CryptonoteNetworkType.Stage;
+                        break;
+                    case "testnet":
+                        networkType = CryptonoteNetworkType.Test;
+                        break;
+                    default:
+                        logger.ThrowLogPoolStartupException($"Unsupport net type '{info.NetType}'");
+                        break;
                 }
             }
 
             else
-                address = input;
+                networkType = info.IsTestnet ? CryptonoteNetworkType.Test : CryptonoteNetworkType.Main;
+        }
+    }
+
+    private async Task<bool> EnsureBalance(decimal requiredAmount, CryptonoteCoinTemplate coin, CancellationToken ct)
+    {
+        var response = await rpcClientWallet.ExecuteAsync<GetBalanceResponse>(logger, CryptonoteWalletCommands.GetBalance, ct);
+
+        if(response.Error != null)
+        {
+            logger.Error(() => $"[{LogCategory}] Daemon command '{CryptonoteWalletCommands.GetBalance}' returned error: {response.Error.Message} code {response.Error.Code}");
+            return false;
         }
 
-        private async Task<bool> PayoutToPaymentId(Balance balance, CancellationToken ct)
+        var unlockedBalance = Math.Floor(response.Response.UnlockedBalance / coin.SmallestUnit);
+        var balance = Math.Floor(response.Response.Balance / coin.SmallestUnit);
+
+        if(unlockedBalance < requiredAmount)
         {
-            var coin = poolConfig.Template.As<CryptonoteCoinTemplate>();
+            logger.Info(() => $"[{LogCategory}] {FormatAmount(requiredAmount)} unlocked balance required for payment, but only have {FormatAmount(unlockedBalance)} of {FormatAmount(balance)} available yet. Will try again.");
+            return false;
+        }
 
-            ExtractAddressAndPaymentId(balance.Address, out var address, out var paymentId);
-            var isIntegratedAddress = string.IsNullOrEmpty(paymentId);
+        logger.Info(() => $"[{LogCategory}] Current balance is {FormatAmount(unlockedBalance)}");
+        return true;
+    }
 
-            // ensure there's enough balance
-            if(!await EnsureBalance(balance.Amount, coin, ct))
-                return false;
+    private async Task<bool> PayoutBatch(Balance[] balances, CancellationToken ct)
+    {
+        var coin = poolConfig.Template.As<CryptonoteCoinTemplate>();
 
-            // build request
-            var request = new TransferRequest
-            {
-                Destinations = new[]
+        // ensure there's enough balance
+        if(!await EnsureBalance(balances.Sum(x => x.Amount), coin, ct))
+            return false;
+
+        // build request
+        var request = new TransferRequest
+        {
+            Destinations = balances
+                .Where(x => x.Amount > 0)
+                .Select(x =>
                 {
-                    new TransferDestination
+                    ExtractAddressAndPaymentId(x.Address, out var address, out var paymentId);
+
+                    return new TransferDestination
                     {
                         Address = address,
-                        Amount = (ulong) Math.Floor(balance.Amount * coin.SmallestUnit)
-                    }
-                },
-                PaymentId = paymentId,
-                GetTxKey = true
-            };
+                        Amount = (ulong) Math.Floor(x.Amount * coin.SmallestUnit)
+                    };
+                }).ToArray(),
 
-            if(!isIntegratedAddress)
-                request.PaymentId = paymentId;
+            GetTxKey = true
+        };
 
-            if(!isIntegratedAddress)
-                logger.Info(() => $"[{LogCategory}] Paying {FormatAmount(balance.Amount)} to address {balance.Address} with paymentId {paymentId}");
-            else
-                logger.Info(() => $"[{LogCategory}] Paying {FormatAmount(balance.Amount)} to integrated address {balance.Address}");
+        if(request.Destinations.Length == 0)
+            return true;
 
-            // send command
-            var result = await rpcClientWallet.ExecuteAsync<TransferResponse>(logger, CryptonoteWalletCommands.Transfer, ct, request);
+        logger.Info(() => $"[{LogCategory}] Paying {FormatAmount(balances.Sum(x => x.Amount))} to {balances.Length} addresses:\n{string.Join("\n", balances.OrderByDescending(x => x.Amount).Select(x => $"{FormatAmount(x.Amount)} to {x.Address}"))}");
 
+        // send command
+        var transferResponse = await rpcClientWallet.ExecuteAsync<TransferResponse>(logger, CryptonoteWalletCommands.Transfer, ct, request);
+
+        // gracefully handle error -4 (transaction would be too large. try /transfer_split)
+        if(transferResponse.Error?.Code == -4)
+        {
             if(walletSupportsTransferSplit)
             {
-                // gracefully handle error -4 (transaction would be too large. try /transfer_split)
-                if(result.Error?.Code == -4)
-                {
-                    logger.Info(() => $"[{LogCategory}] Retrying transfer using {CryptonoteWalletCommands.TransferSplit}");
+                logger.Error(() => $"[{LogCategory}] Daemon command '{CryptonoteWalletCommands.Transfer}' returned error: {transferResponse.Error.Message} code {transferResponse.Error.Code}");
+                logger.Info(() => $"[{LogCategory}] Retrying transfer using {CryptonoteWalletCommands.TransferSplit}");
 
-                    result = await rpcClientWallet.ExecuteAsync<TransferResponse>(logger, CryptonoteWalletCommands.TransferSplit, ct, request);
-                }
+                var transferSplitResponse = await rpcClientWallet.ExecuteAsync<TransferSplitResponse>(logger, CryptonoteWalletCommands.TransferSplit, ct, request);
+
+                return await HandleTransferResponseAsync(transferSplitResponse, balances);
             }
-
-            return await HandleTransferResponseAsync(result, balance);
         }
 
-        #region IPayoutHandler
+        return await HandleTransferResponseAsync(transferResponse, balances);
+    }
 
-        public async Task ConfigureAsync(ClusterConfig clusterConfig, PoolConfig poolConfig, CancellationToken ct)
+    private void ExtractAddressAndPaymentId(string input, out string address, out string paymentId)
+    {
+        paymentId = null;
+        var index = input.IndexOf(PayoutConstants.PayoutInfoSeperator);
+
+        if(index != -1)
         {
-            Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
+            address = input[..index];
 
-            this.poolConfig = poolConfig;
-            this.clusterConfig = clusterConfig;
-            extraConfig = poolConfig.PaymentProcessing.Extra.SafeExtensionDataAs<CryptonotePoolPaymentProcessingConfigExtra>();
-
-            logger = LogUtil.GetPoolScopedLogger(typeof(CryptonotePayoutHandler), poolConfig);
-
-            // configure standard daemon
-            var jsonSerializerSettings = ctx.Resolve<JsonSerializerSettings>();
-
-            var daemonEndpoints = poolConfig.Daemons
-                .Where(x => string.IsNullOrEmpty(x.Category))
-                .Select(x =>
-                {
-                    if(string.IsNullOrEmpty(x.HttpPath))
-                        x.HttpPath = CryptonoteConstants.DaemonRpcLocation;
-
-                    return x;
-                })
-                .ToArray();
-
-            rpcClient = new RpcClient(daemonEndpoints.First(), jsonSerializerSettings, messageBus, poolConfig.Id);
-
-            // configure wallet daemon
-            var walletDaemonEndpoints = poolConfig.Daemons
-                .Where(x => x.Category?.ToLower() == CryptonoteConstants.WalletDaemonCategory)
-                .Select(x =>
-                {
-                    if(string.IsNullOrEmpty(x.HttpPath))
-                        x.HttpPath = CryptonoteConstants.DaemonRpcLocation;
-
-                    return x;
-                })
-                .ToArray();
-
-            rpcClientWallet = new RpcClient(walletDaemonEndpoints.First(), jsonSerializerSettings, messageBus, poolConfig.Id);
-
-            // detect network
-            await UpdateNetworkTypeAsync(ct);
-
-            // detect transfer_split support
-            var response = await rpcClientWallet.ExecuteAsync<TransferResponse>(logger, CryptonoteWalletCommands.TransferSplit, ct);
-            walletSupportsTransferSplit = response.Error.Code != CryptonoteConstants.MoneroRpcMethodNotFound;
-        }
-
-        public async Task<Block[]> ClassifyBlocksAsync(IMiningPool pool, Block[] blocks, CancellationToken ct)
-        {
-            Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
-            Contract.RequiresNonNull(blocks, nameof(blocks));
-
-            var coin = poolConfig.Template.As<CryptonoteCoinTemplate>();
-            var pageSize = 100;
-            var pageCount = (int) Math.Ceiling(blocks.Length / (double) pageSize);
-            var result = new List<Block>();
-
-            for(var i = 0; i < pageCount; i++)
+            if(index + 1 < input.Length)
             {
-                // get a page full of blocks
-                var page = blocks
-                    .Skip(i * pageSize)
-                    .Take(pageSize)
-                    .ToArray();
+                paymentId = input[(index + 1)..];
 
-                // NOTE: monerod does not support batch-requests
-                for(var j = 0; j < page.Length; j++)
+                // ignore invalid payment ids
+                if(paymentId.Length != CryptonoteConstants.PaymentIdHexLength)
+                    paymentId = null;
+            }
+        }
+
+        else
+            address = input;
+    }
+
+    private async Task<bool> PayoutToPaymentId(Balance balance, CancellationToken ct)
+    {
+        var coin = poolConfig.Template.As<CryptonoteCoinTemplate>();
+
+        ExtractAddressAndPaymentId(balance.Address, out var address, out var paymentId);
+        var isIntegratedAddress = string.IsNullOrEmpty(paymentId);
+
+        // ensure there's enough balance
+        if(!await EnsureBalance(balance.Amount, coin, ct))
+            return false;
+
+        // build request
+        var request = new TransferRequest
+        {
+            Destinations = new[]
+            {
+                new TransferDestination
                 {
-                    var block = page[j];
+                    Address = address,
+                    Amount = (ulong) Math.Floor(balance.Amount * coin.SmallestUnit)
+                }
+            },
+            PaymentId = paymentId,
+            GetTxKey = true
+        };
 
-                    var rpcResult = await rpcClient.ExecuteAsync<GetBlockHeaderResponse>(logger,
-                        CNC.GetBlockHeaderByHeight, ct,
-                        new GetBlockHeaderByHeightRequest
-                        {
-                            Height = block.BlockHeight
-                        });
+        if(!isIntegratedAddress)
+            request.PaymentId = paymentId;
 
-                    if(rpcResult.Error != null)
+        if(!isIntegratedAddress)
+            logger.Info(() => $"[{LogCategory}] Paying {FormatAmount(balance.Amount)} to address {balance.Address} with paymentId {paymentId}");
+        else
+            logger.Info(() => $"[{LogCategory}] Paying {FormatAmount(balance.Amount)} to integrated address {balance.Address}");
+
+        // send command
+        var result = await rpcClientWallet.ExecuteAsync<TransferResponse>(logger, CryptonoteWalletCommands.Transfer, ct, request);
+
+        if(walletSupportsTransferSplit)
+        {
+            // gracefully handle error -4 (transaction would be too large. try /transfer_split)
+            if(result.Error?.Code == -4)
+            {
+                logger.Info(() => $"[{LogCategory}] Retrying transfer using {CryptonoteWalletCommands.TransferSplit}");
+
+                result = await rpcClientWallet.ExecuteAsync<TransferResponse>(logger, CryptonoteWalletCommands.TransferSplit, ct, request);
+            }
+        }
+
+        return await HandleTransferResponseAsync(result, balance);
+    }
+
+    #region IPayoutHandler
+
+    public async Task ConfigureAsync(ClusterConfig clusterConfig, PoolConfig poolConfig, CancellationToken ct)
+    {
+        Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
+
+        this.poolConfig = poolConfig;
+        this.clusterConfig = clusterConfig;
+        extraConfig = poolConfig.PaymentProcessing.Extra.SafeExtensionDataAs<CryptonotePoolPaymentProcessingConfigExtra>();
+
+        logger = LogUtil.GetPoolScopedLogger(typeof(CryptonotePayoutHandler), poolConfig);
+
+        // configure standard daemon
+        var jsonSerializerSettings = ctx.Resolve<JsonSerializerSettings>();
+
+        var daemonEndpoints = poolConfig.Daemons
+            .Where(x => string.IsNullOrEmpty(x.Category))
+            .Select(x =>
+            {
+                if(string.IsNullOrEmpty(x.HttpPath))
+                    x.HttpPath = CryptonoteConstants.DaemonRpcLocation;
+
+                return x;
+            })
+            .ToArray();
+
+        rpcClient = new RpcClient(daemonEndpoints.First(), jsonSerializerSettings, messageBus, poolConfig.Id);
+
+        // configure wallet daemon
+        var walletDaemonEndpoints = poolConfig.Daemons
+            .Where(x => x.Category?.ToLower() == CryptonoteConstants.WalletDaemonCategory)
+            .Select(x =>
+            {
+                if(string.IsNullOrEmpty(x.HttpPath))
+                    x.HttpPath = CryptonoteConstants.DaemonRpcLocation;
+
+                return x;
+            })
+            .ToArray();
+
+        rpcClientWallet = new RpcClient(walletDaemonEndpoints.First(), jsonSerializerSettings, messageBus, poolConfig.Id);
+
+        // detect network
+        await UpdateNetworkTypeAsync(ct);
+
+        // detect transfer_split support
+        var response = await rpcClientWallet.ExecuteAsync<TransferResponse>(logger, CryptonoteWalletCommands.TransferSplit, ct);
+        walletSupportsTransferSplit = response.Error.Code != CryptonoteConstants.MoneroRpcMethodNotFound;
+    }
+
+    public async Task<Block[]> ClassifyBlocksAsync(IMiningPool pool, Block[] blocks, CancellationToken ct)
+    {
+        Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
+        Contract.RequiresNonNull(blocks, nameof(blocks));
+
+        var coin = poolConfig.Template.As<CryptonoteCoinTemplate>();
+        var pageSize = 100;
+        var pageCount = (int) Math.Ceiling(blocks.Length / (double) pageSize);
+        var result = new List<Block>();
+
+        for(var i = 0; i < pageCount; i++)
+        {
+            // get a page full of blocks
+            var page = blocks
+                .Skip(i * pageSize)
+                .Take(pageSize)
+                .ToArray();
+
+            // NOTE: monerod does not support batch-requests
+            for(var j = 0; j < page.Length; j++)
+            {
+                var block = page[j];
+
+                var rpcResult = await rpcClient.ExecuteAsync<GetBlockHeaderResponse>(logger,
+                    CNC.GetBlockHeaderByHeight, ct,
+                    new GetBlockHeaderByHeightRequest
                     {
-                        logger.Debug(() => $"[{LogCategory}] Daemon reports error '{rpcResult.Error.Message}' (Code {rpcResult.Error.Code}) for block {block.BlockHeight}");
-                        continue;
-                    }
+                        Height = block.BlockHeight
+                    });
 
-                    if(rpcResult.Response?.BlockHeader == null)
-                    {
-                        logger.Debug(() => $"[{LogCategory}] Daemon returned no header for block {block.BlockHeight}");
-                        continue;
-                    }
+                if(rpcResult.Error != null)
+                {
+                    logger.Debug(() => $"[{LogCategory}] Daemon reports error '{rpcResult.Error.Message}' (Code {rpcResult.Error.Code}) for block {block.BlockHeight}");
+                    continue;
+                }
 
-                    var blockHeader = rpcResult.Response.BlockHeader;
+                if(rpcResult.Response?.BlockHeader == null)
+                {
+                    logger.Debug(() => $"[{LogCategory}] Daemon returned no header for block {block.BlockHeight}");
+                    continue;
+                }
 
-                    // update progress
-                    block.ConfirmationProgress = Math.Min(1.0d, (double) blockHeader.Depth / CryptonoteConstants.PayoutMinBlockConfirmations);
-                    result.Add(block);
+                var blockHeader = rpcResult.Response.BlockHeader;
 
-                    messageBus.NotifyBlockConfirmationProgress(poolConfig.Id, block, coin);
+                // update progress
+                block.ConfirmationProgress = Math.Min(1.0d, (double) blockHeader.Depth / CryptonoteConstants.PayoutMinBlockConfirmations);
+                result.Add(block);
 
-                    // orphaned?
-                    if(blockHeader.IsOrphaned || blockHeader.Hash != block.TransactionConfirmationData)
-                    {
-                        block.Status = BlockStatus.Orphaned;
-                        block.Reward = 0;
+                messageBus.NotifyBlockConfirmationProgress(poolConfig.Id, block, coin);
 
-                        messageBus.NotifyBlockUnlocked(poolConfig.Id, block, coin);
-                        continue;
-                    }
+                // orphaned?
+                if(blockHeader.IsOrphaned || blockHeader.Hash != block.TransactionConfirmationData)
+                {
+                    block.Status = BlockStatus.Orphaned;
+                    block.Reward = 0;
 
-                    // matured and spendable?
-                    if(blockHeader.Depth >= CryptonoteConstants.PayoutMinBlockConfirmations)
-                    {
-                        block.Status = BlockStatus.Confirmed;
-                        block.ConfirmationProgress = 1;
-                        block.Reward = ((decimal) blockHeader.Reward / coin.SmallestUnit) * coin.BlockrewardMultiplier;
+                    messageBus.NotifyBlockUnlocked(poolConfig.Id, block, coin);
+                    continue;
+                }
 
-                        logger.Info(() => $"[{LogCategory}] Unlocked block {block.BlockHeight} worth {FormatAmount(block.Reward)}");
+                // matured and spendable?
+                if(blockHeader.Depth >= CryptonoteConstants.PayoutMinBlockConfirmations)
+                {
+                    block.Status = BlockStatus.Confirmed;
+                    block.ConfirmationProgress = 1;
+                    block.Reward = ((decimal) blockHeader.Reward / coin.SmallestUnit) * coin.BlockrewardMultiplier;
 
-                        messageBus.NotifyBlockUnlocked(poolConfig.Id, block, coin);
-                    }
+                    logger.Info(() => $"[{LogCategory}] Unlocked block {block.BlockHeight} worth {FormatAmount(block.Reward)}");
+
+                    messageBus.NotifyBlockUnlocked(poolConfig.Id, block, coin);
                 }
             }
-
-            return result.ToArray();
         }
 
-        public Task CalculateBlockEffortAsync(IMiningPool pool, Block block, double accumulatedBlockShareDiff, CancellationToken ct)
-        {
-            block.Effort = accumulatedBlockShareDiff / block.NetworkDifficulty;
+        return result.ToArray();
+    }
 
-            return Task.FromResult(true);
-        }
+    public Task CalculateBlockEffortAsync(IMiningPool pool, Block block, double accumulatedBlockShareDiff, CancellationToken ct)
+    {
+        block.Effort = accumulatedBlockShareDiff / block.NetworkDifficulty;
 
-        public override async Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx,
-            IMiningPool pool, Block block, CancellationToken ct)
-        {
-            var blockRewardRemaining = await base.UpdateBlockRewardBalancesAsync(con, tx, pool, block, ct);
+        return Task.FromResult(true);
+    }
 
-            // Deduct static reserve for tx fees
-            blockRewardRemaining -= CryptonoteConstants.StaticTransactionFeeReserve;
+    public override async Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx,
+        IMiningPool pool, Block block, CancellationToken ct)
+    {
+        var blockRewardRemaining = await base.UpdateBlockRewardBalancesAsync(con, tx, pool, block, ct);
 
-            return blockRewardRemaining;
-        }
+        // Deduct static reserve for tx fees
+        blockRewardRemaining -= CryptonoteConstants.StaticTransactionFeeReserve;
 
-        public async Task PayoutAsync(IMiningPool pool, Balance[] balances, CancellationToken ct)
-        {
-            Contract.RequiresNonNull(balances, nameof(balances));
+        return blockRewardRemaining;
+    }
 
-            var coin = poolConfig.Template.As<CryptonoteCoinTemplate>();
+    public async Task PayoutAsync(IMiningPool pool, Balance[] balances, CancellationToken ct)
+    {
+        Contract.RequiresNonNull(balances, nameof(balances));
+
+        var coin = poolConfig.Template.As<CryptonoteCoinTemplate>();
 
 #if !DEBUG // ensure we have peers
             var infoResponse = await rpcClient.ExecuteAsync<GetInfoResponse>(logger, CNC.GetInfo, ct);
@@ -451,118 +446,117 @@ namespace Miningcore.Blockchain.Cryptonote
                 return;
             }
 #endif
-            // validate addresses
-            balances = balances
-                .Where(x =>
+        // validate addresses
+        balances = balances
+            .Where(x =>
+            {
+                ExtractAddressAndPaymentId(x.Address, out var address, out var paymentId);
+
+                var addressPrefix = LibCryptonote.DecodeAddress(address);
+                var addressIntegratedPrefix = LibCryptonote.DecodeIntegratedAddress(address);
+
+                switch(networkType)
                 {
-                    ExtractAddressAndPaymentId(x.Address, out var address, out var paymentId);
+                    case CryptonoteNetworkType.Main:
+                        if(addressPrefix != coin.AddressPrefix &&
+                           addressIntegratedPrefix != coin.AddressPrefixIntegrated)
+                        {
+                            logger.Warn(() => $"[{LogCategory}] Excluding payment to invalid address: {x.Address}");
+                            return false;
+                        }
 
-                    var addressPrefix = LibCryptonote.DecodeAddress(address);
-                    var addressIntegratedPrefix = LibCryptonote.DecodeIntegratedAddress(address);
+                        break;
 
-                    switch(networkType)
-                    {
-                        case CryptonoteNetworkType.Main:
-                            if(addressPrefix != coin.AddressPrefix &&
-                                addressIntegratedPrefix != coin.AddressPrefixIntegrated)
-                            {
-                                logger.Warn(() => $"[{LogCategory}] Excluding payment to invalid address: {x.Address}");
-                                return false;
-                            }
+                    case CryptonoteNetworkType.Stage:
+                        if(addressPrefix != coin.AddressPrefixStagenet &&
+                           addressIntegratedPrefix != coin.AddressPrefixIntegratedStagenet)
+                        {
+                            logger.Warn(() => $"[{LogCategory}] Excluding payment to invalid address: {x.Address}");
+                            return false;
+                        }
 
-                            break;
+                        break;
 
-                        case CryptonoteNetworkType.Stage:
-                            if(addressPrefix != coin.AddressPrefixStagenet &&
-                               addressIntegratedPrefix != coin.AddressPrefixIntegratedStagenet)
-                            {
-                                logger.Warn(() => $"[{LogCategory}] Excluding payment to invalid address: {x.Address}");
-                                return false;
-                            }
+                    case CryptonoteNetworkType.Test:
+                        if(addressPrefix != coin.AddressPrefixTestnet &&
+                           addressIntegratedPrefix != coin.AddressPrefixIntegratedTestnet)
+                        {
+                            logger.Warn(() => $"[{LogCategory}] Excluding payment to invalid address: {x.Address}");
+                            return false;
+                        }
 
-                            break;
+                        break;
+                }
 
-                        case CryptonoteNetworkType.Test:
-                            if(addressPrefix != coin.AddressPrefixTestnet &&
-                                addressIntegratedPrefix != coin.AddressPrefixIntegratedTestnet)
-                            {
-                                logger.Warn(() => $"[{LogCategory}] Excluding payment to invalid address: {x.Address}");
-                                return false;
-                            }
+                return true;
+            })
+            .ToArray();
 
-                            break;
-                    }
+        // simple balances first
+        var simpleBalances = balances
+            .Where(x =>
+            {
+                ExtractAddressAndPaymentId(x.Address, out var address, out var paymentId);
 
-                    return true;
-                })
-                .ToArray();
+                var hasPaymentId = paymentId != null;
+                var isIntegratedAddress = false;
+                var addressIntegratedPrefix = LibCryptonote.DecodeIntegratedAddress(address);
 
-            // simple balances first
-            var simpleBalances = balances
-                .Where(x =>
+                switch(networkType)
                 {
-                    ExtractAddressAndPaymentId(x.Address, out var address, out var paymentId);
+                    case CryptonoteNetworkType.Main:
+                        if(addressIntegratedPrefix == coin.AddressPrefixIntegrated)
+                            isIntegratedAddress = true;
+                        break;
 
-                    var hasPaymentId = paymentId != null;
-                    var isIntegratedAddress = false;
-                    var addressIntegratedPrefix = LibCryptonote.DecodeIntegratedAddress(address);
+                    case CryptonoteNetworkType.Test:
+                        if(addressIntegratedPrefix == coin.AddressPrefixIntegratedTestnet)
+                            isIntegratedAddress = true;
+                        break;
+                }
 
-                    switch(networkType)
-                    {
-                        case CryptonoteNetworkType.Main:
-                            if(addressIntegratedPrefix == coin.AddressPrefixIntegrated)
-                                isIntegratedAddress = true;
-                            break;
+                return !hasPaymentId && !isIntegratedAddress;
+            })
+            .OrderByDescending(x => x.Amount)
+            .ToArray();
 
-                        case CryptonoteNetworkType.Test:
-                            if(addressIntegratedPrefix == coin.AddressPrefixIntegratedTestnet)
-                                isIntegratedAddress = true;
-                            break;
-                    }
-
-                    return !hasPaymentId && !isIntegratedAddress;
-                })
-                .OrderByDescending(x => x.Amount)
-                .ToArray();
-
-            if(simpleBalances.Length > 0)
+        if(simpleBalances.Length > 0)
 #if false
                 await PayoutBatch(simpleBalances);
 #else
+        {
+            var maxBatchSize = 15;  // going over 15 yields "sv/gamma are too large"
+            var pageSize = maxBatchSize;
+            var pageCount = (int) Math.Ceiling((double) simpleBalances.Length / pageSize);
+
+            for(var i = 0; i < pageCount; i++)
             {
-                var maxBatchSize = 15;  // going over 15 yields "sv/gamma are too large"
-                var pageSize = maxBatchSize;
-                var pageCount = (int) Math.Ceiling((double) simpleBalances.Length / pageSize);
+                var page = simpleBalances
+                    .Skip(i * pageSize)
+                    .Take(pageSize)
+                    .ToArray();
 
-                for(var i = 0; i < pageCount; i++)
-                {
-                    var page = simpleBalances
-                        .Skip(i * pageSize)
-                        .Take(pageSize)
-                        .ToArray();
-
-                    if(!await PayoutBatch(page, ct))
-                        break;
-                }
-            }
-#endif
-            // balances with paymentIds
-            var minimumPaymentToPaymentId = extraConfig?.MinimumPaymentToPaymentId ?? poolConfig.PaymentProcessing.MinimumPayment;
-
-            var paymentIdBalances = balances.Except(simpleBalances)
-                .Where(x => x.Amount >= minimumPaymentToPaymentId)
-                .ToArray();
-
-            foreach(var balance in paymentIdBalances)
-            {
-                if(!await PayoutToPaymentId(balance, ct))
+                if(!await PayoutBatch(page, ct))
                     break;
             }
+        }
+#endif
+        // balances with paymentIds
+        var minimumPaymentToPaymentId = extraConfig?.MinimumPaymentToPaymentId ?? poolConfig.PaymentProcessing.MinimumPayment;
 
-            // save wallet
-            await rpcClientWallet.ExecuteAsync<JToken>(logger, CryptonoteWalletCommands.Store, ct);
+        var paymentIdBalances = balances.Except(simpleBalances)
+            .Where(x => x.Amount >= minimumPaymentToPaymentId)
+            .ToArray();
+
+        foreach(var balance in paymentIdBalances)
+        {
+            if(!await PayoutToPaymentId(balance, ct))
+                break;
         }
 
-        #endregion // IPayoutHandler
+        // save wallet
+        await rpcClientWallet.ExecuteAsync<JToken>(logger, CryptonoteWalletCommands.Store, ct);
     }
+
+    #endregion // IPayoutHandler
 }

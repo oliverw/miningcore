@@ -1,15 +1,11 @@
-﻿using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using Newtonsoft.Json;
 
-namespace Miningcore.Blockchain.Bitcoin.DaemonResponses
+namespace Miningcore.Blockchain.Bitcoin.DaemonResponses;
+
+public class PayeeBlockTemplateExtra
 {
-    public class PayeeBlockTemplateExtra
-    {
-        public string Payee { get; set; }
+    public string Payee { get; set; }
 
-        [JsonProperty("payee_amount")]
-        public long? PayeeAmount { get; set; }
-    }
+    [JsonProperty("payee_amount")]
+    public long? PayeeAmount { get; set; }
 }

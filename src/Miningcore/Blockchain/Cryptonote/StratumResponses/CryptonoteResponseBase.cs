@@ -1,7 +1,6 @@
-namespace Miningcore.Blockchain.Cryptonote.StratumResponses
+namespace Miningcore.Blockchain.Cryptonote.StratumResponses;
+
+public class CryptonoteResponseBase
 {
-    public class CryptonoteResponseBase
-    {
-        public string Status { get; set; } = "OK";
-    }
+    public string Status { get; set; } = "OK";
 }

@@ -1,25 +1,19 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading;
+namespace Miningcore.Util;
 
-namespace Miningcore.Util
+public static class StaticRandom
 {
-    public static class StaticRandom
+    static int seed = Environment.TickCount;
+
+    private static readonly ThreadLocal<Random> random =
+        new(() => new Random(Interlocked.Increment(ref seed)));
+
+    public static int Next()
     {
-        static int seed = Environment.TickCount;
+        return random.Value.Next();
+    }
 
-        private static readonly ThreadLocal<Random> random =
-            new(() => new Random(Interlocked.Increment(ref seed)));
-
-        public static int Next()
-        {
-            return random.Value.Next();
-        }
-
-        public static int Next(int n)
-        {
-            return random.Value.Next(n);
-        }
+    public static int Next(int n)
+    {
+        return random.Value.Next(n);
     }
 }

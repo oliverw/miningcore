@@ -1,7 +1,6 @@
-namespace Miningcore.Blockchain.Cryptonote.DaemonResponses
+namespace Miningcore.Blockchain.Cryptonote.DaemonResponses;
+
+public class SubmitResponse
 {
-    public class SubmitResponse
-    {
-        public string Status { get; set; }
-    }
+    public string Status { get; set; }
 }

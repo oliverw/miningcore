@@ -1,7 +1,6 @@
-namespace Miningcore.Blockchain.Cryptonote.DaemonRequests
+namespace Miningcore.Blockchain.Cryptonote.DaemonRequests;
+
+public class GetBlockHeaderByHashRequest
 {
-    public class GetBlockHeaderByHashRequest
-    {
-        public string Hash { get; set; }
-    }
+    public string Hash { get; set; }
 }

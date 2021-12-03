@@ -1,10 +1,9 @@
 using Newtonsoft.Json;
 
-namespace Miningcore.Blockchain.Cryptonote.StratumRequests
+namespace Miningcore.Blockchain.Cryptonote.StratumRequests;
+
+public class CryptonoteGetJobRequest
 {
-    public class CryptonoteGetJobRequest
-    {
-        [JsonProperty("id")]
-        public string WorkerId { get; set; }
-    }
+    [JsonProperty("id")]
+    public string WorkerId { get; set; }
 }
