@@ -45,17 +45,23 @@
         <PackageReference Include="AspNetCoreRateLimit" Version="4.0.1" />
         <PackageReference Include="Autofac" Version="6.3.0" />
         <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="7.2.0" />
-        <PackageReference Include="GitVersion.MsBuild" Version="5.8.0">
+        <PackageReference Include="GitVersion.MsBuild" Version="5.8.1">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="NSwag.AspNetCore" Version="13.14.8" />
+        <PackageReference Include="NSwag.CodeGeneration.CSharp" Version="13.14.8" />
+        <PackageReference Include="NSwag.MSBuild" Version="13.14.8">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="NBitcoin.Altcoins" Version="3.0.8" />
         <PackageReference Include="NLog.Extensions.Hosting" Version="1.7.4" />
         <PackageReference Include="AutoMapper" Version="10.1.1" />
         <PackageReference Include="Dapper" Version="2.0.123" />
-        <PackageReference Include="FluentValidation" Version="10.3.4" />
-        <PackageReference Include="FluentValidation.AspNetCore" Version="10.3.4" />
-        <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="10.3.4" />
+        <PackageReference Include="FluentValidation" Version="10.3.5" />
+        <PackageReference Include="FluentValidation.AspNetCore" Version="10.3.5" />
+        <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="10.3.5" />
         <PackageReference Include="JetBrains.Annotations" Version="2021.3.0" />
         <PackageReference Include="MailKit" Version="2.15.0" />
         <PackageReference Include="McMaster.Extensions.CommandLineUtils" Version="3.1.0" />
@@ -70,8 +76,8 @@
         <PackageReference Include="Npgsql" Version="5.0.11" />
         <PackageReference Include="Polly" Version="7.2.2" />
         <PackageReference Include="Portable.BouncyCastle" Version="1.9.0" />
-        <PackageReference Include="prometheus-net.AspNetCore" Version="5.0.1" />
-        <PackageReference Include="prometheus-net" Version="5.0.1" />
+        <PackageReference Include="prometheus-net.AspNetCore" Version="5.0.2" />
+        <PackageReference Include="prometheus-net" Version="5.0.2" />
         <PackageReference Include="protobuf-net" Version="3.0.101" />
         <PackageReference Include="System.Diagnostics.Process" Version="4.3.0" />
         <PackageReference Include="System.Reactive" Version="5.0.0" />

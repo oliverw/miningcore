@@ -126,68 +126,86 @@ public class Program : BackgroundService
                 hostBuilder.ConfigureWebHost(builder =>
                 {
                     builder.ConfigureServices(services =>
+                    {
+                        // rate limiting
+                        if(enableApiRateLimiting)
                         {
-                            // rate limiting
-                            if(enableApiRateLimiting)
-                            {
-                                services.Configure<IpRateLimitOptions>(ConfigureIpRateLimitOptions);
-                                services.AddSingleton<IIpPolicyStore, MemoryCacheIpPolicyStore>();
-                                services.AddSingleton<IRateLimitCounterStore, MemoryCacheRateLimitCounterStore>();
-                                services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
-                                services.AddSingleton<IProcessingStrategy, AsyncKeyLockProcessingStrategy>();
-                            }
+                            services.Configure<IpRateLimitOptions>(ConfigureIpRateLimitOptions);
+                            services.AddSingleton<IIpPolicyStore, MemoryCacheIpPolicyStore>();
+                            services.AddSingleton<IRateLimitCounterStore, MemoryCacheRateLimitCounterStore>();
+                            services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
+                            services.AddSingleton<IProcessingStrategy, AsyncKeyLockProcessingStrategy>();
+                        }
 
-                            // Controllers
-                            services.AddSingleton<PoolApiController, PoolApiController>();
-                            services.AddSingleton<AdminApiController, AdminApiController>();
+                        // Controllers
+                        services.AddSingleton<PoolApiController, PoolApiController>();
+                        services.AddSingleton<AdminApiController, AdminApiController>();
 
-                            // MVC
-                            services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+                        // MVC
+                        services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
-                            services.AddMvc(options =>
-                                {
-                                    options.EnableEndpointRouting = false;
-                                })
-                                .AddControllersAsServices()
-                                .AddJsonOptions(options =>
-                                {
-                                    options.JsonSerializerOptions.WriteIndented = true;
-                                });
-
-                            // Gzip Compression
-                            services.AddResponseCompression();
-
-                            // Cors
-                            services.AddCors();
-
-                            // WebSockets
-                            services.AddWebSocketManager();
+                        services.AddMvc(options =>
+                        {
+                            options.EnableEndpointRouting = false;
                         })
-                        .UseKestrel(options =>
+                        .AddControllersAsServices()
+                        .AddJsonOptions(options =>
                         {
-                            options.Listen(address, port, listenOptions =>
-                            {
-                                if(apiTlsEnable)
-                                    listenOptions.UseHttps(clusterConfig.Api.Tls.TlsPfxFile, clusterConfig.Api.Tls.TlsPfxPassword);
-                            });
-                        })
-                        .Configure(app =>
-                        {
-                            if(enableApiRateLimiting)
-                                app.UseIpRateLimiting();
-
-                            app.UseMiddleware<ApiExceptionHandlingMiddleware>();
-
-                            UseIpWhiteList(app, true, new[] { "/api/admin" }, clusterConfig.Api?.AdminIpWhitelist);
-                            UseIpWhiteList(app, true, new[] { "/metrics" }, clusterConfig.Api?.MetricsIpWhitelist);
-
-                            app.UseResponseCompression();
-                            app.UseCors(corsPolicyBuilder => corsPolicyBuilder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
-                            app.UseWebSockets();
-                            app.MapWebSocketManager("/notifications", app.ApplicationServices.GetService<WebSocketNotificationsRelay>());
-                            app.UseMetricServer();
-                            app.UseMvc();
+                            options.JsonSerializerOptions.WriteIndented = true;
                         });
+
+                        // NSwag
+                        #if DEBUG
+                        services.AddOpenApiDocument(settings =>
+                        {
+                            settings.DocumentProcessors.Insert(0, new NSwagDocumentProcessor());
+                        });
+                        #endif
+
+                        // Gzip Compression
+                        services.AddResponseCompression();
+
+                        // Cors
+                        services.AddCors();
+
+                        // WebSockets
+                        services.AddWebSocketManager();
+                    })
+                    .UseKestrel(options =>
+                    {
+                        options.Listen(address, port, listenOptions =>
+                        {
+                            if(apiTlsEnable)
+                                listenOptions.UseHttps(clusterConfig.Api.Tls.TlsPfxFile, clusterConfig.Api.Tls.TlsPfxPassword);
+                        });
+                    })
+                    .Configure(app =>
+                    {
+                        if(enableApiRateLimiting)
+                            app.UseIpRateLimiting();
+
+                        app.UseMiddleware<ApiExceptionHandlingMiddleware>();
+
+                        UseIpWhiteList(app, true, new[]
+                        {
+                            "/api/admin"
+                        }, clusterConfig.Api?.AdminIpWhitelist);
+                        UseIpWhiteList(app, true, new[]
+                        {
+                            "/metrics"
+                        }, clusterConfig.Api?.MetricsIpWhitelist);
+
+                        #if DEBUG
+                        app.UseOpenApi();
+                        #endif
+
+                        app.UseResponseCompression();
+                        app.UseCors(corsPolicyBuilder => corsPolicyBuilder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+                        app.UseWebSockets();
+                        app.MapWebSocketManager("/notifications", app.ApplicationServices.GetService<WebSocketNotificationsRelay>());
+                        app.UseMetricServer();
+                        app.UseMvc();
+                    });
 
                     logger.Info(() => $"Prometheus Metrics {address}:{port}/metrics");
                     logger.Info(() => $"WebSocket notifications streaming {address}:{port}/notifications");
@@ -195,8 +213,8 @@ public class Program : BackgroundService
             }
 
             host = hostBuilder
-                .UseConsoleLifetime()
-                .Build();
+            .UseConsoleLifetime()
+            .Build();
 
             await host.RunAsync();
         }
@@ -287,7 +305,7 @@ public class Program : BackgroundService
 
     private static readonly AdminGcStats gcStats = new();
     private static readonly Regex regexJsonTypeConversionError =
-        new("\"([^\"]+)\"[^\']+\'([^\']+)\'.+\\s(\\d+),.+\\s(\\d+)", RegexOptions.Compiled);
+    new("\"([^\"]+)\"[^\']+\'([^\']+)\'.+\\s(\\d+),.+\\s(\\d+)", RegexOptions.Compiled);
 
     public Program(IComponentContext container)
     {
@@ -325,8 +343,8 @@ public class Program : BackgroundService
         logger.Info($"{coinTemplates.Keys.Count} coins loaded from {string.Join(", ", clusterConfig.CoinTemplates)}");
 
         await Task.WhenAll(clusterConfig.Pools
-            .Where(config => config.Enabled)
-            .Select(config=> RunPool(config, coinTemplates, ct)));
+        .Where(config => config.Enabled)
+        .Select(config => RunPool(config, coinTemplates, ct)));
     }
 
     private Task RunPool(PoolConfig poolConfig, Dictionary<string, CoinTemplate> coinTemplates, CancellationToken ct)
@@ -341,7 +359,7 @@ public class Program : BackgroundService
 
             // resolve implementation
             var poolImpl = container.Resolve<IEnumerable<Meta<Lazy<IMiningPool, CoinFamilyAttribute>>>>()
-                .First(x => x.Value.Metadata.SupportedFamilies.Contains(poolConfig.Template.Family)).Value;
+            .First(x => x.Value.Metadata.SupportedFamilies.Contains(poolConfig.Template.Family)).Value;
 
             // configure
             var pool = poolImpl.Value;
@@ -428,12 +446,12 @@ public class Program : BackgroundService
 
         var versionOption = app.Option("-v|--version", "Version Information", CommandOptionType.NoValue);
         var configFileOption = app.Option("-c|--config <configfile>", "Configuration File",
-            CommandOptionType.SingleValue);
+        CommandOptionType.SingleValue);
         dumpConfigOption = app.Option("-dc|--dumpconfig",
-            "Dump the configuration (useful for trouble-shooting typos in the config file)",
-            CommandOptionType.NoValue);
+        "Dump the configuration (useful for trouble-shooting typos in the config file)",
+        CommandOptionType.NoValue);
         shareRecoveryOption = app.Option("-rs", "Import lost shares using existing recovery file",
-            CommandOptionType.SingleValue);
+        CommandOptionType.SingleValue);
         app.HelpOption("-? | -h | --help");
 
         app.Execute(args);
@@ -557,8 +575,8 @@ public class Program : BackgroundService
         {
             // parse level
             var level = !string.IsNullOrEmpty(config.Level)
-                ? NLog.LogLevel.FromString(config.Level)
-                : NLog.LogLevel.Info;
+            ? NLog.LogLevel.FromString(config.Level)
+            : NLog.LogLevel.Info;
 
             var layout = "[${longdate}] [${level:format=FirstCharacter:uppercase=true}] [${logger:shortName=true}] ${message} ${exception:format=ToString,StackTrace}";
 
@@ -595,28 +613,28 @@ public class Program : BackgroundService
                     };
 
                     target.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(
-                        ConditionParser.ParseExpression("level == LogLevel.Trace"),
-                        ConsoleOutputColor.DarkMagenta, ConsoleOutputColor.NoChange));
+                    ConditionParser.ParseExpression("level == LogLevel.Trace"),
+                    ConsoleOutputColor.DarkMagenta, ConsoleOutputColor.NoChange));
 
                     target.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(
-                        ConditionParser.ParseExpression("level == LogLevel.Debug"),
-                        ConsoleOutputColor.Gray, ConsoleOutputColor.NoChange));
+                    ConditionParser.ParseExpression("level == LogLevel.Debug"),
+                    ConsoleOutputColor.Gray, ConsoleOutputColor.NoChange));
 
                     target.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(
-                        ConditionParser.ParseExpression("level == LogLevel.Info"),
-                        ConsoleOutputColor.White, ConsoleOutputColor.NoChange));
+                    ConditionParser.ParseExpression("level == LogLevel.Info"),
+                    ConsoleOutputColor.White, ConsoleOutputColor.NoChange));
 
                     target.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(
-                        ConditionParser.ParseExpression("level == LogLevel.Warn"),
-                        ConsoleOutputColor.Yellow, ConsoleOutputColor.NoChange));
+                    ConditionParser.ParseExpression("level == LogLevel.Warn"),
+                    ConsoleOutputColor.Yellow, ConsoleOutputColor.NoChange));
 
                     target.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(
-                        ConditionParser.ParseExpression("level == LogLevel.Error"),
-                        ConsoleOutputColor.Red, ConsoleOutputColor.NoChange));
+                    ConditionParser.ParseExpression("level == LogLevel.Error"),
+                    ConsoleOutputColor.Red, ConsoleOutputColor.NoChange));
 
                     target.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(
-                        ConditionParser.ParseExpression("level == LogLevel.Fatal"),
-                        ConsoleOutputColor.DarkRed, ConsoleOutputColor.White));
+                    ConditionParser.ParseExpression("level == LogLevel.Fatal"),
+                    ConsoleOutputColor.DarkRed, ConsoleOutputColor.White));
 
                     loggingConfig.AddTarget(target);
                     loggingConfig.AddRule(level, NLog.LogLevel.Fatal, target);
@@ -734,28 +752,28 @@ public class Program : BackgroundService
 
         // register connection factory
         builder.RegisterInstance(new PgConnectionFactory(connectionString))
-            .AsImplementedInterfaces();
+        .AsImplementedInterfaces();
 
         // register repositories
         builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
-            .Where(t =>
-                t?.Namespace?.StartsWith(typeof(ShareRepository).Namespace) == true)
-            .AsImplementedInterfaces()
-            .SingleInstance();
+        .Where(t =>
+        t?.Namespace?.StartsWith(typeof(ShareRepository).Namespace) == true)
+        .AsImplementedInterfaces()
+        .SingleInstance();
     }
 
     private static void ConfigureDummyPersistence(ContainerBuilder builder)
     {
         // register connection factory
         builder.RegisterInstance(new DummyConnectionFactory(string.Empty))
-            .AsImplementedInterfaces();
+        .AsImplementedInterfaces();
 
         // register repositories
         builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
-            .Where(t =>
-                t?.Namespace?.StartsWith(typeof(ShareRepository).Namespace) == true)
-            .AsImplementedInterfaces()
-            .SingleInstance();
+        .Where(t =>
+        t?.Namespace?.StartsWith(typeof(ShareRepository).Namespace) == true)
+        .AsImplementedInterfaces()
+        .SingleInstance();
     }
 
     private Dictionary<string, CoinTemplate> LoadCoinTemplates()
@@ -765,13 +783,13 @@ public class Program : BackgroundService
 
         // make sure default templates are loaded first
         clusterConfig.CoinTemplates = new[]
-            {
-                defaultTemplates
-            }
-            .Concat(clusterConfig.CoinTemplates != null ?
-                clusterConfig.CoinTemplates.Where(x => x != defaultTemplates) :
-                Array.Empty<string>())
-            .ToArray();
+        {
+            defaultTemplates
+        }
+        .Concat(clusterConfig.CoinTemplates != null ?
+        clusterConfig.CoinTemplates.Where(x => x != defaultTemplates) :
+        Array.Empty<string>())
+        .ToArray();
 
         return CoinTemplateLoader.Load(container, clusterConfig.CoinTemplates);
     }
@@ -780,7 +798,10 @@ public class Program : BackgroundService
     {
         var ipList = whitelist?.Select(IPAddress.Parse).ToList();
         if(defaultToLoopback && (ipList == null || ipList.Count == 0))
-            ipList = new List<IPAddress>(new[] { IPAddress.Loopback, IPAddress.IPv6Loopback, IPUtils.IPv4LoopBackOnIPv6 });
+            ipList = new List<IPAddress>(new[]
+            {
+                IPAddress.Loopback, IPAddress.IPv6Loopback, IPUtils.IPv4LoopBackOnIPv6
+            });
 
         if(ipList.Count > 0)
         {
