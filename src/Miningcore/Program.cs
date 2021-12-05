@@ -84,38 +84,38 @@ public class Program : BackgroundService
             var hostBuilder = new HostBuilder();
 
             hostBuilder
-                .UseServiceProviderFactory(new AutofacServiceProviderFactory())
-                .ConfigureContainer((Action<ContainerBuilder>) ConfigureAutofac)
-                .UseNLog()
-                .ConfigureLogging(logging =>
-                {
-                    logging.ClearProviders();
-                    logging.AddNLog();
-                    logging.SetMinimumLevel(LogLevel.Trace);
-                })
-                .ConfigureServices((ctx, services) =>
-                {
-                    services.AddHttpClient();
-                    services.AddMemoryCache();
+            .UseServiceProviderFactory(new AutofacServiceProviderFactory())
+            .ConfigureContainer((Action<ContainerBuilder>) ConfigureAutofac)
+            .UseNLog()
+            .ConfigureLogging(logging =>
+            {
+                logging.ClearProviders();
+                logging.AddNLog();
+                logging.SetMinimumLevel(LogLevel.Trace);
+            })
+            .ConfigureServices((ctx, services) =>
+            {
+                services.AddHttpClient();
+                services.AddMemoryCache();
 
-                    ConfigureBackgroundServices(services);
+                ConfigureBackgroundServices(services);
 
-                    // MUST BE THE LAST REGISTERED HOSTED SERVICE!
-                    services.AddHostedService<Program>();
-                });
+                // MUST BE THE LAST REGISTERED HOSTED SERVICE!
+                services.AddHostedService<Program>();
+            });
 
             if(clusterConfig.Api == null || clusterConfig.Api.Enabled)
             {
                 var address = clusterConfig.Api?.ListenAddress != null
-                    ? (clusterConfig.Api.ListenAddress != "*" ? IPAddress.Parse(clusterConfig.Api.ListenAddress) : IPAddress.Any)
-                    : IPAddress.Parse("127.0.0.1");
+                ? (clusterConfig.Api.ListenAddress != "*" ? IPAddress.Parse(clusterConfig.Api.ListenAddress) : IPAddress.Any)
+                : IPAddress.Parse("127.0.0.1");
 
                 var port = clusterConfig.Api?.Port ?? 4000;
                 var enableApiRateLimiting = clusterConfig.Api?.RateLimiting?.Disabled != true;
 
                 var apiTlsEnable =
-                    clusterConfig.Api?.Tls?.Enabled == true ||
-                    !string.IsNullOrEmpty(clusterConfig.Api?.Tls?.TlsPfxFile);
+                clusterConfig.Api?.Tls?.Enabled == true ||
+                !string.IsNullOrEmpty(clusterConfig.Api?.Tls?.TlsPfxFile);
 
                 if(apiTlsEnable)
                 {
@@ -213,8 +213,8 @@ public class Program : BackgroundService
             }
 
             host = hostBuilder
-            .UseConsoleLifetime()
-            .Build();
+                .UseConsoleLifetime()
+                .Build();
 
             await host.RunAsync();
         }
@@ -770,8 +770,7 @@ public class Program : BackgroundService
 
         // register repositories
         builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
-        .Where(t =>
-        t?.Namespace?.StartsWith(typeof(ShareRepository).Namespace) == true)
+        .Where(t => t?.Namespace?.StartsWith(typeof(ShareRepository).Namespace) == true)
         .AsImplementedInterfaces()
         .SingleInstance();
     }
@@ -786,9 +785,7 @@ public class Program : BackgroundService
         {
             defaultTemplates
         }
-        .Concat(clusterConfig.CoinTemplates != null ?
-        clusterConfig.CoinTemplates.Where(x => x != defaultTemplates) :
-        Array.Empty<string>())
+        .Concat(clusterConfig.CoinTemplates != null ? clusterConfig.CoinTemplates.Where(x => x != defaultTemplates) : Array.Empty<string>())
         .ToArray();
 
         return CoinTemplateLoader.Load(container, clusterConfig.CoinTemplates);
