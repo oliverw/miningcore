@@ -21,7 +21,7 @@
 
 ## Support
 
-Commercial support directly by the maintainer is available through [miningcore.dev](https://store.miningcore.dev/).
+Commercial support directly by the maintainer is available through [miningcore.dev](https://store.miningcore.pro).
 
 For general questions visit the [Discussions Area](https://github.com/coinfoundry/miningcore/discussions).
 
