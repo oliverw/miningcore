@@ -132,6 +132,12 @@ public abstract class StratumServer
         {
             var remoteEndpoint = (IPEndPoint) socket.RemoteEndPoint;
 
+            if(remoteEndpoint == null)
+            {
+                socket.Close();
+                return;
+            }
+
             // dispose of banned clients as early as possible
             if (DisconnectIfBanned(socket, remoteEndpoint))
                 return;
@@ -232,7 +238,7 @@ public abstract class StratumServer
                 }
                 break;
 
-            case ObjectDisposedException odEx:
+            case ObjectDisposedException:
                 // socket disposed
                 break;
 
@@ -241,7 +247,7 @@ public abstract class StratumServer
                     logger.Error(() => $"[{connection.ConnectionId}] Connection error state: {ex}");
                 break;
 
-            case InvalidOperationException invOpEx:
+            case InvalidOperationException:
                 // The source completed without providing data to receive
                 break;
 

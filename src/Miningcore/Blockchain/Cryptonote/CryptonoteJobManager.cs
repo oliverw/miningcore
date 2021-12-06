@@ -226,26 +226,26 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
 
     public CryptonoteCoinTemplate Coin => coin;
 
-    public override void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
+    public override void Configure(PoolConfig pc, ClusterConfig cc)
     {
-        Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
-        Contract.RequiresNonNull(clusterConfig, nameof(clusterConfig));
+        Contract.RequiresNonNull(pc, nameof(pc));
+        Contract.RequiresNonNull(cc, nameof(cc));
 
-        logger = LogUtil.GetPoolScopedLogger(typeof(JobManagerBase<CryptonoteJob>), poolConfig);
-        this.poolConfig = poolConfig;
-        this.clusterConfig = clusterConfig;
-        extraPoolConfig = poolConfig.Extra.SafeExtensionDataAs<CryptonotePoolConfigExtra>();
-        coin = poolConfig.Template.As<CryptonoteCoinTemplate>();
+        logger = LogUtil.GetPoolScopedLogger(typeof(JobManagerBase<CryptonoteJob>), pc);
+        this.poolConfig = pc;
+        this.clusterConfig = cc;
+        extraPoolConfig = pc.Extra.SafeExtensionDataAs<CryptonotePoolConfigExtra>();
+        coin = pc.Template.As<CryptonoteCoinTemplate>();
 
-        if(poolConfig.EnableInternalStratum == true)
+        if(pc.EnableInternalStratum == true)
         {
-            randomXRealm = !string.IsNullOrEmpty(extraPoolConfig.RandomXRealm) ? extraPoolConfig.RandomXRealm : poolConfig.Id;
+            randomXRealm = !string.IsNullOrEmpty(extraPoolConfig.RandomXRealm) ? extraPoolConfig.RandomXRealm : pc.Id;
             randomXFlagsOverride = MakeRandomXFlags(extraPoolConfig.RandomXFlagsOverride);
             randomXFlagsAdd = MakeRandomXFlags(extraPoolConfig.RandomXFlagsAdd);
         }
 
         // extract standard daemon endpoints
-        daemonEndpoints = poolConfig.Daemons
+        daemonEndpoints = pc.Daemons
             .Where(x => string.IsNullOrEmpty(x.Category))
             .Select(x =>
             {
@@ -256,10 +256,10 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
             })
             .ToArray();
 
-        if(clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
+        if(cc.PaymentProcessing?.Enabled == true && pc.PaymentProcessing?.Enabled == true)
         {
             // extract wallet daemon endpoints
-            walletDaemonEndpoints = poolConfig.Daemons
+            walletDaemonEndpoints = pc.Daemons
                 .Where(x => x.Category?.ToLower() == CryptonoteConstants.WalletDaemonCategory)
                 .Select(x =>
                 {

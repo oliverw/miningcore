@@ -87,14 +87,14 @@ public abstract class JobManagerBase<TJob>
 
     #region API-Surface
 
-    public virtual void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
+    public virtual void Configure(PoolConfig pc, ClusterConfig cc)
     {
-        Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
-        Contract.RequiresNonNull(clusterConfig, nameof(clusterConfig));
+        Contract.RequiresNonNull(pc, nameof(pc));
+        Contract.RequiresNonNull(cc, nameof(cc));
 
-        logger = LogUtil.GetPoolScopedLogger(typeof(JobManagerBase<TJob>), poolConfig);
-        this.poolConfig = poolConfig;
-        this.clusterConfig = clusterConfig;
+        logger = LogUtil.GetPoolScopedLogger(typeof(JobManagerBase<TJob>), pc);
+        this.poolConfig = pc;
+        this.clusterConfig = cc;
 
         ConfigureDaemons();
     }
