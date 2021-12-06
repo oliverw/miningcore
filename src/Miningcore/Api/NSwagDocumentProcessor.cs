@@ -27,7 +27,7 @@ public class NSwagDocumentProcessor : IDocumentProcessor
 
             foreach (var ns in additionalNamespacesToInclude)
             {
-                if (t.Namespace.StartsWith(ns))
+                if (t?.Namespace?.StartsWith(ns) == true)
                     return true;
             }
 

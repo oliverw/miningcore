@@ -396,7 +396,7 @@ public class StratumConnection
             return true;
         }
 
-        else if(proxyProtocol.Mandatory)
+        if(proxyProtocol.Mandatory)
         {
             throw new InvalidDataException($"[{ConnectionId}] Missing mandatory Proxy-Protocol header from {peerAddress}. Closing connection.");
         }

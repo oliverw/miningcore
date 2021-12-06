@@ -745,34 +745,32 @@ public class Program : BackgroundService
         if(string.IsNullOrEmpty(pgConfig.User))
             logger.ThrowLogPoolStartupException("Postgres configuration: invalid or missing 'user'");
 
-        //AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
-
         // build connection string
         var connectionString = $"Server={pgConfig.Host};Port={pgConfig.Port};Database={pgConfig.Database};User Id={pgConfig.User};Password={pgConfig.Password};CommandTimeout=900;";
 
         // register connection factory
         builder.RegisterInstance(new PgConnectionFactory(connectionString))
-        .AsImplementedInterfaces();
+            .AsImplementedInterfaces();
 
         // register repositories
         builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
-        .Where(t =>
-        t?.Namespace?.StartsWith(typeof(ShareRepository).Namespace) == true)
-        .AsImplementedInterfaces()
-        .SingleInstance();
+            .Where(t =>
+            t?.Namespace?.StartsWith(typeof(ShareRepository).Namespace) == true)
+            .AsImplementedInterfaces()
+            .SingleInstance();
     }
 
     private static void ConfigureDummyPersistence(ContainerBuilder builder)
     {
         // register connection factory
         builder.RegisterInstance(new DummyConnectionFactory(string.Empty))
-        .AsImplementedInterfaces();
+            .AsImplementedInterfaces();
 
         // register repositories
         builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
-        .Where(t => t?.Namespace?.StartsWith(typeof(ShareRepository).Namespace) == true)
-        .AsImplementedInterfaces()
-        .SingleInstance();
+            .Where(t => t?.Namespace?.StartsWith(typeof(ShareRepository).Namespace) == true)
+            .AsImplementedInterfaces()
+            .SingleInstance();
     }
 
     private Dictionary<string, CoinTemplate> LoadCoinTemplates()
