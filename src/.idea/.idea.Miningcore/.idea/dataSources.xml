@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="miningcore@localhost" uuid="5d9f1152-3129-4767-aa1f-e545b10c7bc9">
+    <data-source source="LOCAL" name="miningcore@localhost" uuid="d0f6d11a-df9e-40e6-84e4-32b4b38a6237">
       <driver-ref>postgresql</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.postgresql.Driver</jdbc-driver>

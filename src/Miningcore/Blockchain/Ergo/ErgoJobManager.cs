@@ -239,14 +239,12 @@ public class ErgoJobManager : JobManagerBase<ErgoJob>
         catch(ApiException<ApiError> ex)
         {
             logger.Warn(() => $"Block {share.BlockHeight} submission failed with: {ex.Result.Detail ?? ex.Result.Reason ?? ex.Message}");
-
             messageBus.SendMessage(new AdminNotification("Block submission failed", $"Pool {poolConfig.Id} {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}failed to submit block {share.BlockHeight}: {ex.Result.Detail ?? ex.Result.Reason}"));
         }
 
         catch(Exception ex)
         {
             logger.Warn(() => $"Block {share.BlockHeight} submission failed with: {ex.Message}");
-
             messageBus.SendMessage(new AdminNotification("Block submission failed", $"Pool {poolConfig.Id} {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}failed to submit block {share.BlockHeight}: {ex.Message}"));
         }
 
@@ -285,7 +283,7 @@ public class ErgoJobManager : JobManagerBase<ErgoJob>
         Contract.RequiresNonNull(worker, nameof(worker));
         Contract.RequiresNonNull(submission, nameof(submission));
 
-        logger.LogInvoke(new object[] { worker.ConnectionId });
+        logger.LogInvoke(new[] { worker.ConnectionId });
 
         if(submission is not object[] submitParams)
             throw new StratumException(StratumError.Other, "invalid params");
@@ -327,7 +325,7 @@ public class ErgoJobManager : JobManagerBase<ErgoJob>
         // if block candidate, submit & check if accepted by network
         if(share.IsBlockCandidate)
         {
-            logger.Info(() => $"Submitting block {share.BlockHeight} [{nonce}]");
+            logger.Info(() => $"Submitting block {share.BlockHeight} [{share.BlockHash}]");
 
             var acceptResponse = await SubmitBlockAsync(share, nonce);
 
@@ -336,7 +334,7 @@ public class ErgoJobManager : JobManagerBase<ErgoJob>
 
             if(share.IsBlockCandidate)
             {
-                logger.Info(() => $"Daemon accepted block {share.BlockHeight} [{nonce}] submitted by {context.Miner}");
+                logger.Info(() => $"Daemon accepted block {share.BlockHeight} [{share.BlockHash}] submitted by {context.Miner}");
 
                 OnBlockFound();
 
@@ -412,16 +410,16 @@ public class ErgoJobManager : JobManagerBase<ErgoJob>
         SetupJobUpdates();
     }
 
-    public override void Configure(PoolConfig pc, ClusterConfig cc)
+    public override void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
     {
-        base.Configure(pc, cc);
-
         coin = poolConfig.Template.As<ErgoCoinTemplate>();
 
         extraPoolConfig = poolConfig.Extra.SafeExtensionDataAs<ErgoPoolConfigExtra>();
 
         if(extraPoolConfig?.MaxActiveJobs.HasValue == true)
             maxActiveJobs = extraPoolConfig.MaxActiveJobs.Value;
+
+        base.Configure(poolConfig, clusterConfig);
     }
 
     protected override void ConfigureDaemons()
@@ -457,8 +455,11 @@ public class ErgoJobManager : JobManagerBase<ErgoJob>
             var info = await Guard(() => ergoClient.GetNodeInfoAsync(ct),
                 ex=> logger.Debug(ex));
 
-            var isSynched = info?.FullHeight.HasValue == true && info.HeadersHeight.HasValue == true &&
-                info.FullHeight.Value >= info.HeadersHeight.Value;
+            var peerInfos = await Guard(() => ergoClient.GetPeersFullInfoAsync(ct),
+                ex=> logger.Debug(ex));
+
+            var isSynched = peerInfos?.All(x=> x.Status == "Equal") == true ||
+                info?.FullHeight.HasValue == true && info.HeadersHeight.HasValue && info.FullHeight.Value >= info.HeadersHeight.Value;
 
             if(isSynched)
             {
