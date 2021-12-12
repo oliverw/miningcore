@@ -91,7 +91,7 @@ public class CryptonotePool : PoolBase
             var staticDiff = GetStaticDiffFromPassparts(passParts);
 
             // Nicehash support
-            var nicehashDiff = await GetNicehashStaticMinDiff(connection, context.UserAgent, manager.Coin.Name, manager.Coin.GetAlgorithmName());
+            var nicehashDiff = await GetNicehashStaticMinDiff(context, manager.Coin.Name, manager.Coin.GetAlgorithmName());
 
             if(nicehashDiff.HasValue)
             {

@@ -44,15 +44,15 @@ public class EquihashPool : PoolBase
     private EquihashPoolConfigExtra extraConfig;
     private EquihashCoinTemplate coin;
 
-    public override void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
+    public override void Configure(PoolConfig pc, ClusterConfig cc)
     {
-        coin = poolConfig.Template.As<EquihashCoinTemplate>();
+        coin = pc.Template.As<EquihashCoinTemplate>();
 
-        base.Configure(poolConfig, clusterConfig);
+        base.Configure(pc, cc);
 
-        extraConfig = poolConfig.Extra.SafeExtensionDataAs<EquihashPoolConfigExtra>();
+        extraConfig = pc.Extra.SafeExtensionDataAs<EquihashPoolConfigExtra>();
 
-        if(poolConfig.Template.As<EquihashCoinTemplate>().UsesZCashAddressFormat &&
+        if(pc.Template.As<EquihashCoinTemplate>().UsesZCashAddressFormat &&
            string.IsNullOrEmpty(extraConfig?.ZAddress))
             logger.ThrowLogPoolStartupException("Pool z-address is not configured");
     }
@@ -157,7 +157,7 @@ public class EquihashPool : PoolBase
             var staticDiff = GetStaticDiffFromPassparts(passParts);
 
             // Nicehash support
-            var nicehashDiff = await GetNicehashStaticMinDiff(connection, context.UserAgent, coin.Name, coin.GetAlgorithmName());
+            var nicehashDiff = await GetNicehashStaticMinDiff(context, coin.Name, coin.GetAlgorithmName());
 
             if(nicehashDiff.HasValue)
             {

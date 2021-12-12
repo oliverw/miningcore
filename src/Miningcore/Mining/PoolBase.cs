@@ -304,13 +304,10 @@ public abstract class PoolBase : StratumServer,
         }
     }
 
-    protected virtual async Task<double?> GetNicehashStaticMinDiff(StratumConnection connection, string userAgent, string coinName, string algoName)
+    protected virtual async Task<double?> GetNicehashStaticMinDiff(WorkerContextBase context, string coinName, string algoName)
     {
-        if(userAgent.Contains(NicehashConstants.NicehashUA, StringComparison.OrdinalIgnoreCase) &&
-           clusterConfig.Nicehash?.EnableAutoDiff == true)
-        {
+        if(context.IsNicehash && clusterConfig.Nicehash?.EnableAutoDiff == true)
             return await nicehashService.GetStaticDiff(coinName, algoName, CancellationToken.None);
-        }
 
         return null;
     }
@@ -349,14 +346,14 @@ Pool Fee:               {(poolConfig.RewardRecipients?.Any() == true ? poolConfi
     public PoolStats PoolStats => poolStats;
     public BlockchainStats NetworkStats => blockchainStats;
 
-    public virtual void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
+    public virtual void Configure(PoolConfig pc, ClusterConfig cc)
     {
-        Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
-        Contract.RequiresNonNull(clusterConfig, nameof(clusterConfig));
+        Contract.RequiresNonNull(pc, nameof(pc));
+        Contract.RequiresNonNull(cc, nameof(cc));
 
-        logger = LogUtil.GetPoolScopedLogger(typeof(PoolBase), poolConfig);
-        this.poolConfig = poolConfig;
-        this.clusterConfig = clusterConfig;
+        logger = LogUtil.GetPoolScopedLogger(typeof(PoolBase), pc);
+        this.poolConfig = pc;
+        this.clusterConfig = cc;
     }
 
     public abstract double HashrateFromShares(double shares, double interval);

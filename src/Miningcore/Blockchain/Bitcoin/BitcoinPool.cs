@@ -108,7 +108,7 @@ public class BitcoinPool : PoolBase
             var staticDiff = GetStaticDiffFromPassparts(passParts);
 
             // Nicehash support
-            var nicehashDiff = await GetNicehashStaticMinDiff(connection, context.UserAgent, coin.Name, coin.GetAlgorithmName());
+            var nicehashDiff = await GetNicehashStaticMinDiff(context, coin.Name, coin.GetAlgorithmName());
 
             if(nicehashDiff.HasValue)
             {
@@ -229,7 +229,7 @@ public class BitcoinPool : PoolBase
 
         try
         {
-            var requestedDiff = (double) Convert.ChangeType(request.Params, TypeCode.Double);
+            var requestedDiff = (double) Convert.ChangeType(request.Params, TypeCode.Double)!;
 
             // client may suggest higher-than-base difficulty, but not a lower one
             var poolEndpoint = poolConfig.Ports[connection.LocalEndpoint.Port];
@@ -259,17 +259,20 @@ public class BitcoinPool : PoolBase
         var extensionParams = requestParams[1].ToObject<Dictionary<string, JToken>>();
         var result = new Dictionary<string, object>();
 
-        foreach(var extension in extensions)
+        if(extensions != null)
         {
-            switch(extension)
+            foreach(var extension in extensions)
             {
-                case BitcoinStratumExtensions.VersionRolling:
-                    ConfigureVersionRolling(connection, context, extensionParams, result);
-                    break;
+                switch(extension)
+                {
+                    case BitcoinStratumExtensions.VersionRolling:
+                        ConfigureVersionRolling(connection, context, extensionParams, result);
+                        break;
 
-                case BitcoinStratumExtensions.MinimumDiff:
-                    ConfigureMinimumDiff(connection, context, extensionParams, result);
-                    break;
+                    case BitcoinStratumExtensions.MinimumDiff:
+                        ConfigureMinimumDiff(connection, context, extensionParams, result);
+                        break;
+                }
             }
         }
 
@@ -354,11 +357,11 @@ public class BitcoinPool : PoolBase
 
     #region Overrides
 
-    public override void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
+    public override void Configure(PoolConfig pc, ClusterConfig cc)
     {
-        coin = poolConfig.Template.As<BitcoinTemplate>();
+        coin = pc.Template.As<BitcoinTemplate>();
 
-        base.Configure(poolConfig, clusterConfig);
+        base.Configure(pc, cc);
     }
 
     protected override async Task SetupJobManager(CancellationToken ct)

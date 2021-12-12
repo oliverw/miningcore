@@ -1,4 +1,5 @@
 using Miningcore.Configuration;
+using Miningcore.Nicehash.API;
 using Miningcore.Time;
 using Miningcore.VarDiff;
 
@@ -13,6 +14,7 @@ public class ShareStats
 public class WorkerContextBase
 {
     private double? pendingDifficulty;
+    private string userAgent;
 
     public ShareStats Stats { get; set; }
     public VarDiffContext VarDiff { get; set; }
@@ -33,7 +35,18 @@ public class WorkerContextBase
     /// <summary>
     /// UserAgent reported by Stratum
     /// </summary>
-    public string UserAgent { get; set; }
+    public string UserAgent
+    {
+        get => userAgent;
+        set
+        {
+            userAgent = value;
+
+            IsNicehash = userAgent?.Contains(NicehashConstants.NicehashUA, StringComparison.OrdinalIgnoreCase) == true;
+        }
+    }
+
+    public bool IsNicehash { get; private set; }
 
     /// <summary>
     /// True if there's a difficulty update queued for this worker

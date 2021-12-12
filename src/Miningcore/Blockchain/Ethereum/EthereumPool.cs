@@ -97,14 +97,14 @@ public class EthereumPool : PoolBase
 
         if(context.IsAuthorized)
         {
-            context.Miner = minerName.ToLower();
+            context.Miner = minerName?.ToLower();
             context.Worker = workerName;
 
             // extract control vars from password
             var staticDiff = GetStaticDiffFromPassparts(passParts);
 
             // Nicehash support
-            var nicehashDiff = await GetNicehashStaticMinDiff(connection, context.UserAgent, coin.Name, coin.GetAlgorithmName());
+            var nicehashDiff = await GetNicehashStaticMinDiff(context, coin.Name, coin.GetAlgorithmName());
 
             if(nicehashDiff.HasValue)
             {
@@ -269,11 +269,11 @@ public class EthereumPool : PoolBase
 
     #region Overrides
 
-    public override void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
+    public override void Configure(PoolConfig pc, ClusterConfig cc)
     {
-        coin = poolConfig.Template.As<EthereumCoinTemplate>();
+        coin = pc.Template.As<EthereumCoinTemplate>();
 
-        base.Configure(poolConfig, clusterConfig);
+        base.Configure(pc, cc);
     }
 
     protected override async Task SetupJobManager(CancellationToken ct)
