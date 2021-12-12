@@ -455,8 +455,11 @@ public class ErgoJobManager : JobManagerBase<ErgoJob>
             var info = await Guard(() => ergoClient.GetNodeInfoAsync(ct),
                 ex=> logger.Debug(ex));
 
-            var isSynched = info?.FullHeight.HasValue == true && info?.HeadersHeight.HasValue == true &&
-                info.FullHeight.Value >= info.HeadersHeight.Value;
+            var peerInfos = await Guard(() => ergoClient.GetPeersFullInfoAsync(ct),
+                ex=> logger.Debug(ex));
+
+            var isSynched = peerInfos?.All(x=> x.Status == "Equal") == true ||
+                info?.FullHeight.HasValue == true && info.HeadersHeight.HasValue && info.FullHeight.Value >= info.HeadersHeight.Value;
 
             if(isSynched)
             {

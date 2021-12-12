@@ -1,5 +1,5 @@
 {
-  "runtime": "Net50",
+  "runtime": "Net60",
   "defaultVariables": null,
   "documentGenerator": {
     "fromDocument": {
@@ -90,7 +90,6 @@
       "typeNameGeneratorType": null,
       "propertyNameGeneratorType": null,
       "enumNameGeneratorType": null,
-      "checksumCacheEnabled": false,
       "serviceHost": null,
       "serviceSchemes": null,
       "output": "ErgoClient.cs",
