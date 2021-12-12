@@ -115,7 +115,7 @@ public class ShareRelay : IHostedService
             pubSocket.Bind(clusterConfig.ShareRelay.PublishUrl);
 
             if(pubSocket.CurveServer)
-                logger.Info(() => $"Bound to {clusterConfig.ShareRelay.PublishUrl} using Curve public-key {pubSocket.CurvePublicKey.ToHexString()}");
+                logger.Info(() => $"Bound to {clusterConfig.ShareRelay.PublishUrl} using key {pubSocket.CurvePublicKey.ToHexString()}");
             else
                 logger.Info(() => $"Bound to {clusterConfig.ShareRelay.PublishUrl}");
         }

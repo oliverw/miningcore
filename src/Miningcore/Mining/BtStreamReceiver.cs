@@ -51,7 +51,7 @@ public class BtStreamReceiver : BackgroundService
         if(!silent)
         {
             if(subSocket.CurveServerKey != null && subSocket.CurveServerKey.Any(x => x != 0))
-                logger.Info($"Monitoring Bt-Stream source {relay.Url} using Curve public-key {subSocket.CurveServerKey.ToHexString()}");
+                logger.Info($"Monitoring Bt-Stream source {relay.Url} using key {subSocket.CurveServerKey.ToHexString()}");
             else
                 logger.Info($"Monitoring Bt-Stream source {relay.Url}");
         }

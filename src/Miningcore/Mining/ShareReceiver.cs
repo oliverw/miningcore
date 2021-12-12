@@ -179,7 +179,7 @@ public class ShareReceiver : BackgroundService
         if(!silent)
         {
             if(subSocket.CurveServerKey != null)
-                logger.Info($"Monitoring external stratum {relay.Url} using Curve public-key {subSocket.CurveServerKey.ToHexString()}");
+                logger.Info($"Monitoring external stratum {relay.Url} using key {subSocket.CurveServerKey.ToHexString()}");
             else
                 logger.Info($"Monitoring external stratum {relay.Url}");
         }

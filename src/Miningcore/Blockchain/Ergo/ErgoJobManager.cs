@@ -452,21 +452,10 @@ public class ErgoJobManager : JobManagerBase<ErgoJob>
 
         while(true)
         {
-            var peerInfos = await Guard(() => ergoClient.GetPeersFullInfoAsync(ct),
-                ex=> logger.Debug(ex));
-
-            double? equalPeers = null;
-
-            if(peerInfos?.Count > 0)
-            {
-                var countEqual = peerInfos.Count(x => x.Status == "Equal");
-                equalPeers = (double) countEqual / peerInfos.Count;
-            }
-
             var work = await Guard(() => ergoClient.MiningRequestBlockCandidateAsync(ct),
                 ex=> logger.Debug(ex));
 
-            var isSynched = equalPeers is >= 0.75 && !string.IsNullOrEmpty(work.Msg);
+            var isSynched = !string.IsNullOrEmpty(work?.Msg);
 
             if(isSynched)
             {
