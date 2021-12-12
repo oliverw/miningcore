@@ -309,13 +309,10 @@ namespace Miningcore.Mining
             }
         }
 
-        protected virtual async Task<double?> GetNicehashStaticMinDiff(StratumConnection connection, string userAgent, string coinName, string algoName)
+        protected virtual async Task<double?> GetNicehashStaticMinDiff(WorkerContextBase context, string coinName, string algoName)
         {
-            if(userAgent.Contains(NicehashConstants.NicehashUA, StringComparison.OrdinalIgnoreCase) &&
-               clusterConfig.Nicehash?.EnableAutoDiff == true)
-            {
+            if(context.IsNicehash && clusterConfig.Nicehash?.EnableAutoDiff == true)
                 return await nicehashService.GetStaticDiff(coinName, algoName, CancellationToken.None);
-            }
 
             return null;
         }

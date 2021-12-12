@@ -110,7 +110,7 @@ namespace Miningcore.Blockchain.Ergo
                 var staticDiff = GetStaticDiffFromPassparts(passParts);
 
                 // Nicehash support
-                var nicehashDiff = await GetNicehashStaticMinDiff(connection, context.UserAgent, coin.Name, coin.GetAlgorithmName());
+                var nicehashDiff = await GetNicehashStaticMinDiff(context, coin.Name, coin.GetAlgorithmName());
 
                 if(nicehashDiff.HasValue)
                 {
@@ -254,7 +254,11 @@ namespace Miningcore.Blockchain.Ergo
             jobParamsActual[6] = target.ToString();
 
             // send static diff of 1 since actual diff gets pre-multiplied to target
-            await connection.NotifyAsync(BitcoinStratumMethods.SetDifficulty, new object[] { context.Difficulty * BitcoinConstants.Pow2x32 });
+            var notifyArgs = !context.IsNicehash ?
+                new object[] { 1 } :
+                new object[] { context.Difficulty * BitcoinConstants.Pow2x32 };
+
+            await connection.NotifyAsync(BitcoinStratumMethods.SetDifficulty, notifyArgs);
 
             // send target
             await connection.NotifyAsync(BitcoinStratumMethods.MiningNotify, jobParamsActual);
@@ -364,9 +368,9 @@ namespace Miningcore.Blockchain.Ergo
             }
         }
 
-        protected override async Task<double?> GetNicehashStaticMinDiff(StratumConnection connection, string userAgent, string coinName, string algoName)
+        protected override async Task<double?> GetNicehashStaticMinDiff(WorkerContextBase context, string coinName, string algoName)
         {
-            var result= await base.GetNicehashStaticMinDiff(connection, userAgent, coinName, algoName);
+            var result= await base.GetNicehashStaticMinDiff(context, coinName, algoName);
 
             // adjust value to fit with our target value calculation
             if(result.HasValue)

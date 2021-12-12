@@ -101,14 +101,14 @@ namespace Miningcore.Blockchain.Ethereum
 
             if(context.IsAuthorized)
             {
-                context.Miner = minerName.ToLower();
+                context.Miner = minerName?.ToLower();
                 context.Worker = workerName;
 
                 // extract control vars from password
                 var staticDiff = GetStaticDiffFromPassparts(passParts);
 
                 // Nicehash support
-                var nicehashDiff = await GetNicehashStaticMinDiff(connection, context.UserAgent, coin.Name, coin.GetAlgorithmName());
+                var nicehashDiff = await GetNicehashStaticMinDiff(context, coin.Name, coin.GetAlgorithmName());
 
                 if(nicehashDiff.HasValue)
                 {

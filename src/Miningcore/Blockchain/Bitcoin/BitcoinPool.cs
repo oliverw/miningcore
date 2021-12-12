@@ -113,7 +113,7 @@ namespace Miningcore.Blockchain.Bitcoin
                 var staticDiff = GetStaticDiffFromPassparts(passParts);
 
                 // Nicehash support
-                var nicehashDiff = await GetNicehashStaticMinDiff(connection, context.UserAgent, coin.Name, coin.GetAlgorithmName());
+                var nicehashDiff = await GetNicehashStaticMinDiff(context, coin.Name, coin.GetAlgorithmName());
 
                 if(nicehashDiff.HasValue)
                 {
