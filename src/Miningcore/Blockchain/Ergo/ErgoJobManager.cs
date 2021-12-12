@@ -452,9 +452,6 @@ public class ErgoJobManager : JobManagerBase<ErgoJob>
 
         while(true)
         {
-            var info = await Guard(() => ergoClient.GetNodeInfoAsync(ct),
-                ex=> logger.Debug(ex));
-
             var peerInfos = await Guard(() => ergoClient.GetPeersFullInfoAsync(ct),
                 ex=> logger.Debug(ex));
 
@@ -466,8 +463,10 @@ public class ErgoJobManager : JobManagerBase<ErgoJob>
                 equalPeers = (double) countEqual / peerInfos.Count;
             }
 
-            var isSynched = equalPeers is >= 0.8 ||
-                info?.FullHeight.HasValue == true && info.HeadersHeight.HasValue && info.FullHeight.Value >= info.HeadersHeight.Value;
+            var work = await Guard(() => ergoClient.MiningRequestBlockCandidateAsync(ct),
+                ex=> logger.Debug(ex));
+
+            var isSynched = equalPeers is >= 0.75 && !string.IsNullOrEmpty(work.Msg);
 
             if(isSynched)
             {
