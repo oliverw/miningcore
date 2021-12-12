@@ -133,17 +133,17 @@ public class ErgoJobManager : JobManagerBase<ErgoJob>
                     else
                         logger.Info(() => $"Detected new block {job.Height}");
 
+                    // TODO: compute average of last N blocks instead using constant
+                    const int blockTimeAvg = 120;
+
                     // update stats
-                    var inode = await Guard(() => ergoClient.GetNodeInfoAsync(),
-                        ex => logger.Debug(ex));
-                    var blockTimeAvg = 120;
-                    var DiffN = (double)inode.Difficulty;
+                    var info = await ergoClient.GetNodeInfoAsync();
 
                     // update stats
                     BlockchainStats.LastNetworkBlockTime = clock.Now;
                     BlockchainStats.BlockHeight = job.Height;
-                    BlockchainStats.ConnectedPeers = inode.PeersCount;
-                    BlockchainStats.NetworkDifficulty = DiffN;
+                    BlockchainStats.ConnectedPeers = info.PeersCount;
+                    BlockchainStats.NetworkDifficulty = (double) info.Difficulty;
                     BlockchainStats.NetworkHashrate = BlockchainStats.NetworkDifficulty / blockTimeAvg;
                 }
 
