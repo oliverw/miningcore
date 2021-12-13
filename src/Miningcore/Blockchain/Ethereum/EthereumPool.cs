@@ -55,22 +55,22 @@ public class EthereumPool : PoolBase
         manager.PrepareWorker(connection);
 
         var data = new object[]
+        {
+            new object[]
             {
-                new object[]
-                {
-                    EthereumStratumMethods.MiningNotify,
-                    connection.ConnectionId,
-                    EthereumConstants.EthereumStratumVersion
-                },
-                context.ExtraNonce1
-            }
-            .ToArray();
+                EthereumStratumMethods.MiningNotify,
+                connection.ConnectionId,
+                EthereumConstants.EthereumStratumVersion
+            },
+            context.ExtraNonce1
+        }
+        .ToArray();
 
         await connection.RespondAsync(data, request.Id);
 
         // setup worker context
         context.IsSubscribed = true;
-        context.UserAgent = requestParams[0].Trim();
+        context.UserAgent = requestParams.FirstOrDefault()?.Trim();
     }
 
     private async Task OnAuthorizeAsync(StratumConnection connection, Timestamped<JsonRpcRequest> tsRequest)

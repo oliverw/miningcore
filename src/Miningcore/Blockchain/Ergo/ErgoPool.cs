@@ -56,21 +56,21 @@ public class ErgoPool : PoolBase
         var requestParams = request.ParamsAs<string[]>();
 
         var data = new object[]
+        {
+            new object[]
             {
-                new object[]
-                {
-                    new object[] { BitcoinStratumMethods.SetDifficulty, connection.ConnectionId },
-                    new object[] { BitcoinStratumMethods.MiningNotify, connection.ConnectionId }
-                }
+                new object[] { BitcoinStratumMethods.SetDifficulty, connection.ConnectionId },
+                new object[] { BitcoinStratumMethods.MiningNotify, connection.ConnectionId }
             }
-            .Concat(manager.GetSubscriberData(connection))
-            .ToArray();
+        }
+        .Concat(manager.GetSubscriberData(connection))
+        .ToArray();
 
         await connection.RespondAsync(data, request.Id);
 
         // setup worker context
         context.IsSubscribed = true;
-        context.UserAgent = requestParams?.Length > 0 ? requestParams[0].Trim() : null;
+        context.UserAgent = requestParams.FirstOrDefault()?.Trim();
     }
 
     protected virtual async Task OnAuthorizeAsync(StratumConnection connection, Timestamped<JsonRpcRequest> tsRequest, CancellationToken ct)

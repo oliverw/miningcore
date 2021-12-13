@@ -111,17 +111,17 @@ public class EquihashPool : PoolBase
         var requestParams = request.ParamsAs<string[]>();
 
         var data = new object[]
-            {
-                connection.ConnectionId,
-            }
-            .Concat(manager.GetSubscriberData(connection))
-            .ToArray();
+        {
+            connection.ConnectionId,
+        }
+        .Concat(manager.GetSubscriberData(connection))
+        .ToArray();
 
         await connection.RespondAsync(data, request.Id);
 
         // setup worker context
         context.IsSubscribed = true;
-        context.UserAgent = requestParams?.Length > 0 ? requestParams[0].Trim() : null;
+        context.UserAgent = requestParams.FirstOrDefault()?.Trim();
     }
 
     protected async Task OnAuthorizeAsync(StratumConnection connection, Timestamped<JsonRpcRequest> tsRequest, CancellationToken ct)

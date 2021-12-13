@@ -54,21 +54,23 @@ public class BitcoinPool : PoolBase
         var requestParams = request.ParamsAs<string[]>();
 
         var data = new object[]
+        {
+            new object[]
             {
-                new object[]
-                {
-                    new object[] { BitcoinStratumMethods.SetDifficulty, connection.ConnectionId },
-                    new object[] { BitcoinStratumMethods.MiningNotify, connection.ConnectionId }
-                }
+                new object[] { BitcoinStratumMethods.SetDifficulty, connection.ConnectionId },
+                new object[] { BitcoinStratumMethods.MiningNotify, connection.ConnectionId }
             }
-            .Concat(manager.GetSubscriberData(connection))
-            .ToArray();
+        }
+        .Concat(manager.GetSubscriberData(connection))
+        .ToArray();
 
         await connection.RespondAsync(data, request.Id);
 
         // setup worker context
         context.IsSubscribed = true;
-        context.UserAgent = requestParams?.Length > 0 ? requestParams[0].Trim() : null;
+        context.UserAgent = requestParams.FirstOrDefault()?.Trim();
+
+logger.Info(() => $"[{connection.ConnectionId}] ** {context.UserAgent} [{context.IsNicehash}]");
 
         // send intial update
         await connection.NotifyAsync(BitcoinStratumMethods.SetDifficulty, new object[] { context.Difficulty });
@@ -97,6 +99,8 @@ public class BitcoinPool : PoolBase
         context.IsAuthorized = await manager.ValidateAddressAsync(minerName, ct);
         context.Miner = minerName;
         context.Worker = workerName;
+
+logger.Info(() => $"[{connection.ConnectionId}] *** {context.UserAgent} [{context.IsNicehash}]");
 
         if(context.IsAuthorized)
         {
