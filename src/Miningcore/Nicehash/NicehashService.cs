@@ -44,7 +44,7 @@ public class NicehashService
             });
 
             var niceHashAlgo = GetNicehashAlgo(coin, algo);
-logger.Info(() => $"** {coin}, {algo}, {coin}");
+
             if(!algos.TryGetValue(niceHashAlgo, out var item))
                 return (double?) null;
 

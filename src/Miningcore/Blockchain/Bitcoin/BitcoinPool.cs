@@ -70,6 +70,17 @@ public class BitcoinPool : PoolBase
         context.IsSubscribed = true;
         context.UserAgent = requestParams.FirstOrDefault()?.Trim();
 
+        // Nicehash support
+        var nicehashDiff = await GetNicehashStaticMinDiff(context, coin.Name, coin.GetAlgorithmName());
+
+        if(nicehashDiff.HasValue)
+        {
+            logger.Info(() => $"[{connection.ConnectionId}] Nicehash detected. Using API supplied difficulty of {nicehashDiff.Value}");
+
+            context.VarDiff = null; // disable vardiff
+            context.SetDifficulty(nicehashDiff.Value);
+        }
+
         // send intial update
         await connection.NotifyAsync(BitcoinStratumMethods.SetDifficulty, new object[] { context.Difficulty });
         await connection.NotifyAsync(BitcoinStratumMethods.MiningNotify, currentJobParams);
@@ -108,22 +119,6 @@ public class BitcoinPool : PoolBase
 
             // extract control vars from password
             var staticDiff = GetStaticDiffFromPassparts(passParts);
-
-            // Nicehash support
-            var nicehashDiff = await GetNicehashStaticMinDiff(context, coin.Name, coin.GetAlgorithmName());
-
-            if(nicehashDiff.HasValue)
-            {
-                if(!staticDiff.HasValue || nicehashDiff > staticDiff)
-                {
-                    logger.Info(() => $"[{connection.ConnectionId}] Nicehash detected. Using API supplied difficulty of {nicehashDiff.Value}");
-
-                    staticDiff = nicehashDiff;
-                }
-
-                else
-                    logger.Info(() => $"[{connection.ConnectionId}] Nicehash detected. Using miner supplied difficulty of {staticDiff.Value}");
-            }
 
             // Static diff
             if(staticDiff.HasValue &&
