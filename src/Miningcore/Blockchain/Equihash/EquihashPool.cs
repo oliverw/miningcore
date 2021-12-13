@@ -4,6 +4,7 @@ using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
 using Autofac;
 using AutoMapper;
+using JetBrains.Annotations;
 using Miningcore.Blockchain.Bitcoin;
 using Miningcore.Blockchain.Equihash.Configuration;
 using Miningcore.Configuration;
@@ -24,6 +25,7 @@ using static Miningcore.Util.ActionUtils;
 namespace Miningcore.Blockchain.Equihash;
 
 [CoinFamily(CoinFamily.Equihash)]
+[UsedImplicitly]
 public class EquihashPool : PoolBase
 {
     public EquihashPool(IComponentContext ctx,

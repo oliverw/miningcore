@@ -4,6 +4,7 @@ using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
 using Autofac;
 using AutoMapper;
+using JetBrains.Annotations;
 using Miningcore.Configuration;
 using Miningcore.Extensions;
 using Miningcore.JsonRpc;
@@ -23,6 +24,7 @@ using static Miningcore.Util.ActionUtils;
 namespace Miningcore.Blockchain.Bitcoin;
 
 [CoinFamily(CoinFamily.Bitcoin)]
+[UsedImplicitly]
 public class BitcoinPool : PoolBase
 {
     public BitcoinPool(IComponentContext ctx,

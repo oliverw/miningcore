@@ -78,7 +78,7 @@ public class NotificationService : BackgroundService
             var coin = poolConfigs[notification.PoolId].Template;
 
             // prepare tx links
-            var txLinks = new string[0];
+            var txLinks = Array.Empty<string>();
 
             if(!string.IsNullOrEmpty(coin.ExplorerTxLink))
                 txLinks = notification.TxIds.Select(txHash => string.Format(coin.ExplorerTxLink, txHash)).ToArray();

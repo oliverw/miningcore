@@ -3,6 +3,7 @@ using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
 using Autofac;
 using AutoMapper;
+using JetBrains.Annotations;
 using Miningcore.Configuration;
 using Miningcore.JsonRpc;
 using Miningcore.Messaging;
@@ -19,6 +20,7 @@ using static Miningcore.Util.ActionUtils;
 namespace Miningcore.Blockchain.Ethereum;
 
 [CoinFamily(CoinFamily.Ethereum)]
+[UsedImplicitly]
 public class EthereumPool : PoolBase
 {
     public EthereumPool(IComponentContext ctx,
@@ -179,8 +181,6 @@ public class EthereumPool : PoolBase
 
             // recognize activity
             context.LastActivity = clock.Now;
-
-            var poolEndpoint = poolConfig.Ports[connection.LocalEndpoint.Port];
 
             var share = await manager.SubmitShareAsync(connection, submitRequest, ct);
 

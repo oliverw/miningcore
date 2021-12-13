@@ -310,7 +310,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
             };
         }
 
-        return new object[0];
+        return Array.Empty<object>();
     }
 
     #region API-Surface

@@ -29,11 +29,11 @@ public abstract class JobManagerBase<TJob>
 
     protected TJob currentJob;
     private int jobId;
-    protected object jobLock = new();
+    protected readonly object jobLock = new();
     protected ILogger logger;
     protected PoolConfig poolConfig;
     protected bool hasInitialBlockTemplate = false;
-    protected Subject<Unit> blockFoundSubject = new();
+    protected readonly Subject<Unit> blockFoundSubject = new();
 
     protected abstract void ConfigureDaemons();
 

@@ -4,6 +4,7 @@ using System.Reactive.Threading.Tasks;
 using System.Numerics;
 using Autofac;
 using AutoMapper;
+using JetBrains.Annotations;
 using Miningcore.Blockchain.Bitcoin;
 using Miningcore.Blockchain.Ergo.Configuration;
 using Miningcore.Configuration;
@@ -24,6 +25,7 @@ using static Miningcore.Util.ActionUtils;
 namespace Miningcore.Blockchain.Ergo;
 
 [CoinFamily(CoinFamily.Ergo)]
+[UsedImplicitly]
 public class ErgoPool : PoolBase
 {
     public ErgoPool(IComponentContext ctx,
