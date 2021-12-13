@@ -70,8 +70,6 @@ public class BitcoinPool : PoolBase
         context.IsSubscribed = true;
         context.UserAgent = requestParams.FirstOrDefault()?.Trim();
 
-logger.Info(() => $"[{connection.ConnectionId}] ** {context.UserAgent} [{context.IsNicehash}]");
-
         // send intial update
         await connection.NotifyAsync(BitcoinStratumMethods.SetDifficulty, new object[] { context.Difficulty });
         await connection.NotifyAsync(BitcoinStratumMethods.MiningNotify, currentJobParams);
@@ -99,8 +97,6 @@ logger.Info(() => $"[{connection.ConnectionId}] ** {context.UserAgent} [{context
         context.IsAuthorized = await manager.ValidateAddressAsync(minerName, ct);
         context.Miner = minerName;
         context.Worker = workerName;
-
-logger.Info(() => $"[{connection.ConnectionId}] *** {context.UserAgent} [{context.IsNicehash}]");
 
         if(context.IsAuthorized)
         {

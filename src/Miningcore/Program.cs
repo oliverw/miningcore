@@ -343,8 +343,8 @@ public class Program : BackgroundService
         logger.Info($"{coinTemplates.Keys.Count} coins loaded from {string.Join(", ", clusterConfig.CoinTemplates)}");
 
         await Task.WhenAll(clusterConfig.Pools
-        .Where(config => config.Enabled)
-        .Select(config => RunPool(config, coinTemplates, ct)));
+            .Where(config => config.Enabled)
+            .Select(config => RunPool(config, coinTemplates, ct)));
     }
 
     private Task RunPool(PoolConfig poolConfig, Dictionary<string, CoinTemplate> coinTemplates, CancellationToken ct)
@@ -447,8 +447,7 @@ public class Program : BackgroundService
         var versionOption = app.Option("-v|--version", "Version Information", CommandOptionType.NoValue);
         var configFileOption = app.Option("-c|--config <configfile>", "Configuration File",
         CommandOptionType.SingleValue);
-        dumpConfigOption = app.Option("-dc|--dumpconfig",
-        "Dump the configuration (useful for trouble-shooting typos in the config file)",
+        dumpConfigOption = app.Option("-dc|--dumpconfig", "Dump the configuration (useful for trouble-shooting typos in the config file)",
         CommandOptionType.NoValue);
         shareRecoveryOption = app.Option("-rs", "Import lost shares using existing recovery file",
         CommandOptionType.SingleValue);
