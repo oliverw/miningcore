@@ -6,7 +6,7 @@ namespace Miningcore.Blockchain;
 
 public class ExtraNonceProviderBase : IExtraNonceProvider
 {
-    public ExtraNonceProviderBase(string poolId, int extranonceBytes, byte? instanceId)
+    protected ExtraNonceProviderBase(string poolId, int extranonceBytes, byte? instanceId)
     {
         this.logger = LogUtil.GetPoolScopedLogger(this.GetType(), poolId);
 

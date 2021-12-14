@@ -46,7 +46,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
 
         serializer = new JsonSerializer
         {
-            ContractResolver = serializerSettings.ContractResolver
+            ContractResolver = serializerSettings.ContractResolver!
         };
     }
 
@@ -564,82 +564,110 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
             blockSubmission.Select(x => (JobRefreshBy.BlockFound, (string) null))
         };
 
-        var enableStreaming = extraPoolConfig?.EnableDaemonWebsocketStreaming == true;
-
-        var streamingEndpoint = daemonEndpoints
+        var endpointExtra = daemonEndpoints
             .Where(x => x.Extra.SafeExtensionDataAs<EthereumDaemonEndpointConfigExtra>() != null)
             .Select(x=> Tuple.Create(x, x.Extra.SafeExtensionDataAs<EthereumDaemonEndpointConfigExtra>()))
             .FirstOrDefault();
 
-        if(enableStreaming && streamingEndpoint.Item2?.PortWs.HasValue != true)
+        // if (!string.IsNullOrEmpty(endpointExtra?.Item2?.NotifyWorkUrl))
+        // {
+        //     var notifyWorkUrl = endpointExtra.Item2.NotifyWorkUrl;
+        //
+        //     logger.Info(() => $"Subscribing to notify work push-updates from {string.Join(", ", notifyWorkUrl)}");
+        //
+        //     var getWorkObs = rpcClient.GethNotifyWorkSubscribe(logger, notifyWorkUrl);
+        //     Jobs = getWorkObs.Where(x => x != null)
+        //         .Select(AssembleBlockTemplate)
+        //         .Select(UpdateJob)
+        //         .Do(isNew =>
+        //         {
+        //             if(isNew)
+        //                 logger.Info(() => $"New work at height {currentJob.BlockTemplate.Height} and header {currentJob.BlockTemplate.Header} detected [{JobRefreshBy.NotifyWork}]");
+        //         })
+        //         .Where(isNew => isNew)
+        //         .Select(_ => GetJobParamsForStratum(true))
+        //         .Publish()
+        //         .RefCount();
+        // }
+        //
+        // else
         {
-            logger.Warn(() => $"'{nameof(EthereumPoolConfigExtra.EnableDaemonWebsocketStreaming).ToLowerCamelCase()}' enabled but not a single daemon found with a configured websocket port ('{nameof(EthereumDaemonEndpointConfigExtra.PortWs).ToLowerCamelCase()}'). Falling back to polling.");
-            enableStreaming = false;
-        }
+            var websocketStreaming = extraPoolConfig?.EnableDaemonWebsocketStreaming == true;
 
-        if(enableStreaming)
-        {
-            var (endpointConfig, extra) = streamingEndpoint;
-
-            var wsEndpointConfig = new DaemonEndpointConfig
+            if(websocketStreaming && endpointExtra?.Item2?.PortWs.HasValue != true)
             {
-                Host = endpointConfig.Host,
-                Port = extra.PortWs.Value,
-                HttpPath = extra.HttpPathWs,
-                Ssl = extra.SslWs
-            };
-
-            logger.Info(() => $"Subscribing to WebSocket {(wsEndpointConfig.Ssl ? "wss" : "ws")}://{wsEndpointConfig.Host}:{wsEndpointConfig.Port}");
-
-            var wsSubscription = "newHeads";
-            var isRetry = false;
-            retry:
-
-            // stream work updates
-            var getWorkObs = rpcClient.WebsocketSubscribe(logger, ct, wsEndpointConfig, EC.Subscribe, new[] { wsSubscription })
-                .Publish()
-                .RefCount();
-
-            // test subscription
-            var subcriptionResponse = await getWorkObs
-                .Take(1)
-                .Select(x => JsonConvert.DeserializeObject<JsonRpcResponse<string>>(Encoding.UTF8.GetString(x)))
-                .ToTask(ct);
-
-            if(subcriptionResponse.Error != null)
-            {
-                // older versions of geth only support subscriptions to "newBlocks"
-                if(!isRetry && subcriptionResponse.Error.Code == (int) BitcoinRPCErrorCode.RPC_METHOD_NOT_FOUND)
-                {
-                    wsSubscription = "newBlocks";
-
-                    isRetry = true;
-                    goto retry;
-                }
-
-                logger.ThrowLogPoolStartupException($"Unable to subscribe to geth websocket '{wsSubscription}': {subcriptionResponse.Error.Message} [{subcriptionResponse.Error.Code}]");
+                logger.Warn(() => $"'{nameof(EthereumPoolConfigExtra.EnableDaemonWebsocketStreaming).ToLowerCamelCase()}' enabled but not a single daemon found with a configured websocket port ('{nameof(EthereumDaemonEndpointConfigExtra.PortWs).ToLowerCamelCase()}'). Falling back to polling.");
+                websocketStreaming = false;
             }
 
-            var blockNotify = getWorkObs.Where(x => x != null)
-                .Do(x => Console.WriteLine("** WS"))
-                .Publish()
-                .RefCount();
+            if(websocketStreaming)
+            {
+                var (endpointConfig, extra) = endpointExtra;
 
-            pollTimerRestart = Observable.Merge(
-                    blockSubmission,
-                    blockNotify.Select(_ => Unit.Default))
-                .Publish()
-                .RefCount();
+                var wsEndpointConfig = new DaemonEndpointConfig
+                {
+                    Host = endpointConfig.Host,
+                    Port = extra.PortWs.Value,
+                    HttpPath = extra.HttpPathWs,
+                    Ssl = extra.SslWs
+                };
 
-            // Websocket
-            triggers.Add(blockNotify
-                .Select(_ => (JobRefreshBy.WebSocket, (string) null)));
+                logger.Info(() => $"Subscribing to WebSocket {(wsEndpointConfig.Ssl ? "wss" : "ws")}://{wsEndpointConfig.Host}:{wsEndpointConfig.Port}");
+
+                var wsSubscription = "newHeads";
+                var isRetry = false;
+
+            retry:
+                // stream work updates
+                var getWorkObs = rpcClient.WebsocketSubscribe(logger, ct, wsEndpointConfig, EC.Subscribe, new[] { wsSubscription })
+                    .Publish()
+                    .RefCount();
+
+                // test subscription
+                var subcriptionResponse = await getWorkObs
+                    .Take(1)
+                    .Select(x => JsonConvert.DeserializeObject<JsonRpcResponse<string>>(Encoding.UTF8.GetString(x)))
+                    .ToTask(ct);
+
+                if(subcriptionResponse.Error != null)
+                {
+                    // older versions of geth only support subscriptions to "newBlocks"
+                    if(!isRetry && subcriptionResponse.Error.Code == (int) BitcoinRPCErrorCode.RPC_METHOD_NOT_FOUND)
+                    {
+                        wsSubscription = "newBlocks";
+
+                        isRetry = true;
+                        goto retry;
+                    }
+
+                    logger.ThrowLogPoolStartupException($"Unable to subscribe to geth websocket '{wsSubscription}': {subcriptionResponse.Error.Message} [{subcriptionResponse.Error.Code}]");
+                }
+
+                var websocketNotify = getWorkObs.Where(x => x != null)
+                    .Publish()
+                    .RefCount();
+
+                pollTimerRestart = Observable.Merge(blockSubmission, websocketNotify.Select(_ => Unit.Default))
+                    .Publish()
+                    .RefCount();
+
+                triggers.Add(websocketNotify.Select(_ => (JobRefreshBy.WebSocket, (string) null)));
+
+                triggers.Add(Observable.Timer(TimeSpan.FromMilliseconds(pollingInterval))
+                    .TakeUntil(pollTimerRestart)
+                    .Select(_ => (JobRefreshBy.Poll, (string) null))
+                    .Repeat());
+            }
+
+            else
+            {
+                // ordinary polling (avoid this at all cost)
+                triggers.Add(Observable.Timer(TimeSpan.FromMilliseconds(pollingInterval))
+                    .TakeUntil(pollTimerRestart)
+                    .Select(_ => (JobRefreshBy.Poll, (string) null))
+                    .Repeat());
+            }
         }
-
-        triggers.Add(Observable.Timer(TimeSpan.FromMilliseconds(pollingInterval))
-            .TakeUntil(pollTimerRestart)
-            .Select(_ => (JobRefreshBy.Poll, (string) null))
-            .Repeat());
 
         Jobs = Observable.Merge(triggers)
             .Select(x => Observable.FromAsync(() => UpdateJob(ct, x.Via)))

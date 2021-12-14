@@ -10,7 +10,8 @@ indent_size = 4
 trim_trailing_whitespace = true
 
 # ReSharper properties
-resharper_continuous_indent_multiplier = 0
+resharper_continuous_indent_multiplier = 1
+resharper_csharp_indent_size = 2
 resharper_use_continuous_indent_inside_initializer_braces = false
 resharper_wrap_before_ternary_opsigns = true
 resharper_wrap_ternary_expr_style = chop_if_long
@@ -21,6 +22,9 @@ csharp_space_after_keywords_in_control_flow_statements = false
 csharp_space_between_method_declaration_parameter_list_parentheses = false
 csharp_space_between_method_call_parameter_list_parentheses = false
 csharp_space_around_binary_operators = true
+indent_style = space
+indent_size = 2
+tab_width = 4
 
 # Tab indentation (no size specified)
 [Makefile]
