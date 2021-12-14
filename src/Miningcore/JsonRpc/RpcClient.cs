@@ -4,6 +4,7 @@ using System.Net.Http.Headers;
 using System.Net.WebSockets;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
+using System.Reactive.Threading.Tasks;
 using System.Text;
 using Miningcore.Configuration;
 using Miningcore.Extensions;
@@ -29,19 +30,19 @@ public class RpcClient
         Contract.RequiresNonNull(messageBus, nameof(messageBus));
         Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(poolId), $"{nameof(poolId)} must not be empty");
 
-        this.endPoint = endPoint;
+        this.config = endPoint;
         this.serializerSettings = serializerSettings;
         this.messageBus = messageBus;
         this.poolId = poolId;
 
         serializer = new JsonSerializer
         {
-            ContractResolver = serializerSettings.ContractResolver
+            ContractResolver = serializerSettings.ContractResolver!
         };
     }
 
     private readonly JsonSerializerSettings serializerSettings;
-    protected readonly DaemonEndpointConfig endPoint;
+    protected readonly DaemonEndpointConfig config;
     private readonly JsonSerializer serializer;
     private readonly IMessageBus messageBus;
     private readonly string poolId;
@@ -65,7 +66,7 @@ public class RpcClient
 
         try
         {
-            var response = await RequestAsync(logger, ct, endPoint, method, payload);
+            var response = await RequestAsync(logger, ct, config, method, payload);
 
             if(response.Result is JToken token)
                 return new RpcResponse<TResponse>(token.ToObject<TResponse>(serializer), response.Error);
@@ -100,7 +101,7 @@ public class RpcClient
 
         try
         {
-            var response = await BatchRequestAsync(logger, ct, endPoint, batch);
+            var response = await BatchRequestAsync(logger, ct, config, batch);
 
             return response
                 .Select(x => new RpcResponse<JToken>(x.Result != null ? JToken.FromObject(x.Result) : null, x.Error))
@@ -275,7 +276,7 @@ public class RpcClient
                                 // connect
                                 var protocol = endPoint.Ssl ? "wss" : "ws";
                                 var uri = new Uri($"{protocol}://{endPoint.Host}:{endPoint.Port}{endPoint.HttpPath}");
-                                client.Options.RemoteCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
+                                client.Options.RemoteCertificateValidationCallback = (_, _, _, _) => true;
 
                                 logger.Debug(() => $"Establishing WebSocket connection to {uri}");
                                 await client.ConnectAsync(uri, cts.Token);
@@ -289,33 +290,22 @@ public class RpcClient
                                 await client.SendAsync(requestData, WebSocketMessageType.Text, true, cts.Token);
 
                                 // stream response
-                                var stream = new MemoryStream();
-
                                 while(!cts.IsCancellationRequested && client.State == WebSocketState.Open)
                                 {
-                                    stream.SetLength(0);
-                                    var complete = false;
+                                    var stream = new MemoryStream();
 
-                                    // read until EndOfMessage
                                     do
                                     {
-                                        using(var ctsTimeout = new CancellationTokenSource())
-                                        {
-                                            using(var ctsComposite = CancellationTokenSource.CreateLinkedTokenSource(cts.Token, ctsTimeout.Token))
-                                            {
-                                                ctsTimeout.CancelAfter(TimeSpan.FromMinutes(10));
+                                        var response = await client.ReceiveAsync(buf, cts.Token);
 
-                                                var response = await client.ReceiveAsync(buf, ctsComposite.Token);
+                                        if(response.MessageType == WebSocketMessageType.Binary)
+                                            throw new InvalidDataException("expected text, received binary data");
 
-                                                if(response.MessageType == WebSocketMessageType.Binary)
-                                                    throw new InvalidDataException("expected text, received binary data");
+                                        await stream.WriteAsync(buf, 0, response.Count, cts.Token);
 
-                                                await stream.WriteAsync(buf, 0, response.Count, ctsComposite.Token);
-
-                                                complete = response.EndOfMessage;
-                                            }
-                                        }
-                                    } while(!complete && !cts.IsCancellationRequested && client.State == WebSocketState.Open);
+                                        if(response.EndOfMessage)
+                                            break;
+                                    } while(!cts.IsCancellationRequested && client.State == WebSocketState.Open);
 
                                     logger.Debug(() => $"Received WebSocket message with length {stream.Length}");
 
@@ -323,6 +313,16 @@ public class RpcClient
                                     obs.OnNext(stream.ToArray());
                                 }
                             }
+                        }
+
+                        catch (TaskCanceledException)
+                        {
+                            break;
+                        }
+
+                        catch (ObjectDisposedException)
+                        {
+                            break;
                         }
 
                         catch(Exception ex)
