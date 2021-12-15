@@ -410,16 +410,16 @@ public class ErgoJobManager : JobManagerBase<ErgoJob>
         SetupJobUpdates();
     }
 
-    public override void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
+    public override void Configure(PoolConfig pc, ClusterConfig cc)
     {
-        coin = poolConfig.Template.As<ErgoCoinTemplate>();
+        coin = pc.Template.As<ErgoCoinTemplate>();
 
-        extraPoolConfig = poolConfig.Extra.SafeExtensionDataAs<ErgoPoolConfigExtra>();
+        extraPoolConfig = pc.Extra.SafeExtensionDataAs<ErgoPoolConfigExtra>();
 
         if(extraPoolConfig?.MaxActiveJobs.HasValue == true)
             maxActiveJobs = extraPoolConfig.MaxActiveJobs.Value;
 
-        base.Configure(poolConfig, clusterConfig);
+        base.Configure(pc, cc);
     }
 
     protected override void ConfigureDaemons()

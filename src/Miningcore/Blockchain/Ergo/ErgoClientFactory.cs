@@ -30,7 +30,7 @@ public static class ErgoClientFactory
             ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true,
         }));
 
-        if(!string.IsNullOrEmpty(extra.ApiKey))
+        if(!string.IsNullOrEmpty(extra?.ApiKey))
             result.RequestHeaders["api_key"] = extra.ApiKey;
 
         if(!string.IsNullOrEmpty(epConfig.User))

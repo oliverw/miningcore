@@ -59,7 +59,7 @@ public class BitcoinJobManager : BitcoinJobManagerBase<BitcoinJob>
 
         var result = JsonConvert.DeserializeObject<JsonRpcResponse>(json);
 
-        return new RpcResponse<BlockTemplate>(result.ResultAs<BlockTemplate>());
+        return new RpcResponse<BlockTemplate>(result!.ResultAs<BlockTemplate>());
     }
 
     private BitcoinJob CreateJob()
@@ -145,9 +145,9 @@ public class BitcoinJobManager : BitcoinJobManagerBase<BitcoinJob>
                 else
                 {
                     if(via != null)
-                        logger.Debug(() => $"Template update {blockTemplate.Height} [{via}]");
+                        logger.Debug(() => $"Template update {blockTemplate?.Height} [{via}]");
                     else
-                        logger.Debug(() => $"Template update {blockTemplate.Height}");
+                        logger.Debug(() => $"Template update {blockTemplate?.Height}");
                 }
 
                 currentJob = job;
@@ -172,18 +172,18 @@ public class BitcoinJobManager : BitcoinJobManagerBase<BitcoinJob>
 
     #region API-Surface
 
-    public override void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
+    public override void Configure(PoolConfig pc, ClusterConfig cc)
     {
-        coin = poolConfig.Template.As<BitcoinTemplate>();
-        extraPoolConfig = poolConfig.Extra.SafeExtensionDataAs<BitcoinPoolConfigExtra>();
-        extraPoolPaymentProcessingConfig = poolConfig.PaymentProcessing?.Extra?.SafeExtensionDataAs<BitcoinPoolPaymentProcessingConfigExtra>();
+        coin = pc.Template.As<BitcoinTemplate>();
+        extraPoolConfig = pc.Extra.SafeExtensionDataAs<BitcoinPoolConfigExtra>();
+        extraPoolPaymentProcessingConfig = pc.PaymentProcessing?.Extra?.SafeExtensionDataAs<BitcoinPoolPaymentProcessingConfigExtra>();
 
         if(extraPoolConfig?.MaxActiveJobs.HasValue == true)
             maxActiveJobs = extraPoolConfig.MaxActiveJobs.Value;
 
         hasLegacyDaemon = extraPoolConfig?.HasLegacyDaemon == true;
 
-        base.Configure(poolConfig, clusterConfig);
+        base.Configure(pc, cc);
     }
 
     public virtual object[] GetSubscriberData(StratumConnection worker)
@@ -256,7 +256,7 @@ public class BitcoinJobManager : BitcoinJobManagerBase<BitcoinJob>
         {
             logger.Info(() => $"Submitting block {share.BlockHeight} [{share.BlockHash}]");
 
-            var acceptResponse = await SubmitBlockAsync(share, blockHex);
+            var acceptResponse = await SubmitBlockAsync(share, blockHex, ct);
 
             // is it still a block candidate?
             share.IsBlockCandidate = acceptResponse.Accepted;

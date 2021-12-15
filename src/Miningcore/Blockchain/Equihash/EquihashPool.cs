@@ -235,7 +235,7 @@ public class EquihashPool : PoolBase
             var requestParams = request.ParamsAs<string[]>();
             var poolEndpoint = poolConfig.Ports[connection.LocalEndpoint.Port];
 
-            var share = await manager.SubmitShareAsync(connection, requestParams, poolEndpoint.Difficulty, ct);
+            var share = await manager.SubmitShareAsync(connection, requestParams, ct);
 
             await connection.RespondAsync(true, request.Id);
 

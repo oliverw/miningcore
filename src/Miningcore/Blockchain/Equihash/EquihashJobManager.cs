@@ -185,11 +185,11 @@ public class EquihashJobManager : BitcoinJobManagerBase<EquihashJob>
 
     #region API-Surface
 
-    public override void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
+    public override void Configure(PoolConfig pc, ClusterConfig cc)
     {
-        coin = poolConfig.Template.As<EquihashCoinTemplate>();
+        coin = pc.Template.As<EquihashCoinTemplate>();
 
-        base.Configure(poolConfig, clusterConfig);
+        base.Configure(pc, cc);
     }
 
     public override async Task<bool> ValidateAddressAsync(string address, CancellationToken ct)
@@ -226,8 +226,8 @@ public class EquihashJobManager : BitcoinJobManagerBase<EquihashJob>
         return responseData;
     }
 
-    public async ValueTask<Share> SubmitShareAsync(StratumConnection worker, object submission,
-        double stratumDifficultyBase, CancellationToken ct)
+    public async ValueTask<Share> SubmitShareAsync(StratumConnection worker,
+        object submission, CancellationToken ct)
     {
         Contract.RequiresNonNull(worker, nameof(worker));
         Contract.RequiresNonNull(submission, nameof(submission));
@@ -270,7 +270,7 @@ public class EquihashJobManager : BitcoinJobManagerBase<EquihashJob>
         {
             logger.Info(() => $"Submitting block {share.BlockHeight} [{share.BlockHash}]");
 
-            var acceptResponse = await SubmitBlockAsync(share, blockHex);
+            var acceptResponse = await SubmitBlockAsync(share, blockHex, ct);
 
             // is it still a block candidate?
             share.IsBlockCandidate = acceptResponse.Accepted;

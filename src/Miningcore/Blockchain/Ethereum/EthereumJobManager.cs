@@ -317,18 +317,18 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
 
     public IObservable<object> Jobs { get; private set; }
 
-    public override void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
+    public override void Configure(PoolConfig pc, ClusterConfig cc)
     {
-        extraPoolConfig = poolConfig.Extra.SafeExtensionDataAs<EthereumPoolConfigExtra>();
+        extraPoolConfig = pc.Extra.SafeExtensionDataAs<EthereumPoolConfigExtra>();
 
         // extract standard daemon endpoints
-        daemonEndpoints = poolConfig.Daemons
+        daemonEndpoints = pc.Daemons
             .Where(x => string.IsNullOrEmpty(x.Category))
             .ToArray();
 
-        base.Configure(poolConfig, clusterConfig);
+        base.Configure(pc, cc);
 
-        if(poolConfig.EnableInternalStratum == true)
+        if(pc.EnableInternalStratum == true)
         {
             // ensure dag location is configured
             var dagDir = !string.IsNullOrEmpty(extraPoolConfig?.DagDir) ?

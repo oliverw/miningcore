@@ -245,8 +245,8 @@ public abstract class BitcoinJobManagerBase<TJob> : JobManagerBase<TJob>
             var miningInfoResponse = results[0].Response.ToObject<MiningInfo>();
             var networkInfoResponse = results[1].Response.ToObject<NetworkInfo>();
 
-            BlockchainStats.NetworkHashrate = miningInfoResponse.NetworkHashps;
-            BlockchainStats.ConnectedPeers = networkInfoResponse.Connections;
+            BlockchainStats.NetworkHashrate = miningInfoResponse!.NetworkHashps;
+            BlockchainStats.ConnectedPeers = networkInfoResponse!.Connections;
 
             // Fall back to alternative RPC if coin does not report Network HPS (Digibyte)
             if(BlockchainStats.NetworkHashrate == 0 && results[2].Error == null)
@@ -259,10 +259,10 @@ public abstract class BitcoinJobManagerBase<TJob> : JobManagerBase<TJob>
         }
     }
 
-    protected virtual async Task<(bool Accepted, string CoinbaseTx)> SubmitBlockAsync(Share share, string blockHex)
+    protected virtual async Task<(bool Accepted, string CoinbaseTx)> SubmitBlockAsync(Share share, string blockHex, CancellationToken ct)
     {
         // execute command batch
-        var results = await rpcClient.ExecuteBatchAsync(logger, CancellationToken.None,
+        var results = await rpcClient.ExecuteBatchAsync(logger, ct,
             hasSubmitBlockMethod
                 ? new RpcRequest(BitcoinCommands.SubmitBlock, new[] { blockHex })
                 : new RpcRequest(BitcoinCommands.GetBlockTemplate, new { mode = "submit", data = blockHex }),
@@ -460,9 +460,9 @@ public abstract class BitcoinJobManagerBase<TJob> : JobManagerBase<TJob>
 
         // chain detection
         if(!hasLegacyDaemon)
-            network = Network.GetNetwork(blockchainInfoResponse.Chain.ToLower());
+            network = Network.GetNetwork(blockchainInfoResponse!.Chain.ToLower());
         else
-            network = daemonInfoResponse.Testnet ? Network.TestNet : Network.Main;
+            network = daemonInfoResponse!.Testnet ? Network.TestNet : Network.Main;
 
         PostChainIdentifyConfigure();
 
@@ -470,7 +470,7 @@ public abstract class BitcoinJobManagerBase<TJob> : JobManagerBase<TJob>
         if(validateAddressResponse is not {IsValid: true})
             logger.ThrowLogPoolStartupException($"Daemon reports pool-address '{poolConfig.Address}' as invalid");
 
-        isPoS = poolConfig.Template is BitcoinTemplate {IsPseudoPoS: true} || difficultyResponse.Values().Any(x => x.Path == "proof-of-stake");
+        isPoS = poolConfig.Template is BitcoinTemplate {IsPseudoPoS: true} || difficultyResponse!.Values().Any(x => x.Path == "proof-of-stake");
 
         // Create pool address script from response
         if(!isPoS)
@@ -573,17 +573,17 @@ public abstract class BitcoinJobManagerBase<TJob> : JobManagerBase<TJob>
     public IObservable<object> Jobs { get; private set; }
     public BlockchainStats BlockchainStats { get; } = new();
 
-    public override void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
+    public override void Configure(PoolConfig pc, ClusterConfig cc)
     {
-        extraPoolConfig = poolConfig.Extra.SafeExtensionDataAs<BitcoinPoolConfigExtra>();
-        extraPoolPaymentProcessingConfig = poolConfig.PaymentProcessing?.Extra?.SafeExtensionDataAs<BitcoinPoolPaymentProcessingConfigExtra>();
+        extraPoolConfig = pc.Extra.SafeExtensionDataAs<BitcoinPoolConfigExtra>();
+        extraPoolPaymentProcessingConfig = pc.PaymentProcessing?.Extra?.SafeExtensionDataAs<BitcoinPoolPaymentProcessingConfigExtra>();
 
         if(extraPoolConfig?.MaxActiveJobs.HasValue == true)
             maxActiveJobs = extraPoolConfig.MaxActiveJobs.Value;
 
         hasLegacyDaemon = extraPoolConfig?.HasLegacyDaemon == true;
 
-        base.Configure(poolConfig, clusterConfig);
+        base.Configure(pc, cc);
     }
 
     public virtual async Task<bool> ValidateAddressAsync(string address, CancellationToken ct)
