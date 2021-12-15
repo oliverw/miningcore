@@ -141,7 +141,6 @@ public class Program : BackgroundService
                         services.AddSingleton<PoolApiController, PoolApiController>();
                         services.AddSingleton<AdminApiController, AdminApiController>();
 
-                        // MVC
                         services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
                         services.AddMvc(options =>
@@ -154,13 +153,8 @@ public class Program : BackgroundService
                             options.JsonSerializerOptions.WriteIndented = true;
                         });
 
-                        // Gzip Compression
                         services.AddResponseCompression();
-
-                        // Cors
                         services.AddCors();
-
-                        // WebSockets
                         services.AddWebSocketManager();
                     })
                     .UseKestrel(options =>
