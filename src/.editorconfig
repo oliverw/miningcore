@@ -9,6 +9,9 @@ indent_style = space
 indent_size = 4
 trim_trailing_whitespace = true
 
+# ReSharper properties
+resharper_continuous_indent_multiplier = 0
+
 [*.cs]
 csharp_space_after_cast = true
 csharp_space_after_keywords_in_control_flow_statements = false

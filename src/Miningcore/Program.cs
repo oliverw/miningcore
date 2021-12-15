@@ -126,68 +126,68 @@ public class Program : BackgroundService
                 hostBuilder.ConfigureWebHost(builder =>
                 {
                     builder.ConfigureServices(services =>
+                    {
+                        // rate limiting
+                        if(enableApiRateLimiting)
                         {
-                            // rate limiting
-                            if(enableApiRateLimiting)
-                            {
-                                services.Configure<IpRateLimitOptions>(ConfigureIpRateLimitOptions);
-                                services.AddSingleton<IIpPolicyStore, MemoryCacheIpPolicyStore>();
-                                services.AddSingleton<IRateLimitCounterStore, MemoryCacheRateLimitCounterStore>();
-                                services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
-                                services.AddSingleton<IProcessingStrategy, AsyncKeyLockProcessingStrategy>();
-                            }
+                            services.Configure<IpRateLimitOptions>(ConfigureIpRateLimitOptions);
+                            services.AddSingleton<IIpPolicyStore, MemoryCacheIpPolicyStore>();
+                            services.AddSingleton<IRateLimitCounterStore, MemoryCacheRateLimitCounterStore>();
+                            services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
+                            services.AddSingleton<IProcessingStrategy, AsyncKeyLockProcessingStrategy>();
+                        }
 
-                            // Controllers
-                            services.AddSingleton<PoolApiController, PoolApiController>();
-                            services.AddSingleton<AdminApiController, AdminApiController>();
+                        // Controllers
+                        services.AddSingleton<PoolApiController, PoolApiController>();
+                        services.AddSingleton<AdminApiController, AdminApiController>();
 
-                            // MVC
-                            services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+                        // MVC
+                        services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
-                            services.AddMvc(options =>
-                                {
-                                    options.EnableEndpointRouting = false;
-                                })
-                                .AddControllersAsServices()
-                                .AddJsonOptions(options =>
-                                {
-                                    options.JsonSerializerOptions.WriteIndented = true;
-                                });
-
-                            // Gzip Compression
-                            services.AddResponseCompression();
-
-                            // Cors
-                            services.AddCors();
-
-                            // WebSockets
-                            services.AddWebSocketManager();
+                        services.AddMvc(options =>
+                        {
+                            options.EnableEndpointRouting = false;
                         })
-                        .UseKestrel(options =>
+                        .AddControllersAsServices()
+                        .AddJsonOptions(options =>
                         {
-                            options.Listen(address, port, listenOptions =>
-                            {
-                                if(apiTlsEnable)
-                                    listenOptions.UseHttps(clusterConfig.Api.Tls.TlsPfxFile, clusterConfig.Api.Tls.TlsPfxPassword);
-                            });
-                        })
-                        .Configure(app =>
-                        {
-                            if(enableApiRateLimiting)
-                                app.UseIpRateLimiting();
-
-                            app.UseMiddleware<ApiExceptionHandlingMiddleware>();
-
-                            UseIpWhiteList(app, true, new[] { "/api/admin" }, clusterConfig.Api?.AdminIpWhitelist);
-                            UseIpWhiteList(app, true, new[] { "/metrics" }, clusterConfig.Api?.MetricsIpWhitelist);
-
-                            app.UseResponseCompression();
-                            app.UseCors(corsPolicyBuilder => corsPolicyBuilder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
-                            app.UseWebSockets();
-                            app.MapWebSocketManager("/notifications", app.ApplicationServices.GetService<WebSocketNotificationsRelay>());
-                            app.UseMetricServer();
-                            app.UseMvc();
+                            options.JsonSerializerOptions.WriteIndented = true;
                         });
+
+                        // Gzip Compression
+                        services.AddResponseCompression();
+
+                        // Cors
+                        services.AddCors();
+
+                        // WebSockets
+                        services.AddWebSocketManager();
+                    })
+                    .UseKestrel(options =>
+                    {
+                        options.Listen(address, port, listenOptions =>
+                        {
+                            if(apiTlsEnable)
+                                listenOptions.UseHttps(clusterConfig.Api.Tls.TlsPfxFile, clusterConfig.Api.Tls.TlsPfxPassword);
+                        });
+                    })
+                    .Configure(app =>
+                    {
+                        if(enableApiRateLimiting)
+                            app.UseIpRateLimiting();
+
+                        app.UseMiddleware<ApiExceptionHandlingMiddleware>();
+
+                        UseIpWhiteList(app, true, new[] { "/api/admin" }, clusterConfig.Api?.AdminIpWhitelist);
+                        UseIpWhiteList(app, true, new[] { "/metrics" }, clusterConfig.Api?.MetricsIpWhitelist);
+
+                        app.UseResponseCompression();
+                        app.UseCors(corsPolicyBuilder => corsPolicyBuilder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+                        app.UseWebSockets();
+                        app.MapWebSocketManager("/notifications", app.ApplicationServices.GetService<WebSocketNotificationsRelay>());
+                        app.UseMetricServer();
+                        app.UseMvc();
+                    });
 
                     logger.Info(() => $"Prometheus Metrics {address}:{port}/metrics");
                     logger.Info(() => $"WebSocket notifications streaming {address}:{port}/notifications");
@@ -765,13 +765,12 @@ public class Program : BackgroundService
 
         // make sure default templates are loaded first
         clusterConfig.CoinTemplates = new[]
-            {
-                defaultTemplates
-            }
-            .Concat(clusterConfig.CoinTemplates != null ?
-                clusterConfig.CoinTemplates.Where(x => x != defaultTemplates) :
-                Array.Empty<string>())
-            .ToArray();
+        {
+            defaultTemplates
+        }
+        .Concat(clusterConfig.CoinTemplates != null ?
+            clusterConfig.CoinTemplates.Where(x => x != defaultTemplates) : Array.Empty<string>())
+        .ToArray();
 
         return CoinTemplateLoader.Load(container, clusterConfig.CoinTemplates);
     }
