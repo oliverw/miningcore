@@ -475,7 +475,7 @@ public abstract class BitcoinJobManagerBase<TJob> : JobManagerBase<TJob>
         // Create pool address script from response
         if(!isPoS)
         {
-            if(extraPoolConfig?.AddressType != BitcoinAddressType.Legacy)
+            if(extraPoolConfig != null && extraPoolConfig.AddressType != BitcoinAddressType.Legacy)
                 logger.Info(()=> $"Interpreting pool address {poolConfig.Address} as type {extraPoolConfig?.AddressType.ToString()}");
 
             poolAddressDestination = AddressToDestination(poolConfig.Address, extraPoolConfig?.AddressType);
@@ -488,7 +488,7 @@ public abstract class BitcoinJobManagerBase<TJob> : JobManagerBase<TJob>
         if(clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
         {
             // ensure pool owns wallet
-            if(validateAddressResponse is {IsMine: false} || addressInfoResponse is {IsMine: false})
+            if(validateAddressResponse is {IsMine: false} && addressInfoResponse is {IsMine: false})
                 logger.Warn(()=> $"Daemon does not own pool-address '{poolConfig.Address}'");
 
             ConfigureRewards();

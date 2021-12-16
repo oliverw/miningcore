@@ -256,9 +256,9 @@
         "explorerTxLink": "https://blocks.notebc.space/tx/{0}",
         "explorerAccountLink": "https://blocks.notebc.space/address/{0}"
     },
-    
+
     // Peercoin is not working as they have switched to hybrib POW + POS. Tested, block orphans 100% of time.
-   
+
     "peercoin": {
         "name": "Peercoin",
         "symbol": "PPC",
@@ -569,8 +569,7 @@
         "explorerTxLink": "https://chainz.cryptoid.info/cann/tx.dws?{0}.htm",
         "explorerAccountLink": "https://chainz.cryptoid.info/cann/address.dws?{0}.htm"
     },
-
-// Ravencoin is currently not working. X16r is OLD algorithm. KawPow is Ravencoin's current algo.    
+    // Ravencoin is currently not working. X16r is OLD algorithm. KawPow is Ravencoin's current algo.
     "ravencoin": {
         "name": "Ravencoin",
         "symbol": "RVN",
@@ -759,6 +758,71 @@
         "explorerBlockLink": "https://digiexplorer.info/block/$height$",
         "explorerTxLink": "https://digiexplorer.info/tx/{0}",
         "explorerAccountLink": "https://digiexplorer.info/address/{0}"
+    },
+    "veles-sha256": {
+        "name": "Veles-Sha256",
+        "symbol": "VLS",
+        "family": "bitcoin",
+        "coinbaseHasher": {
+            "hash": "sha256d"
+        },
+        "headerHasher": {
+            "hash": "sha256d"
+        },
+        "blockHasher": {
+            "hash": "reverse",
+            "args": [ { "hash": "sha256d" } ]
+        },
+        "explorerBlockLink": "https://chainz.cryptoid.info/vls/block.dws?$height$.htm",
+        "explorerTxLink": "https://chainz.cryptoid.info/vls/tx.dws?{0}.htm",
+        "explorerAccountLink": "https://chainz.cryptoid.info/vls/address.dws?{0}.htm"
+    },
+    "veles-x11": {
+        "name": "Veles-Sha256",
+        "symbol": "VLS",
+        "family": "bitcoin",
+        "coinbaseHasher": {
+            "hash": "sha256d"
+        },
+        "headerHasher": {
+            "hash": "x11"
+        },
+        "blockHasher": {
+            "hash": "reverse",
+            "args": [ { "hash": "sha256d" } ]
+        },
+        "explorerBlockLink": "https://chainz.cryptoid.info/vls/block.dws?$height$.htm",
+        "explorerTxLink": "https://chainz.cryptoid.info/vls/tx.dws?{0}.htm",
+        "explorerAccountLink": "https://chainz.cryptoid.info/vls/address.dws?{0}.htm"
+    },
+    "veles-scrypt": {
+        "name": "Veles-Scrypt",
+        "symbol": "VLS",
+        "family": "bitcoin",
+        "coinbaseHasher": {
+            "hash": "sha256d"
+        },
+        "headerHasher": {
+            "hash": "scrypt",
+            "args": [ 1024, 1 ]
+        },
+        "blockHasher": {
+            "hash": "reverse",
+            "args": [ { "hash": "sha256d" } ]
+        },
+        "posBlockHasher": {
+            "hash": "reverse",
+            "args": [
+                {
+                    "hash": "scrypt",
+                    "args": [ 1024, 1 ]
+                }
+            ]
+        },
+        "shareMultiplier": 65536,
+        "explorerBlockLink": "https://chainz.cryptoid.info/vls/block.dws?$height$.htm",
+        "explorerTxLink": "https://chainz.cryptoid.info/vls/tx.dws?{0}.htm",
+        "explorerAccountLink": "https://chainz.cryptoid.info/vls/address.dws?{0}.htm"
     },
     "verge-lyra": {
         "name": "Verge-Lyra",
