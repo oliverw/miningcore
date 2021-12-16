@@ -824,6 +824,35 @@
         "explorerTxLink": "https://chainz.cryptoid.info/vls/tx.dws?{0}.htm",
         "explorerAccountLink": "https://chainz.cryptoid.info/vls/address.dws?{0}.htm"
     },
+    "tiltcoin": {
+        "name": "TILTCoin",
+        "symbol": "TLT",
+        "family": "bitcoin",
+        "coinbaseHasher": {
+            "hash": "sha256d"
+        },
+        "headerHasher": {
+            "hash": "scrypt",
+            "args": [ 1024, 1 ]
+        },
+        "blockHasher": {
+            "hash": "reverse",
+            "args": [ { "hash": "sha256d" } ]
+        },
+        "posBlockHasher": {
+            "hash": "reverse",
+            "args": [
+                {
+                    "hash": "scrypt",
+                    "args": [ 1024, 1 ]
+                }
+            ]
+        },
+        "shareMultiplier": 65536,
+        "explorerBlockLink": "https://chainz.cryptoid.info/tlt/block.dws?$height$.htm",
+        "explorerTxLink": "https://chainz.cryptoid.info/tlt/tx.dws?{0}.htm",
+        "explorerAccountLink": "https://chainz.cryptoid.info/tlt/address.dws?{0}.htm"
+    },
     "verge-lyra": {
         "name": "Verge-Lyra",
         "canonicalName": "Verge",
