@@ -47,6 +47,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "x16s.h"
 #include "x21s.h"
 #include "x25x.h"
+#include "sha256csm.h"
 #include "verthash/h2.h"
 #include "equi/equihashverify.h"
 
@@ -70,6 +71,11 @@ extern "C" MODULE_API void scrypt_export(const char* input, char* output, uint32
 extern "C" MODULE_API void quark_export(const char* input, char* output, uint32_t input_len)
 {
 	quark_hash(input, output, input_len);
+}
+
+extern "C" MODULE_API void sha256csm_export(const char* input, char* output, uint32_t input_len)
+{
+    sha256csm_hash(input, output, input_len);
 }
 
 extern "C" MODULE_API void x11_export(const char* input, char* output, uint32_t input_len)

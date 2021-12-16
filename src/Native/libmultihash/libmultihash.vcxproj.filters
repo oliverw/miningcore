@@ -278,6 +278,9 @@
     <ClInclude Include="blake2\ref\blake2-impl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="sha256csm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -536,6 +539,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="blake2\ref\blake2xs-ref.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sha256csm.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

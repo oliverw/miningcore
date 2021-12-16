@@ -10,6 +10,9 @@ public static unsafe class LibMultihash
     [DllImport("libmultihash", EntryPoint = "quark_export", CallingConvention = CallingConvention.Cdecl)]
     public static extern void quark(byte* input, void* output, uint inputLength);
 
+    [DllImport("libmultihash", EntryPoint = "sha256csm_export", CallingConvention = CallingConvention.Cdecl)]
+    public static extern void sha256csm(byte* input, void* output, uint inputLength);
+
     [DllImport("libmultihash", EntryPoint = "x11_export", CallingConvention = CallingConvention.Cdecl)]
     public static extern void x11(byte* input, void* output, uint inputLength);
 

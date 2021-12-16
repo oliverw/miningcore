@@ -286,6 +286,17 @@ public class HashingTests : TestBase
     }
 
     [Fact]
+    public void Sha256Csm_Hash()
+    {
+        var hasher = new Sha256Csm();
+        var hash = new byte[32];
+        hasher.Digest(testValue2, hash);
+        var result = hash.ToHexString();
+
+        Assert.Equal("e537f42caaeadfc2f022eff26f6e4b16c78ce86f5eda63b347d4466806e07821", result);
+    }
+
+    [Fact]
     public void Qubit_Hash()
     {
         var hasher = new Qubit();
