@@ -23,8 +23,20 @@ public class MasterNodeBlockTemplateExtra : PayeeBlockTemplateExtra
     [JsonProperty("masternode_payments_started")]
     public bool MasternodePaymentsStarted { get; set; }
 
+    /// <summary>
+    /// Alternative version of the above property?
+    /// </summary>
+    [JsonProperty("masternode_payments")]
+    public bool MasternodePayments { get; set; }
+
     [JsonProperty("masternode_payments_enforced")]
     public bool MasternodePaymentsEnforced { get; set; }
+
+    /// <summary>
+    /// Alternative version of the above property
+    /// </summary>
+    [JsonProperty("enforce_masternode_payments")]
+    public bool EnforceMasternodePayments { get; set; }
 
     [JsonProperty("superblock")]
     public SuperBlock[] SuperBlocks { get; set; }

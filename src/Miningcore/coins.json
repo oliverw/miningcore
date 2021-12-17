@@ -867,6 +867,8 @@
             "hash": "reverse",
             "args": [ { "hash": "sha256d" } ]
         },
+        "hasMasterNodes": true,
+        "hasPayee": true,
         "explorerBlockLink": "http://202.61.204.198:3001/block/$hash$",
         "explorerTxLink": "http://202.61.204.198:3001/tx/{0}",
         "explorerAccountLink": "http://202.61.204.198:3001/address/{0}"
