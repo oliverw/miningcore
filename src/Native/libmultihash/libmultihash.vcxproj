@@ -198,6 +198,7 @@
     <ClInclude Include="geek.h" />
     <ClInclude Include="groestl.h" />
     <ClInclude Include="hefty1.h" />
+    <ClInclude Include="hmq17.h" />
     <ClInclude Include="jh.h" />
     <ClInclude Include="keccak.h" />
     <ClInclude Include="KeccakP-800-SnP.h" />
@@ -207,6 +208,7 @@
     <ClInclude Include="neoscrypt.h" />
     <ClInclude Include="nist5.h" />
     <ClInclude Include="odocrypt.h" />
+    <ClInclude Include="phi.h" />
     <ClInclude Include="portable_endian.h" />
     <ClInclude Include="quark.h" />
     <ClInclude Include="qubit.h" />
@@ -290,6 +292,7 @@
     <ClCompile Include="geek.c" />
     <ClCompile Include="groestl.c" />
     <ClCompile Include="hefty1.c" />
+    <ClCompile Include="hmq17.c" />
     <ClCompile Include="jh.c" />
     <ClCompile Include="keccak.c" />
     <ClCompile Include="KeccakP-800-reference.c" />
@@ -300,6 +303,7 @@
     <ClCompile Include="exports.cpp" />
     <ClCompile Include="nist5.c" />
     <ClCompile Include="odocrypt.cpp" />
+    <ClCompile Include="phi.c" />
     <ClCompile Include="quark.c" />
     <ClCompile Include="qubit.c" />
     <ClCompile Include="s3.c" />

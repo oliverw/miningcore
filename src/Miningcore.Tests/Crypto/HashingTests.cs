@@ -297,6 +297,28 @@ public class HashingTests : TestBase
     }
 
     [Fact]
+    public void Hmq17_Hash()
+    {
+        var hasher = new HMMQ17();
+        var hash = new byte[32];
+        hasher.Digest(testValue, hash);
+        var result = hash.ToHexString();
+
+        Assert.Equal("cd0fbcb2aaef0473be539f2d79ea2bc2c4e116b9fdba19893ae68fd03d7a5075", result);
+    }
+
+    [Fact]
+    public void Phi_Hash()
+    {
+        var hasher = new Phi();
+        var hash = new byte[32];
+        hasher.Digest(testValue, hash);
+        var result = hash.ToHexString();
+
+        Assert.Equal("5ba2b8af7b58e359e98087ff8860ded5cdb72adcb46fee05151db1d235c81918", result);
+    }
+
+    [Fact]
     public void Qubit_Hash()
     {
         var hasher = new Qubit();
