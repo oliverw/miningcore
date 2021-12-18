@@ -455,6 +455,12 @@ public class PoolEndpoint
     public bool Tls { get; set; }
 
     /// <summary>
+    /// Enable TLS sniffing
+    /// Check incoming stratum connections for TLS handshake indicator and default to non-TLS if not present
+    /// </summary>
+    public bool TlsAuto { get; set; }
+
+    /// <summary>
     /// PKCS certificate file
     /// </summary>
     public string TlsPfxFile { get; set; }

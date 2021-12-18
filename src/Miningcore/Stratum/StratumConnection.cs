@@ -94,7 +94,13 @@ public class StratumConnection
 
             using(var disposables = new CompositeDisposable(networkStream))
             {
-                if(endpoint.PoolEndpoint.Tls)
+                var tls = endpoint.PoolEndpoint.Tls;
+
+                // auto-detect SSL
+                if(endpoint.PoolEndpoint.TlsAuto)
+                    tls = await DetectSslHandshake(socket, cts.Token);
+
+                if(tls)
                 {
                     var sslStream = new SslStream(networkStream, false);
                     disposables.Add(sslStream);
@@ -290,6 +296,38 @@ public class StratumConnection
             if(result.IsCompleted)
                 break;
         }
+    }
+
+    private async Task<bool> DetectSslHandshake(Socket socket, CancellationToken ct)
+    {
+        // https://tls.ulfheim.net/
+        // https://tls13.ulfheim.net/
+
+        const int BufSize = 3;
+        var buf = ArrayPool<byte>.Shared.Rent(BufSize);
+
+        try
+        {
+            var cb = await socket.ReceiveAsync(buf.AsMemory().Slice(0, BufSize), SocketFlags.Peek, ct);
+
+            if(cb < BufSize)
+                throw new Exception($"Failed to peek at connection's first {BufSize} byte(s)");
+
+            switch(buf[0])
+            {
+                case 0x16: // TLS 1.0 - 1.3
+                {
+                    return true;
+                }
+            }
+        }
+
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(buf);
+        }
+
+        return false;
     }
 
     private async Task ProcessSendQueueAsync(CancellationToken ct)
