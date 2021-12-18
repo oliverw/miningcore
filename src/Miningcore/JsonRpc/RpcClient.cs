@@ -169,8 +169,7 @@ public class RpcClient
             if(!string.IsNullOrEmpty(endPoint.User))
             {
                 var auth = $"{endPoint.User}:{endPoint.Password}";
-                var base64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(auth));
-                request.Headers.Authorization = new AuthenticationHeaderValue("Basic", base64);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Basic", auth.ToBase64());
             }
 
             logger.Trace(() => $"Sending RPC request to {requestUrl}: {json}");
@@ -223,8 +222,7 @@ public class RpcClient
             if(!string.IsNullOrEmpty(endPoint.User))
             {
                 var auth = $"{endPoint.User}:{endPoint.Password}";
-                var base64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(auth));
-                request.Headers.Authorization = new AuthenticationHeaderValue("Basic", base64);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Basic", auth.ToBase64());
             }
 
             logger.Trace(() => $"Sending RPC request to {requestUrl}: {json}");
