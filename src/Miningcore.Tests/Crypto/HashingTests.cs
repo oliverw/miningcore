@@ -242,6 +242,17 @@ public class HashingTests : TestBase
     }
 
     [Fact]
+    public void X16RV2_Hash()
+    {
+        var hasher = new X16RV2();
+        var hash = new byte[32];
+        hasher.Digest(testValue2, hash);
+        var result = hash.ToHexString();
+
+        Assert.Equal("5f14e22e34c685d4b3c4486cdbcda7a5bd9f55adbe0070f7e5bd8c272e598eff", result);
+    }
+
+    [Fact]
     public void X16S_Hash()
     {
         var hasher = new X16S();

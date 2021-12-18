@@ -45,6 +45,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "Lyra2.h"
 #include "x16r.h"
 #include "x16s.h"
+#include "x16rv2.h"
 #include "x21s.h"
 #include "x25x.h"
 #include "sha256csm.h"
@@ -242,6 +243,11 @@ extern "C" MODULE_API void x16r_export(const char* input, char* output, uint32_t
     x16r_hash(input, output, input_len);
 }
 
+extern "C" MODULE_API void x16rv2_export(const char* input, char* output, uint32_t input_len)
+{
+    x16rv2_hash(input, output, input_len);
+}
+
 extern "C" MODULE_API void x21s_export(const char* input, char* output, uint32_t input_len)
 {
 	x21s_hash(input, output, input_len);
@@ -278,7 +284,7 @@ extern "C" MODULE_API bool equihash_verify_200_9_export(const char* header, int 
         return false;
     }
 
-    std::vector<unsigned char> vecSolution(solution, solution + solution_length);
+    const std::vector<unsigned char> vecSolution(solution, solution + solution_length);
 
     return verifyEH_200_9(header, vecSolution, personalization);
 }
@@ -289,7 +295,7 @@ extern "C" MODULE_API bool equihash_verify_144_5_export(const char* header, int 
         return false;
     }
 
-    std::vector<unsigned char> vecSolution(solution, solution + solution_length);
+    const std::vector<unsigned char> vecSolution(solution, solution + solution_length);
 
     return verifyEH_144_5(header, vecSolution, personalization);
 }
@@ -300,7 +306,7 @@ extern "C" MODULE_API bool equihash_verify_96_5_export(const char* header, int h
         return false;
     }
 
-    std::vector<unsigned char> vecSolution(solution, solution + solution_length);
+    const std::vector<unsigned char> vecSolution(solution, solution + solution_length);
 
     return verifyEH_96_5(header, vecSolution, personalization);
 }
