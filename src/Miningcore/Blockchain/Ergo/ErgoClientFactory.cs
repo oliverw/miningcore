@@ -36,7 +36,7 @@ public static class ErgoClientFactory
         if(!string.IsNullOrEmpty(epConfig.User))
         {
             var auth = $"{epConfig.User}:{epConfig.Password}";
-            result.RequestHeaders["Authorization"] = new AuthenticationHeaderValue("Basic", auth.ToBase64()).ToString();
+            result.RequestHeaders["Authorization"] = new AuthenticationHeaderValue("Basic", auth.ToByteArrayBase64()).ToString();
         }
 #if DEBUG
         result.ReadResponseAsString = true;

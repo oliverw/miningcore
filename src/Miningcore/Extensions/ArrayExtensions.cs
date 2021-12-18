@@ -49,7 +49,7 @@ public static class ArrayExtensions
     {
         return ToHexString(value, null, null, withPrefix);
     }
-    public static string ToBase64(this string value)
+    public static string ToByteArrayBase64(this string value)
     {
         return Convert.ToBase64String(Encoding.UTF8.GetBytes(value));
     }

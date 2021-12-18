@@ -150,10 +150,10 @@ public class RpcClient
         // build url
         var protocol = endPoint.Ssl || endPoint.Http2 ? Uri.UriSchemeHttps : Uri.UriSchemeHttp;
         var requestUrl = $"{protocol}://{endPoint.Host}:{endPoint.Port}";
+
         if(!string.IsNullOrEmpty(endPoint.HttpPath))
             requestUrl += $"{(endPoint.HttpPath.StartsWith("/") ? string.Empty : "/")}{endPoint.HttpPath}";
 
-        // build request
         using(var request = new HttpRequestMessage(HttpMethod.Post, requestUrl))
         {
             if(endPoint.Http2)
@@ -161,15 +161,15 @@ public class RpcClient
             else
                 request.Headers.ConnectionClose = false;    // enable keep-alive
 
-            // build content
+            // content
             var json = JsonConvert.SerializeObject(rpcRequest, serializerSettings);
             request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            // build auth header
+            // auth header
             if(!string.IsNullOrEmpty(endPoint.User))
             {
                 var auth = $"{endPoint.User}:{endPoint.Password}";
-                request.Headers.Authorization = new AuthenticationHeaderValue("Basic", auth.ToBase64());
+                request.Headers.Authorization = new AuthenticationHeaderValue("Basic", auth.ToByteArrayBase64());
             }
 
             logger.Trace(() => $"Sending RPC request to {requestUrl}: {json}");
@@ -197,16 +197,15 @@ public class RpcClient
     {
         var sw = Stopwatch.StartNew();
 
-        // build rpc request
         var rpcRequests = batch.Select(x => new JsonRpcRequest<object>(x.Method, x.Payload, GetRequestId()));
 
-        // build url
+        // url
         var protocol = (endPoint.Ssl || endPoint.Http2) ? Uri.UriSchemeHttps : Uri.UriSchemeHttp;
         var requestUrl = $"{protocol}://{endPoint.Host}:{endPoint.Port}";
+
         if(!string.IsNullOrEmpty(endPoint.HttpPath))
             requestUrl += $"{(endPoint.HttpPath.StartsWith("/") ? string.Empty : "/")}{endPoint.HttpPath}";
 
-        // build request
         using(var request = new HttpRequestMessage(HttpMethod.Post, requestUrl))
         {
             if(endPoint.Http2)
@@ -214,15 +213,15 @@ public class RpcClient
             else
                 request.Headers.ConnectionClose = false;    // enable keep-alive
 
-            // build request content
+            // content
             var json = JsonConvert.SerializeObject(rpcRequests, serializerSettings);
             request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            // build auth header
+            // auth header
             if(!string.IsNullOrEmpty(endPoint.User))
             {
                 var auth = $"{endPoint.User}:{endPoint.Password}";
-                request.Headers.Authorization = new AuthenticationHeaderValue("Basic", auth.ToBase64());
+                request.Headers.Authorization = new AuthenticationHeaderValue("Basic", auth.ToByteArrayBase64());
             }
 
             logger.Trace(() => $"Sending RPC request to {requestUrl}: {json}");
@@ -345,42 +344,45 @@ public class RpcClient
         {
             var tcs = CancellationTokenSource.CreateLinkedTokenSource(ct);
 
-            Task.Run(() =>
+            var thread = new Thread(() =>
             {
-                using(tcs)
+                while(!tcs.IsCancellationRequested)
                 {
-                    while(!tcs.IsCancellationRequested)
+                    try
                     {
-                        try
+                        using(var subSocket = new ZSocket(ZSocketType.SUB))
                         {
-                            using(var subSocket = new ZSocket(ZSocketType.SUB))
+                            //subSocket.Options.ReceiveHighWatermark = 1000;
+                            subSocket.Connect(url);
+                            subSocket.Subscribe(topic);
+
+                            logger.Debug($"Subscribed to {url}/{topic}");
+
+                            while(!tcs.IsCancellationRequested)
                             {
-                                //subSocket.Options.ReceiveHighWatermark = 1000;
-                                subSocket.Connect(url);
-                                subSocket.Subscribe(topic);
-
-                                logger.Debug($"Subscribed to {url}/{topic}");
-
-                                while(!tcs.IsCancellationRequested)
-                                {
-                                    var msg = subSocket.ReceiveMessage();
-                                    obs.OnNext(msg);
-                                }
+                                var msg = subSocket.ReceiveMessage();
+                                obs.OnNext(msg);
                             }
                         }
+                    }
 
-                        catch(Exception ex)
-                        {
-                            logger.Error(ex);
-                        }
+                    catch(Exception ex)
+                    {
+                        logger.Error(ex);
 
-                        // do not consume all CPU cycles in case of a long lasting error condition
+                        // do not run wild in case of a persistent error condition
                         Thread.Sleep(1000);
                     }
                 }
-            }, tcs.Token);
+            });
 
-            return Disposable.Create(() => { tcs.Cancel(); });
+            thread.Start();
+
+            return Disposable.Create(() =>
+            {
+                tcs.Cancel();
+                tcs.Dispose();
+            });
         }));
     }
 }
