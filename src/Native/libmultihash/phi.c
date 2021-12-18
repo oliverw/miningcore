@@ -3,11 +3,11 @@
 #include <string.h>
 #include <stdio.h>
 
-#include <sha3/sph_skein.h>
-#include <sha3/sph_jh.h>
-#include <sha3/sph_cubehash.h>
-#include <sha3/sph_fugue.h>
-#include <sha3/sph_echo.h>
+#include "sha3/sph_skein.h"
+#include "sha3/sph_jh.h"
+#include "sha3/sph_cubehash.h"
+#include "sha3/sph_fugue.h"
+#include "sha3/sph_echo.h"
 
 #include "sha3/gost_streebog.h"
 
