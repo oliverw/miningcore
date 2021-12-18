@@ -23,7 +23,7 @@ void phi_hash(const char* input, char* output, uint32_t len)
 #ifdef _MSC_VER
     uint8_t __declspec(align(128)) hash[64];
 #else
-    uint8_t _ALIGN(128) hash[64];
+    uint8_t __attribute__((aligned(128))) hash[64];
 #endif
 
     sph_skein512_init(&ctx_skein);
