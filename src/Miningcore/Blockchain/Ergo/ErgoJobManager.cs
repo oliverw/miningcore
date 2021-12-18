@@ -77,7 +77,7 @@ public class ErgoJobManager : JobManagerBase<ErgoJob>
             .Select(_ => (false, JobRefreshBy.Initial, (string) null))
             .TakeWhile(_ => !hasInitialBlockTemplate));
 
-        Jobs = Observable.Merge(triggers)
+        Jobs = triggers.Merge()
             .Select(x => Observable.FromAsync(() => UpdateJob(x.Force, x.Via, x.Data)))
             .Concat()
             .Where(x => x.IsNew || x.Force)

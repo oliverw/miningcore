@@ -133,7 +133,7 @@ public class NotificationService : BackgroundService
         logger.Error(ex);
     }
 
-    private IObservable<IObservable<Unit>> OnMessageBus<T>(Func<T, CancellationToken, Task> handler, CancellationToken ct)
+    private IObservable<IObservable<Unit>> Subscribe<T>(Func<T, CancellationToken, Task> handler, CancellationToken ct)
     {
         return messageBus.Listen<T>()
             .Select(msg => Observable.FromAsync(() =>
@@ -146,9 +146,9 @@ public class NotificationService : BackgroundService
 
         if(clusterConfig.Notifications?.Admin?.Enabled == true)
         {
-            obs.Add(OnMessageBus<AdminNotification>(OnAdminNotificationAsync, ct));
-            obs.Add(OnMessageBus<BlockFoundNotification>(OnBlockFoundNotificationAsync, ct));
-            obs.Add(OnMessageBus<PaymentNotification>(OnPaymentNotificationAsync, ct));
+            obs.Add(Subscribe<AdminNotification>(OnAdminNotificationAsync, ct));
+            obs.Add(Subscribe<BlockFoundNotification>(OnBlockFoundNotificationAsync, ct));
+            obs.Add(Subscribe<PaymentNotification>(OnPaymentNotificationAsync, ct));
         }
 
         if(obs.Count > 0)

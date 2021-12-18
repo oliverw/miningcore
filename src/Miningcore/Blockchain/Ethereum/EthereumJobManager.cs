@@ -645,7 +645,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
                 .Repeat());
         }
 
-        Jobs = Observable.Merge(triggers)
+        Jobs = triggers.Merge()
             .Select(x => Observable.FromAsync(() => UpdateJob(ct, x.Via)))
             .Concat()
             .Where(isNew => isNew)

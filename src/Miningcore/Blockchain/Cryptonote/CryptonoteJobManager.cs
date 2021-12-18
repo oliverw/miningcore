@@ -727,7 +727,7 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
                 .TakeWhile(_ => !hasInitialBlockTemplate));
         }
 
-        Blocks = Observable.Merge(triggers)
+        Blocks = triggers.Merge()
             .Select(x => Observable.FromAsync(() => UpdateJob(ct, x.Via, x.Data)))
             .Concat()
             .Where(isNew => isNew)

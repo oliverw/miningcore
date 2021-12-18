@@ -178,7 +178,7 @@ public abstract class BitcoinJobManagerBase<TJob> : JobManagerBase<TJob>
                 .TakeWhile(_ => !hasInitialBlockTemplate));
         }
 
-        Jobs = Observable.Merge(triggers)
+        Jobs = triggers.Merge()
             .Select(x => Observable.FromAsync(() => UpdateJob(ct, x.Force, x.Via, x.Data)))
             .Concat()
             .Where(x => x.IsNew || x.Force)
@@ -259,7 +259,9 @@ public abstract class BitcoinJobManagerBase<TJob> : JobManagerBase<TJob>
         }
     }
 
-    protected virtual async Task<(bool Accepted, string CoinbaseTx)> SubmitBlockAsync(Share share, string blockHex)
+    protected record SubmitResult(bool Accepted, string CoinbaseTx);
+
+    protected virtual async Task<SubmitResult> SubmitBlockAsync(Share share, string blockHex)
     {
         // execute command batch
         var results = await rpcClient.ExecuteBatchAsync(logger, CancellationToken.None,
@@ -278,7 +280,7 @@ public abstract class BitcoinJobManagerBase<TJob> : JobManagerBase<TJob>
         {
             logger.Warn(() => $"Block {share.BlockHeight} submission failed with: {submitError}");
             messageBus.SendMessage(new AdminNotification("Block submission failed", $"Pool {poolConfig.Id} {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}failed to submit block {share.BlockHeight}: {submitError}"));
-            return (false, null);
+            return new SubmitResult(false, null);
         }
 
         // was it accepted?
@@ -292,7 +294,7 @@ public abstract class BitcoinJobManagerBase<TJob> : JobManagerBase<TJob>
             messageBus.SendMessage(new AdminNotification($"[{share.PoolId.ToUpper()}]-[{share.Source}] Block submission failed", $"[{share.PoolId.ToUpper()}]-[{share.Source}] Block {share.BlockHeight} submission failed for pool {poolConfig.Id} because block was not found after submission"));
         }
 
-        return (accepted, block?.Transactions.FirstOrDefault());
+        return new SubmitResult(accepted, block?.Transactions.FirstOrDefault());
     }
 
     protected virtual async Task<bool> AreDaemonsHealthyLegacyAsync(CancellationToken ct)

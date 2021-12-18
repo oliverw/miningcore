@@ -131,8 +131,9 @@ public class RpcClient
     {
         logger.LogInvoke();
 
-        return Observable.Merge(portMap.Keys
-                .Select(endPoint => ZmqSubscribeEndpoint(logger, ct, portMap[endPoint].Socket, portMap[endPoint].Topic)))
+        return portMap.Keys
+            .Select(endPoint => ZmqSubscribeEndpoint(logger, ct, portMap[endPoint].Socket, portMap[endPoint].Topic))
+            .Merge()
             .Publish()
             .RefCount();
     }
