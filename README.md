@@ -1,8 +1,8 @@
 [![Build status](https://ci.appveyor.com/api/projects/status/nbvaa55gu3icd1q8?svg=true)](https://ci.appveyor.com/project/oliverw/miningcore)
-[![.NET](https://github.com/coinfoundry/miningcore/actions/workflows/dotnet.yml/badge.svg)](https://github.com/coinfoundry/miningcore/actions/workflows/dotnet.yml)
+[![.NET](https://github.com/oliverw/miningcore/actions/workflows/dotnet.yml/badge.svg)](https://github.com/oliverw/miningcore/actions/workflows/dotnet.yml)
 [![license](https://img.shields.io/github/license/mashape/apistatus.svg)]()
 
-<img src="https://github.com/coinfoundry/miningcore/raw/master/logo.png" width="150">
+<img src="https://github.com/oliverw/miningcore/raw/master/logo.png" width="150">
 
 ### Features
 
@@ -13,7 +13,7 @@
 - Session management for purging DDoS/flood initiated zombie workers
 - Payment processing
 - Banning System
-- Live Stats [API](https://github.com/coinfoundry/miningcore/wiki/API) on Port 4000
+- Live Stats [API](https://github.com/oliverw/miningcore/wiki/API) on Port 4000
 - WebSocket streaming of notable events like Blocks found, Blocks unlocked, Payments and more
 - POW (proof-of-work) & POS (proof-of-stake) support
 - Detailed per-pool logging to console & filesystem
@@ -23,7 +23,7 @@
 
 Commercial support directly by the maintainer is available through [miningcore.pro](https://store.miningcore.pro).
 
-For general questions visit the [Discussions Area](https://github.com/coinfoundry/miningcore/discussions).
+For general questions visit the [Discussions Area](https://github.com/oliverw/miningcore/discussions).
 
 ## Running Miningcore
 
@@ -35,20 +35,20 @@ For general questions visit the [Discussions Area](https://github.com/coinfoundr
   - `libzmq5`
   - `libboost-system1.67.0`
   - `libboost-date-time1.67.0`
-- Download `miningcore-linux-ubuntu-x64.tar.gz` from the latest [Release](https://github.com/coinfoundry/miningcore/releases)
+- Download `miningcore-linux-ubuntu-x64.tar.gz` from the latest [Release](https://github.com/oliverw/miningcore/releases)
 - Extract the archive
 - Setup the database as outlined below
-- Create a configuration file `config.json` as described [here](https://github.com/coinfoundry/miningcore/wiki/Configuration)
+- Create a configuration file `config.json` as described [here](https://github.com/oliverw/miningcore/wiki/Configuration)
 - Run `dotnet Miningcore.dll -c config.json`
 
 ### Windows: pre-built binaries
 
 - Install [.NET 6 Runtime](https://dotnet.microsoft.com/download/dotnet/6.0)
 - Install [PostgreSQL Database](https://www.postgresql.org/)
-- Download `miningcore-win-x64.zip` from the latest [Release](https://github.com/coinfoundry/miningcore/releases)
+- Download `miningcore-win-x64.zip` from the latest [Release](https://github.com/oliverw/miningcore/releases)
 - Extract the Archive
 - Setup the database as outlined below
-- Create a configuration file `config.json` as described [here](https://github.com/coinfoundry/miningcore/wiki/Configuration)
+- Create a configuration file `config.json` as described [here](https://github.com/oliverw/miningcore/wiki/Configuration)
 - Run `dotnet Miningcore.dll -c config.json`
 
 ## Database setup
@@ -73,7 +73,7 @@ grant all privileges on database miningcore to miningcore;
 Import the database schema:
 
 ```console
-$ wget https://raw.githubusercontent.com/coinfoundry/miningcore/master/src/Miningcore/Persistence/Postgres/Scripts/createdb.sql
+$ wget https://raw.githubusercontent.com/oliverw/miningcore/master/src/Miningcore/Persistence/Postgres/Scripts/createdb.sql
 $ psql -d miningcore -U miningcore -f createdb.sql
 ```
 
@@ -84,7 +84,7 @@ If you are planning to run a Multipool-Cluster, the simple setup might not perfo
 **WARNING**: The following step will delete all recorded shares. Do **NOT** do this on a production pool unless you backup your `shares` table using `pg_backup` first!
 
 ```console
-$ wget https://raw.githubusercontent.com/coinfoundry/miningcore/master/src/Miningcore/Persistence/Postgres/Scripts/createdb_postgresql_11_appendix.sql
+$ wget https://raw.githubusercontent.com/oliverw/miningcore/master/src/Miningcore/Persistence/Postgres/Scripts/createdb_postgresql_11_appendix.sql
 $ psql -d miningcore -U miningcore -f createdb_postgresql_11_appendix.sql
 ```
 
@@ -100,7 +100,7 @@ Once you have done this for all of your existing pools you should now restore yo
 
 ## Configuration
 
-Please refer to this Wiki Page: https://github.com/coinfoundry/miningcore/wiki/Configuration
+Please refer to this Wiki Page: https://github.com/oliverw/miningcore/wiki/Configuration
 
 ## Building from Source
 
@@ -113,7 +113,7 @@ $ sudo apt-get update
 $ sudo apt-get install -y apt-transport-https
 $ sudo apt-get update
 $ sudo apt-get -y install dotnet-sdk-6.0 git cmake build-essential libssl-dev pkg-config libboost-all-dev libsodium-dev libzmq5
-$ git clone https://github.com/coinfoundry/miningcore
+$ git clone https://github.com/oliverw/miningcore
 $ cd miningcore/src/Miningcore
 $ dotnet publish -c Release --framework net6.0  -o ../../build
 ```
@@ -123,7 +123,7 @@ $ dotnet publish -c Release --framework net6.0  -o ../../build
 Download and install the [.NET 6 SDK](https://dotnet.microsoft.com/download/dotnet/6.0)
 
 ```dosbatch
-> git clone https://github.com/coinfoundry/miningcore
+> git clone https://github.com/oliverw/miningcore
 > cd miningcore/src/Miningcore
 > dotnet publish -c Release --framework net6.0  -o ..\..\build
 ```
@@ -136,7 +136,7 @@ Download and install the [.NET 6 SDK](https://dotnet.microsoft.com/download/dotn
 
 ### After successful build
 
-Create a configuration file `config.json` as described [here](https://github.com/coinfoundry/miningcore/wiki/Configuration)
+Create a configuration file `config.json` as described [here](https://github.com/oliverw/miningcore/wiki/Configuration)
 
 ```console
 $ cd ../../build
@@ -145,7 +145,7 @@ $ Miningcore -c config.json
 
 ### Supported Currencies
 
-Refer to [this file](https://github.com/coinfoundry/miningcore/blob/master/src/Miningcore/coins.json) for a complete list.
+Refer to [this file](https://github.com/oliverw/miningcore/blob/master/src/Miningcore/coins.json) for a complete list.
 
 ### Caveats
 
@@ -175,7 +175,7 @@ Refer to [this file](https://github.com/coinfoundry/miningcore/blob/master/src/M
 
 ## API
 
-Miningcore comes with an integrated REST API. Please refer to this page for instructions: https://github.com/coinfoundry/miningcore/wiki/API
+Miningcore comes with an integrated REST API. Please refer to this page for instructions: https://github.com/oliverw/miningcore/wiki/API
 
 ## Running a production pool
 
@@ -195,3 +195,4 @@ This software comes with a built-in donation of 0.1% per block-reward to support
 * DASH: `XqpBAV9QCaoLnz42uF5frSSfrJTrqHoxjp`
 * ZEC:  `t1YHZHz2DGVMJiggD2P4fBQ2TAPgtLSUwZ7`
 * BTG:  `GQb77ZuMCyJGZFyxpzqNfm7GB1rQreP4n6`
+* ERGO: `9foYU8JkoqWBSDA3ba8VHfduPXV2NaVNPPAFkdYoR9t9cPQGMv4`
