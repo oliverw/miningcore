@@ -17,6 +17,11 @@ public class EthereumWorkerContext : WorkerContextBase
     public bool IsInitialWorkSent { get; set; } = false;
 
     /// <summary>
+    /// Stratum protocol version
+    /// </summary>
+    public int ProtocolVersion { get; set; }
+
+    /// <summary>
     /// Unique value assigned per worker
     /// </summary>
     public string ExtraNonce1 { get; set; }

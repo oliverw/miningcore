@@ -36,4 +36,24 @@ public static class EthereumStratumMethods
     /// Used to subscribe to work from a server, required before all other communication.
     /// </summary>
     public const string ExtraNonceSubscribe = "mining.extranonce.subscribe";
+
+    /// <summary>
+    /// Used to login & subscribe to work from a server, required before all other communication.
+    /// </summary>
+    public const string SubmitLogin = "eth_submitLogin";
+
+    /// <summary>
+    /// Used to request work
+    /// </summary>
+    public const string GetWork = "eth_getWork";
+
+    /// <summary>
+    /// Used to submit work (shares)
+    /// </summary>
+    public const string SubmitWork = "eth_submitWork";
+
+    /// <summary>
+    /// Ignored
+    /// </summary>
+    public const string SubmitHashrate = "eth_submitHashrate";
 }
