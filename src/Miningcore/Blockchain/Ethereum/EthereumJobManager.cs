@@ -23,6 +23,7 @@ using Contract = Miningcore.Contracts.Contract;
 using EC = Miningcore.Blockchain.Ethereum.EthCommands;
 using static Miningcore.Util.ActionUtils;
 using System.Reactive;
+using Newtonsoft.Json.Linq;
 
 namespace Miningcore.Blockchain.Ethereum;
 
@@ -196,19 +197,25 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
             if(syncStateResponse.Response is false)
                 return;
 
-            if(syncStateResponse.Response is SyncState syncState)
+            if(syncStateResponse.Response is JObject obj)
             {
+                var syncState = obj.ToObject<SyncState>();
+
                 // get peer count
                 var getPeerCountResponse = await rpcClient.ExecuteAsync<string>(logger, EC.GetPeerCount, ct);
                 var peerCount = getPeerCountResponse.Response.IntegralFromHex<uint>();
 
-                if(syncState.WarpChunksAmount != 0)
+                if(syncState?.WarpChunksAmount != 0)
                 {
-                    var warpChunkAmount = syncState.WarpChunksAmount;
-                    var warpChunkProcessed = syncState.WarpChunksProcessed;
-                    var percent = (double) warpChunkProcessed / warpChunkAmount * 100;
+                    var warpChunkAmount = syncState?.WarpChunksAmount;
+                    var warpChunkProcessed = syncState?.WarpChunksProcessed;
 
-                    logger.Info(() => $"Daemons have downloaded {percent:0.00}% of warp-chunks from {peerCount} peers");
+                    if(warpChunkAmount.HasValue)
+                    {
+                        var percent = (double) warpChunkProcessed / warpChunkAmount * 100;
+
+                        logger.Info(() => $"Daemons have downloaded {percent:0.00}% of warp-chunks from {peerCount} peers");
+                    }
                 }
 
                 else if(syncState.HighestBlock != 0)
