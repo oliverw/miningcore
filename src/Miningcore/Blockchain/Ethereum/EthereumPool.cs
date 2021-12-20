@@ -92,7 +92,6 @@ public class EthereumPool : PoolBase
         var minerName = workerParts?.Length > 0 ? workerParts[0].Trim() : null;
         var workerName = workerParts?.Length > 1 ? workerParts[1].Trim() : "0";
 
-        // assumes that workerName is an address
         context.IsAuthorized = manager.ValidateAddress(minerName);
 
         // respond
@@ -261,7 +260,6 @@ public class EthereumPool : PoolBase
 
         manager.PrepareWorker(connection);
 
-        // assumes that workerName is an address
         context.IsAuthorized = manager.ValidateAddress(minerName);
 
         // respond
