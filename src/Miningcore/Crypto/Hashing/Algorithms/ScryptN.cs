@@ -4,6 +4,7 @@ using Miningcore.Time;
 
 namespace Miningcore.Crypto.Hashing.Algorithms;
 
+[Identifier("scryptn")]
 public unsafe class ScryptN : IHashAlgorithm
 {
     public ScryptN(Tuple<long, long>[] timetable = null)

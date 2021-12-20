@@ -3,6 +3,7 @@ using Miningcore.Native;
 
 namespace Miningcore.Crypto.Hashing.Algorithms;
 
+[Identifier("hmq17")]
 public unsafe class HMMQ17 : IHashAlgorithm
 {
     public void Digest(ReadOnlySpan<byte> data, Span<byte> result, params object[] extra)

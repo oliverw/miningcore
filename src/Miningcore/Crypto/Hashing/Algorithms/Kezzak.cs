@@ -4,6 +4,7 @@ using Miningcore.Native;
 
 namespace Miningcore.Crypto.Hashing.Algorithms;
 
+[Identifier("groestl-myriad")]
 public unsafe class Kezzak : IHashAlgorithm
 {
     public void Digest(ReadOnlySpan<byte> data, Span<byte> result, params object[] extra)

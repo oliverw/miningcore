@@ -3,6 +3,7 @@ using Miningcore.Native;
 
 namespace Miningcore.Crypto.Hashing.Algorithms;
 
+[Identifier("x17")]
 public unsafe class X17 : IHashAlgorithm
 {
     public void Digest(ReadOnlySpan<byte> data, Span<byte> result, params object[] extra)

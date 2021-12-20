@@ -3,6 +3,7 @@ using Miningcore.Native;
 
 namespace Miningcore.Crypto.Hashing.Algorithms;
 
+[Identifier("blake2s")]
 public unsafe class Blake2s : IHashAlgorithm
 {
     public void Digest(ReadOnlySpan<byte> data, Span<byte> result, params object[] extra)

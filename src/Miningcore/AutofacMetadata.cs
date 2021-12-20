@@ -20,9 +20,9 @@ public class CoinFamilyAttribute : Attribute
     public CoinFamily[] SupportedFamilies { get; }
 }
 
-public class NamedAttribute : Attribute
+public class IdentifierAttribute : Attribute
 {
-    public NamedAttribute(string name)
+    public IdentifierAttribute(string name)
     {
         Name = name;
     }

@@ -9,6 +9,7 @@ using NLog;
 
 namespace Miningcore.Crypto.Hashing.Algorithms;
 
+[Identifier("verthash")]
 public unsafe class Verthash :
     IHashAlgorithm,
     IHashAlgorithmInit

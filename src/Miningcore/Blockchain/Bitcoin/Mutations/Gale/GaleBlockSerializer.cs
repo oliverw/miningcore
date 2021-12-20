@@ -5,7 +5,7 @@ using NBitcoin;
 namespace Miningcore.Blockchain.Bitcoin.Mutations.Gale;
 
 [UsedImplicitly]
-[Named("gale")]
+[Identifier("gale")]
 public class GaleBlockSerializer : IBitcoinBlockSerializer
 {
     private byte[] CoinbasePrefix = Encoding.UTF8.GetBytes("0000000000000000000000000000000000000000000000000000000000000000");

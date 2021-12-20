@@ -71,7 +71,9 @@ public class AutofacModule : Module
             .AsImplementedInterfaces();
 
         builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
-            .Where(t => t.GetInterfaces().Any(i => i.IsAssignableFrom(typeof(IHashAlgorithm))))
+            .Where(t => t.GetCustomAttributes<IdentifierAttribute>().Any() &&
+                t.GetInterfaces().Any(i => i.IsAssignableFrom(typeof(IHashAlgorithm))))
+            .Named<IHashAlgorithm>(t=> t.GetCustomAttributes<IdentifierAttribute>().First().Name)
             .PropertiesAutowired()
             .AsSelf();
 
@@ -104,9 +106,9 @@ public class AutofacModule : Module
             .SingleInstance();
 
         builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
-            .Where(t => t.GetCustomAttributes<NamedAttribute>().Any() && t.GetInterfaces()
+            .Where(t => t.GetCustomAttributes<IdentifierAttribute>().Any() && t.GetInterfaces()
                 .Any(i => i.IsAssignableFrom(typeof(IBitcoinBlockSerializer))))
-            .Named<IBitcoinBlockSerializer>(t=> t.GetCustomAttributes<NamedAttribute>().First().Name)
+            .Named<IBitcoinBlockSerializer>(t=> t.GetCustomAttributes<IdentifierAttribute>().First().Name)
             .SingleInstance();
 
         //////////////////////
