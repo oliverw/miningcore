@@ -41,6 +41,10 @@
 #include "sha3.h"
 #endif // WITH_CRYPTOPP
 
+#if defined(_MSC_VER)
+#include <intrin.h>
+#endif
+
 uint64_t ethash_get_datasize(uint64_t const block_number)
 {
 	assert(block_number / ETHASH_EPOCH_LENGTH < 2048);
