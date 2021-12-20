@@ -47,7 +47,7 @@ public class BitcoinJobManager : BitcoinJobManagerBase<BitcoinJob>
     {
         logger.LogInvoke();
 
-        var result = await rpcClient.ExecuteAsync<BlockTemplate>(logger,
+        var result = await rpc.ExecuteAsync<BlockTemplate>(logger,
             BitcoinCommands.GetBlockTemplate, ct, extraPoolConfig?.GBTArgs ?? (object) GetBlockTemplateParams());
 
         return result;

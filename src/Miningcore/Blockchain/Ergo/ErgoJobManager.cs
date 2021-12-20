@@ -34,7 +34,7 @@ public class ErgoJobManager : JobManagerBase<ErgoJob>
     }
 
     private ErgoCoinTemplate coin;
-    private ErgoClient ergoClient;
+    private ErgoClient rpc;
     private string network;
     private readonly List<ErgoJob> validJobs = new();
     private int maxActiveJobs = 4;
@@ -137,7 +137,7 @@ public class ErgoJobManager : JobManagerBase<ErgoJob>
                     const int blockTimeAvg = 120;
 
                     // update stats
-                    var info = await ergoClient.GetNodeInfoAsync();
+                    var info = await rpc.GetNodeInfoAsync();
 
                     // update stats
                     BlockchainStats.LastNetworkBlockTime = clock.Now;
@@ -178,7 +178,7 @@ public class ErgoJobManager : JobManagerBase<ErgoJob>
     {
         logger.LogInvoke();
 
-        var work = await ergoClient.MiningRequestBlockCandidateAsync(CancellationToken.None);
+        var work = await rpc.MiningRequestBlockCandidateAsync(CancellationToken.None);
 
         return work;
     }
@@ -192,7 +192,7 @@ public class ErgoJobManager : JobManagerBase<ErgoJob>
 
     private async Task ShowDaemonSyncProgressAsync()
     {
-        var info = await Guard(() => ergoClient.GetNodeInfoAsync(),
+        var info = await Guard(() => rpc.GetNodeInfoAsync(),
             ex => logger.Debug(ex));
 
         if(info?.FullHeight.HasValue == true && info.HeadersHeight.HasValue)
@@ -228,7 +228,7 @@ public class ErgoJobManager : JobManagerBase<ErgoJob>
     {
         try
         {
-            await ergoClient.MiningSubmitSolutionAsync(new PowSolutions
+            await rpc.MiningSubmitSolutionAsync(new PowSolutions
             {
                 N = nonce,
             });
@@ -357,7 +357,7 @@ public class ErgoJobManager : JobManagerBase<ErgoJob>
         if(string.IsNullOrEmpty(address))
             return false;
 
-        var validity = await Guard(() => ergoClient.CheckAddressValidityAsync(address, ct),
+        var validity = await Guard(() => rpc.CheckAddressValidityAsync(address, ct),
             ex => logger.Debug(ex));
 
         return validity?.IsValid == true;
@@ -373,13 +373,13 @@ public class ErgoJobManager : JobManagerBase<ErgoJob>
         if(string.IsNullOrEmpty(poolConfig.Address))
             logger.ThrowLogPoolStartupException($"Pool address is not configured");
 
-        var validity = await Guard(() => ergoClient.CheckAddressValidityAsync(poolConfig.Address, ct),
+        var validity = await Guard(() => rpc.CheckAddressValidityAsync(poolConfig.Address, ct),
             ex=> logger.ThrowLogPoolStartupException($"Error validating pool address: {ex}"));
 
         if(!validity.IsValid)
             logger.ThrowLogPoolStartupException($"Daemon reports pool address {poolConfig.Address} as invalid: {validity.Error}");
 
-        var info = await Guard(() => ergoClient.GetNodeInfoAsync(ct),
+        var info = await Guard(() => rpc.GetNodeInfoAsync(ct),
             ex=> logger.ThrowLogPoolStartupException($"Daemon reports: {ex.Message}"));
 
         blockVersion = info.Parameters.BlockVersion;
@@ -395,7 +395,7 @@ public class ErgoJobManager : JobManagerBase<ErgoJob>
         if(clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
         {
             // check configured address belongs to wallet
-            var walletAddresses = await ergoClient.WalletAddressesAsync(ct);
+            var walletAddresses = await rpc.WalletAddressesAsync(ct);
 
             if(!walletAddresses.Contains(poolConfig.Address))
                 logger.ThrowLogPoolStartupException($"Pool address {poolConfig.Address} is not controlled by wallet");
@@ -424,12 +424,12 @@ public class ErgoJobManager : JobManagerBase<ErgoJob>
 
     protected override void ConfigureDaemons()
     {
-        ergoClient = ErgoClientFactory.CreateClient(poolConfig, clusterConfig, logger);
+        rpc = ErgoClientFactory.CreateClient(poolConfig, clusterConfig, logger);
     }
 
     protected override async Task<bool> AreDaemonsHealthyAsync(CancellationToken ct)
     {
-        var info = await Guard(() => ergoClient.GetNodeInfoAsync(ct),
+        var info = await Guard(() => rpc.GetNodeInfoAsync(ct),
             ex=> logger.ThrowLogPoolStartupException($"Daemon reports: {ex.Message}"));
 
         if(info?.IsMining != true)
@@ -440,7 +440,7 @@ public class ErgoJobManager : JobManagerBase<ErgoJob>
 
     protected override async Task<bool> AreDaemonsConnectedAsync(CancellationToken ct)
     {
-        var info = await Guard(() => ergoClient.GetNodeInfoAsync(ct),
+        var info = await Guard(() => rpc.GetNodeInfoAsync(ct),
             ex=> logger.Debug(ex));
 
         return info?.PeersCount > 0;
@@ -452,7 +452,7 @@ public class ErgoJobManager : JobManagerBase<ErgoJob>
 
         while(true)
         {
-            var work = await Guard(() => ergoClient.MiningRequestBlockCandidateAsync(ct),
+            var work = await Guard(() => rpc.MiningRequestBlockCandidateAsync(ct),
                 ex=> logger.Debug(ex));
 
             var isSynched = !string.IsNullOrEmpty(work?.Msg);

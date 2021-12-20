@@ -43,8 +43,8 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
 
     private byte[] instanceId;
     private DaemonEndpointConfig[] daemonEndpoints;
-    private RpcClient rpcClient;
-    private RpcClient rpcClientWallet;
+    private RpcClient rpc;
+    private RpcClient walletRpc;
     private readonly IMasterClock clock;
     private CryptonoteNetworkType networkType;
     private CryptonotePoolConfigExtra extraPoolConfig;
@@ -150,7 +150,7 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
             ReserveSize = CryptonoteConstants.ReserveSize
         };
 
-        return await rpcClient.ExecuteAsync<GetBlockTemplateResponse>(logger, CryptonoteCommands.GetBlockTemplate, ct, request);
+        return await rpc.ExecuteAsync<GetBlockTemplateResponse>(logger, CryptonoteCommands.GetBlockTemplate, ct, request);
     }
 
     private RpcResponse<GetBlockTemplateResponse> GetBlockTemplateFromJson(string json)
@@ -164,7 +164,7 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
 
     private async Task ShowDaemonSyncProgressAsync(CancellationToken ct)
     {
-        var response = await rpcClient.ExecuteAsync<GetInfoResponse>(logger, CryptonoteCommands.GetInfo, ct);
+        var response = await rpc.ExecuteAsync<GetInfoResponse>(logger, CryptonoteCommands.GetInfo, ct);
         var info = response.Response;
 
         if(info != null)
@@ -184,7 +184,7 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
 
         try
         {
-            var response = await rpcClient.ExecuteAsync(logger, CryptonoteCommands.GetInfo, ct);
+            var response = await rpc.ExecuteAsync(logger, CryptonoteCommands.GetInfo, ct);
 
             if(response.Error != null)
                 logger.Warn(() => $"Error(s) refreshing network stats: {response.Error.Message} (Code {response.Error.Code})");
@@ -206,7 +206,7 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
 
     private async Task<bool> SubmitBlockAsync(Share share, string blobHex, string blobHash)
     {
-        var response = await rpcClient.ExecuteAsync<SubmitResponse>(logger, CryptonoteCommands.SubmitBlock, CancellationToken.None, new[] { blobHex });
+        var response = await rpc.ExecuteAsync<SubmitResponse>(logger, CryptonoteCommands.SubmitBlock, CancellationToken.None, new[] { blobHex });
 
         if(response.Error != null || response?.Response?.Status != "OK")
         {
@@ -427,19 +427,19 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
     {
         var jsonSerializerSettings = ctx.Resolve<JsonSerializerSettings>();
 
-        rpcClient = new RpcClient(daemonEndpoints.First(), jsonSerializerSettings, messageBus, poolConfig.Id);
+        rpc = new RpcClient(daemonEndpoints.First(), jsonSerializerSettings, messageBus, poolConfig.Id);
 
         if(clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
         {
             // also setup wallet daemon
-            rpcClientWallet = new RpcClient(walletDaemonEndpoints.First(), jsonSerializerSettings, messageBus, poolConfig.Id);
+            walletRpc = new RpcClient(walletDaemonEndpoints.First(), jsonSerializerSettings, messageBus, poolConfig.Id);
         }
     }
 
     protected override async Task<bool> AreDaemonsHealthyAsync(CancellationToken ct)
     {
         // test daemons
-        var response = await rpcClient.ExecuteAsync<GetInfoResponse>(logger, CryptonoteCommands.GetInfo, ct);
+        var response = await rpc.ExecuteAsync<GetInfoResponse>(logger, CryptonoteCommands.GetInfo, ct);
 
         if(response.Error != null)
             return false;
@@ -447,7 +447,7 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
         if(clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
         {
             // test wallet daemons
-            var responses2 = await rpcClientWallet.ExecuteAsync<object>(logger, CryptonoteWalletCommands.GetAddress, ct);
+            var responses2 = await walletRpc.ExecuteAsync<object>(logger, CryptonoteWalletCommands.GetAddress, ct);
 
             return responses2.Error == null;
         }
@@ -457,7 +457,7 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
 
     protected override async Task<bool> AreDaemonsConnectedAsync(CancellationToken ct)
     {
-        var response = await rpcClient.ExecuteAsync<GetInfoResponse>(logger, CryptonoteCommands.GetInfo, ct);
+        var response = await rpc.ExecuteAsync<GetInfoResponse>(logger, CryptonoteCommands.GetInfo, ct);
 
         return response.Error == null && response.Response != null &&
             (response.Response.OutgoingConnectionsCount + response.Response.IncomingConnectionsCount) > 0;
@@ -475,7 +475,7 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
                 ReserveSize = CryptonoteConstants.ReserveSize
             };
 
-            var response = await rpcClient.ExecuteAsync<GetBlockTemplateResponse>(logger,
+            var response = await rpc.ExecuteAsync<GetBlockTemplateResponse>(logger,
                 CryptonoteCommands.GetBlockTemplate, ct, request);
 
             var isSynched = response.Error is not {Code: -9};
@@ -505,14 +505,14 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
 
         // coin config
         var coin = poolConfig.Template.As<CryptonoteCoinTemplate>();
-        var infoResponse = await rpcClient.ExecuteAsync(logger, CryptonoteCommands.GetInfo, ct);
+        var infoResponse = await rpc.ExecuteAsync(logger, CryptonoteCommands.GetInfo, ct);
 
         if(infoResponse.Error != null)
             logger.ThrowLogPoolStartupException($"Init RPC failed: {infoResponse.Error.Message} (Code {infoResponse.Error.Code})");
 
         if(clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
         {
-            var addressResponse = await rpcClientWallet.ExecuteAsync<GetAddressResponse>(logger, CryptonoteWalletCommands.GetAddress, ct);
+            var addressResponse = await walletRpc.ExecuteAsync<GetAddressResponse>(logger, CryptonoteWalletCommands.GetAddress, ct);
 
             // ensure pool owns wallet
             if(clusterConfig.PaymentProcessing?.Enabled == true && addressResponse.Response?.Address != poolConfig.Address)
@@ -645,7 +645,7 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
             {
                 logger.Info(() => $"Subscribing to ZMQ push-updates from {string.Join(", ", zmq.Values)}");
 
-                var blockNotify = rpcClient.ZmqSubscribe(logger, ct, zmq)
+                var blockNotify = rpc.ZmqSubscribe(logger, ct, zmq)
                     .Where(msg =>
                     {
                         bool result = false;

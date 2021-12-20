@@ -46,9 +46,9 @@ public class EquihashJobManager : BitcoinJobManagerBase<EquihashJob>
     {
         logger.LogInvoke();
 
-        var subsidyResponse = await rpcClient.ExecuteAsync<ZCashBlockSubsidy>(logger, BitcoinCommands.GetBlockSubsidy, ct);
+        var subsidyResponse = await rpc.ExecuteAsync<ZCashBlockSubsidy>(logger, BitcoinCommands.GetBlockSubsidy, ct);
 
-        var result = await rpcClient.ExecuteAsync<EquihashBlockTemplate>(logger,
+        var result = await rpc.ExecuteAsync<EquihashBlockTemplate>(logger,
             BitcoinCommands.GetBlockTemplate, ct, extraPoolConfig?.GBTArgs ?? (object) GetBlockTemplateParams());
 
         if(subsidyResponse.Error == null && result.Error == null && result.Response != null)
@@ -202,7 +202,7 @@ public class EquihashJobManager : BitcoinJobManagerBase<EquihashJob>
             return true;
 
         // handle z-addr
-        var result = await rpcClient.ExecuteAsync<ValidateAddressResponse>(logger,
+        var result = await rpc.ExecuteAsync<ValidateAddressResponse>(logger,
             EquihashCommands.ZValidateAddress, ct, new[] { address });
 
         return result.Response is {IsValid: true};

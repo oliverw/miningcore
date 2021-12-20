@@ -52,7 +52,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
     }
 
     private DaemonEndpointConfig[] daemonEndpoints;
-    private RpcClient rpcClient;
+    private RpcClient rpc;
     private EthereumNetworkType networkType;
     private GethChainType chainType;
     private EthashFull ethash;
@@ -151,7 +151,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
             new RpcRequest(EC.GetBlockByNumber, new[] { (object) "latest", true })
         };
 
-        var responses = await rpcClient.ExecuteBatchAsync(logger, ct, requests);
+        var responses = await rpc.ExecuteBatchAsync(logger, ct, requests);
 
         if(responses.Any(x => x.Error != null))
         {
@@ -189,7 +189,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
 
     private async Task ShowDaemonSyncProgressAsync(CancellationToken ct)
     {
-        var syncStateResponse = await rpcClient.ExecuteAsync<object>(logger, EC.GetSyncState, ct);
+        var syncStateResponse = await rpc.ExecuteAsync<object>(logger, EC.GetSyncState, ct);
 
         if(syncStateResponse.Error == null)
         {
@@ -202,7 +202,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
                 var syncState = obj.ToObject<SyncState>();
 
                 // get peer count
-                var getPeerCountResponse = await rpcClient.ExecuteAsync<string>(logger, EC.GetPeerCount, ct);
+                var getPeerCountResponse = await rpc.ExecuteAsync<string>(logger, EC.GetPeerCount, ct);
                 var peerCount = getPeerCountResponse.Response.IntegralFromHex<uint>();
 
                 if(syncState?.WarpChunksAmount.HasValue == true)
@@ -248,7 +248,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
                 new RpcRequest(EC.GetBlockByNumber, new[] { (object) "latest", true })
             };
 
-            var responses = await rpcClient.ExecuteBatchAsync(logger, ct, requests);
+            var responses = await rpc.ExecuteBatchAsync(logger, ct, requests);
 
             if(responses.Any(x => x.Error != null))
             {
@@ -269,7 +269,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
 
             var sampleSize = (ulong) 300;
             var sampleBlockNumber = latestBlockHeight - sampleSize;
-            var sampleBlockResults = await rpcClient.ExecuteAsync<Block>(logger, EC.GetBlockByNumber, ct, new[] { (object) sampleBlockNumber.ToStringHexWithPrefix(), true });
+            var sampleBlockResults = await rpc.ExecuteAsync<Block>(logger, EC.GetBlockByNumber, ct, new[] { (object) sampleBlockNumber.ToStringHexWithPrefix(), true });
             var sampleBlockTimestamp = sampleBlockResults.Response.Timestamp;
 
             var blockTime = (double) (latestBlockTimestamp - sampleBlockTimestamp) / sampleSize;
@@ -288,7 +288,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
     private async Task<bool> SubmitBlockAsync(Share share, string fullNonceHex, string headerHash, string mixHash)
     {
         // submit work
-        var response = await rpcClient.ExecuteAsync<object>(logger, EC.SubmitWork, CancellationToken.None, new[]
+        var response = await rpc.ExecuteAsync<object>(logger, EC.SubmitWork, CancellationToken.None, new[]
         {
             fullNonceHex,
             headerHash,
@@ -463,19 +463,19 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
     {
         var jsonSerializerSettings = ctx.Resolve<JsonSerializerSettings>();
 
-        rpcClient = new RpcClient(daemonEndpoints.First(), jsonSerializerSettings, messageBus, poolConfig.Id);
+        rpc = new RpcClient(daemonEndpoints.First(), jsonSerializerSettings, messageBus, poolConfig.Id);
     }
 
     protected override async Task<bool> AreDaemonsHealthyAsync(CancellationToken ct)
     {
-        var response = await rpcClient.ExecuteAsync<Block>(logger, EC.GetBlockByNumber, ct, new[] { (object) "latest", true });
+        var response = await rpc.ExecuteAsync<Block>(logger, EC.GetBlockByNumber, ct, new[] { (object) "latest", true });
 
         return response.Error == null;
     }
 
     protected override async Task<bool> AreDaemonsConnectedAsync(CancellationToken ct)
     {
-        var response = await rpcClient.ExecuteAsync<string>(logger, EC.GetPeerCount, ct);
+        var response = await rpc.ExecuteAsync<string>(logger, EC.GetPeerCount, ct);
 
         return response.Error == null && response.Response.IntegralFromHex<uint>() > 0;
     }
@@ -486,7 +486,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
 
         while(true)
         {
-            var syncStateResponse = await rpcClient.ExecuteAsync<object>(logger, EC.GetSyncState, ct);
+            var syncStateResponse = await rpc.ExecuteAsync<object>(logger, EC.GetSyncState, ct);
 
             var isSynched = syncStateResponse.Response is false;
 
@@ -518,7 +518,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
             new RpcRequest(EC.GetCoinbase),
         };
 
-        var responses = await rpcClient.ExecuteBatchAsync(logger, ct, requests);
+        var responses = await rpc.ExecuteBatchAsync(logger, ct, requests);
 
         if(responses.Any(x => x.Error != null))
         {
@@ -633,7 +633,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
 
         retry:
             // stream work updates
-            var getWorkObs = rpcClient.WebsocketSubscribe(logger, ct, wsEndpointConfig, EC.Subscribe, new[] { wsSubscription })
+            var getWorkObs = rpc.WebsocketSubscribe(logger, ct, wsEndpointConfig, EC.Subscribe, new[] { wsSubscription })
                 .Publish()
                 .RefCount();
 
