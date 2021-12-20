@@ -10,7 +10,6 @@ using System.Reactive.Subjects;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks.Dataflow;
-using JetBrains.Annotations;
 using Miningcore.Configuration;
 using Miningcore.Extensions;
 using Miningcore.JsonRpc;
@@ -306,15 +305,16 @@ public class StratumConnection
         {
             var cb = await socket.ReceiveAsync(buf.AsMemory().Slice(0, BufSize), SocketFlags.Peek, ct);
 
+            if(cb == 0)
+                return false;   // End of stream
+
             if(cb < BufSize)
                 throw new Exception($"Failed to peek at connection's first {BufSize} byte(s)");
 
             switch(buf[0])
             {
                 case 0x16: // TLS 1.0 - 1.3
-                {
                     return true;
-                }
             }
         }
 
