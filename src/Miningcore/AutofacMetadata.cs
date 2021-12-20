@@ -19,3 +19,13 @@ public class CoinFamilyAttribute : Attribute
 
     public CoinFamily[] SupportedFamilies { get; }
 }
+
+public class NamedAttribute : Attribute
+{
+    public NamedAttribute(string name)
+    {
+        Name = name;
+    }
+
+    public string Name { get; }
+}

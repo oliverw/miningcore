@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Text;
+using Autofac;
 using Miningcore.Blockchain.Bitcoin.Configuration;
 using Miningcore.Blockchain.Bitcoin.DaemonResponses;
 using Miningcore.Configuration;
@@ -12,6 +13,7 @@ using Miningcore.Util;
 using NBitcoin;
 using NBitcoin.DataEncoders;
 using Newtonsoft.Json.Linq;
+using System.Reflection;
 using Contract = Miningcore.Contracts.Contract;
 using Transaction = NBitcoin.Transaction;
 
@@ -31,7 +33,6 @@ public class BitcoinJob
 
     protected Network network;
     protected IDestination poolAddressDestination;
-    protected PoolConfig poolConfig;
     protected BitcoinTemplate coin;
     private BitcoinTemplate.BitcoinNetworkParams networkParams;
     protected readonly ConcurrentDictionary<string, bool> submissions = new(StringComparer.OrdinalIgnoreCase);
@@ -42,6 +43,7 @@ public class BitcoinJob
     protected string coinbaseInitialHex;
     protected string[] merkleBranchesHex;
     protected MerkleTree mt;
+    protected IBitcoinBlockSerializer blockSerializer;
 
     ///////////////////////////////////////////
     // GetJobParams related properties
@@ -388,31 +390,9 @@ public class BitcoinJob
 
     protected virtual byte[] SerializeBlock(byte[] header, byte[] coinbase)
     {
-        var transactionCount = (uint) BlockTemplate.Transactions.Length + 1; // +1 for prepended coinbase tx
         var rawTransactionBuffer = BuildRawTransactionBuffer();
 
-        using(var stream = new MemoryStream())
-        {
-            var bs = new BitcoinStream(stream, true);
-
-            bs.ReadWrite(ref header);
-            bs.ReadWriteAsVarInt(ref transactionCount);
-
-            if(!string.IsNullOrEmpty(coin.BlockConstantCoinbasePrefix))
-            {
-                var tmp = Encoding.UTF8.GetBytes(coin.BlockConstantCoinbasePrefix);
-                bs.ReadWrite(ref tmp);
-            }
-
-            bs.ReadWrite(ref coinbase);
-            bs.ReadWrite(ref rawTransactionBuffer);
-
-            // POS coins require a zero byte appended to block which the daemon replaces with the signature
-            if(isPoS)
-                bs.ReadWrite((byte) 0);
-
-            return stream.ToArray();
-        }
+        return blockSerializer.SerializeBlock(this, isPoS, header, coinbase, rawTransactionBuffer);
     }
 
     protected virtual byte[] BuildRawTransactionBuffer()
@@ -445,20 +425,23 @@ public class BitcoinJob
             else
                 masternodes = new[] { masterNodeParameters.Masternode.ToObject<Masternode>() };
 
-            foreach(var masterNode in masternodes)
+            if(masternodes != null)
             {
-                if(!string.IsNullOrEmpty(masterNode.Payee))
+                foreach(var masterNode in masternodes)
                 {
-                    var payeeDestination = BitcoinUtils.AddressToDestination(masterNode.Payee, network);
-                    var payeeReward = masterNode.Amount;
-                    reward -= payeeReward;
+                    if(!string.IsNullOrEmpty(masterNode.Payee))
+                    {
+                        var payeeDestination = BitcoinUtils.AddressToDestination(masterNode.Payee, network);
+                        var payeeReward = masterNode.Amount;
+                        reward -= payeeReward;
 
-                    tx.Outputs.Add(payeeReward, payeeDestination);
+                        tx.Outputs.Add(payeeReward, payeeDestination);
+                    }
                 }
             }
         }
 
-        if(masterNodeParameters.SuperBlocks != null && masterNodeParameters.SuperBlocks.Length > 0)
+        if(masterNodeParameters.SuperBlocks is { Length: > 0 })
         {
             foreach(var superBlock in masterNodeParameters.SuperBlocks)
             {
@@ -492,44 +475,48 @@ public class BitcoinJob
 
     public string JobId { get; protected set; }
 
-    public void Init(BlockTemplate blockTemplate, string jobId,
-        PoolConfig poolConfig, BitcoinPoolConfigExtra extraPoolConfig,
-        ClusterConfig clusterConfig, IMasterClock clock,
-        IDestination poolAddressDestination, Network network,
-        bool isPoS, double shareMultiplier, IHashAlgorithm coinbaseHasher,
-        IHashAlgorithm headerHasher, IHashAlgorithm blockHasher)
+    public void Init(IComponentContext ctx, BlockTemplate blockTemplate, string jobId,
+        PoolConfig _poolConfig, BitcoinPoolConfigExtra extraPoolConfig,
+        ClusterConfig _clusterConfig, IMasterClock _clock,
+        IDestination _poolAddressDestination, Network _network,
+        bool _isPoS, double _shareMultiplier, IHashAlgorithm _coinbaseHasher,
+        IHashAlgorithm _headerHasher, IHashAlgorithm _blockHasher)
     {
         Contract.RequiresNonNull(blockTemplate, nameof(blockTemplate));
-        Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
-        Contract.RequiresNonNull(clusterConfig, nameof(clusterConfig));
-        Contract.RequiresNonNull(clock, nameof(clock));
-        Contract.RequiresNonNull(poolAddressDestination, nameof(poolAddressDestination));
-        Contract.RequiresNonNull(coinbaseHasher, nameof(coinbaseHasher));
-        Contract.RequiresNonNull(headerHasher, nameof(headerHasher));
-        Contract.RequiresNonNull(blockHasher, nameof(blockHasher));
+        Contract.RequiresNonNull(_poolConfig, nameof(_poolConfig));
+        Contract.RequiresNonNull(_clusterConfig, nameof(_clusterConfig));
+        Contract.RequiresNonNull(_clock, nameof(_clock));
+        Contract.RequiresNonNull(_poolAddressDestination, nameof(_poolAddressDestination));
+        Contract.RequiresNonNull(_coinbaseHasher, nameof(_coinbaseHasher));
+        Contract.RequiresNonNull(_headerHasher, nameof(_headerHasher));
+        Contract.RequiresNonNull(_blockHasher, nameof(_blockHasher));
         Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(jobId), $"{nameof(jobId)} must not be empty");
 
-        this.poolConfig = poolConfig;
-        coin = poolConfig.Template.As<BitcoinTemplate>();
-        networkParams = coin.GetNetwork(network.ChainName);
+        coin = _poolConfig.Template.As<BitcoinTemplate>();
+        networkParams = coin.GetNetwork(_network.ChainName);
         txVersion = coin.CoinbaseTxVersion;
-        this.network = network;
-        this.clock = clock;
-        this.poolAddressDestination = poolAddressDestination;
+        network = _network;
+        clock = _clock;
+        poolAddressDestination = _poolAddressDestination;
         BlockTemplate = blockTemplate;
         JobId = jobId;
 
-        var coinbaseString = !string.IsNullOrEmpty(clusterConfig.PaymentProcessing?.CoinbaseString) ?
-            clusterConfig.PaymentProcessing?.CoinbaseString.Trim() : "Miningcore";
+        if(string.IsNullOrEmpty(coin.BlockSerializer))
+            blockSerializer = ctx.Resolve<BitcoinBlockSerializer>();
+        else
+            blockSerializer = ctx.Resolve<IEnumerable<IBitcoinBlockSerializer>>().First(x=>
+                x.GetType().GetCustomAttributes<NamedAttribute>().Any(y=> y.Name == coin.BlockSerializer));
+
+        var coinbaseString = !string.IsNullOrEmpty(_clusterConfig.PaymentProcessing?.CoinbaseString) ?
+            _clusterConfig.PaymentProcessing?.CoinbaseString.Trim() : "Miningcore";
 
         scriptSigFinalBytes = new Script(Op.GetPushOp(Encoding.UTF8.GetBytes(coinbaseString))).ToBytes();
 
-        //Difficulty = new Target(new Org.BouncyCastle.Math.BigInteger(BlockTemplate.Target, 16)).Difficulty;
         Difficulty = new Target(System.Numerics.BigInteger.Parse(BlockTemplate.Target, NumberStyles.HexNumber)).Difficulty;
 
         extraNoncePlaceHolderLength = BitcoinConstants.ExtranoncePlaceHolderLength;
-        this.isPoS = isPoS;
-        this.shareMultiplier = shareMultiplier;
+        isPoS = _isPoS;
+        shareMultiplier = _shareMultiplier;
 
         txComment = !string.IsNullOrEmpty(extraPoolConfig?.CoinbaseTxComment) ?
             extraPoolConfig.CoinbaseTxComment : coin.CoinbaseTxComment;
@@ -549,9 +536,9 @@ public class BitcoinJob
         if(coin.HasPayee)
             payeeParameters = BlockTemplate.Extra.SafeExtensionDataAs<PayeeBlockTemplateExtra>();
 
-        this.coinbaseHasher = coinbaseHasher;
-        this.headerHasher = headerHasher;
-        this.blockHasher = blockHasher;
+        coinbaseHasher = _coinbaseHasher;
+        headerHasher = _headerHasher;
+        blockHasher = _blockHasher;
 
         if(!string.IsNullOrEmpty(BlockTemplate.Target))
             blockTargetValue = new uint256(BlockTemplate.Target);

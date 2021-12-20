@@ -867,7 +867,7 @@
             "hash": "reverse",
             "args": [ { "hash": "sha256d" } ]
         },
-        "blockConstantCoinbasePrefix": "0000000000000000000000000000000000000000000000000000000000000000",
+        "blockSerializer": "gale",
         "hasMasterNodes": true,
         "explorerBlockLink": "http://202.61.204.198:3001/block/$hash$",
         "explorerTxLink": "http://202.61.204.198:3001/tx/{0}",

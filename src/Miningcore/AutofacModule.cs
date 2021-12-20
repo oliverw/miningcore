@@ -97,6 +97,22 @@ public class AutofacModule : Module
             .SingleInstance();
 
         //////////////////////
+        // Bitcoin Block Serializers
+
+        builder.RegisterType<BitcoinBlockSerializer>()
+            .AsSelf()
+            .AsImplementedInterfaces()
+            .SingleInstance();
+
+        builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
+            .Where(t => t.GetCustomAttributes<NamedAttribute>().Any() && t.GetInterfaces()
+                .Any(i =>
+                    i.IsAssignableFrom(typeof(IBitcoinBlockSerializer))))
+            .WithMetadataFrom<NamedAttribute>()
+            .AsImplementedInterfaces()
+            .SingleInstance();
+
+        //////////////////////
         // Background services
 
         builder.RegisterType<PayoutManager>()
