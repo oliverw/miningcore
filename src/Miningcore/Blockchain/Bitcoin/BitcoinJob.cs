@@ -397,6 +397,13 @@ public class BitcoinJob
 
             bs.ReadWrite(ref header);
             bs.ReadWriteAsVarInt(ref transactionCount);
+
+            if(!string.IsNullOrEmpty(coin.BlockConstantCoinbasePrefix))
+            {
+                var tmp = Encoding.UTF8.GetBytes(coin.BlockConstantCoinbasePrefix);
+                bs.ReadWrite(ref tmp);
+            }
+
             bs.ReadWrite(ref coinbase);
             bs.ReadWrite(ref rawTransactionBuffer);
 

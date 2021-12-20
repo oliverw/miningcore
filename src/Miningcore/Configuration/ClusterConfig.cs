@@ -169,6 +169,9 @@ public partial class BitcoinTemplate : CoinTemplate
 
     [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
     public int? CoinbaseMinConfimations { get; set; }
+
+    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+    public string BlockConstantCoinbasePrefix { get; set; }
 }
 
 public enum EquihashSubfamily
