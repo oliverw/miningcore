@@ -74,8 +74,7 @@ public class AutofacModule : Module
             .Where(t => t.GetCustomAttributes<IdentifierAttribute>().Any() &&
                 t.GetInterfaces().Any(i => i.IsAssignableFrom(typeof(IHashAlgorithm))))
             .Named<IHashAlgorithm>(t=> t.GetCustomAttributes<IdentifierAttribute>().First().Name)
-            .PropertiesAutowired()
-            .AsSelf();
+            .PropertiesAutowired();
 
         builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
             .Where(t => t.IsAssignableTo<EquihashSolver>())
