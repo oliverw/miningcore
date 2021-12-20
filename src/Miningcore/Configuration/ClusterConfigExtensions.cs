@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Numerics;
 using Autofac;
+using JetBrains.Annotations;
 using Miningcore.Crypto;
 using Miningcore.Crypto.Hashing.Algorithms;
 using NBitcoin;
@@ -29,36 +30,16 @@ public partial class BitcoinTemplate
     public BitcoinTemplate()
     {
         coinbaseHasherValue = new Lazy<IHashAlgorithm>(() =>
-        {
-            if(CoinbaseHasher == null)
-                return null;
-
-            return HashAlgorithmFactory.GetHash(ComponentContext, CoinbaseHasher);
-        });
+            HashAlgorithmFactory.GetHash(ComponentContext, CoinbaseHasher));
 
         headerHasherValue = new Lazy<IHashAlgorithm>(() =>
-        {
-            if(HeaderHasher == null)
-                return null;
-
-            return HashAlgorithmFactory.GetHash(ComponentContext, HeaderHasher);
-        });
+            HashAlgorithmFactory.GetHash(ComponentContext, HeaderHasher));
 
         blockHasherValue = new Lazy<IHashAlgorithm>(() =>
-        {
-            if(BlockHasher == null)
-                return null;
-
-            return HashAlgorithmFactory.GetHash(ComponentContext, BlockHasher);
-        });
+            HashAlgorithmFactory.GetHash(ComponentContext, BlockHasher));
 
         posBlockHasherValue = new Lazy<IHashAlgorithm>(() =>
-        {
-            if(PoSBlockHasher == null)
-                return null;
-
-            return HashAlgorithmFactory.GetHash(ComponentContext, PoSBlockHasher);
-        });
+            HashAlgorithmFactory.GetHash(ComponentContext, PoSBlockHasher));
     }
 
     private readonly Lazy<IHashAlgorithm> coinbaseHasherValue;
@@ -66,7 +47,7 @@ public partial class BitcoinTemplate
     private readonly Lazy<IHashAlgorithm> blockHasherValue;
     private readonly Lazy<IHashAlgorithm> posBlockHasherValue;
 
-    public IComponentContext ComponentContext { get; set; }
+    public IComponentContext ComponentContext { get; [UsedImplicitly] init; }
 
     public IHashAlgorithm CoinbaseHasherValue => coinbaseHasherValue.Value;
     public IHashAlgorithm HeaderHasherValue => headerHasherValue.Value;

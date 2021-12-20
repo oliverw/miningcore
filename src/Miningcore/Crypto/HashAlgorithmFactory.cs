@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using Autofac;
-using Miningcore.Crypto.Hashing.Algorithms;
 using Newtonsoft.Json.Linq;
 
 namespace Miningcore.Crypto;
@@ -11,35 +10,39 @@ public static class HashAlgorithmFactory
 
     public static IHashAlgorithm GetHash(IComponentContext ctx, JObject definition)
     {
+        if(definition == null)
+            return null;
+
         var hash = definition["hash"]?.Value<string>()?.ToLower();
 
         if(string.IsNullOrEmpty(hash))
             throw new NotSupportedException("$Invalid or empty hash value {hash}");
 
-        var args = definition["args"]?
+        var parameters = definition["args"]?
             .Select(token => token.Type == JTokenType.Object ? GetHash(ctx, (JObject) token) : token.Value<object>())
             .ToArray();
 
-        return InstantiateHash(ctx, hash, args);
+        return InstantiateHash(ctx, hash, parameters);
     }
 
-    private static IHashAlgorithm InstantiateHash(IComponentContext ctx, string name, object[] args)
+    private static IHashAlgorithm InstantiateHash(IComponentContext ctx, string name, object[] parameters)
     {
-        var hasArgs = args is { Length: > 0 };
+        var isParameterized = parameters is { Length: > 0 };
 
         // check cache
-        if(!hasArgs && cache.TryGetValue(name, out var result))
+        if(!isParameterized && cache.TryGetValue(name, out var result))
             return result;
 
         // instantiate (through DI)
-        if(!hasArgs)
+        if(!isParameterized)
         {
             result = ctx.ResolveNamed<IHashAlgorithm>(name);
+
             cache.TryAdd(name, result);
         }
 
         else
-            result = ctx.ResolveNamed<IHashAlgorithm>(name, args.Select((x, i) => new PositionalParameter(i, x)));
+            result = ctx.ResolveNamed<IHashAlgorithm>(name, parameters.Select((x, i) => new PositionalParameter(i, x)));
 
         return result;
     }
