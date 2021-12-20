@@ -33,7 +33,6 @@ public static class HashAlgorithmFactory
         if(!isParameterized && cache.TryGetValue(name, out var result))
             return result;
 
-        // instantiate (through DI)
         if(!isParameterized)
         {
             result = ctx.ResolveNamed<IHashAlgorithm>(name);
@@ -42,7 +41,11 @@ public static class HashAlgorithmFactory
         }
 
         else
-            result = ctx.ResolveNamed<IHashAlgorithm>(name, parameters.Select((x, i) => new PositionalParameter(i, x)));
+        {
+            var positionalParameters = parameters.Select((x, i) => new PositionalParameter(i, x));
+
+            result = ctx.ResolveNamed<IHashAlgorithm>(name, positionalParameters);
+        }
 
         return result;
     }
