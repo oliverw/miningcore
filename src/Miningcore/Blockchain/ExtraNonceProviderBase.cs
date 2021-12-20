@@ -8,7 +8,7 @@ public class ExtraNonceProviderBase : IExtraNonceProvider
 {
     protected ExtraNonceProviderBase(string poolId, int extranonceBytes, byte? instanceId)
     {
-        this.logger = LogUtil.GetPoolScopedLogger(this.GetType(), poolId);
+        logger = LogUtil.GetPoolScopedLogger(GetType(), poolId);
 
         this.extranonceBytes = extranonceBytes;
         idShift = (extranonceBytes * 8) - IdBits;
