@@ -504,8 +504,7 @@ public class BitcoinJob
         if(string.IsNullOrEmpty(coin.BlockSerializer))
             blockSerializer = ctx.Resolve<BitcoinBlockSerializer>();
         else
-            blockSerializer = ctx.Resolve<IEnumerable<IBitcoinBlockSerializer>>().First(x=>
-                x.GetType().GetCustomAttributes<NamedAttribute>().Any(y=> y.Name == coin.BlockSerializer));
+            blockSerializer = ctx.ResolveNamed<IBitcoinBlockSerializer>(coin.BlockSerializer);
 
         var coinbaseString = !string.IsNullOrEmpty(_clusterConfig.PaymentProcessing?.CoinbaseString) ?
             _clusterConfig.PaymentProcessing?.CoinbaseString.Trim() : "Miningcore";

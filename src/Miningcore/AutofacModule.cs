@@ -101,15 +101,12 @@ public class AutofacModule : Module
 
         builder.RegisterType<BitcoinBlockSerializer>()
             .AsSelf()
-            .AsImplementedInterfaces()
             .SingleInstance();
 
         builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
             .Where(t => t.GetCustomAttributes<NamedAttribute>().Any() && t.GetInterfaces()
-                .Any(i =>
-                    i.IsAssignableFrom(typeof(IBitcoinBlockSerializer))))
-            .WithMetadataFrom<NamedAttribute>()
-            .AsImplementedInterfaces()
+                .Any(i => i.IsAssignableFrom(typeof(IBitcoinBlockSerializer))))
+            .Named<IBitcoinBlockSerializer>(t=> t.GetCustomAttributes<NamedAttribute>().First().Name)
             .SingleInstance();
 
         //////////////////////
