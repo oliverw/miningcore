@@ -478,8 +478,7 @@ public class EthereumPool : PoolBase
                     break;
 
                 case EthereumStratumMethods.SubmitHashrate:
-                    // Pretend to support it even though we actually do not. Some miners drop the connection upon receiving an error from this
-                    await connection.RespondAsync(true, request.Id);
+                    // just ignore this
                     break;
 
                 default:
