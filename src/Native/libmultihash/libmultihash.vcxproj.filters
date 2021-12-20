@@ -254,9 +254,6 @@
     <ClInclude Include="brg_endian.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="x25x.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="lane.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -512,9 +509,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="KeccakP-800-reference.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="x25x.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="lane.c">

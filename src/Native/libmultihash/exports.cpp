@@ -47,7 +47,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "x16s.h"
 #include "x16rv2.h"
 #include "x21s.h"
-#include "x25x.h"
 #include "sha256csm.h"
 #include "hmq17.h"
 #include "phi.h"
@@ -256,11 +255,6 @@ extern "C" MODULE_API void x21s_export(const char* input, char* output, uint32_t
 extern "C" MODULE_API void x22i_export(const char* input, char* output, uint32_t input_len)
 {
     x22i_hash(input, output, input_len);
-}
-
-extern "C" MODULE_API void x25x_export(const char* input, char* output, uint32_t input_len)
-{
-    x25x_hash(input, output, input_len);
 }
 
 extern "C" MODULE_API int verthash_init_export(const char* filename, int createIfMissing)
