@@ -14,8 +14,6 @@ public class EthereumWorkerContext : WorkerContextBase
     /// </summary>
     public string Worker { get; set; }
 
-    public bool IsInitialWorkSent { get; set; } = false;
-
     /// <summary>
     /// Stratum protocol version
     /// </summary>
