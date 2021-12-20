@@ -10,6 +10,7 @@ using System.Reactive.Subjects;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks.Dataflow;
+using JetBrains.Annotations;
 using Miningcore.Configuration;
 using Miningcore.Extensions;
 using Miningcore.JsonRpc;
@@ -40,11 +41,6 @@ public class StratumConnection
         this.clock = clock;
         ConnectionId = connectionId;
         IsAlive = true;
-    }
-
-    public StratumConnection()
-    {
-        // For unit testing only
     }
 
     private readonly ILogger logger;
