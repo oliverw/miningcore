@@ -298,12 +298,12 @@ public class StratumConnection
         // https://tls.ulfheim.net/
         // https://tls13.ulfheim.net/
 
-        const int BufSize = 3;
+        const int BufSize = 1;
         var buf = ArrayPool<byte>.Shared.Rent(BufSize);
 
         try
         {
-            var cb = await socket.ReceiveAsync(buf.AsMemory().Slice(0, BufSize), SocketFlags.Peek, ct);
+            var cb = await socket.ReceiveAsync(buf.AsMemory()[..BufSize], SocketFlags.Peek, ct);
 
             if(cb == 0)
                 return false;   // End of stream
