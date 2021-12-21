@@ -152,7 +152,7 @@ extern "C" MODULE_API bool cryptonight_export(const uint8_t * input, size_t inpu
     return true;
 }
 
-extern "C" MODULE_API bool cryptonight_light_export(const uint8_t * input, size_t input_length,
+extern "C" MODULE_API bool cryptonight_lite_export(const uint8_t * input, size_t input_length,
     char* output, int algo, uint64_t height, struct cryptonight_ctx* ctx)
 {
     if (input_length == 0)

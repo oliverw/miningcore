@@ -71,8 +71,8 @@ public static unsafe class libcryptonight
     [DllImport("libcryptonight", EntryPoint = "cryptonight_export", CallingConvention = CallingConvention.Cdecl)]
     private static extern bool cryptonight(byte* input, int inputLength, void* output, Algorithm algo, ulong height, IntPtr ctx);
 
-    [DllImport("libcryptonight", EntryPoint = "cryptonight_light_export", CallingConvention = CallingConvention.Cdecl)]
-    private static extern bool cryptonight_light(byte* input, int inputLength, void* output, Algorithm algo, ulong height, IntPtr ctx);
+    [DllImport("libcryptonight", EntryPoint = "cryptonight_lite_export", CallingConvention = CallingConvention.Cdecl)]
+    private static extern bool cryptonight_lite(byte* input, int inputLength, void* output, Algorithm algo, ulong height, IntPtr ctx);
 
     [DllImport("libcryptonight", EntryPoint = "cryptonight_heavy_export", CallingConvention = CallingConvention.Cdecl)]
     private static extern bool cryptonight_heavy(byte* input, int inputLength, void* output, Algorithm algo, ulong height, IntPtr ctx);
@@ -213,7 +213,7 @@ public static unsafe class libcryptonight
             {
                 using(var lease = new ContextLease())
                 {
-                    var success = cryptonight_light(input, data.Length, output, algo, height, lease.Context.Handle);
+                    var success = cryptonight_lite(input, data.Length, output, algo, height, lease.Context.Handle);
                     Debug.Assert(success);
 
                     messageBus?.SendTelemetry(algo.ToString(), TelemetryCategory.Hash, sw.Elapsed, true);
