@@ -391,6 +391,9 @@ public class Program : BackgroundService
             logger.Info(() => $"Version {assemblySemVer}-{branchName} [{sha}]");
         }
 
+        else
+            logger.Info(() => "Version [unknown]");
+
         logger.Info(() => $"Runtime {RuntimeInformation.FrameworkDescription.Trim()} on {RuntimeInformation.OSDescription.Trim()} [{RuntimeInformation.ProcessArchitecture}]");
     }
 
