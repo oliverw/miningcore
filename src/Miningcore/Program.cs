@@ -719,7 +719,7 @@ public class Program : BackgroundService
 
         // Configure Cryptonight
         libcryptonight.messageBus = messageBus;
-        libcryptonight.ContextInit(clusterConfig.CryptonightMaxThreads ?? 1);
+        libcryptonight.InitContexts(clusterConfig.CryptonightMaxThreads ?? 1);
 
         // Configure RandomX
         librandomx.messageBus = messageBus;

@@ -69,19 +69,19 @@ public static unsafe class libcryptonight
     private static extern void free_context(IntPtr ctx);
 
     [DllImport("libcryptonight", EntryPoint = "cryptonight_export", CallingConvention = CallingConvention.Cdecl)]
-    public static extern bool cryptonight(byte* input, int inputLength, void* output, Algorithm algo, ulong height, IntPtr ctx);
+    private static extern bool cryptonight(byte* input, int inputLength, void* output, Algorithm algo, ulong height, IntPtr ctx);
 
     [DllImport("libcryptonight", EntryPoint = "cryptonight_light_export", CallingConvention = CallingConvention.Cdecl)]
-    public static extern bool cryptonight_light(byte* input, int inputLength, void* output, Algorithm algo, ulong height, IntPtr ctx);
+    private static extern bool cryptonight_light(byte* input, int inputLength, void* output, Algorithm algo, ulong height, IntPtr ctx);
 
     [DllImport("libcryptonight", EntryPoint = "cryptonight_heavy_export", CallingConvention = CallingConvention.Cdecl)]
-    public static extern bool cryptonight_heavy(byte* input, int inputLength, void* output, Algorithm algo, ulong height, IntPtr ctx);
+    private static extern bool cryptonight_heavy(byte* input, int inputLength, void* output, Algorithm algo, ulong height, IntPtr ctx);
 
     [DllImport("libcryptonight", EntryPoint = "cryptonight_pico_export", CallingConvention = CallingConvention.Cdecl)]
-    public static extern bool cryptonight_pico(byte* input, int inputLength, void* output, Algorithm algo, ulong height, IntPtr ctx);
+    private static extern bool cryptonight_pico(byte* input, int inputLength, void* output, Algorithm algo, ulong height, IntPtr ctx);
 
     [DllImport("libcryptonight", EntryPoint = "argon_export", CallingConvention = CallingConvention.Cdecl)]
-    public static extern bool argon(byte* input, int inputLength, void* output, Algorithm algo, ulong height, IntPtr ctx);
+    private static extern bool argon(byte* input, int inputLength, void* output, Algorithm algo, ulong height, IntPtr ctx);
 
     #region Context managment
 
@@ -109,31 +109,27 @@ public static unsafe class libcryptonight
         }
     }
 
-    public static void ContextInit(int maxParallelism)
+    private readonly struct ContextLease : IDisposable
+    {
+        public ContextLease()
+        {
+            Context = contexts.Take();
+        }
+
+        public Context Context { get; }
+
+        public void Dispose()
+        {
+            contexts.Add(Context);
+        }
+    }
+
+    public static void InitContexts(int maxParallelism)
     {
         contexts = new BlockingCollection<Context>();
 
         for(var i=0;i<maxParallelism;i++)
             contexts.Add(new Context());
-    }
-
-    public static void ContextDispose()
-    {
-        contexts.CompleteAdding();
-
-        try
-        {
-            while(true)
-            {
-                var ctx = contexts.Take();
-                ctx.Dispose();
-            }
-        }
-
-        catch(InvalidOperationException)
-        {
-            // ignored
-        }
     }
 
     #endregion // Context managment
@@ -193,19 +189,12 @@ public static unsafe class libcryptonight
         {
             fixed (byte* output = result)
             {
-                var ctx = contexts.Take();
-
-                try
+                using(var lease = new ContextLease())
                 {
-                    var success = cryptonight(input, data.Length, output, algo, height, ctx.Handle);
+                    var success = cryptonight(input, data.Length, output, algo, height, lease.Context.Handle);
                     Debug.Assert(success);
 
                     messageBus?.SendTelemetry(algo.ToString(), TelemetryCategory.Hash, sw.Elapsed, true);
-                }
-
-                finally
-                {
-                    contexts.Add(ctx);
                 }
             }
         }
@@ -222,19 +211,12 @@ public static unsafe class libcryptonight
         {
             fixed (byte* output = result)
             {
-                var ctx = contexts.Take();
-
-                try
+                using(var lease = new ContextLease())
                 {
-                    var success = cryptonight_light(input, data.Length, output, algo, height, ctx.Handle);
+                    var success = cryptonight_light(input, data.Length, output, algo, height, lease.Context.Handle);
                     Debug.Assert(success);
 
                     messageBus?.SendTelemetry(algo.ToString(), TelemetryCategory.Hash, sw.Elapsed, true);
-                }
-
-                finally
-                {
-                    contexts.Add(ctx);
                 }
             }
         }
@@ -251,19 +233,12 @@ public static unsafe class libcryptonight
         {
             fixed (byte* output = result)
             {
-                var ctx = contexts.Take();
-
-                try
+                using(var lease = new ContextLease())
                 {
-                    var success = cryptonight_heavy(input, data.Length, output, algo, height, ctx.Handle);
+                    var success = cryptonight_heavy(input, data.Length, output, algo, height, lease.Context.Handle);
                     Debug.Assert(success);
 
                     messageBus?.SendTelemetry(algo.ToString(), TelemetryCategory.Hash, sw.Elapsed, true);
-                }
-
-                finally
-                {
-                    contexts.Add(ctx);
                 }
             }
         }
@@ -280,19 +255,12 @@ public static unsafe class libcryptonight
         {
             fixed (byte* output = result)
             {
-                var ctx = contexts.Take();
-
-                try
+                using(var lease = new ContextLease())
                 {
-                    var success = cryptonight_pico(input, data.Length, output, algo, height, ctx.Handle);
+                    var success = cryptonight_pico(input, data.Length, output, algo, height, lease.Context.Handle);
                     Debug.Assert(success);
 
                     messageBus?.SendTelemetry(algo.ToString(), TelemetryCategory.Hash, sw.Elapsed, true);
-                }
-
-                finally
-                {
-                    contexts.Add(ctx);
                 }
             }
         }
@@ -309,19 +277,12 @@ public static unsafe class libcryptonight
         {
             fixed (byte* output = result)
             {
-                var ctx = contexts.Take();
-
-                try
+                using(var lease = new ContextLease())
                 {
-                    var success = argon(input, data.Length, output, algo, height, ctx.Handle);
+                    var success = argon(input, data.Length, output, algo, height, lease.Context.Handle);
                     Debug.Assert(success);
 
                     messageBus?.SendTelemetry(algo.ToString(), TelemetryCategory.Hash, sw.Elapsed, true);
-                }
-
-                finally
-                {
-                    contexts.Add(ctx);
                 }
             }
         }
