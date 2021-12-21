@@ -1,9 +1,6 @@
-using System.Buffers;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using System.Text;
-using JetBrains.Annotations;
 using Miningcore.Contracts;
 using Miningcore.Extensions;
 using Miningcore.Messaging;
@@ -142,6 +139,8 @@ public static unsafe class libcryptonight
         contexts = null;
     }
 
+    #endregion // Context managment
+
     private static readonly HashSet<Algorithm> validCryptonightAlgos = new()
     {
         Algorithm.CN_0,
@@ -160,7 +159,31 @@ public static unsafe class libcryptonight
         Algorithm.GHOSTRIDER_RTM,
     };
 
-    #endregion // Context managment
+    private static readonly HashSet<Algorithm> validCryptonightLiteAlgos = new()
+    {
+        Algorithm.CN_LITE_0,
+        Algorithm.CN_LITE_1,
+    };
+
+    private static readonly HashSet<Algorithm> validCryptonightHeavyAlgos = new()
+    {
+        Algorithm.CN_HEAVY_0,
+        Algorithm.CN_HEAVY_XHV,
+        Algorithm.CN_HEAVY_TUBE,
+    };
+
+    private static readonly HashSet<Algorithm> validCryptonightPicoAlgos = new()
+    {
+        Algorithm.CN_PICO_0,
+        Algorithm.CN_PICO_TLO,
+    };
+
+    private static readonly HashSet<Algorithm> validArgonAlgos = new()
+    {
+        Algorithm.AR2_WRKZ,
+        Algorithm.AR2_CHUKWA,
+        Algorithm.AR2_CHUKWA_V2,
+    };
 
     public static void Cryptonight(ReadOnlySpan<byte> data, Span<byte> result, Algorithm algo, ulong height)
     {
@@ -178,6 +201,122 @@ public static unsafe class libcryptonight
                 try
                 {
                     var success = cryptonight(input, data.Length, output, algo, height, ctx.Handle);
+                    Debug.Assert(success);
+
+                    messageBus?.SendTelemetry(algo.ToString(), TelemetryCategory.Hash, sw.Elapsed, true);
+                }
+
+                finally
+                {
+                    contexts.Add(ctx);
+                }
+            }
+        }
+    }
+
+    public static void CryptonightLite(ReadOnlySpan<byte> data, Span<byte> result, Algorithm algo, ulong height)
+    {
+        Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
+        Contract.Requires<ArgumentException>(validCryptonightLiteAlgos.Contains(algo), $"{nameof(algo)} does not fall into valid range");
+
+        var sw = Stopwatch.StartNew();
+
+        fixed (byte* input = data)
+        {
+            fixed (byte* output = result)
+            {
+                var ctx = contexts.Take();
+
+                try
+                {
+                    var success = cryptonight_light(input, data.Length, output, algo, height, ctx.Handle);
+                    Debug.Assert(success);
+
+                    messageBus?.SendTelemetry(algo.ToString(), TelemetryCategory.Hash, sw.Elapsed, true);
+                }
+
+                finally
+                {
+                    contexts.Add(ctx);
+                }
+            }
+        }
+    }
+
+    public static void CryptonightHeavy(ReadOnlySpan<byte> data, Span<byte> result, Algorithm algo, ulong height)
+    {
+        Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
+        Contract.Requires<ArgumentException>(validCryptonightHeavyAlgos.Contains(algo), $"{nameof(algo)} does not fall into valid range");
+
+        var sw = Stopwatch.StartNew();
+
+        fixed (byte* input = data)
+        {
+            fixed (byte* output = result)
+            {
+                var ctx = contexts.Take();
+
+                try
+                {
+                    var success = cryptonight_heavy(input, data.Length, output, algo, height, ctx.Handle);
+                    Debug.Assert(success);
+
+                    messageBus?.SendTelemetry(algo.ToString(), TelemetryCategory.Hash, sw.Elapsed, true);
+                }
+
+                finally
+                {
+                    contexts.Add(ctx);
+                }
+            }
+        }
+    }
+
+    public static void CryptonightPico(ReadOnlySpan<byte> data, Span<byte> result, Algorithm algo, ulong height)
+    {
+        Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
+        Contract.Requires<ArgumentException>(validCryptonightPicoAlgos.Contains(algo), $"{nameof(algo)} does not fall into valid range");
+
+        var sw = Stopwatch.StartNew();
+
+        fixed (byte* input = data)
+        {
+            fixed (byte* output = result)
+            {
+                var ctx = contexts.Take();
+
+                try
+                {
+                    var success = cryptonight_pico(input, data.Length, output, algo, height, ctx.Handle);
+                    Debug.Assert(success);
+
+                    messageBus?.SendTelemetry(algo.ToString(), TelemetryCategory.Hash, sw.Elapsed, true);
+                }
+
+                finally
+                {
+                    contexts.Add(ctx);
+                }
+            }
+        }
+    }
+
+    public static void Argon(ReadOnlySpan<byte> data, Span<byte> result, Algorithm algo, ulong height)
+    {
+        Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
+        Contract.Requires<ArgumentException>(validArgonAlgos.Contains(algo), $"{nameof(algo)} does not fall into valid range");
+
+        var sw = Stopwatch.StartNew();
+
+        fixed (byte* input = data)
+        {
+            fixed (byte* output = result)
+            {
+                var ctx = contexts.Take();
+
+                try
+                {
+                    var success = argon(input, data.Length, output, algo, height, ctx.Handle);
                     Debug.Assert(success);
 
                     messageBus?.SendTelemetry(algo.ToString(), TelemetryCategory.Hash, sw.Elapsed, true);
