@@ -14,7 +14,7 @@ public unsafe class Skein : IHashAlgorithm
         {
             fixed (byte* output = result)
             {
-                LibMultihash.skein(input, output, (uint) data.Length);
+                libmultihash.skein(input, output, (uint) data.Length);
             }
         }
     }

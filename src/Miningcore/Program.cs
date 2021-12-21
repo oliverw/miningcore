@@ -709,9 +709,7 @@ public class Program : BackgroundService
 
         // Configure Equihash
         EquihashSolver.messageBus = messageBus;
-
-        if(clusterConfig.EquihashMaxThreads.HasValue)
-            EquihashSolver.MaxThreads = clusterConfig.EquihashMaxThreads.Value;
+        EquihashSolver.MaxThreads = clusterConfig.EquihashMaxThreads ?? 1;
 
         // Configure Ethhash
         Dag.messageBus = messageBus;
@@ -719,8 +717,12 @@ public class Program : BackgroundService
         // Configure Verthash
         Verthash.messageBus = messageBus;
 
+        // Configure Cryptonight
+        libcryptonight.messageBus = messageBus;
+        libcryptonight.ContextInit(clusterConfig.CryptonightMaxThreads ?? 1);
+
         // Configure RandomX
-        LibRandomX.messageBus = messageBus;
+        librandomx.messageBus = messageBus;
     }
 
     private static void ConfigurePersistence(ContainerBuilder builder)

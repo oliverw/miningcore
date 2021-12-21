@@ -22,7 +22,7 @@ public unsafe class NeoScrypt : IHashAlgorithm
         {
             fixed (byte* output = result)
             {
-                LibMultihash.neoscrypt(input, output, (uint) data.Length, profile);
+                libmultihash.neoscrypt(input, output, (uint) data.Length, profile);
             }
         }
     }

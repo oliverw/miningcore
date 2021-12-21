@@ -14,7 +14,7 @@ public unsafe class X22I : IHashAlgorithm
         {
             fixed (byte* output = result)
             {
-                LibMultihash.x22i(input, output, (uint) data.Length);
+                libmultihash.x22i(input, output, (uint) data.Length);
             }
         }
     }

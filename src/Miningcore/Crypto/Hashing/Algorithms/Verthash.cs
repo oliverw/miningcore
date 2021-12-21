@@ -27,7 +27,7 @@ public unsafe class Verthash :
         {
             fixed (byte* output = result)
             {
-                LibMultihash.verthash(input, output, data.Length);
+                libmultihash.verthash(input, output, data.Length);
             }
         }
 
@@ -45,6 +45,6 @@ public unsafe class Verthash :
 
         logger.Info(()=> $"Loading verthash data file {vertHashDataFile}");
 
-        return LibMultihash.verthash_init(vertHashDataFile, false) == 0;
+        return libmultihash.verthash_init(vertHashDataFile, false) == 0;
     }
 }

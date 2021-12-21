@@ -14,7 +14,7 @@ public unsafe class Blake2b : IHashAlgorithm
         {
             fixed (byte* output = result)
             {
-                LibMultihash.blake2b(input, output, (uint) data.Length, result.Length);
+                libmultihash.blake2b(input, output, (uint) data.Length, result.Length);
             }
         }
     }

@@ -14,7 +14,7 @@ public unsafe class X11 : IHashAlgorithm
         {
             fixed (byte* output = result)
             {
-                LibMultihash.x11(input, output, (uint) data.Length);
+                libmultihash.x11(input, output, (uint) data.Length);
             }
         }
     }

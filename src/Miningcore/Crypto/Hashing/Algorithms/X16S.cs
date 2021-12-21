@@ -14,7 +14,7 @@ public unsafe class X16S : IHashAlgorithm
         {
             fixed (byte* output = result)
             {
-                LibMultihash.x16s(input, output, (uint) data.Length);
+                libmultihash.x16s(input, output, (uint) data.Length);
             }
         }
     }

@@ -820,6 +820,11 @@ public partial class ClusterConfig
     /// </summary>
     public int? EquihashMaxThreads { get; set; }
 
+    /// <summary>
+    /// Cryptonight maximum parallelism
+    /// </summary>
+    public int? CryptonightMaxThreads { get; set; }
+
     public string ShareRecoveryFile { get; set; }
 
     public PoolConfig[] Pools { get; set; }

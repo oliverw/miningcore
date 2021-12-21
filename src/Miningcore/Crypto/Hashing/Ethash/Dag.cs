@@ -32,7 +32,7 @@ public class Dag : IDisposable
 
         fixed (byte* data = chars)
         {
-            if(LibEthhash.ethash_get_default_dirname(data, chars.Length))
+            if(libethhash.ethash_get_default_dirname(data, chars.Length))
             {
                 int length;
                 for(length = 0; length < chars.Length; length++)
@@ -52,7 +52,7 @@ public class Dag : IDisposable
     {
         if(handle != IntPtr.Zero)
         {
-            LibEthhash.ethash_full_delete(handle);
+            libethhash.ethash_full_delete(handle);
             handle = IntPtr.Zero;
         }
     }
@@ -79,12 +79,12 @@ public class Dag : IDisposable
                     var block = Epoch * EthereumConstants.EpochLength;
 
                     // Generate a temporary cache
-                    var light = LibEthhash.ethash_light_new(block);
+                    var light = libethhash.ethash_light_new(block);
 
                     try
                     {
                         // Generate the actual DAG
-                        handle = LibEthhash.ethash_full_new(dagDir, light, progress =>
+                        handle = libethhash.ethash_full_new(dagDir, light, progress =>
                         {
                             logger.Info(() => $"Generating DAG for epoch {Epoch}: {progress}%");
 
@@ -100,7 +100,7 @@ public class Dag : IDisposable
                     finally
                     {
                         if(light != IntPtr.Zero)
-                            LibEthhash.ethash_light_delete(light);
+                            libethhash.ethash_light_delete(light);
                     }
                 }
 
@@ -123,11 +123,11 @@ public class Dag : IDisposable
         mixDigest = null;
         result = null;
 
-        var value = new LibEthhash.ethash_return_value();
+        var value = new libethhash.ethash_return_value();
 
         fixed (byte* input = hash)
         {
-            LibEthhash.ethash_full_compute(handle, input, nonce, ref value);
+            libethhash.ethash_full_compute(handle, input, nonce, ref value);
         }
 
         if(value.success)

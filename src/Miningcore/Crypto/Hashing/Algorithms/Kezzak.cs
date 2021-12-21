@@ -30,7 +30,7 @@ public unsafe class Kezzak : IHashAlgorithm
         {
             fixed (byte* output = result)
             {
-                LibMultihash.kezzak(input, output, (uint) data.Length);
+                libmultihash.kezzak(input, output, (uint) data.Length);
             }
         }
     }

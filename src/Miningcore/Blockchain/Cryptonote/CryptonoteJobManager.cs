@@ -48,8 +48,8 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
     private readonly IMasterClock clock;
     private CryptonoteNetworkType networkType;
     private CryptonotePoolConfigExtra extraPoolConfig;
-    private LibRandomX.randomx_flags? randomXFlagsOverride;
-    private LibRandomX.randomx_flags? randomXFlagsAdd;
+    private librandomx.randomx_flags? randomXFlagsOverride;
+    private librandomx.randomx_flags? randomXFlagsAdd;
     private string currentSeedHash;
     private string randomXRealm;
     private ulong poolAddressBase58Prefix;
@@ -93,15 +93,15 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
 
                     if(poolConfig.EnableInternalStratum == true)
                     {
-                        LibRandomX.WithLock(() =>
+                        librandomx.WithLock(() =>
                         {
                             // delete old seed
                             if(currentSeedHash != null)
-                                LibRandomX.DeleteSeed(randomXRealm, currentSeedHash);
+                                librandomx.DeleteSeed(randomXRealm, currentSeedHash);
 
                             // activate new one
                             currentSeedHash = blockTemplate.SeedHash;
-                            LibRandomX.CreateSeed(randomXRealm, currentSeedHash, randomXFlagsOverride, randomXFlagsAdd, extraPoolConfig.RandomXVMCount);
+                            librandomx.CreateSeed(randomXRealm, currentSeedHash, randomXFlagsOverride, randomXFlagsAdd, extraPoolConfig.RandomXVMCount);
                         });
                     }
 
@@ -282,8 +282,8 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
         if(string.IsNullOrEmpty(address))
             return false;
 
-        var addressPrefix = LibCryptonote.DecodeAddress(address);
-        var addressIntegratedPrefix = LibCryptonote.DecodeIntegratedAddress(address);
+        var addressPrefix = libcryptonote.DecodeAddress(address);
+        var addressIntegratedPrefix = libcryptonote.DecodeIntegratedAddress(address);
         var coin = poolConfig.Template.As<CryptonoteCoinTemplate>();
 
         switch(networkType)
@@ -397,22 +397,22 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
         return JToken.Parse(json);
     }
 
-    private LibRandomX.randomx_flags? MakeRandomXFlags(JToken token)
+    private librandomx.randomx_flags? MakeRandomXFlags(JToken token)
     {
         if(token == null)
             return null;
 
         if(token.Type == JTokenType.Integer)
-            return (LibRandomX.randomx_flags) token.Value<ulong>();
+            return (librandomx.randomx_flags) token.Value<ulong>();
         else if(token.Type == JTokenType.String)
         {
-            LibRandomX.randomx_flags result = 0;
+            librandomx.randomx_flags result = 0;
             var value = token.Value<string>();
 
             foreach(var flag in value.Split("|").Select(x=> x.Trim()).Where(x=> !string.IsNullOrEmpty(x)))
             {
-                if(Enum.TryParse(typeof(LibRandomX.randomx_flags), flag, true, out var flagVal))
-                    result |= (LibRandomX.randomx_flags) flagVal;
+                if(Enum.TryParse(typeof(librandomx.randomx_flags), flag, true, out var flagVal))
+                    result |= (librandomx.randomx_flags) flagVal;
             }
 
             return result;
@@ -545,7 +545,7 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
             networkType = info.IsTestnet ? CryptonoteNetworkType.Test : CryptonoteNetworkType.Main;
 
         // address validation
-        poolAddressBase58Prefix = LibCryptonote.DecodeAddress(poolConfig.Address);
+        poolAddressBase58Prefix = libcryptonote.DecodeAddress(poolConfig.Address);
         if(poolAddressBase58Prefix == 0)
             logger.ThrowLogPoolStartupException("Unable to decode pool-address");
 

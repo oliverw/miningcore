@@ -25,7 +25,7 @@ public class Cache : IDisposable
     {
         if(handle != IntPtr.Zero)
         {
-            LibEthhash.ethash_light_delete(handle);
+            libethhash.ethash_light_delete(handle);
             handle = IntPtr.Zero;
         }
     }
@@ -42,7 +42,7 @@ public class Cache : IDisposable
                     logger.Debug(() => $"Generating cache for epoch {Epoch}");
 
                     var block = Epoch * EthereumConstants.EpochLength;
-                    handle = LibEthhash.ethash_light_new(block);
+                    handle = libethhash.ethash_light_new(block);
 
                     logger.Debug(() => $"Done generating cache for epoch {Epoch} after {DateTime.Now - started}");
                     isGenerated = true;
@@ -60,11 +60,11 @@ public class Cache : IDisposable
         mixDigest = null;
         result = null;
 
-        var value = new LibEthhash.ethash_return_value();
+        var value = new libethhash.ethash_return_value();
 
         fixed (byte* input = hash)
         {
-            LibEthhash.ethash_light_compute(handle, input, nonce, ref value);
+            libethhash.ethash_light_compute(handle, input, nonce, ref value);
         }
 
         if(value.success)

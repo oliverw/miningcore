@@ -14,7 +14,7 @@ public unsafe class Phi : IHashAlgorithm
         {
             fixed (byte* output = result)
             {
-                LibMultihash.phi(input, output, (uint) data.Length);
+                libmultihash.phi(input, output, (uint) data.Length);
             }
         }
     }
