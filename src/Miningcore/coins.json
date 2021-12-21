@@ -1607,6 +1607,50 @@
         "explorerTxLink": "https://explorer.callisto.network/tx/{0}",
         "explorerAccountLink": "https://explorer.callisto.network/address/{0}"
     },
+    "foxdcoin": {
+        "name": "FoxDcoin",
+        "canonicalName": "FoxDcoin",
+        "symbol": "FOXD",
+        "family": "bitcoin",
+        "coinbaseHasher": {
+            "hash": "sha256d"
+        },
+        "headerHasher": {
+            "hash": "x16rv2"
+        },
+        "blockHasher": {
+            "hash": "reverse",
+            "args": [ { "hash": "x16r-v2" } ]
+        },
+        "posBlockHasher": {
+            "hash": "reverse",
+            "args": [ { "hash": "x16r-v2" } ]
+        },
+        "shareMultiplier": 4096,
+        "explorerBlockLink": "https://explorer.foxdcoin.com/block-height/$height$",
+        "explorerTxLink": "https://explorer.foxdcoin.com/tx/{0}",
+        "explorerAccountLink": "https://explorer.foxdcoin.com/address/{0}"
+    },
+    "ravencoinlite": {
+        "name": "Ravencoin Lite",
+        "canonicalName": "Ravencoin Lite",
+        "symbol": "RVL",
+        "family": "bitcoin",
+        "coinbaseHasher": {
+            "hash": "sha256d"
+        },
+        "headerHasher": {
+            "hash": "x16r"
+        },
+        "blockHasher": {
+            "hash": "reverse",
+            "args": [ { "hash": "x16r" } ]
+        },
+        "shareMultiplier": 256,
+        "explorerBlockLink": "http://explorer.ravencoinlite.org/block/$hash$",
+        "explorerTxLink": "http://explorer.ravencoinlite.org/tx/{0}",
+        "explorerAccountLink": "http://explorer.ravencoinlite.org/address/{0}"
+    },
     "ergo": {
         "name": "Ergo",
         "symbol": "ERG",
