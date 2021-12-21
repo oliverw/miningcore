@@ -246,6 +246,9 @@ public class BitcoinJob
         if(coin.HasMasterNodes)
             rewardToPool = CreateMasternodeOutputs(tx, rewardToPool);
 
+        if (coin.HasFounderFee)
+            rewardToPool = CreateFounderOutputs(tx, rewardToPool);
+
         // Remaining amount goes to pool
         tx.Outputs.Add(rewardToPool, poolAddressDestination);
 
@@ -468,6 +471,36 @@ public class BitcoinJob
 
     #endregion // Masternodes
 
+    #region Founder
+
+    protected FounderBlockTemplateExtra founderParameters;
+    protected virtual Money CreateFounderOutputs(Transaction tx, Money reward)
+    {
+        if (founderParameters.Founder != null)
+        {
+            Founder[] founders;
+            if (founderParameters.Founder.Type == JTokenType.Array)
+                founders = founderParameters.Founder.ToObject<Founder[]>();
+            else
+                founders = new[] { founderParameters.Founder.ToObject<Founder>() };
+
+            foreach (var Founder in founders)
+            {
+                if (!string.IsNullOrEmpty(Founder.Payee))
+                {
+                    var payeeAddress = BitcoinUtils.AddressToDestination(Founder.Payee, network);
+                    var payeeReward = Founder.Amount;
+                    reward -= payeeReward;
+                    rewardToPool -= payeeReward;
+                    tx.Outputs.Add(payeeReward, payeeAddress);
+                }
+            }
+        }
+        return reward;
+    }
+
+    #endregion
+
     #region API-Surface
 
     public BlockTemplate BlockTemplate { get; protected set; }
@@ -534,6 +567,9 @@ public class BitcoinJob
 
         if(coin.HasPayee)
             payeeParameters = BlockTemplate.Extra.SafeExtensionDataAs<PayeeBlockTemplateExtra>();
+
+        if (coin.HasFounderFee)
+            founderParameters = BlockTemplate.Extra.SafeExtensionDataAs<FounderBlockTemplateExtra>();
 
         coinbaseHasher = _coinbaseHasher;
         headerHasher = _headerHasher;
