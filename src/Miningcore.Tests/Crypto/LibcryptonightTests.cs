@@ -229,4 +229,50 @@ public class LibcryptonightTests : TestBase
 
         libcryptonight.ContextDispose();
     }
+
+    [Fact]
+    public void Crytonight_Hash_CN_HEAVY_0()
+    {
+        libcryptonight.ContextInit(1);
+
+        var value = "0305a0dbd6bf05cf16e503f3a66f78007cbf34144332ecbfc22ed95c8700383b309ace1923a0964b00000008ba939a62724c0d7581fce5761e9d8a0e6a1c3f924fdd8493d1115649c05eb601".HexToByteArray();
+        var hash = new byte[32];
+        libcryptonight.CryptonightHeavy(value, hash, libcryptonight.Algorithm.CN_HEAVY_0, 10);
+
+        var result = hash.ToHexString();
+        Assert.Equal("9983f21bdf2010a8d707bb2f14d78664bbe1187f55014b39e5f3d69328e48fc2", result);
+
+        libcryptonight.ContextDispose();
+    }
+
+    [Fact]
+    public void Crytonight_Hash_CN_HEAVY_XHV()
+    {
+        libcryptonight.ContextInit(1);
+
+        var value = "656c69742c2073656420646f20656975736d6f642074656d706f7220696e6369646964756e74207574206c61626f7265".HexToByteArray();
+        var hash = new byte[32];
+        libcryptonight.CryptonightHeavy(value, hash, libcryptonight.Algorithm.CN_HEAVY_XHV, 10);
+
+        var result = hash.ToHexString();
+        Assert.Equal("8e9c20c03c06981e5673d9f306001c50c9cf2ca151140d69a0f94c8c6c49ba13", result);
+
+        libcryptonight.ContextDispose();
+    }
+
+    [Fact]
+    public void Crytonight_Hash_CN_HEAVY_TUBE()
+    {
+        libcryptonight.ContextInit(1);
+
+        var value = "0305a0dbd6bf05cf16e503f3a66f78007cbf34144332ecbfc22ed95c8700383b309ace1923a0964b00000008ba939a62724c0d7581fce5761e9d8a0e6a1c3f924fdd8493d1115649c05eb601".HexToByteArray();
+        var hash = new byte[32];
+        libcryptonight.CryptonightHeavy(value, hash, libcryptonight.Algorithm.CN_HEAVY_TUBE, 10);
+
+        var result = hash.ToHexString();
+        Assert.Equal("fe53352076eae689fa3b4fda614634cfc312ee0c387df2b8b74da2a159741235", result);
+
+        libcryptonight.ContextDispose();
+    }
+
 }
