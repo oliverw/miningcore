@@ -382,11 +382,15 @@ public class Program : BackgroundService
         var assembly = Assembly.GetEntryAssembly();
         var gitVersionInformationType = assembly.GetType("GitVersionInformation");
 
-        var assemblySemVer = gitVersionInformationType.GetField("AssemblySemVer").GetValue(null);
-        var branchName = gitVersionInformationType.GetField("BranchName").GetValue(null);
-        var sha = gitVersionInformationType.GetField("Sha").GetValue(null);
+        if(gitVersionInformationType != null)
+        {
+            var assemblySemVer = gitVersionInformationType.GetField("AssemblySemVer").GetValue(null);
+            var branchName = gitVersionInformationType.GetField("BranchName").GetValue(null);
+            var sha = gitVersionInformationType.GetField("Sha").GetValue(null);
 
-        logger.Info(() => $"Version {assemblySemVer}-{branchName} [{sha}]");
+            logger.Info(() => $"Version {assemblySemVer}-{branchName} [{sha}]");
+        }
+
         logger.Info(() => $"Runtime {RuntimeInformation.FrameworkDescription.Trim()} on {RuntimeInformation.OSDescription.Trim()} [{RuntimeInformation.ProcessArchitecture}]");
     }
 
