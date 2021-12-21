@@ -1607,6 +1607,47 @@
         "explorerTxLink": "https://explorer.callisto.network/tx/{0}",
         "explorerAccountLink": "https://explorer.callisto.network/address/{0}"
     },
+    "raptoreum": {
+        "name": "Raptoreum",
+        "canonicalName": "Raptoreum",
+        "symbol": "RTM",
+        "family": "bitcoin",
+        "coinbaseHasher": {
+            "hash": "sha256d"
+        },
+        "headerHasher": {
+            "hash": "ghostrider"
+        },
+        "blockHasher": {
+            "hash": "reverse",
+            "args": [ { "hash": "ghostrider" } ]
+        },
+        "hasFounderFee": true,
+        "hasMasterNodes": true,
+        "shareMultiplier": 65536,
+        "explorerBlockLink": "https://explorer.raptoreum.com/block-height/$height$",
+        "explorerTxLink": "https://explorer.raptoreum.com/tx/{0}",
+        "explorerAccountLink": "https://explorer.raptoreum.com/address/{0}"
+    },
+    "opticalbitcoin": {
+        "name": "Optical BTC",
+        "canonicalName": "Optical Bitcoin",
+        "symbol": "OBTC",
+        "family": "bitcoin",
+        "coinbaseHasher": {
+            "hash": "sha256d"
+        },
+        "headerHasher": {
+            "hash": "heavyhash"
+        },
+        "blockHasher": {
+            "hash": "reverse",
+            "args": [ { "hash": "heavyhash" } ]
+        },
+        "explorerBlockLink": "https://explorer.powx.org/block/$hash$",
+        "explorerTxLink": "https://explorer.powx.org/tx/{0}",
+        "explorerAccountLink": "https://explorer.powx.org/address/{0}"
+    },
     "foxdcoin": {
         "name": "FoxDcoin",
         "canonicalName": "FoxDcoin",

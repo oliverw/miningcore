@@ -287,6 +287,12 @@
     <ClInclude Include="x16rv2.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="heavyhash\heavyhash.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="heavyhash\keccak_tiny.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -554,6 +560,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="x16rv2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="heavyhash\heavyhash.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="heavyhash\keccak_tiny.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

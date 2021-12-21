@@ -330,6 +330,18 @@ public class HashingTests : TestBase
     }
 
     [Fact]
+    public void Ghostrider_Hash()
+    {
+        var hasher = new Ghostrider();
+        var hash = new byte[32];
+        var value = "0305a0dbd6bf05cf16e503f3a66f78007cbf34144332ecbfc22ed95c8700383b309ace1923a0964b00000008ba939a62724c0d7581fce5761e9d8a0e6a1c3f924fdd8493d1115649c05eb601".HexToByteArray();
+        hasher.Digest(value, hash);
+        var result = hash.ToHexString();
+
+        Assert.Equal("9ee5c8db717d3c3098c68ccd7cd9cd01873e2a22f5f0d231b683dcb4f4883b76", result);
+    }
+
+    [Fact]
     public void Qubit_Hash()
     {
         var hasher = new Qubit();
@@ -338,6 +350,17 @@ public class HashingTests : TestBase
         var result = hash.ToHexString();
 
         Assert.Equal("93c1471bb55081ae14ffb78d18f1e1d77844013efb5b32e95269c1a9afe88a71", result);
+    }
+
+    [Fact]
+    public void Heavy_Hash()
+    {
+        var hasher = new Heavy();
+        var hash = new byte[32];
+        hasher.Digest(testValue, hash);
+        var result = hash.ToHexString();
+
+        Assert.Equal("e89c26771f3fda42e6f8ed82ca888f805fa15013d8543ab2692904095c6d3dc3", result);
     }
 
     [Fact]

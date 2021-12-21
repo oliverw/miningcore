@@ -85,6 +85,9 @@ public static unsafe class libmultihash
     [DllImport("libmultihash", EntryPoint = "qubit_export", CallingConvention = CallingConvention.Cdecl)]
     public static extern void qubit(byte* input, void* output, uint inputLength);
 
+    [DllImport("libmultihash", EntryPoint = "heavyhash_export", CallingConvention = CallingConvention.Cdecl)]
+    public static extern void heavyhash(byte* input, void* output, uint inputLength);
+
     [DllImport("libmultihash", EntryPoint = "s3_export", CallingConvention = CallingConvention.Cdecl)]
     public static extern void s3(byte* input, void* output, uint inputLength);
 

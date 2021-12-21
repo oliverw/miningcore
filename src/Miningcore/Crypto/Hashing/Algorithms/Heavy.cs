@@ -1,0 +1,21 @@
+using Miningcore.Contracts;
+using Miningcore.Native;
+
+namespace Miningcore.Crypto.Hashing.Algorithms;
+
+[Identifier("heavyhash")]
+public unsafe class Heavy : IHashAlgorithm
+{
+    public void Digest(ReadOnlySpan<byte> data, Span<byte> result, params object[] extra)
+    {
+        Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
+
+        fixed (byte* input = data)
+        {
+            fixed (byte* output = result)
+            {
+                libmultihash.heavyhash(input, output, (uint) data.Length);
+            }
+        }
+    }
+}

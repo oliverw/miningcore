@@ -52,6 +52,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "phi.h"
 #include "verthash/h2.h"
 #include "equi/equihashverify.h"
+#include "heavyhash/heavyhash.h"
 
 #ifdef _WIN32
 #include "blake2/ref/blake2.h"
@@ -270,6 +271,11 @@ extern "C" MODULE_API int verthash_export(const unsigned char* input, unsigned c
 extern "C" MODULE_API void x16s_export(const char* input, char* output, uint32_t input_len)
 {
     x16s_hash(input, output, input_len);
+}
+
+extern "C" MODULE_API void heavyhash_export(const char* input, char* output, uint32_t input_len)
+{
+    heavyhash_hash(input, output, input_len);
 }
 
 extern "C" MODULE_API bool equihash_verify_200_9_export(const char* header, int header_length, const char* solution, int solution_length, const char *personalization)

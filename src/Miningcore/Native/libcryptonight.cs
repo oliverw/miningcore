@@ -91,20 +91,20 @@ public static unsafe class libcryptonight
     {
         public Context()
         {
-            handle = alloc_context();
+            handle = new Lazy<IntPtr>(alloc_context);
         }
 
-        private IntPtr handle;
+        private Lazy<IntPtr> handle;
 
-        public bool IsValid => handle != IntPtr.Zero;
-        public IntPtr Handle => handle;
+        public bool IsValid => handle.IsValueCreated && handle.Value != IntPtr.Zero;
+        public IntPtr Handle => handle.Value;
 
         public void Dispose()
         {
             if(IsValid)
             {
-                free_context(handle);
-                handle = IntPtr.Zero;
+                free_context(handle.Value);
+                handle = null;
             }
         }
     }
@@ -134,9 +134,6 @@ public static unsafe class libcryptonight
         {
             // ignored
         }
-
-        contexts.Dispose();
-        contexts = null;
     }
 
     #endregion // Context managment

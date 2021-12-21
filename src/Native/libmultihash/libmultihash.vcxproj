@@ -197,6 +197,8 @@
     <ClInclude Include="fugue.h" />
     <ClInclude Include="geek.h" />
     <ClInclude Include="groestl.h" />
+    <ClInclude Include="heavyhash\heavyhash.h" />
+    <ClInclude Include="heavyhash\keccak_tiny.h" />
     <ClInclude Include="hefty1.h" />
     <ClInclude Include="hmq17.h" />
     <ClInclude Include="jh.h" />
@@ -291,6 +293,8 @@
     <ClCompile Include="fugue.c" />
     <ClCompile Include="geek.c" />
     <ClCompile Include="groestl.c" />
+    <ClCompile Include="heavyhash\heavyhash.c" />
+    <ClCompile Include="heavyhash\keccak_tiny.c" />
     <ClCompile Include="hefty1.c" />
     <ClCompile Include="hmq17.c" />
     <ClCompile Include="jh.c" />
