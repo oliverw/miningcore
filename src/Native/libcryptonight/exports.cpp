@@ -29,13 +29,15 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "crypto/kawpow/KPHash.h"
 #include "3rdparty/libethash/ethash.h"
 #include "crypto/ghostrider/ghostrider.h"
+#include "crypto/common/portable/mm_malloc.h"
 
 extern "C" {
-#include "c29/portable_endian.h" // for htole32/64
-#include "c29/int-util.h"
+    #include "c29/portable_endian.h" // for htole32/64
+    #include "c29/int-util.h"
 }
 
 #include "c29.h"
+
 
 #if (defined(__AES__) && (__AES__ == 1)) || (defined(__ARM_FEATURE_CRYPTO) && (__ARM_FEATURE_CRYPTO == 1))
 #define SOFT_AES false

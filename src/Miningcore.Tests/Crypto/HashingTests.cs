@@ -355,7 +355,7 @@ public class HashingTests : TestBase
     [Fact]
     public void Heavy_Hash()
     {
-        var hasher = new Heavy();
+        var hasher = new HeavyHash();
         var hash = new byte[32];
         hasher.Digest(testValue, hash);
         var result = hash.ToHexString();

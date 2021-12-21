@@ -1,26 +1,70 @@
-CFLAGS = -g -Wall -c -fPIC -O2 -Wno-pointer-sign -Wno-char-subscripts -Wno-unused-variable -Wno-unused-function -Wno-strict-aliasing -Wno-discarded-qualifiers -Wno-unused-const-variable
-CXXFLAGS = -g -Wall -fPIC -fpermissive -O2 -Wno-char-subscripts -Wno-unused-variable -Wno-unused-function -Wno-strict-aliasing -Wno-sign-compare -std=c++11
+INC_DIRS = -I. -Ixmrig/3rdparty/argon2/include -Ixmrig/3rdparty/argon2/lib -Ixmrig -Ixmrig-override
+CFLAGS = -DCPU_INTEL -DHAVE_SSE2 -std=gnu11 -fPIC -DNDEBUG -Ofast -fno-fast-math -w $(INC_DIRS)
+CXXFLAGS = -DCPU_INTEL -DHAVE_SSE2 -std=gnu++11 -s -fPIC -DNDEBUG -Ofast -fno-fast-math -fexceptions -fno-rtti -Wno-class-memaccess -w $(INC_DIRS)
 LDFLAGS = -shared
-LDLIBS = -lsodium
-TARGET  = libmultihash.so
+TARGET  = libcryptonight.so
 
-OBJECTS = bcrypt.o blake.o c11.o dcrypt.o fresh.o lane.o \
-	fugue.o groestl.o hefty1.o jh.o keccak.o neoscrypt.o exports.o nist5.o quark.o qubit.o s3.o scryptn.o \
-	sha256csm.o hmq17.o phi.o \
-	sha3/aes_helper.o sha3/hamsi.o sha3/hamsi_helper.o sha3/sph_blake.o sha3/sph_bmw.o sha3/sph_cubehash.o \
-	sha3/sph_echo.o sha3/sph_fugue.o sha3/sph_groestl.o sha3/sph_hefty1.o sha3/sph_jh.o sha3/sph_keccak.o \
-	sha3/sph_luffa.o sha3/sph_shabal.o sha3/sph_shavite.o sha3/sph_simd.o sha3/sph_skein.o sha3/sph_whirlpool.o \
-	sha3/sph_haval.o sha3/sph_sha2.o sha3/sph_sha2big.o sha3/sm3.o sha3/panama.o \
-	sha3/extra.o sha3/gost_streebog.o sha3/sph_tiger.o sha3/SWIFFTX.o KeccakP-800-reference.o \
-	shavite3.o skein.o x11.o x13.o x15.o x17.o x16r.o x16rv2.o x16s.o x21s.o x22i.o odocrypt.o \
-	blake2/sse/blake2s.o blake2/sse/blake2b.o \
-	Lyra2.o Lyra2RE.o Sponge.o geek.o  \
-	verthash/tiny_sha3/sha3.o verthash/h2.o \
-	equi/util.o equi/support/cleanse.o equi/random.o \
-	equi/uint256.o equi/arith_uint256.o equi/crypto/hmac_sha512.o \
-	equi/crypto/sha1.o equi/crypto/sha512.o equi/crypto/sha256.o \
-	equi/crypto/hmac_sha256.o equi/crypto/equihash.o equi/crypto/ripemd160.o \
-	equi/equihashverify.o
+OBJECTS = exports.o \
+	xmrig/crypto/cn/asm/cn_main_loop.o \
+	xmrig/crypto/cn/asm/CryptonightR_template.o \
+	xmrig/crypto/cn/r/CryptonightR_gen.o \
+	xmrig/crypto/cn/gpu/cn_gpu_ssse3.o \
+	xmrig-override/backend/cpu/platform/BasicCpuInfo.o \
+	\
+	xmrig-override/backend/cpu/Cpu.o \
+	c29b.o \
+	c29i.o \
+	c29s.o \
+	c29v.o \
+	xmrig/crypto/cn/c_blake256.o \
+	xmrig/crypto/cn/c_groestl.o \
+	xmrig/crypto/cn/c_jh.o \
+	xmrig/crypto/cn/c_skein.o \
+	xmrig/base/crypto/keccak.o \
+	xmrig/base/crypto/sha3.o \
+	xmrig/crypto/cn/CnCtx.o \
+	xmrig/crypto/cn/CnHash.o \
+	xmrig/crypto/common/MemoryPool.o \
+	xmrig/crypto/common/VirtualMemory.o \
+	xmrig/crypto/common/VirtualMemory_unix.o \
+	\
+	xmrig/3rdparty/argon2/lib/argon2.o \
+	xmrig/3rdparty/argon2/lib/core.o \
+	xmrig/3rdparty/argon2/lib/encoding.o \
+	xmrig/3rdparty/argon2/lib/genkat.o \
+	xmrig/3rdparty/argon2/lib/impl-select.o \
+	xmrig/3rdparty/argon2/lib/blake2/blake2.o \
+	xmrig/3rdparty/argon2/arch/x86_64/lib/argon2-arch.o \
+	xmrig/3rdparty/argon2/arch/x86_64/lib/argon2-avx2.o \
+	xmrig/3rdparty/argon2/arch/x86_64/lib/argon2-avx512f.o \
+	xmrig/3rdparty/argon2/arch/x86_64/lib/argon2-sse2.o \
+	xmrig/3rdparty/argon2/arch/x86_64/lib/argon2-xop.o \
+	\
+	xmrig/crypto/astrobwt/AstroBWT.o \
+	xmrig/crypto/astrobwt/Salsa20.o \
+	xmrig/crypto/astrobwt/salsa20_ref/salsa20.o \
+	\
+	xmrig/crypto/ghostrider/sph_blake.o \
+	xmrig/crypto/ghostrider/sph_bmw.o \
+	xmrig/crypto/ghostrider/sph_cubehash.o \
+	xmrig/crypto/ghostrider/sph_echo.o \
+	xmrig/crypto/ghostrider/sph_fugue.o \
+	xmrig/crypto/ghostrider/sph_groestl.o \
+	xmrig/crypto/ghostrider/sph_hamsi.o \
+	xmrig/crypto/ghostrider/sph_hamsi_helper.o \
+	xmrig/crypto/ghostrider/sph_jh.o \
+	xmrig/crypto/ghostrider/sph_keccak.o \
+	xmrig/crypto/ghostrider/sph_luffa.o \
+	xmrig/crypto/ghostrider/sph_sha2.o \
+	xmrig/crypto/ghostrider/sph_shabal.o \
+	xmrig/crypto/ghostrider/sph_shavite.o \
+	xmrig/crypto/ghostrider/sph_simd.o \
+	xmrig/crypto/ghostrider/sph_skein.o \
+	xmrig/crypto/ghostrider/sph_whirlpool.o \
+	xmrig-override/crypto/ghostrider/ghostrider.o \
+	\
+	xmrig/3rdparty/libethash/keccakf800.o
+
 
 all: $(TARGET)
 
