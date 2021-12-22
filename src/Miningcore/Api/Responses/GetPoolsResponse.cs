@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Miningcore.Blockchain;
 using Miningcore.Configuration;
 using Miningcore.Mining;
@@ -11,10 +12,26 @@ public class ApiCoinConfig
     public string Type { get; set; }
     public string Name { get; set; }
     public string Symbol { get; set; }
+
+    [System.Text.Json.Serialization.JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string Website { get; set; }
+
+    [System.Text.Json.Serialization.JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string Family { get; set; }
+
+    [System.Text.Json.Serialization.JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string Algorithm { get; set; }
 
-    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+    [System.Text.Json.Serialization.JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string Twitter { get; set; }
+
+    [System.Text.Json.Serialization.JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string Discord { get; set; }
+
+    [System.Text.Json.Serialization.JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string Telegram { get; set; }
+
+    [System.Text.Json.Serialization.JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string CanonicalName { get; set; }
 }
 
@@ -25,7 +42,7 @@ public class ApiPoolPaymentProcessingConfig
     public string PayoutScheme { get; set; }
     public JToken PayoutSchemeConfig { get; set; }
 
-    [JsonExtensionData]
+    [Newtonsoft.Json.JsonExtensionData]
     public IDictionary<string, object> Extra { get; set; }
 }
 

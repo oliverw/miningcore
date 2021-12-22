@@ -54,6 +54,12 @@ public abstract partial class CoinTemplate
     public string Symbol { get; set; }
 
     /// <summary>
+    /// Website
+    /// </summary>
+    [JsonProperty(Order = -9)]
+    public string Website { get; set; }
+
+    /// <summary>
     /// Family
     /// </summary>
     [JsonConverter(typeof(StringEnumConverter), true)]
@@ -84,6 +90,24 @@ public abstract partial class CoinTemplate
     /// Supported placeholders: {0}
     /// </summary>
     public string ExplorerAccountLink { get; set; }
+
+    /// <summary>
+    /// Twitter Link
+    /// </summary>
+    [JsonProperty(Order = -9)]
+    public string Twitter { get; set; }
+
+    /// <summary>
+    /// Discord Link
+    /// </summary>
+    [JsonProperty(Order = -9)]
+    public string Discord { get; set; }
+
+    /// <summary>
+    /// Telegram Group Link
+    /// </summary>
+    [JsonProperty(Order = -9)]
+    public string Telegram { get; set; }
 
     /// <summary>
     /// Arbitrary extension data

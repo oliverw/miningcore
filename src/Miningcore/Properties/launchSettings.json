@@ -2,7 +2,7 @@
   "profiles": {
     "MiningCore": {
       "commandName": "Project",
-      "commandLineArgs": "-gcs",
+      "commandLineArgs": "-c ..\\..\\..\\config.json",
       "nativeDebugging": true
     }
   }

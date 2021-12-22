@@ -256,27 +256,6 @@
         "explorerTxLink": "https://blocks.notebc.space/tx/{0}",
         "explorerAccountLink": "https://blocks.notebc.space/address/{0}"
     },
-
-    // Peercoin is not working as they have switched to hybrib POW + POS. Tested, block orphans 100% of time.
-
-    "peercoin": {
-        "name": "Peercoin",
-        "symbol": "PPC",
-        "family": "bitcoin",
-        "coinbaseHasher": {
-            "hash": "sha256d"
-        },
-        "headerHasher": {
-            "hash": "sha256d"
-        },
-        "blockHasher": {
-            "hash": "reverse",
-            "args": [ { "hash": "sha256d" } ]
-        },
-        "explorerBlockLink": "https://chainz.cryptoid.info/ppc/block.dws?$height$.htm",
-        "explorerTxLink": "https://chainz.cryptoid.info/ppc/tx.dws?{0}.htm",
-        "explorerAccountLink": "https://chainz.cryptoid.info/ppc/address.dws?{0}.htm"
-    },
     "litecoin": {
         "name": "Litecoin",
         "symbol": "LTC",
@@ -569,26 +548,6 @@
         "explorerTxLink": "https://chainz.cryptoid.info/cann/tx.dws?{0}.htm",
         "explorerAccountLink": "https://chainz.cryptoid.info/cann/address.dws?{0}.htm"
     },
-    // Ravencoin is currently not working. X16r is OLD algorithm. KawPow is Ravencoin's current algo.
-    "ravencoin": {
-        "name": "Ravencoin",
-        "symbol": "RVN",
-        "family": "bitcoin",
-        "coinbaseHasher": {
-            "hash": "sha256d"
-        },
-        "headerHasher": {
-            "hash": "x16r"
-        },
-        "blockHasher": {
-            "hash": "reverse",
-            "args": [ { "hash": "x16r" } ]
-        },
-        "shareMultiplier": 256,
-        "explorerBlockLink": "https://ravencoin.network/block/$hash$",
-        "explorerTxLink": "https://ravencoin.network/tx/{0}",
-        "explorerAccountLink": "https://ravencoin.network/address/{0}"
-    },
     "pigeoncoin": {
         "name": "Pigeoncoin",
         "symbol": "PGN",
@@ -828,6 +787,8 @@
         "name": "TILTCoin",
         "symbol": "TLT",
         "family": "bitcoin",
+        "website": "https://tiltcoin.io/",
+        "discord": "https://discord.com/invite/qSs6PWdkPt",
         "coinbaseHasher": {
             "hash": "sha256d"
         },
@@ -1611,6 +1572,10 @@
         "name": "Raptoreum",
         "canonicalName": "Raptoreum",
         "symbol": "RTM",
+        "website": "https://raptoreum.com/",
+        "twitter": "https://twitter.com/raptoreum",
+        "telegram": "https://t.me/raptoreum",
+        "discord": "https://discord.com/invite/2T8xG7e",
         "family": "bitcoin",
         "coinbaseHasher": {
             "hash": "sha256d"
@@ -1634,6 +1599,9 @@
         "canonicalName": "Optical Bitcoin",
         "symbol": "OBTC",
         "family": "bitcoin",
+        "website": "https://www.powx.org/",
+        "twitter": "https://twitter.com/_powx",
+        "discord": "https://discord.com/invite/JvPep78Ysa",
         "coinbaseHasher": {
             "hash": "sha256d"
         },
@@ -1653,6 +1621,9 @@
         "canonicalName": "FoxDcoin",
         "symbol": "FOXD",
         "family": "bitcoin",
+        "website": "https://foxdcoin.com/",
+        "twitter": "https://twitter.com/foxdcoin",
+        "discord": "https://discord.com/invite/WmdfKEg",
         "coinbaseHasher": {
             "hash": "sha256d"
         },
@@ -1677,6 +1648,10 @@
         "canonicalName": "Ravencoin Lite",
         "symbol": "RVL",
         "family": "bitcoin",
+        "website": "https://www.ravencoinlite.net/",
+        "twitter": "https://twitter.com/ravencoinlite",
+        "telegram": "https://t.me/OfficialRavenCoinLite",
+        "discord": "https://discord.com/invite/ravencoinlite",
         "coinbaseHasher": {
             "hash": "sha256d"
         },
@@ -1696,6 +1671,10 @@
         "name": "Ergo",
         "symbol": "ERG",
         "family": "ergo",
+        "website": "https://ergoplatform.org",
+        "twitter": "https://twitter.com/ergoplatformorg",
+        "telegram": "https://t.me/ergoplatform",
+        "discord": "https://discord.com/invite/kj7s7nb",
         "explorerBlockLink": "https://explorer.ergoplatform.com/en/blocks/$hash$",
         "explorerTxLink": "https://explorer.ergoplatform.com/en/transactions/{0}",
         "explorerAccountLink": "https://explorer.ergoplatform.com/en/addresses/{0}"
