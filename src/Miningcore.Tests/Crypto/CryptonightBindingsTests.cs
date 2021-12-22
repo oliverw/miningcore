@@ -55,6 +55,28 @@ public class CryptonightBindingsTests : TestBase
     }
 
     [Fact]
+    public void Crytonight_Hash_CN_HALF()
+    {
+        var value = "0305a0dbd6bf05cf16e503f3a66f78007cbf34144332ecbfc22ed95c8700383b309ace1923a0964b00000008ba939a62724c0d7581fce5761e9d8a0e6a1c3f924fdd8493d1115649c05eb601".HexToByteArray();
+        var hash = new byte[32];
+        CryptonightBindings.Cryptonight(value, hash, CryptonightBindings.Algorithm.CN_HALF, 10);
+
+        var result = hash.ToHexString();
+        Assert.Equal("5d4fbc356097ea6440b0888edeb635ddc84a0e397c868456895c3f29be7312a7", result);
+    }
+
+    [Fact]
+    public void Crytonight_Hash_CN_DOUBLE()
+    {
+        var value = "0305a0dbd6bf05cf16e503f3a66f78007cbf34144332ecbfc22ed95c8700383b309ace1923a0964b00000008ba939a62724c0d7581fce5761e9d8a0e6a1c3f924fdd8493d1115649c05eb601".HexToByteArray();
+        var hash = new byte[32];
+        CryptonightBindings.Cryptonight(value, hash, CryptonightBindings.Algorithm.CN_DOUBLE, 10);
+
+        var result = hash.ToHexString();
+        Assert.Equal("aefbb3f0cc88046d119f6c54b96d90c9e884ea3b5983a60d50a42d7d3ebe4821", result);
+    }
+
+    [Fact]
     public void Crytonight_Hash_CN_R()
     {
         var value = "5468697320697320612074657374205468697320697320612074657374205468697320697320612074657374".HexToByteArray();
@@ -85,6 +107,17 @@ public class CryptonightBindingsTests : TestBase
 
         var result = hash.ToHexString();
         Assert.Equal("e49f8d8561690a6ede1f8bd92e578fa75d4af3323e9b6bfa2c2985fb2c32b8eb", result);
+    }
+
+    [Fact]
+    public void Crytonight_Hash_CN_ZLS()
+    {
+        var value = "4c6f72656d20697073756d20646f6c6f722073697420616d65742c20636f6e73656374657475722061646970697363696e67".HexToByteArray();
+        var hash = new byte[32];
+        CryptonightBindings.Cryptonight(value, hash, CryptonightBindings.Algorithm.CN_ZLS, 10);
+
+        var result = hash.ToHexString();
+        Assert.Equal("afca646c21339a24d9783155462f39495415ec21b16c16ff5e3bcfa8a94c2425", result);
     }
 
     [Fact]
@@ -196,6 +229,17 @@ public class CryptonightBindingsTests : TestBase
 
         var result = hash.ToHexString();
         Assert.Equal("fe53352076eae689fa3b4fda614634cfc312ee0c387df2b8b74da2a159741235", result);
+    }
+
+    [Fact]
+    public void Crytonight_Hash_CN_PICO_0()
+    {
+        var value = "0305a0dbd6bf05cf16e503f3a66f78007cbf34144332ecbfc22ed95c8700383b309ace1923a0964b00000008ba939a62724c0d7581fce5761e9d8a0e6a1c3f924fdd8493d1115649c05eb601".HexToByteArray();
+        var hash = new byte[32];
+        CryptonightBindings.CryptonightPico(value, hash, CryptonightBindings.Algorithm.CN_PICO_0, 10);
+
+        var result = hash.ToHexString();
+        Assert.Equal("08f421d7833117300eda66e98f4a2569093df300500173944efc401e9a4a17af", result);
     }
 
     [Fact]
