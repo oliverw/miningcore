@@ -515,7 +515,7 @@ public class Program : BackgroundService
         configFileOption = app.Option("-c|--config <configfile>", "Configuration File", CommandOptionType.SingleValue);
         dumpConfigOption = app.Option("-dc|--dumpconfig", "Dump the configuration (useful for trouble-shooting typos in the config file)",CommandOptionType.NoValue);
         shareRecoveryOption = app.Option("-rs", "Import lost shares using existing recovery file", CommandOptionType.SingleValue);
-        generateSchemaOption = app.Option("-gs|--generate-schema <outputfile>", "Generate JSON schema from configuration options", CommandOptionType.SingleValue);
+        generateSchemaOption = app.Option("-gcs|--generate-config-schema <outputfile>", "Generate JSON schema from configuration options", CommandOptionType.SingleValue);
         app.HelpOption("-? | -h | --help");
 
         app.Execute(args);
