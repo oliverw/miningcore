@@ -36,6 +36,8 @@ using Miningcore.Persistence.Postgres.Repositories;
 using Miningcore.Util;
 using NBitcoin.Zcash;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Schema;
+using Newtonsoft.Json.Schema.Generation;
 using Newtonsoft.Json.Serialization;
 using NLog;
 using NLog.Conditions;
@@ -94,6 +96,7 @@ public class Program : BackgroundService
             clusterConfig = ReadConfig(configFileOption.Value());
 
             ValidateConfig();
+
             ConfigureLogging();
             LogRuntimeInfo();
             ValidateRuntimeEnvironment();
@@ -137,7 +140,7 @@ public class Program : BackgroundService
                 if(apiTlsEnable)
                 {
                     if(!File.Exists(clusterConfig.Api.Tls.TlsPfxFile))
-                        logger.ThrowLogPoolStartupException($"Certificate file {clusterConfig.Api.Tls.TlsPfxFile} does not exist!");
+                        throw new PoolStartupAbortException($"Certificate file {clusterConfig.Api.Tls.TlsPfxFile} does not exist!");
                 }
 
                 hostBuilder.ConfigureWebHost(builder =>
@@ -373,7 +376,7 @@ public class Program : BackgroundService
         {
             // Lookup coin
             if(!coinTemplates.TryGetValue(poolConfig.Coin, out var template))
-                logger.ThrowLogPoolStartupException($"Pool {poolConfig.Id} references undefined coin '{poolConfig.Coin}'");
+                throw new PoolStartupAbortException($"Pool {poolConfig.Id} references undefined coin '{poolConfig.Coin}'");
 
             poolConfig.Template = template;
 
@@ -399,6 +402,13 @@ public class Program : BackgroundService
 
     private static void LogRuntimeInfo()
     {
+        logger.Info(() => $"Version {GetVersion()}");
+
+        logger.Info(() => $"Runtime {RuntimeInformation.FrameworkDescription.Trim()} on {RuntimeInformation.OSDescription.Trim()} [{RuntimeInformation.ProcessArchitecture}]");
+    }
+
+    private static string GetVersion()
+    {
         var assembly = Assembly.GetEntryAssembly();
         var gitVersionInformationType = assembly.GetType("GitVersionInformation");
 
@@ -408,13 +418,11 @@ public class Program : BackgroundService
             var branchName = gitVersionInformationType.GetField("BranchName").GetValue(null);
             var sha = gitVersionInformationType.GetField("Sha").GetValue(null);
 
-            logger.Info(() => $"Version {assemblySemVer}-{branchName} [{sha}]");
+            return $"{assemblySemVer}-{branchName} [{sha}]";
         }
 
         else
-            logger.Info(() => "Version [unknown]");
-
-        logger.Info(() => $"Runtime {RuntimeInformation.FrameworkDescription.Trim()} on {RuntimeInformation.OSDescription.Trim()} [{RuntimeInformation.ProcessArchitecture}]");
+            return "unknown";
     }
 
     private static void ValidateConfig()
@@ -432,13 +440,19 @@ public class Program : BackgroundService
             if(clusterConfig.Notifications?.Admin?.Enabled == true)
             {
                 if(string.IsNullOrEmpty(clusterConfig.Notifications?.Email?.FromName))
-                    logger.ThrowLogPoolStartupException($"Notifications are enabled but email sender name is not configured (notifications.email.fromName)");
+                    throw new PoolStartupAbortException($"Notifications are enabled but email sender name is not configured (notifications.email.fromName)");
 
                 if(string.IsNullOrEmpty(clusterConfig.Notifications?.Email?.FromAddress))
-                    logger.ThrowLogPoolStartupException($"Notifications are enabled but email sender address name is not configured (notifications.email.fromAddress)");
+                    throw new PoolStartupAbortException($"Notifications are enabled but email sender address name is not configured (notifications.email.fromAddress)");
 
                 if(string.IsNullOrEmpty(clusterConfig.Notifications?.Admin?.EmailAddress))
-                    logger.ThrowLogPoolStartupException($"Admin notifications are enabled but recipient address is not configured (notifications.admin.emailAddress)");
+                    throw new PoolStartupAbortException($"Admin notifications are enabled but recipient address is not configured (notifications.admin.emailAddress)");
+            }
+
+            if(string.IsNullOrEmpty(clusterConfig.Logging.LogFile))
+            {
+                // emit a newline before regular logging output starts
+                Console.WriteLine();
             }
         }
 
@@ -463,15 +477,38 @@ public class Program : BackgroundService
     private static void GenerateJsonConfigSchema()
     {
         var filename = generateSchemaOption.Value();
+
+        var generator = new JSchemaGenerator
+        {
+            DefaultRequired = Required.Default,
+            SchemaPropertyOrderHandling = SchemaPropertyOrderHandling.Alphabetical,
+            ContractResolver = new CamelCasePropertyNamesContractResolver(),
+            GenerationProviders =
+            {
+                new StringEnumGenerationProvider()
+            }
+        };
+
+        var schema = generator.Generate(typeof(ClusterConfig));
+
+        using(var stream = File.Create(filename))
+        {
+            using(var writer = new JsonTextWriter(new StreamWriter(stream, Encoding.UTF8)))
+            {
+                schema.WriteTo(writer);
+
+                writer.Flush();
+            }
+        }
     }
 
     private static CommandLineApplication ParseCommandLine(string[] args)
     {
         var app = new CommandLineApplication
         {
-            FullName = "Miningcore - Mining Pool Engine",
-            ShortVersionGetter = () => $"v{Assembly.GetEntryAssembly().GetName().Version}",
-            LongVersionGetter = () => $"v{Assembly.GetEntryAssembly().GetName().Version}"
+            FullName = "Miningcore",
+            ShortVersionGetter = () => GetVersion(),
+            LongVersionGetter = () => GetVersion()
         };
 
         versionOption = app.Option("-v|--version", "Version Information", CommandOptionType.NoValue);
@@ -490,7 +527,7 @@ public class Program : BackgroundService
     {
         try
         {
-            Console.WriteLine($"Using configuration file {file}\n");
+            Console.WriteLine($"Using configuration file '{file}'");
 
             var serializer = JsonSerializer.Create(new JsonSerializerSettings
             {
@@ -501,48 +538,46 @@ public class Program : BackgroundService
             {
                 using(var jsonReader = new JsonTextReader(reader))
                 {
-                    return serializer.Deserialize<ClusterConfig>(jsonReader);
+                    using(var validatingReader = new JSchemaValidatingReader(jsonReader)
+                    {
+                        Schema =  LoadSchema()
+                    })
+                    {
+                        return serializer.Deserialize<ClusterConfig>(validatingReader);
+                    }
                 }
             }
         }
 
+        catch(JSchemaValidationException ex)
+        {
+            throw new PoolStartupAbortException($"Configuration file error: {ex.Message}");
+        }
+
         catch(JsonSerializationException ex)
         {
-            HumanizeJsonParseException(ex);
-            throw;
+            throw new PoolStartupAbortException($"Configuration file error: {ex.Message}");
         }
 
         catch(JsonException ex)
         {
-            Console.Error.WriteLine($"Error: {ex.Message}");
-            throw;
+            throw new PoolStartupAbortException($"Configuration file error: {ex.Message}");
         }
 
         catch(IOException ex)
         {
-            Console.Error.WriteLine($"Error: {ex.Message}");
-            throw;
+            throw new PoolStartupAbortException($"Configuration file error: {ex.Message}");
         }
     }
 
-    private static void HumanizeJsonParseException(JsonSerializationException ex)
+    private static JSchema LoadSchema()
     {
-        var m = regexJsonTypeConversionError.Match(ex.Message);
+        var basePath = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+        var path = Path.Combine(basePath, "config.schema.json");
 
-        if(m.Success)
+        using(var reader = new JsonTextReader(new StreamReader(File.OpenRead(path))))
         {
-            var value = m.Groups[1].Value;
-            var type = Type.GetType(m.Groups[2].Value);
-            var line = m.Groups[3].Value;
-            var col = m.Groups[4].Value;
-
-            if(type == typeof(PayoutScheme))
-                Console.Error.WriteLine($"Error: Payout scheme '{value}' is not (yet) supported (line {line}, column {col})");
-        }
-
-        else
-        {
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            return JSchema.Load(reader);
         }
     }
 
@@ -737,7 +772,7 @@ public class Program : BackgroundService
         if(clusterConfig.Persistence == null &&
            clusterConfig.PaymentProcessing?.Enabled == true &&
            clusterConfig.ShareRelay == null)
-            logger.ThrowLogPoolStartupException("Persistence is not configured!");
+            throw new PoolStartupAbortException("Persistence is not configured!");
 
         if(clusterConfig.Persistence?.Postgres != null)
             ConfigurePostgres(clusterConfig.Persistence.Postgres, builder);
@@ -749,16 +784,16 @@ public class Program : BackgroundService
     {
         // validate config
         if(string.IsNullOrEmpty(pgConfig.Host))
-            logger.ThrowLogPoolStartupException("Postgres configuration: invalid or missing 'host'");
+            throw new PoolStartupAbortException("Postgres configuration: invalid or missing 'host'");
 
         if(pgConfig.Port == 0)
-            logger.ThrowLogPoolStartupException("Postgres configuration: invalid or missing 'port'");
+            throw new PoolStartupAbortException("Postgres configuration: invalid or missing 'port'");
 
         if(string.IsNullOrEmpty(pgConfig.Database))
-            logger.ThrowLogPoolStartupException("Postgres configuration: invalid or missing 'database'");
+            throw new PoolStartupAbortException("Postgres configuration: invalid or missing 'database'");
 
         if(string.IsNullOrEmpty(pgConfig.User))
-            logger.ThrowLogPoolStartupException("Postgres configuration: invalid or missing 'user'");
+            throw new PoolStartupAbortException("Postgres configuration: invalid or missing 'user'");
 
         // build connection string
         var connectionString = $"Server={pgConfig.Host};Port={pgConfig.Port};Database={pgConfig.Database};User Id={pgConfig.User};Password={pgConfig.Password};CommandTimeout=900;";

@@ -5,6 +5,7 @@ using NLog;
 using Miningcore.Configuration;
 using Miningcore.Extensions;
 using Miningcore.Messaging;
+using Miningcore.Mining;
 using Miningcore.Notifications.Messages;
 using Miningcore.Stratum;
 using Miningcore.Time;
@@ -371,23 +372,23 @@ public class ErgoJobManager : JobManagerBase<ErgoJob>
     {
         // validate pool address
         if(string.IsNullOrEmpty(poolConfig.Address))
-            logger.ThrowLogPoolStartupException($"Pool address is not configured");
+            throw new PoolStartupAbortException($"Pool address is not configured");
 
         var validity = await Guard(() => rpc.CheckAddressValidityAsync(poolConfig.Address, ct),
-            ex=> logger.ThrowLogPoolStartupException($"Error validating pool address: {ex}"));
+            ex=> throw new PoolStartupAbortException($"Error validating pool address: {ex}"));
 
         if(!validity.IsValid)
-            logger.ThrowLogPoolStartupException($"Daemon reports pool address {poolConfig.Address} as invalid: {validity.Error}");
+            throw new PoolStartupAbortException($"Daemon reports pool address {poolConfig.Address} as invalid: {validity.Error}");
 
         var info = await Guard(() => rpc.GetNodeInfoAsync(ct),
-            ex=> logger.ThrowLogPoolStartupException($"Daemon reports: {ex.Message}"));
+            ex=> throw new PoolStartupAbortException($"Daemon reports: {ex.Message}"));
 
         blockVersion = info.Parameters.BlockVersion;
 
         // chain detection
         var m = ErgoConstants.RegexChain.Match(info.Name);
         if(!m.Success)
-            logger.ThrowLogPoolStartupException($"Unable to identify network type ({info.Name}");
+            throw new PoolStartupAbortException($"Unable to identify network type ({info.Name}");
 
         network = m.Groups[1].Value.ToLower();
 
@@ -398,7 +399,7 @@ public class ErgoJobManager : JobManagerBase<ErgoJob>
             var walletAddresses = await rpc.WalletAddressesAsync(ct);
 
             if(!walletAddresses.Contains(poolConfig.Address))
-                logger.ThrowLogPoolStartupException($"Pool address {poolConfig.Address} is not controlled by wallet");
+                throw new PoolStartupAbortException($"Pool address {poolConfig.Address} is not controlled by wallet");
 
             ConfigureRewards();
         }
@@ -430,10 +431,10 @@ public class ErgoJobManager : JobManagerBase<ErgoJob>
     protected override async Task<bool> AreDaemonsHealthyAsync(CancellationToken ct)
     {
         var info = await Guard(() => rpc.GetNodeInfoAsync(ct),
-            ex=> logger.ThrowLogPoolStartupException($"Daemon reports: {ex.Message}"));
+            ex=> throw new PoolStartupAbortException($"Daemon reports: {ex.Message}"));
 
         if(info?.IsMining != true)
-            logger.ThrowLogPoolStartupException($"Mining is disabled in Ergo Daemon");
+            throw new PoolStartupAbortException($"Mining is disabled in Ergo Daemon");
 
         return true;
     }

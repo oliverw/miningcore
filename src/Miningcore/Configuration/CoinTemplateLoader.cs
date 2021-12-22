@@ -1,4 +1,5 @@
 using Autofac;
+using Miningcore.Mining;
 using Miningcore.Util;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -20,11 +21,11 @@ public static class CoinTemplateLoader
             foreach(var o in jo)
             {
                 if(o.Value.Type != JTokenType.Object)
-                    logger.ThrowLogPoolStartupException("Invalid coin-template file: dictionary of coin-templates expected");
+                    throw new PoolStartupAbortException("Invalid coin-template file: dictionary of coin-templates expected");
 
                 var value = o.Value[nameof(CoinTemplate.Family).ToLower()];
                 if(value == null)
-                    logger.ThrowLogPoolStartupException($"Invalid coin-template '{o.Key}': missing 'family' property");
+                    throw new PoolStartupAbortException($"Invalid coin-template '{o.Key}': missing 'family' property");
 
                 var family = value.ToObject<CoinFamily>();
                 var result = (CoinTemplate) o.Value.ToObject(CoinTemplate.Families[family]);

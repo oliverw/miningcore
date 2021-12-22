@@ -9,6 +9,7 @@ using Miningcore.Contracts;
 using Miningcore.Extensions;
 using Miningcore.JsonRpc;
 using Miningcore.Messaging;
+using Miningcore.Mining;
 using Miningcore.Notifications.Messages;
 using Miningcore.Time;
 using Miningcore.Util;
@@ -449,7 +450,7 @@ public abstract class BitcoinJobManagerBase<TJob> : JobManagerBase<TJob>
                 .ToArray();
 
             if(errors.Any())
-                logger.ThrowLogPoolStartupException($"Init RPC failed: {string.Join(", ", errors.Select(y => y.Error.Message))}");
+                throw new PoolStartupAbortException($"Init RPC failed: {string.Join(", ", errors.Select(y => y.Error.Message))}");
         }
 
         // extract results
@@ -470,7 +471,7 @@ public abstract class BitcoinJobManagerBase<TJob> : JobManagerBase<TJob>
 
         // ensure pool owns wallet
         if(validateAddressResponse is not {IsValid: true})
-            logger.ThrowLogPoolStartupException($"Daemon reports pool-address '{poolConfig.Address}' as invalid");
+            throw new PoolStartupAbortException($"Daemon reports pool-address '{poolConfig.Address}' as invalid");
 
         isPoS = poolConfig.Template is BitcoinTemplate {IsPseudoPoS: true} || difficultyResponse.Values().Any(x => x.Path == "proof-of-stake");
 
@@ -506,7 +507,7 @@ public abstract class BitcoinJobManagerBase<TJob> : JobManagerBase<TJob>
         else if(submitBlockResponse.Error?.Code == -1)
             hasSubmitBlockMethod = true;
         else
-            logger.ThrowLogPoolStartupException("Unable detect block submission RPC method");
+            throw new PoolStartupAbortException("Unable detect block submission RPC method");
 
         if(!hasLegacyDaemon)
             await UpdateNetworkStatsAsync(ct);

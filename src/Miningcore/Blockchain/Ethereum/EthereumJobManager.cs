@@ -23,6 +23,7 @@ using Contract = Miningcore.Contracts.Contract;
 using EC = Miningcore.Blockchain.Ethereum.EthCommands;
 using static Miningcore.Util.ActionUtils;
 using System.Reactive;
+using Miningcore.Mining;
 using Newtonsoft.Json.Linq;
 
 namespace Miningcore.Blockchain.Ethereum;
@@ -526,7 +527,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
                 .ToArray();
 
             if(errors.Any())
-                logger.ThrowLogPoolStartupException($"Init RPC failed: {string.Join(", ", errors.Select(y => y.Error.Message))}");
+                throw new PoolStartupAbortException($"Init RPC failed: {string.Join(", ", errors.Select(y => y.Error.Message))}");
         }
 
         // extract results
@@ -654,7 +655,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
                     goto retry;
                 }
 
-                logger.ThrowLogPoolStartupException($"Unable to subscribe to geth websocket '{wsSubscription}': {subcriptionResponse.Error.Message} [{subcriptionResponse.Error.Code}]");
+                throw new PoolStartupAbortException($"Unable to subscribe to geth websocket '{wsSubscription}': {subcriptionResponse.Error.Message} [{subcriptionResponse.Error.Code}]");
             }
 
             var websocketNotify = getWorkObs.Where(x => x != null)

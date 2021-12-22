@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using System.Runtime.Serialization;
 using AspNetCoreRateLimit;
 using JetBrains.Annotations;
@@ -746,21 +747,23 @@ public partial class PoolConfig
     /// <summary>
     /// unique id
     /// </summary>
+    [Required]
     public string Id { get; set; }
 
     /// <summary>
     /// Coin template reference
     /// </summary>
+    [Required]
     public string Coin { get; set; }
 
-    /// <summary>
-    /// Display name
-    /// </summary>
-    public string PoolName { get; set; }
-
     public bool Enabled { get; set; }
+
+    [Required]
     public Dictionary<int, PoolEndpoint> Ports { get; set; }
+
+    [Required]
     public DaemonEndpointConfig[] Daemons { get; set; }
+
     public PoolPaymentProcessingConfig PaymentProcessing { get; set; }
     public PoolShareBasedBanningConfig Banning { get; set; }
     public RewardRecipient[] RewardRecipients { get; set; }
@@ -830,5 +833,6 @@ public partial class ClusterConfig
 
     public string ShareRecoveryFile { get; set; }
 
+    [Required]
     public PoolConfig[] Pools { get; set; }
 }

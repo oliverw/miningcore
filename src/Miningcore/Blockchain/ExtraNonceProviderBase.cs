@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using Miningcore.Mining;
 using Miningcore.Util;
 using NLog;
 
@@ -24,7 +25,7 @@ public class ExtraNonceProviderBase : IExtraNonceProvider
             id = instanceId.Value;
 
             if(id > idMax)
-                logger.ThrowLogPoolStartupException($"Provided instance id too large to fit into {IdBits} bits (limit {idMax})");
+                throw new PoolStartupAbortException($"Provided instance id too large to fit into {IdBits} bits (limit {idMax})");
         }
 
         else

@@ -127,8 +127,7 @@ public class CryptonotePayoutHandler : PayoutHandlerBase,
                         networkType = CryptonoteNetworkType.Test;
                         break;
                     default:
-                        logger.ThrowLogPoolStartupException($"Unsupport net type '{info.NetType}'");
-                        break;
+                        throw new PoolStartupAbortException($"Unsupport net type '{info.NetType}'");
                 }
             }
 
