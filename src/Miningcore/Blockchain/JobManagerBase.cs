@@ -71,7 +71,7 @@ public abstract class JobManagerBase<TJob>
     {
         return messageBus.Listen<BtStreamMessage>()
             .Where(x => x.Topic == config.Topic)
-            .DoSafe(x => messageBus.SendMessage(new TelemetryEvent(poolConfig.Id, TelemetryCategory.BtStream, x.Received - x.Sent)), logger)
+            .SafeDo(x => messageBus.SendMessage(new TelemetryEvent(poolConfig.Id, TelemetryCategory.BtStream, x.Received - x.Sent)), logger)
             .Select(x => x.Payload);
     }
 

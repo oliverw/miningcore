@@ -1,6 +1,7 @@
 using NLog;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
+using static Miningcore.Util.ActionUtils;
 
 namespace Miningcore.Extensions;
 
@@ -39,19 +40,8 @@ public static class ObservableExtensions
         });
     }
 
-    public static IObservable<T> DoSafe<T>(this IObservable<T> source, Action<T> action, ILogger logger)
+    public static IObservable<T> SafeDo<T>(this IObservable<T> source, Action<T> action, ILogger logger)
     {
-        return source.Do(x =>
-        {
-            try
-            {
-                action(x);
-            }
-
-            catch(Exception ex)
-            {
-                logger.Error(ex);
-            }
-        });
+        return source.Do(x => Guard(()=> action(x), logger.Error));
     }
 }
