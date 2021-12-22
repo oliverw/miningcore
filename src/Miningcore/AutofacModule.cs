@@ -36,8 +36,6 @@ public class AutofacModule : Module
     /// <param name="builder">The builder through which components can be registered.</param>
     protected override void Load(ContainerBuilder builder)
     {
-        var thisAssembly = typeof(AutofacModule).GetTypeInfo().Assembly;
-
         builder.RegisterInstance(new JsonSerializerSettings
         {
             ContractResolver = new DefaultContractResolver
@@ -61,7 +59,7 @@ public class AutofacModule : Module
             .Keyed<IBanManager>(BanManagerKind.Integrated)
             .SingleInstance();
 
-        builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
+        builder.RegisterAssemblyTypes(ThisAssembly)
             .Where(t => t.GetCustomAttributes<CoinFamilyAttribute>().Any() && t.GetInterfaces()
                 .Any(i =>
                     i.IsAssignableFrom(typeof(IMiningPool)) ||
@@ -70,18 +68,18 @@ public class AutofacModule : Module
             .WithMetadataFrom<CoinFamilyAttribute>()
             .AsImplementedInterfaces();
 
-        builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
+        builder.RegisterAssemblyTypes(ThisAssembly)
             .Where(t => t.GetCustomAttributes<IdentifierAttribute>().Any() &&
                 t.GetInterfaces().Any(i => i.IsAssignableFrom(typeof(IHashAlgorithm))))
             .Named<IHashAlgorithm>(t=> t.GetCustomAttributes<IdentifierAttribute>().First().Name)
             .PropertiesAutowired();
 
-        builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
+        builder.RegisterAssemblyTypes(ThisAssembly)
             .Where(t => t.IsAssignableTo<EquihashSolver>())
             .PropertiesAutowired()
             .AsSelf();
 
-        builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
+        builder.RegisterAssemblyTypes(ThisAssembly)
             .Where(t => t.IsAssignableTo<ControllerBase>())
             .PropertiesAutowired()
             .AsSelf();
@@ -104,7 +102,7 @@ public class AutofacModule : Module
             .AsSelf()
             .SingleInstance();
 
-        builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
+        builder.RegisterAssemblyTypes(ThisAssembly)
             .Where(t => t.GetCustomAttributes<IdentifierAttribute>().Any() && t.GetInterfaces()
                 .Any(i => i.IsAssignableFrom(typeof(IBitcoinBlockSerializer))))
             .Named<IBitcoinBlockSerializer>(t=> t.GetCustomAttributes<IdentifierAttribute>().First().Name)
