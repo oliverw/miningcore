@@ -507,8 +507,8 @@ public class Program : BackgroundService
         var app = new CommandLineApplication
         {
             FullName = "Miningcore",
-            ShortVersionGetter = () => GetVersion(),
-            LongVersionGetter = () => GetVersion()
+            ShortVersionGetter = GetVersion,
+            LongVersionGetter = GetVersion
         };
 
         versionOption = app.Option("-v|--version", "Version Information", CommandOptionType.NoValue);
