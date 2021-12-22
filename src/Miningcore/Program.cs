@@ -62,19 +62,36 @@ public class Program : BackgroundService
         {
             AppDomain.CurrentDomain.UnhandledException += OnAppDomainUnhandledException;
 
-            if(!ParseCommandLine(args, out var configFile))
+            var app = ParseCommandLine(args);
+
+            if(versionOption.HasValue())
+            {
+                app.ShowVersion();
                 return;
-
-            isShareRecoveryMode = shareRecoveryOption.HasValue();
-
-            Logo();
-            clusterConfig = ReadConfig(configFile);
+            }
 
             if(dumpConfigOption.HasValue())
             {
                 DumpParsedConfig(clusterConfig);
                 return;
             }
+
+            if(generateSchemaOption.HasValue())
+            {
+                GenerateJsonConfigSchema();
+                return;
+            }
+
+            if(!configFileOption.HasValue())
+            {
+                app.ShowHelp();
+                return;
+            }
+
+            Logo();
+
+            isShareRecoveryMode = shareRecoveryOption.HasValue();
+            clusterConfig = ReadConfig(configFileOption.Value());
 
             ValidateConfig();
             ConfigureLogging();
@@ -297,8 +314,11 @@ public class Program : BackgroundService
     private static IHost host;
     private readonly IComponentContext container;
     private static ILogger logger;
+    private static CommandOption versionOption;
+    private static CommandOption configFileOption;
     private static CommandOption dumpConfigOption;
     private static CommandOption shareRecoveryOption;
+    private static CommandOption generateSchemaOption;
     private static bool isShareRecoveryMode;
     private static ClusterConfig clusterConfig;
     private static readonly ConcurrentDictionary<string, IMiningPool> pools = new();
@@ -440,10 +460,13 @@ public class Program : BackgroundService
         }));
     }
 
-    private static bool ParseCommandLine(string[] args, out string configFile)
+    private static void GenerateJsonConfigSchema()
     {
-        configFile = null;
+        var filename = generateSchemaOption.Value();
+    }
 
+    private static CommandLineApplication ParseCommandLine(string[] args)
+    {
         var app = new CommandLineApplication
         {
             FullName = "Miningcore - Mining Pool Engine",
@@ -451,32 +474,16 @@ public class Program : BackgroundService
             LongVersionGetter = () => $"v{Assembly.GetEntryAssembly().GetName().Version}"
         };
 
-        var versionOption = app.Option("-v|--version", "Version Information", CommandOptionType.NoValue);
-        var configFileOption = app.Option("-c|--config <configfile>", "Configuration File",
-        CommandOptionType.SingleValue);
-        dumpConfigOption = app.Option("-dc|--dumpconfig", "Dump the configuration (useful for trouble-shooting typos in the config file)",
-        CommandOptionType.NoValue);
-        shareRecoveryOption = app.Option("-rs", "Import lost shares using existing recovery file",
-        CommandOptionType.SingleValue);
+        versionOption = app.Option("-v|--version", "Version Information", CommandOptionType.NoValue);
+        configFileOption = app.Option("-c|--config <configfile>", "Configuration File", CommandOptionType.SingleValue);
+        dumpConfigOption = app.Option("-dc|--dumpconfig", "Dump the configuration (useful for trouble-shooting typos in the config file)",CommandOptionType.NoValue);
+        shareRecoveryOption = app.Option("-rs", "Import lost shares using existing recovery file", CommandOptionType.SingleValue);
+        generateSchemaOption = app.Option("-gs|--generate-schema <outputfile>", "Generate JSON schema from configuration options", CommandOptionType.SingleValue);
         app.HelpOption("-? | -h | --help");
 
         app.Execute(args);
 
-        if(versionOption.HasValue())
-        {
-            app.ShowVersion();
-            return false;
-        }
-
-        if(!configFileOption.HasValue())
-        {
-            app.ShowHelp();
-            return false;
-        }
-
-        configFile = configFileOption.Value();
-
-        return true;
+        return app;
     }
 
     private static ClusterConfig ReadConfig(string file)
