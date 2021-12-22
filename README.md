@@ -177,7 +177,7 @@ A public production pool requires a web-frontend for your users to check their h
 
 ## Donations
 
-This software comes with a built-in donation of 0.1% per block-reward to support the ongoing development of this project. You can also send donations directly to the following accounts:
+To support this project you can become a [sponsor](https://github.com/sponsors/oliverw) or send a donation to the following accounts:
 
 * XMR: `46S2AEwYmD9fnmZkxCpXf1T3U3DyEq3Ekb8Lg9kgUMGABn9Fp9q5nE2fBcXebrjrXfZHy5uC5HfLE6X4WLtSm35wUr9Mh46`
 * BTC:  `bc1quzdczlpfn3n4xvpdz0x9h79569afhg0ashwxxp`

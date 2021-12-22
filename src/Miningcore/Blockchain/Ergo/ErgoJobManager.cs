@@ -207,24 +207,6 @@ public class ErgoJobManager : JobManagerBase<ErgoJob>
             logger.Info(() => $"Daemon is downloading headers ...");
     }
 
-    private void ConfigureRewards()
-    {
-        // Donation to MiningCore development
-        if(network == "mainnet" &&
-           DevDonation.Addresses.TryGetValue(poolConfig.Template.Symbol, out var address))
-        {
-            poolConfig.RewardRecipients = poolConfig.RewardRecipients.Concat(new[]
-            {
-                new RewardRecipient
-                {
-                    Address = address,
-                    Percentage = DevDonation.Percent,
-                    Type = "dev"
-                }
-            }).ToArray();
-        }
-    }
-
     private async Task<bool> SubmitBlockAsync(Share share, string nonce)
     {
         try
@@ -400,8 +382,6 @@ public class ErgoJobManager : JobManagerBase<ErgoJob>
 
             if(!walletAddresses.Contains(poolConfig.Address))
                 throw new PoolStartupAbortException($"Pool address {poolConfig.Address} is not controlled by wallet");
-
-            ConfigureRewards();
         }
 
         // update stats

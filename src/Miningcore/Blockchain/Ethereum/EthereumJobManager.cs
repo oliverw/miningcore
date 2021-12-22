@@ -574,28 +574,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
             }
         }
 
-        ConfigureRewards();
-
         await SetupJobUpdates(ct);
-    }
-
-    private void ConfigureRewards()
-    {
-        // Donation to MiningCore development
-        if(networkType == EthereumNetworkType.Mainnet &&
-           chainType == GethChainType.Ethereum &&
-           DevDonation.Addresses.TryGetValue(poolConfig.Template.As<CoinTemplate>().Symbol, out var address))
-        {
-            poolConfig.RewardRecipients = poolConfig.RewardRecipients.Concat(new[]
-            {
-                new RewardRecipient
-                {
-                    Address = address,
-                    Percentage = DevDonation.Percent,
-                    Type = "dev"
-                }
-            }).ToArray();
-        }
     }
 
     protected virtual async Task SetupJobUpdates(CancellationToken ct)

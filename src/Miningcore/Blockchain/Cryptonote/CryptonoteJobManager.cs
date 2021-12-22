@@ -567,9 +567,6 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
                 break;
         }
 
-        if(clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
-            ConfigureRewards();
-
         // update stats
         BlockchainStats.RewardType = "POW";
         BlockchainStats.NetworkType = networkType.ToString();
@@ -598,24 +595,6 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
 
         if(clusterConfig.InstanceId.HasValue)
             instanceId[0] = clusterConfig.InstanceId.Value;
-    }
-
-    private void ConfigureRewards()
-    {
-        // Donation to MiningCore development
-        if(networkType == CryptonoteNetworkType.Main &&
-           DevDonation.Addresses.TryGetValue(poolConfig.Template.Symbol, out var address))
-        {
-            poolConfig.RewardRecipients = poolConfig.RewardRecipients.Concat(new[]
-            {
-                new RewardRecipient
-                {
-                    Address = address,
-                    Percentage = DevDonation.Percent,
-                    Type = "dev"
-                }
-            }).ToArray();
-        }
     }
 
     protected virtual void SetupJobUpdates(CancellationToken ct)
