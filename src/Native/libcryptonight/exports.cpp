@@ -65,7 +65,7 @@ extern "C" {
 #define FNA(algo) xmrig::CnHash::fn(xmrig::Algorithm::algo, SOFT_AES ? xmrig::CnHash::AV_SINGLE_SOFT : xmrig::CnHash::AV_SINGLE, xmrig::Assembly::NONE)
 #endif
 
-const size_t max_mem_size = 20 * 1024 * 1024;
+constexpr size_t max_mem_size = 20 * 1024 * 1024;
 
 void ghostrider(const uint8_t* data, size_t size, uint8_t * output, cryptonight_ctx** ctx, uint64_t) {
     xmrig::ghostrider::hash(data, size, output, ctx, nullptr);
@@ -125,24 +125,24 @@ static xmrig::cn_hash_fun get_argon2_fn(const int algo) {
 
 extern "C" MODULE_API void *alloc_context_export()
 {
-    struct cryptonight_ctx* ctx = NULL;
+    cryptonight_ctx* ctx = nullptr;
     xmrig::CnCtx::create(&ctx, static_cast<uint8_t*>(_mm_malloc(max_mem_size, 4096)), max_mem_size, 1);
     return ctx;
 }
 
-extern "C" MODULE_API void free_context_export(struct cryptonight_ctx* ctx)
+extern "C" MODULE_API void free_context_export(cryptonight_ctx* ctx)
 {
-    if(ctx != NULL)
+    if(ctx != nullptr)
         xmrig::CnCtx::release(&ctx, 1);
 }
 
 extern "C" MODULE_API bool cryptonight_export(const uint8_t * input, size_t input_length,
-    char* output, int algo, uint64_t height, struct cryptonight_ctx* ctx)
+    char* output, const int algo, const uint64_t height, cryptonight_ctx* ctx)
 {
     if (input_length == 0)
         return false;
 
-    if (ctx == NULL || input == NULL)
+    if (ctx == nullptr || input == nullptr)
         return false;
 
     const xmrig::cn_hash_fun fn = get_cn_fn(algo);
@@ -153,12 +153,12 @@ extern "C" MODULE_API bool cryptonight_export(const uint8_t * input, size_t inpu
 }
 
 extern "C" MODULE_API bool cryptonight_lite_export(const uint8_t * input, size_t input_length,
-    char* output, int algo, uint64_t height, struct cryptonight_ctx* ctx)
+    char* output, const int algo, const uint64_t height, cryptonight_ctx* ctx)
 {
     if (input_length == 0)
         return false;
 
-    if (ctx == NULL || input == NULL)
+    if (ctx == nullptr || input == nullptr)
         return false;
 
     const xmrig::cn_hash_fun fn = get_cn_lite_fn(algo);
@@ -169,12 +169,12 @@ extern "C" MODULE_API bool cryptonight_lite_export(const uint8_t * input, size_t
 }
 
 extern "C" MODULE_API bool cryptonight_heavy_export(const uint8_t * input, size_t input_length,
-    char* output, int algo, uint64_t height, struct cryptonight_ctx* ctx)
+    char* output, const int algo, const uint64_t height, cryptonight_ctx* ctx)
 {
     if (input_length == 0)
         return false;
 
-    if (ctx == NULL || input == NULL)
+    if (ctx == nullptr || input == nullptr)
         return false;
 
     const xmrig::cn_hash_fun fn = get_cn_heavy_fn(algo);
@@ -185,12 +185,12 @@ extern "C" MODULE_API bool cryptonight_heavy_export(const uint8_t * input, size_
 }
 
 extern "C" MODULE_API bool cryptonight_pico_export(const uint8_t * input, size_t input_length,
-    char* output, int algo, uint64_t height, struct cryptonight_ctx* ctx)
+    char* output, const int algo, const uint64_t height, cryptonight_ctx* ctx)
 {
     if (input_length == 0)
         return false;
 
-    if (ctx == NULL || input == NULL)
+    if (ctx == nullptr || input == nullptr)
         return false;
 
     const xmrig::cn_hash_fun fn = get_cn_pico_fn(algo);
@@ -201,12 +201,12 @@ extern "C" MODULE_API bool cryptonight_pico_export(const uint8_t * input, size_t
 }
 
 extern "C" MODULE_API bool argon_export(const uint8_t * input, size_t input_length,
-    char* output, int algo, uint64_t height, struct cryptonight_ctx* ctx)
+    char* output, const int algo, const uint64_t height, cryptonight_ctx* ctx)
 {
     if (input_length == 0)
         return false;
 
-    if (ctx == NULL || input == NULL)
+    if (ctx == nullptr || input == nullptr)
         return false;
 
     const xmrig::cn_hash_fun fn = get_argon2_fn(algo);

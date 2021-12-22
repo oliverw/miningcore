@@ -162,12 +162,6 @@ Refer to [this file](https://github.com/oliverw/miningcore/blob/master/src/Minin
 - To increase the share processing throughput it is advisable to increase the maximum number of concurrent equihash solvers through the new configuration property "equihashMaxThreads" of the cluster configuration element. Increasing this value by one increases the peak memory consumption of the pool cluster by 1 GB.
 - Miners may use both t-addresses and z-addresses when connecting to the pool
 
-#### Ethereum
-
-- Miningcore implements the [Ethereum stratum mining protocol](https://github.com/nicehash/Specifications/blob/master/EthereumStratum_NiceHash_v1.0.0.txt) authored by NiceHash. This protocol is implemented by all major Ethereum miners.
-- Claymore Miner must be configured to communicate using this protocol by supplying the `-esm 3` command line option
-- Genoil's `ethminer` must be configured to communicate using this protocol by supplying the `-SP 2` command line option
-
 #### Vertcoin
 
 - Be sure to copy the file `verthash.dat` from your vertcoin blockchain folder to your Miningcore server
