@@ -18,49 +18,48 @@ public class MerkleTreeTests : TestBase
         this.output = output;
     }
 
-
     [Fact]
     public void MerkleTree_SimpleTest_Branches()
     {
+        var value1 = Encoding.ASCII.GetBytes("1");
+        var value2 = Encoding.ASCII.GetBytes("2");
 
-        byte[] value1 = Encoding.ASCII.GetBytes("1");
-        byte[] value2 = Encoding.ASCII.GetBytes("2");
-
-        IEnumerable<byte[]> hashes = new List<byte[]>{
+        var hashes = new List<byte[]>
+        {
             MerkelHash(value1),
             MerkelHash(value2)
         };
 
-
-        MerkleTree tree = new MerkleTree(hashes);
+        var tree = new MerkleTree(hashes);
         var output = tree.Branches;
 
-        string[] expectedOutput = {
+        var expectedOutput = new[]
+        {
             "9c2e4d8fe97d881430de4e754b4205b9c27ce96715231cffc4337340cb110280",
             "064a9b4691e6c7c53f8cbe713c02ce1cfd22ce261e6fdf042f4d4e1cdd547cdb"
         };
 
-        Assert.Equal<string>(expectedOutput, output);
-
+        Assert.Equal(expectedOutput, output);
     }
 
     [Fact]
     public void MerkleTree_100HashesTest_Branches()
     {
+        var hashesList = new List<byte[]>();
 
-        List<byte[]> hashesList = new List<byte[]>();
-        for(int i = 0; i < 100; i++)
+        for(var i = 0; i < 100; i++)
         {
-            byte[] value = Encoding.ASCII.GetBytes(i.ToString());
-            byte[] hash = MerkelHash(value);
+            var value = Encoding.ASCII.GetBytes(i.ToString());
+            var hash = MerkelHash(value);
+
             hashesList.Add(hash);
         }
 
-
-        MerkleTree tree = new MerkleTree(hashesList);
+        var tree = new MerkleTree(hashesList);
         var output = tree.Branches;
 
-        string[] expectedOutput = {
+        var expectedOutput = new[]
+        {
             "67050eeb5f95abf57449d92629dcf69f80c26247e207ad006a862d1e4e6498ff",
             "7de236613dd3d9fa1d86054a84952f1e0df2f130546b394a4d4dd7b76997f607",
             "2501f389988298bebe860b37315788bdffc8b72533a95c820db9c8c40be4455f",
@@ -70,33 +69,31 @@ public class MerkleTreeTests : TestBase
             "3c7e141f9a3816f2131d3248540701e09e69f50e34e6a77059e785ae3b8263c7"
         };
 
-        Assert.Equal<string>(expectedOutput, output);
-
+        Assert.Equal(expectedOutput, output);
     }
 
     [Fact]
     public void MerkleTree_99HashesTest_Branches()
     {
+        var hashesList = new List<byte[]>();
 
-        List<byte[]> hashesList = new List<byte[]>();
-        for(int i = 0; i < 100; i++)
+        for(var i = 0; i < 100; i++)
         {
-            byte[] value = Encoding.ASCII.GetBytes(i.ToString());
-            byte[] hash = MerkelHash(value);
+            var value = Encoding.ASCII.GetBytes(i.ToString());
+            var hash = MerkelHash(value);
             hashesList.Add(hash);
         }
 
-
-        MerkleTree tree = new MerkleTree(hashesList);
+        var tree = new MerkleTree(hashesList);
         var output = tree.Steps
             .Select(x => x.ToHexString())
             .ToArray();
 
-
         foreach(var hex in output)
             this.output.WriteLine(hex);
 
-        string[] expectedOutput = {
+        var expectedOutput = new[]
+        {
             "67050eeb5f95abf57449d92629dcf69f80c26247e207ad006a862d1e4e6498ff",
             "7de236613dd3d9fa1d86054a84952f1e0df2f130546b394a4d4dd7b76997f607",
             "2501f389988298bebe860b37315788bdffc8b72533a95c820db9c8c40be4455f",
@@ -107,7 +104,6 @@ public class MerkleTreeTests : TestBase
         };
 
         Assert.Equal<string>(expectedOutput, output);
-
     }
 
 
