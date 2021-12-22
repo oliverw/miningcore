@@ -81,10 +81,10 @@ public class CryptonightBindingsTests : TestBase
     {
         var value = "5468697320697320612074657374205468697320697320612074657374205468697320697320612074657374".HexToByteArray();
         var hash = new byte[32];
-        CryptonightBindings.Cryptonight(value, hash, CryptonightBindings.Algorithm.CN_R, 10);
+        CryptonightBindings.Cryptonight(value, hash, CryptonightBindings.Algorithm.CN_R, 1806260);
 
         var result = hash.ToHexString();
-        Assert.Equal("c6bcd03a96dd5d8302c33c250bc96fc7213f9c7e497283a56e979bf2bbca3dfb", result);
+        Assert.Equal("f759588ad57e758467295443a9bd71490abff8e9dad1b95b6bf2f5d0d78387bc", result);
     }
 
     [Fact]
