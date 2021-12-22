@@ -15,7 +15,7 @@ public unsafe class X13BCD : IHashAlgorithm
         {
             fixed (byte* output = result)
             {
-                libmultihash.x13_bcd(input, output);
+                MultihashBindings.x13_bcd(input, output);
             }
         }
     }

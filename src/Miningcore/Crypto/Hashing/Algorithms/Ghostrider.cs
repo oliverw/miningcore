@@ -10,6 +10,6 @@ public unsafe class Ghostrider : IHashAlgorithm
     {
         Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
 
-        libcryptonight.Cryptonight(data, result, libcryptonight.Algorithm.GHOSTRIDER_RTM, 10);
+        CryptonightBindings.Cryptonight(data, result, CryptonightBindings.Algorithm.GHOSTRIDER_RTM, 10);
     }
 }

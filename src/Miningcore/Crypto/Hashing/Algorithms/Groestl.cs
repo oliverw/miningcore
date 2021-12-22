@@ -14,7 +14,7 @@ public unsafe class Groestl : IHashAlgorithm
         {
             fixed (byte* output = result)
             {
-                libmultihash.groestl(input, output, (uint) data.Length);
+                MultihashBindings.groestl(input, output, (uint) data.Length);
             }
         }
     }

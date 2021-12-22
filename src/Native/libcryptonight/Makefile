@@ -1,6 +1,6 @@
 INC_DIRS = -I. -Ixmrig/3rdparty/argon2/include -Ixmrig/3rdparty/argon2/lib -Ixmrig -Ixmrig-override
-CFLAGS = -DCPU_INTEL -DHAVE_SSE2 -std=gnu11 -fPIC -DNDEBUG -Ofast -fno-fast-math -w $(INC_DIRS)
-CXXFLAGS = -DCPU_INTEL -DHAVE_SSE2 -std=gnu++11 -s -fPIC -DNDEBUG -Ofast -fno-fast-math -fexceptions -fno-rtti -Wno-class-memaccess -w $(INC_DIRS)
+CFLAGS = -D__AES__ -DCPU_INTEL -maes -msse2 -mavx -mavx2 -g -std=gnu11 -fPIC -DNDEBUG -Ofast -fno-fast-math -w $(INC_DIRS)
+CXXFLAGS = -D__AES__ -DCPU_INTEL -maes -msse2 -mavx -mavx2 -g -std=gnu++11 -s -fPIC -DNDEBUG -Ofast -fno-fast-math -fexceptions -fno-rtti -Wno-class-memaccess -w $(INC_DIRS)
 LDFLAGS = -shared
 TARGET  = libcryptonight.so
 
@@ -8,6 +8,7 @@ OBJECTS = exports.o \
 	xmrig/crypto/cn/asm/cn_main_loop.o \
 	xmrig/crypto/cn/asm/CryptonightR_template.o \
 	xmrig/crypto/cn/r/CryptonightR_gen.o \
+	xmrig/crypto/cn/gpu/cn_gpu_avx.o \
 	xmrig/crypto/cn/gpu/cn_gpu_ssse3.o \
 	xmrig-override/backend/cpu/platform/BasicCpuInfo.o \
 	\
@@ -38,6 +39,7 @@ OBJECTS = exports.o \
 	xmrig/3rdparty/argon2/arch/x86_64/lib/argon2-avx2.o \
 	xmrig/3rdparty/argon2/arch/x86_64/lib/argon2-avx512f.o \
 	xmrig/3rdparty/argon2/arch/x86_64/lib/argon2-sse2.o \
+	xmrig/3rdparty/argon2/arch/x86_64/lib/argon2-ssse3.o \
 	xmrig/3rdparty/argon2/arch/x86_64/lib/argon2-xop.o \
 	\
 	xmrig/crypto/astrobwt/AstroBWT.o \

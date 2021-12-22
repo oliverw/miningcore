@@ -5,16 +5,33 @@ using Miningcore.Contracts;
 using Miningcore.Extensions;
 using Miningcore.Messaging;
 using Miningcore.Notifications.Messages;
-using NLog;
 
 // ReSharper disable UnusedMember.Global
 
 namespace Miningcore.Native;
 
-public static unsafe class libcryptonight
+public static unsafe class CryptonightBindings
 {
-    private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
-    internal static IMessageBus messageBus;
+    [DllImport("libcryptonight", EntryPoint = "alloc_context_export", CallingConvention = CallingConvention.Cdecl)]
+    private static extern IntPtr alloc_context();
+
+    [DllImport("libcryptonight", EntryPoint = "free_context_export", CallingConvention = CallingConvention.Cdecl)]
+    private static extern void free_context(IntPtr ctx);
+
+    [DllImport("libcryptonight", EntryPoint = "cryptonight_export", CallingConvention = CallingConvention.Cdecl)]
+    private static extern bool cryptonight(byte* input, int inputLength, void* output, int algo, ulong height, IntPtr ctx);
+
+    [DllImport("libcryptonight", EntryPoint = "cryptonight_lite_export", CallingConvention = CallingConvention.Cdecl)]
+    private static extern bool cryptonight_lite(byte* input, int inputLength, void* output, int algo, ulong height, IntPtr ctx);
+
+    [DllImport("libcryptonight", EntryPoint = "cryptonight_heavy_export", CallingConvention = CallingConvention.Cdecl)]
+    private static extern bool cryptonight_heavy(byte* input, int inputLength, void* output, int algo, ulong height, IntPtr ctx);
+
+    [DllImport("libcryptonight", EntryPoint = "cryptonight_pico_export", CallingConvention = CallingConvention.Cdecl)]
+    private static extern bool cryptonight_pico(byte* input, int inputLength, void* output, int algo, ulong height, IntPtr ctx);
+
+    [DllImport("libcryptonight", EntryPoint = "argon_export", CallingConvention = CallingConvention.Cdecl)]
+    private static extern bool argon(byte* input, int inputLength, void* output, int algo, ulong height, IntPtr ctx);
 
     public enum Algorithm
     {
@@ -62,26 +79,51 @@ public static unsafe class libcryptonight
         //RX_XLA          = 0x721211ff,   // "panthera"         Panthera (Scala2).
     }
 
-    [DllImport("libcryptonight", EntryPoint = "alloc_context_export", CallingConvention = CallingConvention.Cdecl)]
-    private static extern IntPtr alloc_context();
+    internal static IMessageBus messageBus;
 
-    [DllImport("libcryptonight", EntryPoint = "free_context_export", CallingConvention = CallingConvention.Cdecl)]
-    private static extern void free_context(IntPtr ctx);
+    private static readonly HashSet<Algorithm> validCryptonightAlgos = new()
+    {
+        Algorithm.CN_0,
+        Algorithm.CN_1,
+        Algorithm.CN_FAST,
+        Algorithm.CN_XAO,
+        Algorithm.CN_RTO,
+        Algorithm.CN_2,
+        Algorithm.CN_HALF,
+        Algorithm.CN_GPU,
+        Algorithm.CN_R,
+        Algorithm.CN_RWZ,
+        Algorithm.CN_ZLS,
+        Algorithm.CN_DOUBLE,
+        Algorithm.CN_CCX,
+        Algorithm.GHOSTRIDER_RTM,
+    };
 
-    [DllImport("libcryptonight", EntryPoint = "cryptonight_export", CallingConvention = CallingConvention.Cdecl)]
-    private static extern bool cryptonight(byte* input, int inputLength, void* output, Algorithm algo, ulong height, IntPtr ctx);
+    private static readonly HashSet<Algorithm> validCryptonightLiteAlgos = new()
+    {
+        Algorithm.CN_LITE_0,
+        Algorithm.CN_LITE_1,
+    };
 
-    [DllImport("libcryptonight", EntryPoint = "cryptonight_lite_export", CallingConvention = CallingConvention.Cdecl)]
-    private static extern bool cryptonight_lite(byte* input, int inputLength, void* output, Algorithm algo, ulong height, IntPtr ctx);
+    private static readonly HashSet<Algorithm> validCryptonightHeavyAlgos = new()
+    {
+        Algorithm.CN_HEAVY_0,
+        Algorithm.CN_HEAVY_XHV,
+        Algorithm.CN_HEAVY_TUBE,
+    };
 
-    [DllImport("libcryptonight", EntryPoint = "cryptonight_heavy_export", CallingConvention = CallingConvention.Cdecl)]
-    private static extern bool cryptonight_heavy(byte* input, int inputLength, void* output, Algorithm algo, ulong height, IntPtr ctx);
+    private static readonly HashSet<Algorithm> validCryptonightPicoAlgos = new()
+    {
+        Algorithm.CN_PICO_0,
+        Algorithm.CN_PICO_TLO,
+    };
 
-    [DllImport("libcryptonight", EntryPoint = "cryptonight_pico_export", CallingConvention = CallingConvention.Cdecl)]
-    private static extern bool cryptonight_pico(byte* input, int inputLength, void* output, Algorithm algo, ulong height, IntPtr ctx);
-
-    [DllImport("libcryptonight", EntryPoint = "argon_export", CallingConvention = CallingConvention.Cdecl)]
-    private static extern bool argon(byte* input, int inputLength, void* output, Algorithm algo, ulong height, IntPtr ctx);
+    private static readonly HashSet<Algorithm> validArgonAlgos = new()
+    {
+        Algorithm.AR2_WRKZ,
+        Algorithm.AR2_CHUKWA,
+        Algorithm.AR2_CHUKWA_V2,
+    };
 
     #region Context managment
 
@@ -134,50 +176,6 @@ public static unsafe class libcryptonight
 
     #endregion // Context managment
 
-    private static readonly HashSet<Algorithm> validCryptonightAlgos = new()
-    {
-        Algorithm.CN_0,
-        Algorithm.CN_1,
-        Algorithm.CN_FAST,
-        Algorithm.CN_XAO,
-        Algorithm.CN_RTO,
-        Algorithm.CN_2,
-        Algorithm.CN_HALF,
-        Algorithm.CN_GPU,
-        Algorithm.CN_R,
-        Algorithm.CN_RWZ,
-        Algorithm.CN_ZLS,
-        Algorithm.CN_DOUBLE,
-        Algorithm.CN_CCX,
-        Algorithm.GHOSTRIDER_RTM,
-    };
-
-    private static readonly HashSet<Algorithm> validCryptonightLiteAlgos = new()
-    {
-        Algorithm.CN_LITE_0,
-        Algorithm.CN_LITE_1,
-    };
-
-    private static readonly HashSet<Algorithm> validCryptonightHeavyAlgos = new()
-    {
-        Algorithm.CN_HEAVY_0,
-        Algorithm.CN_HEAVY_XHV,
-        Algorithm.CN_HEAVY_TUBE,
-    };
-
-    private static readonly HashSet<Algorithm> validCryptonightPicoAlgos = new()
-    {
-        Algorithm.CN_PICO_0,
-        Algorithm.CN_PICO_TLO,
-    };
-
-    private static readonly HashSet<Algorithm> validArgonAlgos = new()
-    {
-        Algorithm.AR2_WRKZ,
-        Algorithm.AR2_CHUKWA,
-        Algorithm.AR2_CHUKWA_V2,
-    };
-
     public static void Cryptonight(ReadOnlySpan<byte> data, Span<byte> result, Algorithm algo, ulong height)
     {
         Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
@@ -191,7 +189,7 @@ public static unsafe class libcryptonight
             {
                 using(var lease = new ContextLease())
                 {
-                    var success = cryptonight(input, data.Length, output, algo, height, lease.Context.Handle);
+                    var success = cryptonight(input, data.Length, output, (int) algo, height, lease.Context.Handle);
                     Debug.Assert(success);
 
                     messageBus?.SendTelemetry(algo.ToString(), TelemetryCategory.Hash, sw.Elapsed, true);
@@ -213,7 +211,7 @@ public static unsafe class libcryptonight
             {
                 using(var lease = new ContextLease())
                 {
-                    var success = cryptonight_lite(input, data.Length, output, algo, height, lease.Context.Handle);
+                    var success = cryptonight_lite(input, data.Length, output, (int) algo, height, lease.Context.Handle);
                     Debug.Assert(success);
 
                     messageBus?.SendTelemetry(algo.ToString(), TelemetryCategory.Hash, sw.Elapsed, true);
@@ -235,7 +233,7 @@ public static unsafe class libcryptonight
             {
                 using(var lease = new ContextLease())
                 {
-                    var success = cryptonight_heavy(input, data.Length, output, algo, height, lease.Context.Handle);
+                    var success = cryptonight_heavy(input, data.Length, output, (int) algo, height, lease.Context.Handle);
                     Debug.Assert(success);
 
                     messageBus?.SendTelemetry(algo.ToString(), TelemetryCategory.Hash, sw.Elapsed, true);
@@ -257,7 +255,7 @@ public static unsafe class libcryptonight
             {
                 using(var lease = new ContextLease())
                 {
-                    var success = cryptonight_pico(input, data.Length, output, algo, height, lease.Context.Handle);
+                    var success = cryptonight_pico(input, data.Length, output, (int) algo, height, lease.Context.Handle);
                     Debug.Assert(success);
 
                     messageBus?.SendTelemetry(algo.ToString(), TelemetryCategory.Hash, sw.Elapsed, true);
@@ -279,7 +277,7 @@ public static unsafe class libcryptonight
             {
                 using(var lease = new ContextLease())
                 {
-                    var success = argon(input, data.Length, output, algo, height, lease.Context.Handle);
+                    var success = argon(input, data.Length, output, (int) algo, height, lease.Context.Handle);
                     Debug.Assert(success);
 
                     messageBus?.SendTelemetry(algo.ToString(), TelemetryCategory.Hash, sw.Elapsed, true);

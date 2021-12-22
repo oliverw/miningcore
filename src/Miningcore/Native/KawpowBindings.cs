@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 
 namespace Miningcore.Native;
 
-public static unsafe class libkawpow
+public static unsafe class KawpowBindings
 {
     [DllImport("libethash", EntryPoint = "ethash_create_epoch_context", CallingConvention = CallingConvention.Cdecl)]
     private static extern IntPtr CreateContext(int epoch_number);

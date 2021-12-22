@@ -14,7 +14,7 @@ public unsafe class GroestlMyriad : IHashAlgorithm
         {
             fixed (byte* output = result)
             {
-                libmultihash.groestl_myriad(input, output, (uint) data.Length);
+                MultihashBindings.groestl_myriad(input, output, (uint) data.Length);
             }
         }
     }

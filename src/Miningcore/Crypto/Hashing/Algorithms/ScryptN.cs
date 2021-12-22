@@ -42,7 +42,7 @@ public unsafe class ScryptN : IHashAlgorithm
         {
             fixed (byte* output = result)
             {
-                libmultihash.scryptn(input, output, (uint) nFactor, (uint) data.Length);
+                MultihashBindings.scryptn(input, output, (uint) nFactor, (uint) data.Length);
             }
         }
     }

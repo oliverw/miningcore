@@ -452,8 +452,8 @@ public class CryptonotePayoutHandler : PayoutHandlerBase,
             {
                 ExtractAddressAndPaymentId(x.Address, out var address, out var paymentId);
 
-                var addressPrefix = libcryptonote.DecodeAddress(address);
-                var addressIntegratedPrefix = libcryptonote.DecodeIntegratedAddress(address);
+                var addressPrefix = CryptonoteBindings.DecodeAddress(address);
+                var addressIntegratedPrefix = CryptonoteBindings.DecodeIntegratedAddress(address);
 
                 switch(networkType)
                 {
@@ -500,7 +500,7 @@ public class CryptonotePayoutHandler : PayoutHandlerBase,
 
                 var hasPaymentId = paymentId != null;
                 var isIntegratedAddress = false;
-                var addressIntegratedPrefix = libcryptonote.DecodeIntegratedAddress(address);
+                var addressIntegratedPrefix = CryptonoteBindings.DecodeIntegratedAddress(address);
 
                 switch(networkType)
                 {

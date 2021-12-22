@@ -14,7 +14,7 @@ public unsafe class Qubit : IHashAlgorithm
         {
             fixed (byte* output = result)
             {
-                libmultihash.qubit(input, output, (uint) data.Length);
+                MultihashBindings.qubit(input, output, (uint) data.Length);
             }
         }
     }

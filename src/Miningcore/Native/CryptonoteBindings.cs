@@ -5,7 +5,7 @@ using Miningcore.Contracts;
 
 namespace Miningcore.Native;
 
-public static unsafe class libcryptonote
+public static unsafe class CryptonoteBindings
 {
     [DllImport("libcryptonote", EntryPoint = "convert_blob_export", CallingConvention = CallingConvention.Cdecl)]
     private static extern bool convert_blob(byte* input, int inputSize, byte* output, ref int outputSize);

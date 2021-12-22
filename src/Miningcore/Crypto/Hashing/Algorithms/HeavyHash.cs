@@ -14,7 +14,7 @@ public unsafe class HeavyHash : IHashAlgorithm
         {
             fixed (byte* output = result)
             {
-                libmultihash.heavyhash(input, output, (uint) data.Length);
+                MultihashBindings.heavyhash(input, output, (uint) data.Length);
             }
         }
     }

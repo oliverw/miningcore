@@ -2,7 +2,7 @@ using System.Runtime.InteropServices;
 
 namespace Miningcore.Native;
 
-public static unsafe class libmultihash
+public static unsafe class MultihashBindings
 {
     [DllImport("libmultihash", EntryPoint = "scrypt_export", CallingConvention = CallingConvention.Cdecl)]
     public static extern void scrypt(byte* input, void* output, uint n, uint r, uint inputLength);

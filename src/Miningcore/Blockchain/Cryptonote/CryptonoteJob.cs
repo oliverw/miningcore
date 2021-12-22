@@ -29,7 +29,7 @@ public class CryptonoteJob
             case CryptonightHashType.RandomX:
                 hashFunc = ((seedHex, data, result, height) =>
                 {
-                    librandomx.CalculateHash(randomXRealm, seedHex, data, result);
+                    RandomxBindings.CalculateHash(randomXRealm, seedHex, data, result);
                 });
                 break;
         }
@@ -58,7 +58,7 @@ public class CryptonoteJob
         var bytes = BitConverter.GetBytes(workerExtraNonce.ToBigEndian());
         bytes.CopyTo(blob[BlockTemplate.ReservedOffset..]);
 
-        return libcryptonote.ConvertBlob(blob, blobTemplate.Length).ToHexString();
+        return CryptonoteBindings.ConvertBlob(blob, blobTemplate.Length).ToHexString();
     }
 
     private string EncodeTarget(double difficulty, int size = 4)
@@ -86,7 +86,7 @@ public class CryptonoteJob
         block[0] = (byte) blobConverted.Length;
         blobConverted.CopyTo(block[1..]);
 
-        libcryptonote.CryptonightHashFast(block, result);
+        CryptonoteBindings.CryptonightHashFast(block, result);
     }
 
     #region API-Surface
@@ -132,7 +132,7 @@ public class CryptonoteJob
         bytes.CopyTo(blob[CryptonoteConstants.BlobNonceOffset..]);
 
         // convert
-        var blobConverted = libcryptonote.ConvertBlob(blob, blobTemplate.Length);
+        var blobConverted = CryptonoteBindings.ConvertBlob(blob, blobTemplate.Length);
         if(blobConverted == null)
             throw new StratumException(StratumError.MinusOne, "malformed blob");
 

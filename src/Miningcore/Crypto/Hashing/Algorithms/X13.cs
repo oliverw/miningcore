@@ -15,7 +15,7 @@ public unsafe class X13 : IHashAlgorithm
         {
             fixed (byte* output = result)
             {
-                libmultihash.x13(input, output, (uint) data.Length);
+                MultihashBindings.x13(input, output, (uint) data.Length);
             }
         }
     }

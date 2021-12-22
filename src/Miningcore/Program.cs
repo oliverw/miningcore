@@ -25,6 +25,7 @@ using Miningcore.Configuration;
 using Miningcore.Crypto.Hashing.Algorithms;
 using Miningcore.Crypto.Hashing.Equihash;
 using Miningcore.Crypto.Hashing.Ethash;
+using Miningcore.Extensions;
 using Miningcore.Messaging;
 using Miningcore.Mining;
 using Miningcore.Native;
@@ -718,11 +719,20 @@ public class Program : BackgroundService
         Verthash.messageBus = messageBus;
 
         // Configure Cryptonight
-        libcryptonight.messageBus = messageBus;
-        libcryptonight.InitContexts(clusterConfig.CryptonightMaxThreads ?? 1);
+        CryptonightBindings.messageBus = messageBus;
+        CryptonightBindings.InitContexts(clusterConfig.CryptonightMaxThreads ?? 1);
 
         // Configure RandomX
-        librandomx.messageBus = messageBus;
+        RandomxBindings.messageBus = messageBus;
+
+
+
+var value = "0305a0dbd6bf05cf16e503f3a66f78007cbf34144332ecbfc22ed95c8700383b309ace1923a0964b00000008ba939a62724c0d7581fce5761e9d8a0e6a1c3f924fdd8493d1115649c05eb601".HexToByteArray();
+var hash = new byte[32];
+CryptonightBindings.Cryptonight(value, hash, CryptonightBindings.Algorithm.GHOSTRIDER_RTM, 10);
+
+var result = hash.ToHexString();
+Console.WriteLine(result);
     }
 
     private static void ConfigurePersistence(ContainerBuilder builder)

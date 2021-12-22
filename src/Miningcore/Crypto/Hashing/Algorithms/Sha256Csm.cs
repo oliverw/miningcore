@@ -16,7 +16,7 @@ public unsafe class Sha256Csm : IHashAlgorithm
         {
             fixed (byte* output = result)
             {
-                libmultihash.sha256csm(input, output, (uint) data.Length);
+                MultihashBindings.sha256csm(input, output, (uint) data.Length);
             }
         }
     }

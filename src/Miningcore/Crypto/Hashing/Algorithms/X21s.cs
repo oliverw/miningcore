@@ -14,7 +14,7 @@ public unsafe class X21S : IHashAlgorithm
         {
             fixed (byte* output = result)
             {
-                libmultihash.x21s(input, output, (uint) data.Length);
+                MultihashBindings.x21s(input, output, (uint) data.Length);
             }
         }
     }

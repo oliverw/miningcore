@@ -5,7 +5,7 @@ using Xunit;
 
 namespace Miningcore.Tests.Crypto;
 
-public class LibrandomxTests : TestBase
+public class RandomxBindingsTests : TestBase
 {
     const string realm = "xmr";
     const string seedHex = "7915d56de262bf23b1fb9104cf5d2a13fcbed2f6b4b9b657309c222b09f54bc0";
@@ -16,21 +16,21 @@ public class LibrandomxTests : TestBase
     public void CreateAndDeleteSeed()
     {
         // creation
-        librandomx.CreateSeed(realm, seedHex);
-        Assert.True(librandomx.realms.ContainsKey(realm));
-        Assert.True(librandomx.realms[realm].ContainsKey(seedHex));
+        RandomxBindings.CreateSeed(realm, seedHex);
+        Assert.True(RandomxBindings.realms.ContainsKey(realm));
+        Assert.True(RandomxBindings.realms[realm].ContainsKey(seedHex));
 
         // accessing the created seed should work
-        Assert.NotNull(librandomx.GetSeed(realm, seedHex));
+        Assert.NotNull(RandomxBindings.GetSeed(realm, seedHex));
 
         // creating the same realm and key twice should not result in duplicates
-        librandomx.CreateSeed(realm, seedHex);
-        Assert.Equal(librandomx.realms.Count, 1);
-        Assert.Equal(librandomx.realms[realm].Count, 1);
+        RandomxBindings.CreateSeed(realm, seedHex);
+        Assert.Equal(RandomxBindings.realms.Count, 1);
+        Assert.Equal(RandomxBindings.realms[realm].Count, 1);
 
         // deletion
-        librandomx.DeleteSeed(realm, seedHex);
-        Assert.False(librandomx.realms[realm].ContainsKey(seedHex));
+        RandomxBindings.DeleteSeed(realm, seedHex);
+        Assert.False(RandomxBindings.realms[realm].ContainsKey(seedHex));
     }
 
     [Fact]
@@ -39,20 +39,20 @@ public class LibrandomxTests : TestBase
         var buf = new byte[32];
 
         // light-mode
-        librandomx.CreateSeed(realm, seedHex);
+        RandomxBindings.CreateSeed(realm, seedHex);
 
-        librandomx.CalculateHash("xmr", seedHex, data, buf);
+        RandomxBindings.CalculateHash("xmr", seedHex, data, buf);
         var result = buf.ToHexString();
         Assert.Equal(hashExpected, result);
 
         Array.Clear(buf, 0, buf.Length);
 
         // second invocation should give the same result
-        librandomx.CalculateHash("xmr", seedHex, data, buf);
+        RandomxBindings.CalculateHash("xmr", seedHex, data, buf);
         result = buf.ToHexString();
         Assert.Equal(hashExpected, result);
 
-        librandomx.DeleteSeed(realm, seedHex);
+        RandomxBindings.DeleteSeed(realm, seedHex);
     }
 
     [Fact]
@@ -61,19 +61,19 @@ public class LibrandomxTests : TestBase
         var buf = new byte[32];
 
         // fast-mode
-        librandomx.CreateSeed(realm, seedHex, null, librandomx.randomx_flags.RANDOMX_FLAG_FULL_MEM);
+        RandomxBindings.CreateSeed(realm, seedHex, null, RandomxBindings.randomx_flags.RANDOMX_FLAG_FULL_MEM);
 
-        librandomx.CalculateHash("xmr", seedHex, data, buf);
+        RandomxBindings.CalculateHash("xmr", seedHex, data, buf);
         var result = buf.ToHexString();
         Assert.Equal(hashExpected, result);
 
         Array.Clear(buf, 0, buf.Length);
 
         // second invocation should give the same result
-        librandomx.CalculateHash("xmr", seedHex, data, buf);
+        RandomxBindings.CalculateHash("xmr", seedHex, data, buf);
         result = buf.ToHexString();
         Assert.Equal(hashExpected, result);
 
-        librandomx.DeleteSeed(realm, seedHex);
+        RandomxBindings.DeleteSeed(realm, seedHex);
     }
 }
