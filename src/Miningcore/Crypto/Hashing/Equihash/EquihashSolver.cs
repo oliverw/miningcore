@@ -61,7 +61,7 @@ public unsafe class EquihashSolver_200_9 : EquihashSolver
             {
                 fixed (byte* s = solution)
                 {
-                    var result = MultihashBindings.equihash_verify_200_9(h, header.Length, s, solution.Length, personalization);
+                    var result = Multihash.equihash_verify_200_9(h, header.Length, s, solution.Length, personalization);
 
                     messageBus?.SendTelemetry("Equihash 200-9", TelemetryCategory.Hash, sw.Elapsed, result);
 
@@ -96,7 +96,7 @@ public unsafe class EquihashSolver_144_5 : EquihashSolver
             {
                 fixed (byte* s = solution)
                 {
-                    var result = MultihashBindings.equihash_verify_144_5(h, header.Length, s, solution.Length, personalization);
+                    var result = Multihash.equihash_verify_144_5(h, header.Length, s, solution.Length, personalization);
 
                     messageBus?.SendTelemetry(personalization ?? "Equihash 144-5", TelemetryCategory.Hash, sw.Elapsed, result);
 
@@ -131,7 +131,7 @@ public unsafe class EquihashSolver_96_5 : EquihashSolver
             {
                 fixed (byte* s = solution)
                 {
-                    var result = MultihashBindings.equihash_verify_96_5(h, header.Length, s, solution.Length, personalization);
+                    var result = Multihash.equihash_verify_96_5(h, header.Length, s, solution.Length, personalization);
 
                     messageBus?.SendTelemetry("Equihash 96-5", TelemetryCategory.Hash, sw.Elapsed, result);
 

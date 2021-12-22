@@ -14,7 +14,7 @@ public unsafe class X17 : IHashAlgorithm
         {
             fixed (byte* output = result)
             {
-                MultihashBindings.x17(input, output, (uint) data.Length);
+                Multihash.x17(input, output, (uint) data.Length);
             }
         }
     }

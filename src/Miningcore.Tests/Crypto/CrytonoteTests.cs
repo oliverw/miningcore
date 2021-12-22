@@ -5,7 +5,7 @@ using Xunit;
 
 namespace Miningcore.Tests.Crypto;
 
-public class CrytonoteBindingsTests : TestBase
+public class CrytonoteTests : TestBase
 {
     [Fact]
     public void Crytonote_ConvertBlob()

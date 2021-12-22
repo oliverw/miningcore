@@ -5,7 +5,7 @@ using Xunit;
 
 namespace Miningcore.Tests.Crypto;
 
-public class RandomxBindingsTests : TestBase
+public class RandomXTests : TestBase
 {
     const string realm = "xmr";
     const string seedHex = "7915d56de262bf23b1fb9104cf5d2a13fcbed2f6b4b9b657309c222b09f54bc0";
@@ -16,21 +16,21 @@ public class RandomxBindingsTests : TestBase
     public void CreateAndDeleteSeed()
     {
         // creation
-        RandomxBindings.CreateSeed(realm, seedHex);
-        Assert.True(RandomxBindings.realms.ContainsKey(realm));
-        Assert.True(RandomxBindings.realms[realm].ContainsKey(seedHex));
+        RandomX.CreateSeed(realm, seedHex);
+        Assert.True(RandomX.realms.ContainsKey(realm));
+        Assert.True(RandomX.realms[realm].ContainsKey(seedHex));
 
         // accessing the created seed should work
-        Assert.NotNull(RandomxBindings.GetSeed(realm, seedHex));
+        Assert.NotNull(RandomX.GetSeed(realm, seedHex));
 
         // creating the same realm and key twice should not result in duplicates
-        RandomxBindings.CreateSeed(realm, seedHex);
-        Assert.Equal(RandomxBindings.realms.Count, 1);
-        Assert.Equal(RandomxBindings.realms[realm].Count, 1);
+        RandomX.CreateSeed(realm, seedHex);
+        Assert.Equal(RandomX.realms.Count, 1);
+        Assert.Equal(RandomX.realms[realm].Count, 1);
 
         // deletion
-        RandomxBindings.DeleteSeed(realm, seedHex);
-        Assert.False(RandomxBindings.realms[realm].ContainsKey(seedHex));
+        RandomX.DeleteSeed(realm, seedHex);
+        Assert.False(RandomX.realms[realm].ContainsKey(seedHex));
     }
 
     [Fact]
@@ -39,20 +39,20 @@ public class RandomxBindingsTests : TestBase
         var buf = new byte[32];
 
         // light-mode
-        RandomxBindings.CreateSeed(realm, seedHex);
+        RandomX.CreateSeed(realm, seedHex);
 
-        RandomxBindings.CalculateHash("xmr", seedHex, data, buf);
+        RandomX.CalculateHash("xmr", seedHex, data, buf);
         var result = buf.ToHexString();
         Assert.Equal(hashExpected, result);
 
         Array.Clear(buf, 0, buf.Length);
 
         // second invocation should give the same result
-        RandomxBindings.CalculateHash("xmr", seedHex, data, buf);
+        RandomX.CalculateHash("xmr", seedHex, data, buf);
         result = buf.ToHexString();
         Assert.Equal(hashExpected, result);
 
-        RandomxBindings.DeleteSeed(realm, seedHex);
+        RandomX.DeleteSeed(realm, seedHex);
     }
 
     [Fact]
@@ -61,19 +61,19 @@ public class RandomxBindingsTests : TestBase
         var buf = new byte[32];
 
         // fast-mode
-        RandomxBindings.CreateSeed(realm, seedHex, null, RandomxBindings.randomx_flags.RANDOMX_FLAG_FULL_MEM);
+        RandomX.CreateSeed(realm, seedHex, null, RandomX.randomx_flags.RANDOMX_FLAG_FULL_MEM);
 
-        RandomxBindings.CalculateHash("xmr", seedHex, data, buf);
+        RandomX.CalculateHash("xmr", seedHex, data, buf);
         var result = buf.ToHexString();
         Assert.Equal(hashExpected, result);
 
         Array.Clear(buf, 0, buf.Length);
 
         // second invocation should give the same result
-        RandomxBindings.CalculateHash("xmr", seedHex, data, buf);
+        RandomX.CalculateHash("xmr", seedHex, data, buf);
         result = buf.ToHexString();
         Assert.Equal(hashExpected, result);
 
-        RandomxBindings.DeleteSeed(realm, seedHex);
+        RandomX.DeleteSeed(realm, seedHex);
     }
 }

@@ -54,7 +54,7 @@ public static class ModuleInitializer
 
             coinTemplates = CoinTemplateLoader.Load(container, coinDefs);
 
-            CryptonightBindings.InitContexts(1);
+            Cryptonight.InitContexts(1);
         }
     }
 }

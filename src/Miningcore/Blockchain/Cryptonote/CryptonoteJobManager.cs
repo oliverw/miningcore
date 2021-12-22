@@ -49,8 +49,8 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
     private readonly IMasterClock clock;
     private CryptonoteNetworkType networkType;
     private CryptonotePoolConfigExtra extraPoolConfig;
-    private RandomxBindings.randomx_flags? randomXFlagsOverride;
-    private RandomxBindings.randomx_flags? randomXFlagsAdd;
+    private RandomX.randomx_flags? randomXFlagsOverride;
+    private RandomX.randomx_flags? randomXFlagsAdd;
     private string currentSeedHash;
     private string randomXRealm;
     private ulong poolAddressBase58Prefix;
@@ -94,15 +94,15 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
 
                     if(poolConfig.EnableInternalStratum == true)
                     {
-                        RandomxBindings.WithLock(() =>
+                        RandomX.WithLock(() =>
                         {
                             // delete old seed
                             if(currentSeedHash != null)
-                                RandomxBindings.DeleteSeed(randomXRealm, currentSeedHash);
+                                RandomX.DeleteSeed(randomXRealm, currentSeedHash);
 
                             // activate new one
                             currentSeedHash = blockTemplate.SeedHash;
-                            RandomxBindings.CreateSeed(randomXRealm, currentSeedHash, randomXFlagsOverride, randomXFlagsAdd, extraPoolConfig.RandomXVMCount);
+                            RandomX.CreateSeed(randomXRealm, currentSeedHash, randomXFlagsOverride, randomXFlagsAdd, extraPoolConfig.RandomXVMCount);
                         });
                     }
 
@@ -398,22 +398,22 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
         return JToken.Parse(json);
     }
 
-    private RandomxBindings.randomx_flags? MakeRandomXFlags(JToken token)
+    private RandomX.randomx_flags? MakeRandomXFlags(JToken token)
     {
         if(token == null)
             return null;
 
         if(token.Type == JTokenType.Integer)
-            return (RandomxBindings.randomx_flags) token.Value<ulong>();
+            return (RandomX.randomx_flags) token.Value<ulong>();
         else if(token.Type == JTokenType.String)
         {
-            RandomxBindings.randomx_flags result = 0;
+            RandomX.randomx_flags result = 0;
             var value = token.Value<string>();
 
             foreach(var flag in value.Split("|").Select(x=> x.Trim()).Where(x=> !string.IsNullOrEmpty(x)))
             {
-                if(Enum.TryParse(typeof(RandomxBindings.randomx_flags), flag, true, out var flagVal))
-                    result |= (RandomxBindings.randomx_flags) flagVal;
+                if(Enum.TryParse(typeof(RandomX.randomx_flags), flag, true, out var flagVal))
+                    result |= (RandomX.randomx_flags) flagVal;
             }
 
             return result;

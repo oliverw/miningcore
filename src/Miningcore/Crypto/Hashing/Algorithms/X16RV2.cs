@@ -15,7 +15,7 @@ public unsafe class X16RV2 : IHashAlgorithm
         {
             fixed (byte* output = result)
             {
-                MultihashBindings.x16rv2(input, output, (uint) data.Length);
+                Multihash.x16rv2(input, output, (uint) data.Length);
             }
         }
     }

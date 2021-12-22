@@ -439,6 +439,9 @@
         "name": "Vertcoin",
         "symbol": "VTC",
         "family": "bitcoin",
+        "website": "https://vertcoin.org/",
+        "twitter": "https://twitter.com/Vertcoin",
+        "discord": "https://discord.com/invite/vertcoin",
         "coinbaseHasher": {
             "hash": "sha256d"
         },

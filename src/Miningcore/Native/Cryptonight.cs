@@ -10,7 +10,7 @@ using Miningcore.Notifications.Messages;
 
 namespace Miningcore.Native;
 
-public static unsafe class CryptonightBindings
+public static unsafe class Cryptonight
 {
     [DllImport("libcryptonight", EntryPoint = "alloc_context_export", CallingConvention = CallingConvention.Cdecl)]
     private static extern IntPtr alloc_context();
@@ -176,7 +176,7 @@ public static unsafe class CryptonightBindings
 
     #endregion // Context managment
 
-    public static void Cryptonight(ReadOnlySpan<byte> data, Span<byte> result, Algorithm algo, ulong height)
+    public static void CryptonightHash(ReadOnlySpan<byte> data, Span<byte> result, Algorithm algo, ulong height)
     {
         Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
         Contract.Requires<ArgumentException>(validCryptonightAlgos.Contains(algo), $"{nameof(algo)} does not fall into valid range");
@@ -198,7 +198,7 @@ public static unsafe class CryptonightBindings
         }
     }
 
-    public static void CryptonightLite(ReadOnlySpan<byte> data, Span<byte> result, Algorithm algo, ulong height)
+    public static void CryptonightLiteHash(ReadOnlySpan<byte> data, Span<byte> result, Algorithm algo, ulong height)
     {
         Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
         Contract.Requires<ArgumentException>(validCryptonightLiteAlgos.Contains(algo), $"{nameof(algo)} does not fall into valid range");
@@ -220,7 +220,7 @@ public static unsafe class CryptonightBindings
         }
     }
 
-    public static void CryptonightHeavy(ReadOnlySpan<byte> data, Span<byte> result, Algorithm algo, ulong height)
+    public static void CryptonightHeavyHash(ReadOnlySpan<byte> data, Span<byte> result, Algorithm algo, ulong height)
     {
         Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
         Contract.Requires<ArgumentException>(validCryptonightHeavyAlgos.Contains(algo), $"{nameof(algo)} does not fall into valid range");
@@ -242,7 +242,7 @@ public static unsafe class CryptonightBindings
         }
     }
 
-    public static void CryptonightPico(ReadOnlySpan<byte> data, Span<byte> result, Algorithm algo, ulong height)
+    public static void CryptonightPicoHash(ReadOnlySpan<byte> data, Span<byte> result, Algorithm algo, ulong height)
     {
         Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
         Contract.Requires<ArgumentException>(validCryptonightPicoAlgos.Contains(algo), $"{nameof(algo)} does not fall into valid range");
@@ -264,7 +264,7 @@ public static unsafe class CryptonightBindings
         }
     }
 
-    public static void Argon(ReadOnlySpan<byte> data, Span<byte> result, Algorithm algo, ulong height)
+    public static void ArgonHash(ReadOnlySpan<byte> data, Span<byte> result, Algorithm algo, ulong height)
     {
         Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
         Contract.Requires<ArgumentException>(validArgonAlgos.Contains(algo), $"{nameof(algo)} does not fall into valid range");

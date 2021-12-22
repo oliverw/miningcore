@@ -760,11 +760,11 @@ public class Program : BackgroundService
         Verthash.messageBus = messageBus;
 
         // Configure Cryptonight
-        CryptonightBindings.messageBus = messageBus;
-        CryptonightBindings.InitContexts(clusterConfig.CryptonightMaxThreads ?? 1);
+        Cryptonight.messageBus = messageBus;
+        Cryptonight.InitContexts(clusterConfig.CryptonightMaxThreads ?? 1);
 
         // Configure RandomX
-        RandomxBindings.messageBus = messageBus;
+        RandomX.messageBus = messageBus;
     }
 
     private static void ConfigurePersistence(ContainerBuilder builder)

@@ -23,7 +23,7 @@ public unsafe class Scrypt : IHashAlgorithm
         {
             fixed (byte* output = result)
             {
-                MultihashBindings.scrypt(input, output, n, r, (uint) data.Length);
+                Multihash.scrypt(input, output, n, r, (uint) data.Length);
             }
         }
     }

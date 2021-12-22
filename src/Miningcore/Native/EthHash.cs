@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 
 namespace Miningcore.Native;
 
-public static unsafe class EthhashBindings
+public static unsafe class EthHash
 {
     [StructLayout(LayoutKind.Sequential)]
     public struct ethash_h256_t

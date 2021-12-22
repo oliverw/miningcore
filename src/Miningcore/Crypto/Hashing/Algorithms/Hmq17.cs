@@ -14,7 +14,7 @@ public unsafe class HMMQ17 : IHashAlgorithm
         {
             fixed (byte* output = result)
             {
-                MultihashBindings.hmq17(input, output, (uint) data.Length);
+                Multihash.hmq17(input, output, (uint) data.Length);
             }
         }
     }

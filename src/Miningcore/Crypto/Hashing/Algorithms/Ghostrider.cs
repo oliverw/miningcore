@@ -8,6 +8,6 @@ public class Ghostrider : IHashAlgorithm
 {
     public void Digest(ReadOnlySpan<byte> data, Span<byte> result, params object[] extra)
     {
-        CryptonightBindings.Cryptonight(data, result, CryptonightBindings.Algorithm.GHOSTRIDER_RTM, 0);
+        Cryptonight.CryptonightHash(data, result, Cryptonight.Algorithm.GHOSTRIDER_RTM, 0);
     }
 }

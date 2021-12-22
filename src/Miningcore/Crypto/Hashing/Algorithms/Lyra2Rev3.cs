@@ -15,7 +15,7 @@ public unsafe class Lyra2Rev3 : IHashAlgorithm
         {
             fixed (byte* output = result)
             {
-                MultihashBindings.lyra2rev3(input, output);
+                Multihash.lyra2rev3(input, output);
             }
         }
     }

@@ -12,7 +12,7 @@ using NLog;
 
 namespace Miningcore.Native;
 
-public static unsafe class RandomxBindings
+public static unsafe class RandomX
 {
     private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
     internal static IMessageBus messageBus;

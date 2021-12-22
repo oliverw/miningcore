@@ -29,7 +29,7 @@ public class CryptonoteJob
             case CryptonightHashType.RandomX:
                 hashFunc = ((seedHex, data, result, height) =>
                 {
-                    RandomxBindings.CalculateHash(randomXRealm, seedHex, data, result);
+                    RandomX.CalculateHash(randomXRealm, seedHex, data, result);
                 });
                 break;
         }
