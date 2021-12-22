@@ -14,16 +14,6 @@
         <IsLinux Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))' == 'true'">true</IsLinux>
         <IsOSX Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::OSX)))' == 'true'">true</IsOSX>
     </PropertyGroup>
-
-    <!-- GitVersion.MSBuild control -->
-    <PropertyGroup>
-        <UpdateAssemblyInfo>true</UpdateAssemblyInfo>
-        <UpdateAssemblyInfo Condition="!Exists('..\..\.git')">true</UpdateAssemblyInfo>
-    </PropertyGroup>
-
-    <Target Name="TestMessage" AfterTargets="Build" >
-        <Message Text="*** $(UpdateAssemblyInfo)" Importance="high"/>
-    </Target>
     
     <ItemGroup>
         <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
