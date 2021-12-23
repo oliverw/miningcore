@@ -748,8 +748,6 @@ public class Program : BackgroundService
 
     private static async Task PreFlightChecks(IServiceProvider services)
     {
-        await ConfigurePostgresCompatibilityOptions(services);
-
         ZcashNetworks.Instance.EnsureRegistered();
 
         var messageBus = services.GetService<IMessageBus>();
@@ -770,25 +768,6 @@ public class Program : BackgroundService
 
         // Configure RandomX
         RandomX.messageBus = messageBus;
-    }
-
-    private static async Task ConfigurePostgresCompatibilityOptions(IServiceProvider services)
-    {
-        if(clusterConfig.Persistence?.Postgres == null)
-            return;
-
-        var cf = services.GetService<IConnectionFactory>();
-
-        // check if 'shares.created' is legacy timestamp (without timezone)
-        var columnType = await GetPostgresColumnType(cf, "shares", "created");
-        var isLegacyTimestamps = columnType.ToLower().Contains("without time zone");
-
-        if(isLegacyTimestamps)
-        {
-            logger.Info(()=> "Enabling Npgsql Legacy Timestamp Behavior");
-
-            AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
-        }
     }
 
     private static Task<string> GetPostgresColumnType(IConnectionFactory cf, string table, string column)
