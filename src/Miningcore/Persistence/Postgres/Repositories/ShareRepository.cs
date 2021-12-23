@@ -62,7 +62,7 @@ public class ShareRepository : IShareRepository
                 await writer.WriteAsync(share.UserAgent);
                 await writer.WriteAsync(share.IpAddress);
                 await writer.WriteAsync(share.Source);
-                await writer.WriteAsync(share.Created, NpgsqlDbType.Timestamp);
+                await writer.WriteAsync(share.Created, NpgsqlDbType.TimestampTz);
             }
 
             await writer.CompleteAsync();

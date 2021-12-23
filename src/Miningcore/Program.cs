@@ -385,7 +385,7 @@ public class Program : BackgroundService
 
             // resolve implementation
             var poolImpl = container.Resolve<IEnumerable<Meta<Lazy<IMiningPool, CoinFamilyAttribute>>>>()
-            .First(x => x.Value.Metadata.SupportedFamilies.Contains(poolConfig.Template.Family)).Value;
+                .First(x => x.Value.Metadata.SupportedFamilies.Contains(poolConfig.Template.Family)).Value;
 
             // configure
             var pool = poolImpl.Value;
@@ -430,6 +430,9 @@ public class Program : BackgroundService
 
     private static void ValidateConfig()
     {
+        if(!clusterConfig.Pools.Any(x => x.Enabled))
+            throw new PoolStartupAbortException("No pools are enabled.");
+
         // set some defaults
         foreach(var config in clusterConfig.Pools)
         {
@@ -748,6 +751,8 @@ public class Program : BackgroundService
 
     private static async Task PreFlightChecks(IServiceProvider services)
     {
+        await ConfigurePostgresCompatibilityOptions(services);
+
         ZcashNetworks.Instance.EnsureRegistered();
 
         var messageBus = services.GetService<IMessageBus>();
@@ -768,6 +773,25 @@ public class Program : BackgroundService
 
         // Configure RandomX
         RandomX.messageBus = messageBus;
+    }
+
+    private static async Task ConfigurePostgresCompatibilityOptions(IServiceProvider services)
+    {
+        if(clusterConfig.Persistence?.Postgres == null)
+            return;
+
+        var cf = services.GetService<IConnectionFactory>();
+
+        // check if 'shares.created' is legacy timestamp (without timezone)
+        var columnType = await GetPostgresColumnType(cf, "shares", "created");
+        var isLegacyTimestamps = columnType.ToLower().Contains("without time zone");
+
+        if(isLegacyTimestamps)
+        {
+            logger.Info(()=> "Enabling Npgsql Legacy Timestamp Behavior");
+
+            AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+        }
     }
 
     private static Task<string> GetPostgresColumnType(IConnectionFactory cf, string table, string column)
