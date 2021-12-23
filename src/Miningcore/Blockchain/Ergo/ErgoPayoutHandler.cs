@@ -117,10 +117,6 @@ public class ErgoPayoutHandler : PayoutHandlerBase,
         // detect chain
         var info = await ergoClient.GetNodeInfoAsync(ct);
         network = ErgoConstants.RegexChain.Match(info.Name).Groups[1].Value.ToLower();
-
-        // Init
-        await UnlockWallet(ct);
-        await LockWallet(ct);
     }
 
     public virtual async Task<Block[]> ClassifyBlocksAsync(IMiningPool pool, Block[] blocks, CancellationToken ct)
