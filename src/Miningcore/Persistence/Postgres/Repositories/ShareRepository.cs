@@ -47,7 +47,7 @@ public class ShareRepository : IShareRepository
         const string query = "COPY shares (poolid, blockheight, difficulty, " +
             "networkdifficulty, miner, worker, useragent, ipaddress, source, created) FROM STDIN (FORMAT BINARY)";
 
-        await using(var writer = pgCon.BeginBinaryImport(query))
+        await using(var writer = await pgCon.BeginBinaryImportAsync(query))
         {
             foreach(var share in shares)
             {

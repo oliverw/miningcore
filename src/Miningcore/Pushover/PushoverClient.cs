@@ -6,9 +6,7 @@ namespace Miningcore.Pushover;
 
 public class PushoverClient
 {
-    public PushoverClient(
-        ClusterConfig clusterConfig,
-        IHttpClientFactory httpClientFactory)
+    public PushoverClient(ClusterConfig clusterConfig, IHttpClientFactory httpClientFactory)
     {
         config = clusterConfig?.Notifications.Pushover;
         client = new SimpleRestClient(httpClientFactory, PushoverConstants.ApiBaseUrl);
