@@ -13,7 +13,6 @@ using Miningcore.Util;
 using NBitcoin;
 using NBitcoin.DataEncoders;
 using Newtonsoft.Json.Linq;
-using System.Reflection;
 using Contract = Miningcore.Contracts.Contract;
 using Transaction = NBitcoin.Transaction;
 
@@ -43,7 +42,6 @@ public class BitcoinJob
     protected string coinbaseInitialHex;
     protected string[] merkleBranchesHex;
     protected MerkleTree mt;
-    protected IBitcoinBlockSerializer blockSerializer;
 
     ///////////////////////////////////////////
     // GetJobParams related properties
@@ -394,8 +392,24 @@ public class BitcoinJob
     protected virtual byte[] SerializeBlock(byte[] header, byte[] coinbase)
     {
         var rawTransactionBuffer = BuildRawTransactionBuffer();
+        var transactionCount = (uint) BlockTemplate.Transactions.Length + 1; // +1 for prepended coinbase tx
 
-        return blockSerializer.SerializeBlock(this, isPoS, header, coinbase, rawTransactionBuffer);
+        using(var stream = new MemoryStream())
+        {
+            var bs = new BitcoinStream(stream, true);
+
+            bs.ReadWrite(ref header);
+            bs.ReadWriteAsVarInt(ref transactionCount);
+
+            bs.ReadWrite(ref coinbase);
+            bs.ReadWrite(ref rawTransactionBuffer);
+
+            // POS coins require a zero byte appended to block which the daemon replaces with the signature
+            if(isPoS)
+                bs.ReadWrite((byte) 0);
+
+            return stream.ToArray();
+        }
     }
 
     protected virtual byte[] BuildRawTransactionBuffer()
@@ -436,7 +450,11 @@ public class BitcoinJob
                     {
                         var payeeDestination = BitcoinUtils.AddressToDestination(masterNode.Payee, network);
                         var payeeReward = masterNode.Amount;
-                        reward -= payeeReward;
+
+                        if(coin.Symbol != "RTM")
+                        {
+                            reward -= payeeReward;
+                        }
 
                         tx.Outputs.Add(payeeReward, payeeDestination);
                     }
@@ -459,9 +477,12 @@ public class BitcoinJob
         if(!coin.HasPayee && !string.IsNullOrEmpty(masterNodeParameters.Payee))
         {
             var payeeAddress = BitcoinUtils.AddressToDestination(masterNodeParameters.Payee, network);
-            var payeeReward = masterNodeParameters.PayeeAmount ?? (reward / 5);
+            var payeeReward = masterNodeParameters.PayeeAmount;
 
-            reward -= payeeReward;
+            if(coin.Symbol != "RTM")
+            {
+                reward -= payeeReward;
+            }
 
             tx.Outputs.Add(payeeReward, payeeAddress);
         }
@@ -474,6 +495,7 @@ public class BitcoinJob
     #region Founder
 
     protected FounderBlockTemplateExtra founderParameters;
+
     protected virtual Money CreateFounderOutputs(Transaction tx, Money reward)
     {
         if (founderParameters.Founder != null)
@@ -484,15 +506,18 @@ public class BitcoinJob
             else
                 founders = new[] { founderParameters.Founder.ToObject<Founder>() };
 
-            foreach (var Founder in founders)
+            if(founders != null)
             {
-                if (!string.IsNullOrEmpty(Founder.Payee))
+                foreach(var Founder in founders)
                 {
-                    var payeeAddress = BitcoinUtils.AddressToDestination(Founder.Payee, network);
-                    var payeeReward = Founder.Amount;
-                    reward -= payeeReward;
-                    rewardToPool -= payeeReward;
-                    tx.Outputs.Add(payeeReward, payeeAddress);
+                    if(!string.IsNullOrEmpty(Founder.Payee))
+                    {
+                        var payeeAddress = BitcoinUtils.AddressToDestination(Founder.Payee, network);
+                        var payeeReward = Founder.Amount;
+                        reward -= payeeReward;
+                        rewardToPool -= payeeReward;
+                        tx.Outputs.Add(payeeReward, payeeAddress);
+                    }
                 }
             }
         }
@@ -533,11 +558,6 @@ public class BitcoinJob
         poolAddressDestination = _poolAddressDestination;
         BlockTemplate = blockTemplate;
         JobId = jobId;
-
-        if(string.IsNullOrEmpty(coin.BlockSerializer))
-            blockSerializer = ctx.Resolve<BitcoinBlockSerializer>();
-        else
-            blockSerializer = ctx.ResolveNamed<IBitcoinBlockSerializer>(coin.BlockSerializer);
 
         var coinbaseString = !string.IsNullOrEmpty(_clusterConfig.PaymentProcessing?.CoinbaseString) ?
             _clusterConfig.PaymentProcessing?.CoinbaseString.Trim() : "Miningcore";

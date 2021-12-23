@@ -817,26 +817,6 @@
         "explorerTxLink": "https://chainz.cryptoid.info/tlt/tx.dws?{0}.htm",
         "explorerAccountLink": "https://chainz.cryptoid.info/tlt/address.dws?{0}.htm"
     },
-    "galleoncoin": {
-        "name": "Galleoncoin",
-        "symbol": "GALE",
-        "family": "bitcoin",
-        "coinbaseHasher": {
-            "hash": "sha256d"
-        },
-        "headerHasher": {
-            "hash": "sha256csm"
-        },
-        "blockHasher": {
-            "hash": "reverse",
-            "args": [ { "hash": "sha256d" } ]
-        },
-        "blockSerializer": "gale",
-        "hasMasterNodes": true,
-        "explorerBlockLink": "http://202.61.204.198:3001/block/$hash$",
-        "explorerTxLink": "http://202.61.204.198:3001/tx/{0}",
-        "explorerAccountLink": "http://202.61.204.198:3001/address/{0}"
-    },
     "verge-lyra": {
         "name": "Verge-Lyra",
         "canonicalName": "Verge",
@@ -1575,11 +1555,11 @@
         "name": "Raptoreum",
         "canonicalName": "Raptoreum",
         "symbol": "RTM",
+        "family": "bitcoin",
         "website": "https://raptoreum.com/",
         "twitter": "https://twitter.com/raptoreum",
         "telegram": "https://t.me/raptoreum",
         "discord": "https://discord.com/invite/2T8xG7e",
-        "family": "bitcoin",
         "coinbaseHasher": {
             "hash": "sha256d"
         },
