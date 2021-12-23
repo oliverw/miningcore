@@ -239,7 +239,7 @@ public class Program : BackgroundService
                 .UseConsoleLifetime()
                 .Build();
 
-            await ConfigureMisc(host.Services);
+            await PreFlightChecks(host.Services);
 
             await host.RunAsync();
         }
@@ -746,10 +746,9 @@ public class Program : BackgroundService
         return Path.Combine(config.LogBaseDirectory, name);
     }
 
-    private static async Task ConfigureMisc(IServiceProvider services)
+    private static async Task PreFlightChecks(IServiceProvider services)
     {
-        await ConfigurePostgresCompat(
-            services);
+        await ConfigurePostgresCompatibilityOptions(services);
 
         ZcashNetworks.Instance.EnsureRegistered();
 
@@ -773,7 +772,7 @@ public class Program : BackgroundService
         RandomX.messageBus = messageBus;
     }
 
-    private static async Task ConfigurePostgresCompat(IServiceProvider services)
+    private static async Task ConfigurePostgresCompatibilityOptions(IServiceProvider services)
     {
         if(clusterConfig.Persistence?.Postgres == null)
             return;
