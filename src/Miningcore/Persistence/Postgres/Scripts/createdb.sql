@@ -11,7 +11,7 @@ CREATE TABLE shares
 	useragent TEXT NULL,
 	ipaddress TEXT NOT NULL,
     source TEXT NULL,
-	created TIMESTAMP NOT NULL
+	created TIMESTAMP WITH TIME ZONE  NOT NULL
 );
 
 CREATE INDEX IDX_SHARES_POOL_MINER on shares(poolid, miner);

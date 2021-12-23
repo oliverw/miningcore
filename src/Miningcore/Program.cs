@@ -782,6 +782,8 @@ public class Program : BackgroundService
 
     private static void ConfigurePostgres(DatabaseConfig pgConfig, ContainerBuilder builder)
     {
+        AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
         // validate config
         if(string.IsNullOrEmpty(pgConfig.Host))
             throw new PoolStartupAbortException("Postgres configuration: invalid or missing 'host'");

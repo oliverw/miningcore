@@ -334,11 +334,11 @@ public class HashingTests : TestBase
     {
         var hasher = new Ghostrider();
         var hash = new byte[32];
-        var value = "0305a0dbd6bf05cf16e503f3a66f78007cbf34144332ecbfc22ed95c8700383b309ace1923a0964b00000008ba939a62724c0d7581fce5761e9d8a0e6a1c3f924fdd8493d1115649c05eb601".HexToByteArray();
+        var value = "000000208c246d0b90c3b389c4086e8b672ee040d64db5b9648527133e217fbfa48da64c0f3c0a0b0e8350800568b40fbb323ac3ccdf2965de51b9aaeb939b4f11ff81c49b74a16156ff251c00000000".HexToByteArray();
         hasher.Digest(value, hash);
         var result = hash.ToHexString();
 
-        Assert.Equal("9ee5c8db717d3c3098c68ccd7cd9cd01873e2a22f5f0d231b683dcb4f4883b76", result);
+        Assert.Equal("84402e62b6bedafcd65f6ba13b59ff19ad7f273900c59fa49bfbb5f67e10030f", result);
     }
 
     [Fact]
