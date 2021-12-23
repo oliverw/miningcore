@@ -11,7 +11,7 @@ CREATE TABLE shares
 	useragent TEXT NULL,
 	ipaddress TEXT NOT NULL,
     source TEXT NULL,
-	created TIMESTAMP WITH TIME ZONE  NOT NULL
+	created TIMESTAMP WITH TIME ZONE NOT NULL
 );
 
 CREATE INDEX IDX_SHARES_POOL_MINER on shares(poolid, miner);
@@ -33,7 +33,7 @@ CREATE TABLE blocks
 	reward decimal(28,12) NULL,
     source TEXT NULL,
     hash TEXT NULL,
-	created TIMESTAMP NOT NULL,
+	created TIMESTAMP WITH TIME ZONE NOT NULL,
 
     CONSTRAINT BLOCKS_POOL_HEIGHT UNIQUE (poolid, blockheight, type) DEFERRABLE INITIALLY DEFERRED
 );
@@ -45,8 +45,8 @@ CREATE TABLE balances
 	poolid TEXT NOT NULL,
 	address TEXT NOT NULL,
 	amount decimal(28,12) NOT NULL DEFAULT 0,
-	created TIMESTAMP NOT NULL,
-	updated TIMESTAMP NOT NULL,
+	created TIMESTAMP WITH TIME ZONE NOT NULL,
+	updated TIMESTAMP WITH TIME ZONE NOT NULL,
 
 	primary key(poolid, address)
 );
@@ -59,7 +59,7 @@ CREATE TABLE balance_changes
 	amount decimal(28,12) NOT NULL DEFAULT 0,
 	usage TEXT NULL,
     tags text[] NULL,
-	created TIMESTAMP NOT NULL
+	created TIMESTAMP WITH TIME ZONE NOT NULL
 );
 
 CREATE INDEX IDX_BALANCE_CHANGES_POOL_ADDRESS_CREATED on balance_changes(poolid, address, created desc);
@@ -70,8 +70,8 @@ CREATE TABLE miner_settings
 	poolid TEXT NOT NULL,
 	address TEXT NOT NULL,
 	paymentthreshold decimal(28,12) NOT NULL,
-	created TIMESTAMP NOT NULL,
-	updated TIMESTAMP NOT NULL,
+	created TIMESTAMP WITH TIME ZONE NOT NULL,
+	updated TIMESTAMP WITH TIME ZONE NOT NULL,
 
 	primary key(poolid, address)
 );
@@ -84,7 +84,7 @@ CREATE TABLE payments
 	address TEXT NOT NULL,
 	amount decimal(28,12) NOT NULL,
 	transactionconfirmationdata TEXT NOT NULL,
-	created TIMESTAMP NOT NULL
+	created TIMESTAMP WITH TIME ZONE NOT NULL
 );
 
 CREATE INDEX IDX_PAYMENTS_POOL_COIN_WALLET on payments(poolid, coin, address);
@@ -98,10 +98,10 @@ CREATE TABLE poolstats
 	sharespersecond DOUBLE PRECISION NOT NULL DEFAULT 0,
 	networkhashrate DOUBLE PRECISION NOT NULL DEFAULT 0,
 	networkdifficulty DOUBLE PRECISION NOT NULL DEFAULT 0,
-	lastnetworkblocktime TIMESTAMP NULL,
+	lastnetworkblocktime TIMESTAMP WITH TIME ZONE NULL,
     blockheight BIGINT NOT NULL DEFAULT 0,
     connectedpeers INT NOT NULL DEFAULT 0,
-	created TIMESTAMP NOT NULL
+	created TIMESTAMP WITH TIME ZONE NOT NULL
 );
 
 CREATE INDEX IDX_POOLSTATS_POOL_CREATED on poolstats(poolid, created);
@@ -115,7 +115,7 @@ CREATE TABLE minerstats
 	worker TEXT NOT NULL,
 	hashrate DOUBLE PRECISION NOT NULL DEFAULT 0,
 	sharespersecond DOUBLE PRECISION NOT NULL DEFAULT 0,
-	created TIMESTAMP NOT NULL
+	created TIMESTAMP WITH TIME ZONE NOT NULL
 );
 
 CREATE INDEX IDX_MINERSTATS_POOL_CREATED on minerstats(poolid, created);

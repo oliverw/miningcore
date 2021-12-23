@@ -9,6 +9,7 @@ using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Autofac.Features.Metadata;
 using AutoMapper;
+using Dapper;
 using FluentValidation;
 using McMaster.Extensions.CommandLineUtils;
 using Microsoft.AspNetCore.Builder;
@@ -25,11 +26,13 @@ using Miningcore.Configuration;
 using Miningcore.Crypto.Hashing.Algorithms;
 using Miningcore.Crypto.Hashing.Equihash;
 using Miningcore.Crypto.Hashing.Ethash;
+using Miningcore.Extensions;
 using Miningcore.Messaging;
 using Miningcore.Mining;
 using Miningcore.Native;
 using Miningcore.Notifications;
 using Miningcore.Payments;
+using Miningcore.Persistence;
 using Miningcore.Persistence.Dummy;
 using Miningcore.Persistence.Postgres;
 using Miningcore.Persistence.Postgres.Repositories;
@@ -104,25 +107,25 @@ public class Program : BackgroundService
             var hostBuilder = new HostBuilder();
 
             hostBuilder
-            .UseServiceProviderFactory(new AutofacServiceProviderFactory())
-            .ConfigureContainer((Action<ContainerBuilder>) ConfigureAutofac)
-            .UseNLog()
-            .ConfigureLogging(logging =>
-            {
-                logging.ClearProviders();
-                logging.AddNLog();
-                logging.SetMinimumLevel(LogLevel.Trace);
-            })
-            .ConfigureServices((ctx, services) =>
-            {
-                services.AddHttpClient();
-                services.AddMemoryCache();
+                .UseServiceProviderFactory(new AutofacServiceProviderFactory())
+                .ConfigureContainer((Action<ContainerBuilder>) ConfigureAutofac)
+                .UseNLog()
+                .ConfigureLogging(logging =>
+                {
+                    logging.ClearProviders();
+                    logging.AddNLog();
+                    logging.SetMinimumLevel(LogLevel.Trace);
+                })
+                .ConfigureServices((ctx, services) =>
+                {
+                    services.AddHttpClient();
+                    services.AddMemoryCache();
 
-                ConfigureBackgroundServices(services);
+                    ConfigureBackgroundServices(services);
 
-                // MUST BE THE LAST REGISTERED HOSTED SERVICE!
-                services.AddHostedService<Program>();
-            });
+                    // MUST BE THE LAST REGISTERED HOSTED SERVICE!
+                    services.AddHostedService<Program>();
+                });
 
             if(clusterConfig.Api == null || clusterConfig.Api.Enabled)
             {
@@ -235,6 +238,8 @@ public class Program : BackgroundService
             host = hostBuilder
                 .UseConsoleLifetime()
                 .Build();
+
+            await ConfigureMisc(host.Services);
 
             await host.RunAsync();
         }
@@ -356,8 +361,6 @@ public class Program : BackgroundService
             await RecoverSharesAsync(shareRecoveryOption.Value());
             return;
         }
-
-        ConfigureMisc();
 
         if(clusterConfig.InstanceId.HasValue)
             logger.Info($"This is cluster node {clusterConfig.InstanceId.Value}{(!string.IsNullOrEmpty(clusterConfig.ClusterName) ? $" [{clusterConfig.ClusterName}]" : string.Empty)}");
@@ -743,11 +746,14 @@ public class Program : BackgroundService
         return Path.Combine(config.LogBaseDirectory, name);
     }
 
-    private void ConfigureMisc()
+    private static async Task ConfigureMisc(IServiceProvider services)
     {
+        await ConfigurePostgresCompat(
+            services);
+
         ZcashNetworks.Instance.EnsureRegistered();
 
-        var messageBus = container.Resolve<IMessageBus>();
+        var messageBus = services.GetService<IMessageBus>();
 
         // Configure Equihash
         EquihashSolver.messageBus = messageBus;
@@ -767,6 +773,32 @@ public class Program : BackgroundService
         RandomX.messageBus = messageBus;
     }
 
+    private static async Task ConfigurePostgresCompat(IServiceProvider services)
+    {
+        if(clusterConfig.Persistence?.Postgres == null)
+            return;
+
+        var cf = services.GetService<IConnectionFactory>();
+
+        // check if 'shares.created' is legacy timestamp (without timezone)
+        var columnType = await GetPostgresColumnType(cf, "shares", "created");
+        var isLegacyTimestamps = columnType.ToLower().Contains("without time zone");
+
+        if(isLegacyTimestamps)
+        {
+            logger.Info(()=> "Enabling Npgsql Legacy Timestamp Behavior");
+
+            AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+        }
+    }
+
+    private static Task<string> GetPostgresColumnType(IConnectionFactory cf, string table, string column)
+    {
+        const string query = "SELECT data_type FROM information_schema.columns WHERE table_name = @table AND column_name = @column";
+
+        return cf.Run(con => con.ExecuteScalarAsync<string>(query, new { table, column }));
+    }
+
     private static void ConfigurePersistence(ContainerBuilder builder)
     {
         if(clusterConfig.Persistence == null &&
@@ -782,8 +814,6 @@ public class Program : BackgroundService
 
     private static void ConfigurePostgres(DatabaseConfig pgConfig, ContainerBuilder builder)
     {
-        AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
-
         // validate config
         if(string.IsNullOrEmpty(pgConfig.Host))
             throw new PoolStartupAbortException("Postgres configuration: invalid or missing 'host'");
