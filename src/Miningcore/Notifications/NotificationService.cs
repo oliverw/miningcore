@@ -26,7 +26,7 @@ public class NotificationService : BackgroundService
         Contract.RequiresNonNull(messageBus, nameof(messageBus));
 
         this.clusterConfig = clusterConfig;
-        this.emailSenderConfig = clusterConfig.Notifications.Email;
+        emailSenderConfig = clusterConfig.Notifications.Email;
         this.messageBus = messageBus;
         this.pushoverClient = pushoverClient;
 

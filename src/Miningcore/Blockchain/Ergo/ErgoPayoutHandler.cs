@@ -102,18 +102,17 @@ public class ErgoPayoutHandler : PayoutHandlerBase,
 
     #region IPayoutHandler
 
-    public virtual async Task ConfigureAsync(ClusterConfig clusterConfig, PoolConfig poolConfig, CancellationToken ct)
+    public virtual async Task ConfigureAsync(ClusterConfig cc, PoolConfig pc, CancellationToken ct)
     {
-        Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
+        Contract.RequiresNonNull(pc, nameof(pc));
 
-        logger = LogUtil.GetPoolScopedLogger(typeof(ErgoPayoutHandler), poolConfig);
+        logger = LogUtil.GetPoolScopedLogger(typeof(ErgoPayoutHandler), pc);
 
-        this.poolConfig = poolConfig;
-        this.clusterConfig = clusterConfig;
+        poolConfig = pc;
+        clusterConfig = cc;
+        extraPoolPaymentProcessingConfig = pc.PaymentProcessing.Extra.SafeExtensionDataAs<ErgoPaymentProcessingConfigExtra>();
 
-        extraPoolPaymentProcessingConfig = poolConfig.PaymentProcessing.Extra.SafeExtensionDataAs<ErgoPaymentProcessingConfigExtra>();
-
-        ergoClient = ErgoClientFactory.CreateClient(poolConfig, clusterConfig, null);
+        ergoClient = ErgoClientFactory.CreateClient(pc, cc, null);
 
         // detect chain
         var info = await ergoClient.GetNodeInfoAsync(ct);

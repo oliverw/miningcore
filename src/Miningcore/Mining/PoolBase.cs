@@ -352,8 +352,8 @@ Pool Fee:               {(poolConfig.RewardRecipients?.Any() == true ? poolConfi
         Contract.RequiresNonNull(cc, nameof(cc));
 
         logger = LogUtil.GetPoolScopedLogger(typeof(PoolBase), pc);
-        this.poolConfig = pc;
-        this.clusterConfig = cc;
+        poolConfig = pc;
+        clusterConfig = cc;
     }
 
     public abstract double HashrateFromShares(double shares, double interval);

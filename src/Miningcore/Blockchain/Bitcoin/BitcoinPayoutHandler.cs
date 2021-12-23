@@ -52,20 +52,20 @@ public class BitcoinPayoutHandler : PayoutHandlerBase,
 
     #region IPayoutHandler
 
-    public virtual Task ConfigureAsync(ClusterConfig clusterConfig, PoolConfig poolConfig, CancellationToken ct)
+    public virtual Task ConfigureAsync(ClusterConfig cc, PoolConfig pc, CancellationToken ct)
     {
-        Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
+        Contract.RequiresNonNull(pc, nameof(pc));
 
-        this.poolConfig = poolConfig;
-        this.clusterConfig = clusterConfig;
+        poolConfig = pc;
+        clusterConfig = cc;
 
-        extraPoolConfig = poolConfig.Extra.SafeExtensionDataAs<BitcoinDaemonEndpointConfigExtra>();
-        extraPoolPaymentProcessingConfig = poolConfig.PaymentProcessing.Extra.SafeExtensionDataAs<BitcoinPoolPaymentProcessingConfigExtra>();
+        extraPoolConfig = pc.Extra.SafeExtensionDataAs<BitcoinDaemonEndpointConfigExtra>();
+        extraPoolPaymentProcessingConfig = pc.PaymentProcessing.Extra.SafeExtensionDataAs<BitcoinPoolPaymentProcessingConfigExtra>();
 
-        logger = LogUtil.GetPoolScopedLogger(typeof(BitcoinPayoutHandler), poolConfig);
+        logger = LogUtil.GetPoolScopedLogger(typeof(BitcoinPayoutHandler), pc);
 
         var jsonSerializerSettings = ctx.Resolve<JsonSerializerSettings>();
-        rpcClient = new RpcClient(poolConfig.Daemons.First(), jsonSerializerSettings, messageBus, poolConfig.Id);
+        rpcClient = new RpcClient(pc.Daemons.First(), jsonSerializerSettings, messageBus, pc.Id);
 
         return Task.FromResult(true);
     }

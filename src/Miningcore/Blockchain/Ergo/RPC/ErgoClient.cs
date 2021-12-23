@@ -18,20 +18,20 @@ using Newtonsoft.Json.Linq;
 
 namespace Miningcore.Blockchain.Ergo;
 
-using System = global::System;
+using System = System;
 
 [System.CodeDom.Compiler.GeneratedCode("NSwag", "13.11.3.0 (NJsonSchema v10.4.4.0 (Newtonsoft.Json v12.0.0.0))")]
 public partial class ErgoClient
 {
     private string _baseUrl = "";
-    private System.Net.Http.HttpClient _httpClient;
-    private System.Lazy<Newtonsoft.Json.JsonSerializerSettings> _settings;
+    private HttpClient _httpClient;
+    private Lazy<Newtonsoft.Json.JsonSerializerSettings> _settings;
 
-    public ErgoClient(string baseUrl, System.Net.Http.HttpClient httpClient)
+    public ErgoClient(string baseUrl, HttpClient httpClient)
     {
         BaseUrl = baseUrl;
         _httpClient = httpClient;
-        _settings = new System.Lazy<Newtonsoft.Json.JsonSerializerSettings>(CreateSerializerSettings);
+        _settings = new Lazy<Newtonsoft.Json.JsonSerializerSettings>(CreateSerializerSettings);
     }
 
     private Newtonsoft.Json.JsonSerializerSettings CreateSerializerSettings()
@@ -57,9 +57,9 @@ public partial class ErgoClient
     /// <param name="offset">The number of items in list to skip</param>
     /// <returns>Array of header ids</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<System.Collections.Generic.ICollection<string>> GetHeaderIdsAsync(int? limit, int? offset)
+    public Task<ICollection<string>> GetHeaderIdsAsync(int? limit, int? offset)
     {
-        return GetHeaderIdsAsync(limit, offset, System.Threading.CancellationToken.None);
+        return GetHeaderIdsAsync(limit, offset, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -68,17 +68,17 @@ public partial class ErgoClient
     /// <param name="offset">The number of items in list to skip</param>
     /// <returns>Array of header ids</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<System.Collections.Generic.ICollection<string>> GetHeaderIdsAsync(int? limit, int? offset, System.Threading.CancellationToken cancellationToken)
+    public async Task<ICollection<string>> GetHeaderIdsAsync(int? limit, int? offset, CancellationToken cancellationToken)
     {
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/blocks?");
         if (limit != null)
         {
-            urlBuilder_.Append(System.Uri.EscapeDataString("limit") + "=").Append(System.Uri.EscapeDataString(ConvertToString(limit, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
+            urlBuilder_.Append(Uri.EscapeDataString("limit") + "=").Append(Uri.EscapeDataString(ConvertToString(limit, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
         }
         if (offset != null)
         {
-            urlBuilder_.Append(System.Uri.EscapeDataString("offset") + "=").Append(System.Uri.EscapeDataString(ConvertToString(offset, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
+            urlBuilder_.Append(Uri.EscapeDataString("offset") + "=").Append(Uri.EscapeDataString(ConvertToString(offset, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
         }
         urlBuilder_.Length--;
 
@@ -86,23 +86,23 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                request_.Method = new System.Net.Http.HttpMethod("GET");
+                request_.Method = new HttpMethod("GET");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -114,7 +114,7 @@ public partial class ErgoClient
                     var status_ = (int)response_.StatusCode;
                     if (status_ == 200)
                     {
-                        var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.ICollection<string>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                        var objectResponse_ = await ReadObjectResponseAsync<ICollection<string>>(response_, headers_, cancellationToken).ConfigureAwait(false);
                         if (objectResponse_.Object == null)
                         {
                             throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -148,19 +148,19 @@ public partial class ErgoClient
     /// <summary>Send a mined block</summary>
     /// <returns>Block is valid</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task SendMinedBlockAsync(FullBlock body)
+    public Task SendMinedBlockAsync(FullBlock body)
     {
-        return SendMinedBlockAsync(body, System.Threading.CancellationToken.None);
+        return SendMinedBlockAsync(body, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
     /// <summary>Send a mined block</summary>
     /// <returns>Block is valid</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task SendMinedBlockAsync(FullBlock body, System.Threading.CancellationToken cancellationToken)
+    public async Task SendMinedBlockAsync(FullBlock body, CancellationToken cancellationToken)
     {
         if (body == null)
-            throw new System.ArgumentNullException("body");
+            throw new ArgumentNullException("body");
 
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/blocks");
@@ -169,25 +169,25 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                var content_ = new System.Net.Http.StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
+                var content_ = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
                 content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
                 request_.Content = content_;
-                request_.Method = new System.Net.Http.HttpMethod("POST");
+                request_.Method = new HttpMethod("POST");
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -229,9 +229,9 @@ public partial class ErgoClient
     /// <param name="blockHeight">Height of a wanted block</param>
     /// <returns>Array of header ids</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<System.Collections.Generic.ICollection<string>> GetFullBlockAtAsync(int blockHeight)
+    public Task<ICollection<string>> GetFullBlockAtAsync(int blockHeight)
     {
-        return GetFullBlockAtAsync(blockHeight, System.Threading.CancellationToken.None);
+        return GetFullBlockAtAsync(blockHeight, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -239,36 +239,36 @@ public partial class ErgoClient
     /// <param name="blockHeight">Height of a wanted block</param>
     /// <returns>Array of header ids</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<System.Collections.Generic.ICollection<string>> GetFullBlockAtAsync(int blockHeight, System.Threading.CancellationToken cancellationToken)
+    public async Task<ICollection<string>> GetFullBlockAtAsync(int blockHeight, CancellationToken cancellationToken)
     {
         if (blockHeight == null)
-            throw new System.ArgumentNullException("blockHeight");
+            throw new ArgumentNullException("blockHeight");
 
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/blocks/at/{blockHeight}");
-        urlBuilder_.Replace("{blockHeight}", System.Uri.EscapeDataString(ConvertToString(blockHeight, System.Globalization.CultureInfo.InvariantCulture)));
+        urlBuilder_.Replace("{blockHeight}", Uri.EscapeDataString(ConvertToString(blockHeight, System.Globalization.CultureInfo.InvariantCulture)));
 
         var client_ = _httpClient;
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                request_.Method = new System.Net.Http.HttpMethod("GET");
+                request_.Method = new HttpMethod("GET");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -280,7 +280,7 @@ public partial class ErgoClient
                     var status_ = (int)response_.StatusCode;
                     if (status_ == 200)
                     {
-                        var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.ICollection<string>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                        var objectResponse_ = await ReadObjectResponseAsync<ICollection<string>>(response_, headers_, cancellationToken).ConfigureAwait(false);
                         if (objectResponse_.Object == null)
                         {
                             throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -326,9 +326,9 @@ public partial class ErgoClient
     /// <param name="toHeight">Max header height (best header height by default)</param>
     /// <returns>Array of headers</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<System.Collections.Generic.ICollection<BlockHeader>> GetChainSliceAsync(int? fromHeight, int? toHeight)
+    public Task<ICollection<BlockHeader>> GetChainSliceAsync(int? fromHeight, int? toHeight)
     {
-        return GetChainSliceAsync(fromHeight, toHeight, System.Threading.CancellationToken.None);
+        return GetChainSliceAsync(fromHeight, toHeight, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -337,17 +337,17 @@ public partial class ErgoClient
     /// <param name="toHeight">Max header height (best header height by default)</param>
     /// <returns>Array of headers</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<System.Collections.Generic.ICollection<BlockHeader>> GetChainSliceAsync(int? fromHeight, int? toHeight, System.Threading.CancellationToken cancellationToken)
+    public async Task<ICollection<BlockHeader>> GetChainSliceAsync(int? fromHeight, int? toHeight, CancellationToken cancellationToken)
     {
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/blocks/chainSlice?");
         if (fromHeight != null)
         {
-            urlBuilder_.Append(System.Uri.EscapeDataString("fromHeight") + "=").Append(System.Uri.EscapeDataString(ConvertToString(fromHeight, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
+            urlBuilder_.Append(Uri.EscapeDataString("fromHeight") + "=").Append(Uri.EscapeDataString(ConvertToString(fromHeight, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
         }
         if (toHeight != null)
         {
-            urlBuilder_.Append(System.Uri.EscapeDataString("toHeight") + "=").Append(System.Uri.EscapeDataString(ConvertToString(toHeight, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
+            urlBuilder_.Append(Uri.EscapeDataString("toHeight") + "=").Append(Uri.EscapeDataString(ConvertToString(toHeight, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
         }
         urlBuilder_.Length--;
 
@@ -355,23 +355,23 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                request_.Method = new System.Net.Http.HttpMethod("GET");
+                request_.Method = new HttpMethod("GET");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -383,7 +383,7 @@ public partial class ErgoClient
                     var status_ = (int)response_.StatusCode;
                     if (status_ == 200)
                     {
-                        var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.ICollection<BlockHeader>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                        var objectResponse_ = await ReadObjectResponseAsync<ICollection<BlockHeader>>(response_, headers_, cancellationToken).ConfigureAwait(false);
                         if (objectResponse_.Object == null)
                         {
                             throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -418,9 +418,9 @@ public partial class ErgoClient
     /// <param name="headerId">ID of a wanted block</param>
     /// <returns>Block object</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<FullBlock> GetFullBlockByIdAsync(string headerId)
+    public Task<FullBlock> GetFullBlockByIdAsync(string headerId)
     {
-        return GetFullBlockByIdAsync(headerId, System.Threading.CancellationToken.None);
+        return GetFullBlockByIdAsync(headerId, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -428,36 +428,36 @@ public partial class ErgoClient
     /// <param name="headerId">ID of a wanted block</param>
     /// <returns>Block object</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<FullBlock> GetFullBlockByIdAsync(string headerId, System.Threading.CancellationToken cancellationToken)
+    public async Task<FullBlock> GetFullBlockByIdAsync(string headerId, CancellationToken cancellationToken)
     {
         if (headerId == null)
-            throw new System.ArgumentNullException("headerId");
+            throw new ArgumentNullException("headerId");
 
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/blocks/{headerId}");
-        urlBuilder_.Replace("{headerId}", System.Uri.EscapeDataString(ConvertToString(headerId, System.Globalization.CultureInfo.InvariantCulture)));
+        urlBuilder_.Replace("{headerId}", Uri.EscapeDataString(ConvertToString(headerId, System.Globalization.CultureInfo.InvariantCulture)));
 
         var client_ = _httpClient;
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                request_.Method = new System.Net.Http.HttpMethod("GET");
+                request_.Method = new HttpMethod("GET");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -514,9 +514,9 @@ public partial class ErgoClient
     /// <param name="headerId">ID of a wanted block header</param>
     /// <returns>Block header object</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<BlockHeader> GetBlockHeaderByIdAsync(string headerId)
+    public Task<BlockHeader> GetBlockHeaderByIdAsync(string headerId)
     {
-        return GetBlockHeaderByIdAsync(headerId, System.Threading.CancellationToken.None);
+        return GetBlockHeaderByIdAsync(headerId, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -524,36 +524,36 @@ public partial class ErgoClient
     /// <param name="headerId">ID of a wanted block header</param>
     /// <returns>Block header object</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<BlockHeader> GetBlockHeaderByIdAsync(string headerId, System.Threading.CancellationToken cancellationToken)
+    public async Task<BlockHeader> GetBlockHeaderByIdAsync(string headerId, CancellationToken cancellationToken)
     {
         if (headerId == null)
-            throw new System.ArgumentNullException("headerId");
+            throw new ArgumentNullException("headerId");
 
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/blocks/{headerId}/header");
-        urlBuilder_.Replace("{headerId}", System.Uri.EscapeDataString(ConvertToString(headerId, System.Globalization.CultureInfo.InvariantCulture)));
+        urlBuilder_.Replace("{headerId}", Uri.EscapeDataString(ConvertToString(headerId, System.Globalization.CultureInfo.InvariantCulture)));
 
         var client_ = _httpClient;
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                request_.Method = new System.Net.Http.HttpMethod("GET");
+                request_.Method = new HttpMethod("GET");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -610,9 +610,9 @@ public partial class ErgoClient
     /// <param name="headerId">ID of a wanted block transactions</param>
     /// <returns>Block transaction object</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<BlockTransactions> GetBlockTransactionsByIdAsync(string headerId)
+    public Task<BlockTransactions> GetBlockTransactionsByIdAsync(string headerId)
     {
-        return GetBlockTransactionsByIdAsync(headerId, System.Threading.CancellationToken.None);
+        return GetBlockTransactionsByIdAsync(headerId, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -620,36 +620,36 @@ public partial class ErgoClient
     /// <param name="headerId">ID of a wanted block transactions</param>
     /// <returns>Block transaction object</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<BlockTransactions> GetBlockTransactionsByIdAsync(string headerId, System.Threading.CancellationToken cancellationToken)
+    public async Task<BlockTransactions> GetBlockTransactionsByIdAsync(string headerId, CancellationToken cancellationToken)
     {
         if (headerId == null)
-            throw new System.ArgumentNullException("headerId");
+            throw new ArgumentNullException("headerId");
 
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/blocks/{headerId}/transactions");
-        urlBuilder_.Replace("{headerId}", System.Uri.EscapeDataString(ConvertToString(headerId, System.Globalization.CultureInfo.InvariantCulture)));
+        urlBuilder_.Replace("{headerId}", Uri.EscapeDataString(ConvertToString(headerId, System.Globalization.CultureInfo.InvariantCulture)));
 
         var client_ = _httpClient;
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                request_.Method = new System.Net.Http.HttpMethod("GET");
+                request_.Method = new HttpMethod("GET");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -707,9 +707,9 @@ public partial class ErgoClient
     /// <param name="txId">ID of a wanted transaction</param>
     /// <returns>Merkle proof object</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<MerkleProof> GetProofForTxAsync(string headerId, string txId)
+    public Task<MerkleProof> GetProofForTxAsync(string headerId, string txId)
     {
-        return GetProofForTxAsync(headerId, txId, System.Threading.CancellationToken.None);
+        return GetProofForTxAsync(headerId, txId, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -718,40 +718,40 @@ public partial class ErgoClient
     /// <param name="txId">ID of a wanted transaction</param>
     /// <returns>Merkle proof object</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<MerkleProof> GetProofForTxAsync(string headerId, string txId, System.Threading.CancellationToken cancellationToken)
+    public async Task<MerkleProof> GetProofForTxAsync(string headerId, string txId, CancellationToken cancellationToken)
     {
         if (headerId == null)
-            throw new System.ArgumentNullException("headerId");
+            throw new ArgumentNullException("headerId");
 
         if (txId == null)
-            throw new System.ArgumentNullException("txId");
+            throw new ArgumentNullException("txId");
 
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/blocks/{headerId}/proofFor/{txId}");
-        urlBuilder_.Replace("{headerId}", System.Uri.EscapeDataString(ConvertToString(headerId, System.Globalization.CultureInfo.InvariantCulture)));
-        urlBuilder_.Replace("{txId}", System.Uri.EscapeDataString(ConvertToString(txId, System.Globalization.CultureInfo.InvariantCulture)));
+        urlBuilder_.Replace("{headerId}", Uri.EscapeDataString(ConvertToString(headerId, System.Globalization.CultureInfo.InvariantCulture)));
+        urlBuilder_.Replace("{txId}", Uri.EscapeDataString(ConvertToString(txId, System.Globalization.CultureInfo.InvariantCulture)));
 
         var client_ = _httpClient;
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                request_.Method = new System.Net.Http.HttpMethod("GET");
+                request_.Method = new HttpMethod("GET");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -798,9 +798,9 @@ public partial class ErgoClient
     /// <param name="count">count of a wanted block headers</param>
     /// <returns>Array of block headers</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<System.Collections.Generic.ICollection<BlockHeader>> GetLastHeadersAsync(double count)
+    public Task<ICollection<BlockHeader>> GetLastHeadersAsync(double count)
     {
-        return GetLastHeadersAsync(count, System.Threading.CancellationToken.None);
+        return GetLastHeadersAsync(count, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -808,36 +808,36 @@ public partial class ErgoClient
     /// <param name="count">count of a wanted block headers</param>
     /// <returns>Array of block headers</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<System.Collections.Generic.ICollection<BlockHeader>> GetLastHeadersAsync(double count, System.Threading.CancellationToken cancellationToken)
+    public async Task<ICollection<BlockHeader>> GetLastHeadersAsync(double count, CancellationToken cancellationToken)
     {
         if (count == null)
-            throw new System.ArgumentNullException("count");
+            throw new ArgumentNullException("count");
 
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/blocks/lastHeaders/{count}");
-        urlBuilder_.Replace("{count}", System.Uri.EscapeDataString(ConvertToString(count, System.Globalization.CultureInfo.InvariantCulture)));
+        urlBuilder_.Replace("{count}", Uri.EscapeDataString(ConvertToString(count, System.Globalization.CultureInfo.InvariantCulture)));
 
         var client_ = _httpClient;
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                request_.Method = new System.Net.Http.HttpMethod("GET");
+                request_.Method = new HttpMethod("GET");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -849,7 +849,7 @@ public partial class ErgoClient
                     var status_ = (int)response_.StatusCode;
                     if (status_ == 200)
                     {
-                        var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.ICollection<BlockHeader>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                        var objectResponse_ = await ReadObjectResponseAsync<ICollection<BlockHeader>>(response_, headers_, cancellationToken).ConfigureAwait(false);
                         if (objectResponse_.Object == null)
                         {
                             throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -884,9 +884,9 @@ public partial class ErgoClient
     /// <param name="modifierId">ID of a wanted modifier</param>
     /// <returns>Persistent modifier object</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task GetModifierByIdAsync(string modifierId)
+    public Task GetModifierByIdAsync(string modifierId)
     {
-        return GetModifierByIdAsync(modifierId, System.Threading.CancellationToken.None);
+        return GetModifierByIdAsync(modifierId, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -894,35 +894,35 @@ public partial class ErgoClient
     /// <param name="modifierId">ID of a wanted modifier</param>
     /// <returns>Persistent modifier object</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task GetModifierByIdAsync(string modifierId, System.Threading.CancellationToken cancellationToken)
+    public async Task GetModifierByIdAsync(string modifierId, CancellationToken cancellationToken)
     {
         if (modifierId == null)
-            throw new System.ArgumentNullException("modifierId");
+            throw new ArgumentNullException("modifierId");
 
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/blocks/modifier/{modifierId}");
-        urlBuilder_.Replace("{modifierId}", System.Uri.EscapeDataString(ConvertToString(modifierId, System.Globalization.CultureInfo.InvariantCulture)));
+        urlBuilder_.Replace("{modifierId}", Uri.EscapeDataString(ConvertToString(modifierId, System.Globalization.CultureInfo.InvariantCulture)));
 
         var client_ = _httpClient;
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                request_.Method = new System.Net.Http.HttpMethod("GET");
+                request_.Method = new HttpMethod("GET");
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -974,9 +974,9 @@ public partial class ErgoClient
     /// <param name="headerId">ID of wanted header</param>
     /// <returns>PoPow header object</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<PopowHeader> GetPopowHeaderByIdAsync(string headerId)
+    public Task<PopowHeader> GetPopowHeaderByIdAsync(string headerId)
     {
-        return GetPopowHeaderByIdAsync(headerId, System.Threading.CancellationToken.None);
+        return GetPopowHeaderByIdAsync(headerId, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -984,36 +984,36 @@ public partial class ErgoClient
     /// <param name="headerId">ID of wanted header</param>
     /// <returns>PoPow header object</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<PopowHeader> GetPopowHeaderByIdAsync(string headerId, System.Threading.CancellationToken cancellationToken)
+    public async Task<PopowHeader> GetPopowHeaderByIdAsync(string headerId, CancellationToken cancellationToken)
     {
         if (headerId == null)
-            throw new System.ArgumentNullException("headerId");
+            throw new ArgumentNullException("headerId");
 
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/nipopow/popowHeaderById/{headerId}");
-        urlBuilder_.Replace("{headerId}", System.Uri.EscapeDataString(ConvertToString(headerId, System.Globalization.CultureInfo.InvariantCulture)));
+        urlBuilder_.Replace("{headerId}", Uri.EscapeDataString(ConvertToString(headerId, System.Globalization.CultureInfo.InvariantCulture)));
 
         var client_ = _httpClient;
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                request_.Method = new System.Net.Http.HttpMethod("GET");
+                request_.Method = new HttpMethod("GET");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -1070,9 +1070,9 @@ public partial class ErgoClient
     /// <param name="height">Height of a wanted header</param>
     /// <returns>PoPow header object</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<PopowHeader> GetPopowHeaderByHeightAsync(int height)
+    public Task<PopowHeader> GetPopowHeaderByHeightAsync(int height)
     {
-        return GetPopowHeaderByHeightAsync(height, System.Threading.CancellationToken.None);
+        return GetPopowHeaderByHeightAsync(height, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -1080,36 +1080,36 @@ public partial class ErgoClient
     /// <param name="height">Height of a wanted header</param>
     /// <returns>PoPow header object</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<PopowHeader> GetPopowHeaderByHeightAsync(int height, System.Threading.CancellationToken cancellationToken)
+    public async Task<PopowHeader> GetPopowHeaderByHeightAsync(int height, CancellationToken cancellationToken)
     {
         if (height == null)
-            throw new System.ArgumentNullException("height");
+            throw new ArgumentNullException("height");
 
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/nipopow/popowHeaderByHeight/{height}");
-        urlBuilder_.Replace("{height}", System.Uri.EscapeDataString(ConvertToString(height, System.Globalization.CultureInfo.InvariantCulture)));
+        urlBuilder_.Replace("{height}", Uri.EscapeDataString(ConvertToString(height, System.Globalization.CultureInfo.InvariantCulture)));
 
         var client_ = _httpClient;
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                request_.Method = new System.Net.Http.HttpMethod("GET");
+                request_.Method = new HttpMethod("GET");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -1167,9 +1167,9 @@ public partial class ErgoClient
     /// <param name="suffixLength">Suffix length</param>
     /// <returns>Nipopow proof object</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<NipopowProof> GetPopowProofAsync(double minChainLength, double suffixLength)
+    public Task<NipopowProof> GetPopowProofAsync(double minChainLength, double suffixLength)
     {
-        return GetPopowProofAsync(minChainLength, suffixLength, System.Threading.CancellationToken.None);
+        return GetPopowProofAsync(minChainLength, suffixLength, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -1178,40 +1178,40 @@ public partial class ErgoClient
     /// <param name="suffixLength">Suffix length</param>
     /// <returns>Nipopow proof object</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<NipopowProof> GetPopowProofAsync(double minChainLength, double suffixLength, System.Threading.CancellationToken cancellationToken)
+    public async Task<NipopowProof> GetPopowProofAsync(double minChainLength, double suffixLength, CancellationToken cancellationToken)
     {
         if (minChainLength == null)
-            throw new System.ArgumentNullException("minChainLength");
+            throw new ArgumentNullException("minChainLength");
 
         if (suffixLength == null)
-            throw new System.ArgumentNullException("suffixLength");
+            throw new ArgumentNullException("suffixLength");
 
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/nipopow/proof/{minChainLength}/{suffixLength}");
-        urlBuilder_.Replace("{minChainLength}", System.Uri.EscapeDataString(ConvertToString(minChainLength, System.Globalization.CultureInfo.InvariantCulture)));
-        urlBuilder_.Replace("{suffixLength}", System.Uri.EscapeDataString(ConvertToString(suffixLength, System.Globalization.CultureInfo.InvariantCulture)));
+        urlBuilder_.Replace("{minChainLength}", Uri.EscapeDataString(ConvertToString(minChainLength, System.Globalization.CultureInfo.InvariantCulture)));
+        urlBuilder_.Replace("{suffixLength}", Uri.EscapeDataString(ConvertToString(suffixLength, System.Globalization.CultureInfo.InvariantCulture)));
 
         var client_ = _httpClient;
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                request_.Method = new System.Net.Http.HttpMethod("GET");
+                request_.Method = new HttpMethod("GET");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -1260,9 +1260,9 @@ public partial class ErgoClient
     /// <param name="headerId">ID of wanted header</param>
     /// <returns>Nipopow proof object</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<NipopowProof> GetPopowProofByHeaderIdAsync(double minChainLength, double suffixLength, string headerId)
+    public Task<NipopowProof> GetPopowProofByHeaderIdAsync(double minChainLength, double suffixLength, string headerId)
     {
-        return GetPopowProofByHeaderIdAsync(minChainLength, suffixLength, headerId, System.Threading.CancellationToken.None);
+        return GetPopowProofByHeaderIdAsync(minChainLength, suffixLength, headerId, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -1272,44 +1272,44 @@ public partial class ErgoClient
     /// <param name="headerId">ID of wanted header</param>
     /// <returns>Nipopow proof object</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<NipopowProof> GetPopowProofByHeaderIdAsync(double minChainLength, double suffixLength, string headerId, System.Threading.CancellationToken cancellationToken)
+    public async Task<NipopowProof> GetPopowProofByHeaderIdAsync(double minChainLength, double suffixLength, string headerId, CancellationToken cancellationToken)
     {
         if (minChainLength == null)
-            throw new System.ArgumentNullException("minChainLength");
+            throw new ArgumentNullException("minChainLength");
 
         if (suffixLength == null)
-            throw new System.ArgumentNullException("suffixLength");
+            throw new ArgumentNullException("suffixLength");
 
         if (headerId == null)
-            throw new System.ArgumentNullException("headerId");
+            throw new ArgumentNullException("headerId");
 
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/nipopow/proof/{minChainLength}/{suffixLength}/{headerId}");
-        urlBuilder_.Replace("{minChainLength}", System.Uri.EscapeDataString(ConvertToString(minChainLength, System.Globalization.CultureInfo.InvariantCulture)));
-        urlBuilder_.Replace("{suffixLength}", System.Uri.EscapeDataString(ConvertToString(suffixLength, System.Globalization.CultureInfo.InvariantCulture)));
-        urlBuilder_.Replace("{headerId}", System.Uri.EscapeDataString(ConvertToString(headerId, System.Globalization.CultureInfo.InvariantCulture)));
+        urlBuilder_.Replace("{minChainLength}", Uri.EscapeDataString(ConvertToString(minChainLength, System.Globalization.CultureInfo.InvariantCulture)));
+        urlBuilder_.Replace("{suffixLength}", Uri.EscapeDataString(ConvertToString(suffixLength, System.Globalization.CultureInfo.InvariantCulture)));
+        urlBuilder_.Replace("{headerId}", Uri.EscapeDataString(ConvertToString(headerId, System.Globalization.CultureInfo.InvariantCulture)));
 
         var client_ = _httpClient;
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                request_.Method = new System.Net.Http.HttpMethod("GET");
+                request_.Method = new HttpMethod("GET");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -1355,16 +1355,16 @@ public partial class ErgoClient
     /// <summary>Get the information about the Node</summary>
     /// <returns>Node info object</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<NodeInfo> GetNodeInfoAsync()
+    public Task<NodeInfo> GetNodeInfoAsync()
     {
-        return GetNodeInfoAsync(System.Threading.CancellationToken.None);
+        return GetNodeInfoAsync(CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
     /// <summary>Get the information about the Node</summary>
     /// <returns>Node info object</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<NodeInfo> GetNodeInfoAsync(System.Threading.CancellationToken cancellationToken)
+    public async Task<NodeInfo> GetNodeInfoAsync(CancellationToken cancellationToken)
     {
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/info");
@@ -1373,23 +1373,23 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                request_.Method = new System.Net.Http.HttpMethod("GET");
+                request_.Method = new HttpMethod("GET");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -1435,19 +1435,19 @@ public partial class ErgoClient
     /// <summary>Submit an Ergo transaction to unconfirmed pool to send it over the network</summary>
     /// <returns>JSON with ID of the new transaction</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<string> SendTransactionAsync(ErgoTransaction body)
+    public Task<string> SendTransactionAsync(ErgoTransaction body)
     {
-        return SendTransactionAsync(body, System.Threading.CancellationToken.None);
+        return SendTransactionAsync(body, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
     /// <summary>Submit an Ergo transaction to unconfirmed pool to send it over the network</summary>
     /// <returns>JSON with ID of the new transaction</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<string> SendTransactionAsync(ErgoTransaction body, System.Threading.CancellationToken cancellationToken)
+    public async Task<string> SendTransactionAsync(ErgoTransaction body, CancellationToken cancellationToken)
     {
         if (body == null)
-            throw new System.ArgumentNullException("body");
+            throw new ArgumentNullException("body");
 
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/transactions");
@@ -1456,26 +1456,26 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                var content_ = new System.Net.Http.StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
+                var content_ = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
                 content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
                 request_.Content = content_;
-                request_.Method = new System.Net.Http.HttpMethod("POST");
+                request_.Method = new HttpMethod("POST");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -1521,19 +1521,19 @@ public partial class ErgoClient
     /// <summary>Checks an Ergo transaction without sending it over the network. Checks that transaction is valid and its inputs are in the UTXO set. Returns transaction identifier if the transaction is passing the checks.</summary>
     /// <returns>JSON with ID of the new transaction</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<string> CheckTransactionAsync(ErgoTransaction body)
+    public Task<string> CheckTransactionAsync(ErgoTransaction body)
     {
-        return CheckTransactionAsync(body, System.Threading.CancellationToken.None);
+        return CheckTransactionAsync(body, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
     /// <summary>Checks an Ergo transaction without sending it over the network. Checks that transaction is valid and its inputs are in the UTXO set. Returns transaction identifier if the transaction is passing the checks.</summary>
     /// <returns>JSON with ID of the new transaction</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<string> CheckTransactionAsync(ErgoTransaction body, System.Threading.CancellationToken cancellationToken)
+    public async Task<string> CheckTransactionAsync(ErgoTransaction body, CancellationToken cancellationToken)
     {
         if (body == null)
-            throw new System.ArgumentNullException("body");
+            throw new ArgumentNullException("body");
 
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/transactions/check");
@@ -1542,26 +1542,26 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                var content_ = new System.Net.Http.StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
+                var content_ = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
                 content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
                 request_.Content = content_;
-                request_.Method = new System.Net.Http.HttpMethod("POST");
+                request_.Method = new HttpMethod("POST");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -1609,9 +1609,9 @@ public partial class ErgoClient
     /// <param name="offset">The number of items in list to skip</param>
     /// <returns>Array with Ergo transactions</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<System.Collections.Generic.ICollection<ErgoTransaction>> GetUnconfirmedTransactionsAsync(int? limit, int? offset)
+    public Task<ICollection<ErgoTransaction>> GetUnconfirmedTransactionsAsync(int? limit, int? offset)
     {
-        return GetUnconfirmedTransactionsAsync(limit, offset, System.Threading.CancellationToken.None);
+        return GetUnconfirmedTransactionsAsync(limit, offset, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -1620,17 +1620,17 @@ public partial class ErgoClient
     /// <param name="offset">The number of items in list to skip</param>
     /// <returns>Array with Ergo transactions</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<System.Collections.Generic.ICollection<ErgoTransaction>> GetUnconfirmedTransactionsAsync(int? limit, int? offset, System.Threading.CancellationToken cancellationToken)
+    public async Task<ICollection<ErgoTransaction>> GetUnconfirmedTransactionsAsync(int? limit, int? offset, CancellationToken cancellationToken)
     {
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/transactions/unconfirmed?");
         if (limit != null)
         {
-            urlBuilder_.Append(System.Uri.EscapeDataString("limit") + "=").Append(System.Uri.EscapeDataString(ConvertToString(limit, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
+            urlBuilder_.Append(Uri.EscapeDataString("limit") + "=").Append(Uri.EscapeDataString(ConvertToString(limit, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
         }
         if (offset != null)
         {
-            urlBuilder_.Append(System.Uri.EscapeDataString("offset") + "=").Append(System.Uri.EscapeDataString(ConvertToString(offset, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
+            urlBuilder_.Append(Uri.EscapeDataString("offset") + "=").Append(Uri.EscapeDataString(ConvertToString(offset, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
         }
         urlBuilder_.Length--;
 
@@ -1638,23 +1638,23 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                request_.Method = new System.Net.Http.HttpMethod("GET");
+                request_.Method = new HttpMethod("GET");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -1666,7 +1666,7 @@ public partial class ErgoClient
                     var status_ = (int)response_.StatusCode;
                     if (status_ == 200)
                     {
-                        var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.ICollection<ErgoTransaction>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                        var objectResponse_ = await ReadObjectResponseAsync<ICollection<ErgoTransaction>>(response_, headers_, cancellationToken).ConfigureAwait(false);
                         if (objectResponse_.Object == null)
                         {
                             throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -1702,9 +1702,9 @@ public partial class ErgoClient
     /// <param name="maxtime">Maximal wait time in milliseconds</param>
     /// <returns>Array with fee histogram</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<System.Collections.Generic.ICollection<FeeHistogramBin>> GetFeeHistogramAsync(int? bins, long? maxtime)
+    public Task<ICollection<FeeHistogramBin>> GetFeeHistogramAsync(int? bins, long? maxtime)
     {
-        return GetFeeHistogramAsync(bins, maxtime, System.Threading.CancellationToken.None);
+        return GetFeeHistogramAsync(bins, maxtime, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -1713,17 +1713,17 @@ public partial class ErgoClient
     /// <param name="maxtime">Maximal wait time in milliseconds</param>
     /// <returns>Array with fee histogram</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<System.Collections.Generic.ICollection<FeeHistogramBin>> GetFeeHistogramAsync(int? bins, long? maxtime, System.Threading.CancellationToken cancellationToken)
+    public async Task<ICollection<FeeHistogramBin>> GetFeeHistogramAsync(int? bins, long? maxtime, CancellationToken cancellationToken)
     {
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/transactions/poolHistogram?");
         if (bins != null)
         {
-            urlBuilder_.Append(System.Uri.EscapeDataString("bins") + "=").Append(System.Uri.EscapeDataString(ConvertToString(bins, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
+            urlBuilder_.Append(Uri.EscapeDataString("bins") + "=").Append(Uri.EscapeDataString(ConvertToString(bins, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
         }
         if (maxtime != null)
         {
-            urlBuilder_.Append(System.Uri.EscapeDataString("maxtime") + "=").Append(System.Uri.EscapeDataString(ConvertToString(maxtime, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
+            urlBuilder_.Append(Uri.EscapeDataString("maxtime") + "=").Append(Uri.EscapeDataString(ConvertToString(maxtime, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
         }
         urlBuilder_.Length--;
 
@@ -1731,23 +1731,23 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                request_.Method = new System.Net.Http.HttpMethod("GET");
+                request_.Method = new HttpMethod("GET");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -1759,7 +1759,7 @@ public partial class ErgoClient
                     var status_ = (int)response_.StatusCode;
                     if (status_ == 200)
                     {
-                        var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.ICollection<FeeHistogramBin>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                        var objectResponse_ = await ReadObjectResponseAsync<ICollection<FeeHistogramBin>>(response_, headers_, cancellationToken).ConfigureAwait(false);
                         if (objectResponse_.Object == null)
                         {
                             throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -1795,9 +1795,9 @@ public partial class ErgoClient
     /// <param name="txSize">Transaction size</param>
     /// <returns>Recommended fee for the transaction (in nanoErgs)</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<int> GetRecommendedFeeAsync(int waitTime, int txSize)
+    public Task<int> GetRecommendedFeeAsync(int waitTime, int txSize)
     {
-        return GetRecommendedFeeAsync(waitTime, txSize, System.Threading.CancellationToken.None);
+        return GetRecommendedFeeAsync(waitTime, txSize, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -1806,41 +1806,41 @@ public partial class ErgoClient
     /// <param name="txSize">Transaction size</param>
     /// <returns>Recommended fee for the transaction (in nanoErgs)</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<int> GetRecommendedFeeAsync(int waitTime, int txSize, System.Threading.CancellationToken cancellationToken)
+    public async Task<int> GetRecommendedFeeAsync(int waitTime, int txSize, CancellationToken cancellationToken)
     {
         if (waitTime == null)
-            throw new System.ArgumentNullException("waitTime");
+            throw new ArgumentNullException("waitTime");
 
         if (txSize == null)
-            throw new System.ArgumentNullException("txSize");
+            throw new ArgumentNullException("txSize");
 
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/transactions/getFee?");
-        urlBuilder_.Append(System.Uri.EscapeDataString("waitTime") + "=").Append(System.Uri.EscapeDataString(ConvertToString(waitTime, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
-        urlBuilder_.Append(System.Uri.EscapeDataString("txSize") + "=").Append(System.Uri.EscapeDataString(ConvertToString(txSize, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
+        urlBuilder_.Append(Uri.EscapeDataString("waitTime") + "=").Append(Uri.EscapeDataString(ConvertToString(waitTime, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
+        urlBuilder_.Append(Uri.EscapeDataString("txSize") + "=").Append(Uri.EscapeDataString(ConvertToString(txSize, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
         urlBuilder_.Length--;
 
         var client_ = _httpClient;
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                request_.Method = new System.Net.Http.HttpMethod("GET");
+                request_.Method = new HttpMethod("GET");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -1888,9 +1888,9 @@ public partial class ErgoClient
     /// <param name="txSize">Transaction size</param>
     /// <returns>Expected wait time in milliseconds</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<int> GetExpectedWaitTimeAsync(int fee, int txSize)
+    public Task<int> GetExpectedWaitTimeAsync(int fee, int txSize)
     {
-        return GetExpectedWaitTimeAsync(fee, txSize, System.Threading.CancellationToken.None);
+        return GetExpectedWaitTimeAsync(fee, txSize, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -1899,41 +1899,41 @@ public partial class ErgoClient
     /// <param name="txSize">Transaction size</param>
     /// <returns>Expected wait time in milliseconds</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<int> GetExpectedWaitTimeAsync(int fee, int txSize, System.Threading.CancellationToken cancellationToken)
+    public async Task<int> GetExpectedWaitTimeAsync(int fee, int txSize, CancellationToken cancellationToken)
     {
         if (fee == null)
-            throw new System.ArgumentNullException("fee");
+            throw new ArgumentNullException("fee");
 
         if (txSize == null)
-            throw new System.ArgumentNullException("txSize");
+            throw new ArgumentNullException("txSize");
 
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/transactions/waitTime?");
-        urlBuilder_.Append(System.Uri.EscapeDataString("fee") + "=").Append(System.Uri.EscapeDataString(ConvertToString(fee, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
-        urlBuilder_.Append(System.Uri.EscapeDataString("txSize") + "=").Append(System.Uri.EscapeDataString(ConvertToString(txSize, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
+        urlBuilder_.Append(Uri.EscapeDataString("fee") + "=").Append(Uri.EscapeDataString(ConvertToString(fee, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
+        urlBuilder_.Append(Uri.EscapeDataString("txSize") + "=").Append(Uri.EscapeDataString(ConvertToString(txSize, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
         urlBuilder_.Length--;
 
         var client_ = _httpClient;
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                request_.Method = new System.Net.Http.HttpMethod("GET");
+                request_.Method = new HttpMethod("GET");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -1979,16 +1979,16 @@ public partial class ErgoClient
     /// <summary>Get all known peers</summary>
     /// <returns>Array of peer objects</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<System.Collections.Generic.ICollection<Peer>> GetAllPeersAsync()
+    public Task<ICollection<Peer>> GetAllPeersAsync()
     {
-        return GetAllPeersAsync(System.Threading.CancellationToken.None);
+        return GetAllPeersAsync(CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
     /// <summary>Get all known peers</summary>
     /// <returns>Array of peer objects</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<System.Collections.Generic.ICollection<Peer>> GetAllPeersAsync(System.Threading.CancellationToken cancellationToken)
+    public async Task<ICollection<Peer>> GetAllPeersAsync(CancellationToken cancellationToken)
     {
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/peers/all");
@@ -1997,23 +1997,23 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                request_.Method = new System.Net.Http.HttpMethod("GET");
+                request_.Method = new HttpMethod("GET");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -2025,7 +2025,7 @@ public partial class ErgoClient
                     var status_ = (int)response_.StatusCode;
                     if (status_ == 200)
                     {
-                        var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.ICollection<Peer>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                        var objectResponse_ = await ReadObjectResponseAsync<ICollection<Peer>>(response_, headers_, cancellationToken).ConfigureAwait(false);
                         if (objectResponse_.Object == null)
                         {
                             throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -2059,16 +2059,16 @@ public partial class ErgoClient
     /// <summary>Get current connected peers</summary>
     /// <returns>Array of peer objects</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<System.Collections.Generic.ICollection<Peer>> GetConnectedPeersAsync()
+    public Task<ICollection<Peer>> GetConnectedPeersAsync()
     {
-        return GetConnectedPeersAsync(System.Threading.CancellationToken.None);
+        return GetConnectedPeersAsync(CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
     /// <summary>Get current connected peers</summary>
     /// <returns>Array of peer objects</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<System.Collections.Generic.ICollection<Peer>> GetConnectedPeersAsync(System.Threading.CancellationToken cancellationToken)
+    public async Task<ICollection<Peer>> GetConnectedPeersAsync(CancellationToken cancellationToken)
     {
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/peers/connected");
@@ -2077,23 +2077,23 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                request_.Method = new System.Net.Http.HttpMethod("GET");
+                request_.Method = new HttpMethod("GET");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -2105,7 +2105,7 @@ public partial class ErgoClient
                     var status_ = (int)response_.StatusCode;
                     if (status_ == 200)
                     {
-                        var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.ICollection<Peer>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                        var objectResponse_ = await ReadObjectResponseAsync<ICollection<Peer>>(response_, headers_, cancellationToken).ConfigureAwait(false);
                         if (objectResponse_.Object == null)
                         {
                             throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -2139,19 +2139,19 @@ public partial class ErgoClient
     /// <summary>Add address to peers list</summary>
     /// <returns>Attempt to connect to the peer</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task ConnectToPeerAsync(string body)
+    public Task ConnectToPeerAsync(string body)
     {
-        return ConnectToPeerAsync(body, System.Threading.CancellationToken.None);
+        return ConnectToPeerAsync(body, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
     /// <summary>Add address to peers list</summary>
     /// <returns>Attempt to connect to the peer</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task ConnectToPeerAsync(string body, System.Threading.CancellationToken cancellationToken)
+    public async Task ConnectToPeerAsync(string body, CancellationToken cancellationToken)
     {
         if (body == null)
-            throw new System.ArgumentNullException("body");
+            throw new ArgumentNullException("body");
 
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/peers/connect");
@@ -2160,25 +2160,25 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                var content_ = new System.Net.Http.StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
+                var content_ = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
                 content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
                 request_.Content = content_;
-                request_.Method = new System.Net.Http.HttpMethod("POST");
+                request_.Method = new HttpMethod("POST");
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -2219,16 +2219,16 @@ public partial class ErgoClient
     /// <summary>Get blacklisted peers</summary>
     /// <returns>Array of the addresses</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<System.Collections.Generic.ICollection<string>> GetBlacklistedPeersAsync()
+    public Task<ICollection<string>> GetBlacklistedPeersAsync()
     {
-        return GetBlacklistedPeersAsync(System.Threading.CancellationToken.None);
+        return GetBlacklistedPeersAsync(CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
     /// <summary>Get blacklisted peers</summary>
     /// <returns>Array of the addresses</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<System.Collections.Generic.ICollection<string>> GetBlacklistedPeersAsync(System.Threading.CancellationToken cancellationToken)
+    public async Task<ICollection<string>> GetBlacklistedPeersAsync(CancellationToken cancellationToken)
     {
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/peers/blacklisted");
@@ -2237,23 +2237,23 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                request_.Method = new System.Net.Http.HttpMethod("GET");
+                request_.Method = new HttpMethod("GET");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -2265,7 +2265,7 @@ public partial class ErgoClient
                     var status_ = (int)response_.StatusCode;
                     if (status_ == 200)
                     {
-                        var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.ICollection<string>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                        var objectResponse_ = await ReadObjectResponseAsync<ICollection<string>>(response_, headers_, cancellationToken).ConfigureAwait(false);
                         if (objectResponse_.Object == null)
                         {
                             throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -2299,16 +2299,16 @@ public partial class ErgoClient
     /// <summary>Get last incomming message timestamp and current network time</summary>
     /// <returns>Network status</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<PeersStatus> GetPeersStatusAsync()
+    public Task<PeersStatus> GetPeersStatusAsync()
     {
-        return GetPeersStatusAsync(System.Threading.CancellationToken.None);
+        return GetPeersStatusAsync(CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
     /// <summary>Get last incomming message timestamp and current network time</summary>
     /// <returns>Network status</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<PeersStatus> GetPeersStatusAsync(System.Threading.CancellationToken cancellationToken)
+    public async Task<PeersStatus> GetPeersStatusAsync(CancellationToken cancellationToken)
     {
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/peers/status");
@@ -2317,23 +2317,23 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                request_.Method = new System.Net.Http.HttpMethod("GET");
+                request_.Method = new HttpMethod("GET");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -2379,16 +2379,16 @@ public partial class ErgoClient
     /// <summary>Get sync info reported by peers, including versions, current status and height (if available)</summary>
     /// <returns>Network status</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<System.Collections.Generic.ICollection<PeersInfo>> GetPeersFullInfoAsync()
+    public Task<ICollection<PeersInfo>> GetPeersFullInfoAsync()
     {
-        return GetPeersFullInfoAsync(System.Threading.CancellationToken.None);
+        return GetPeersFullInfoAsync(CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
     /// <summary>Get sync info reported by peers, including versions, current status and height (if available)</summary>
     /// <returns>Network status</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<System.Collections.Generic.ICollection<PeersInfo>> GetPeersFullInfoAsync(System.Threading.CancellationToken cancellationToken)
+    public async Task<ICollection<PeersInfo>> GetPeersFullInfoAsync(CancellationToken cancellationToken)
     {
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/peers/syncInfo");
@@ -2397,23 +2397,23 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                request_.Method = new System.Net.Http.HttpMethod("GET");
+                request_.Method = new HttpMethod("GET");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -2425,7 +2425,7 @@ public partial class ErgoClient
                     var status_ = (int)response_.StatusCode;
                     if (status_ == 200)
                     {
-                        var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.ICollection<PeersInfo>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                        var objectResponse_ = await ReadObjectResponseAsync<ICollection<PeersInfo>>(response_, headers_, cancellationToken).ConfigureAwait(false);
                         if (objectResponse_.Object == null)
                         {
                             throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -2459,16 +2459,16 @@ public partial class ErgoClient
     /// <summary>Get random seed of 32 bytes</summary>
     /// <returns>Base16-encoded 32 byte seed</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<string> GetRandomSeedAsync()
+    public Task<string> GetRandomSeedAsync()
     {
-        return GetRandomSeedAsync(System.Threading.CancellationToken.None);
+        return GetRandomSeedAsync(CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
     /// <summary>Get random seed of 32 bytes</summary>
     /// <returns>Base16-encoded 32 byte seed</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<string> GetRandomSeedAsync(System.Threading.CancellationToken cancellationToken)
+    public async Task<string> GetRandomSeedAsync(CancellationToken cancellationToken)
     {
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/utils/seed");
@@ -2477,23 +2477,23 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                request_.Method = new System.Net.Http.HttpMethod("GET");
+                request_.Method = new HttpMethod("GET");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -2540,9 +2540,9 @@ public partial class ErgoClient
     /// <param name="address">address to check</param>
     /// <returns>Address validity with validation error</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<AddressValidity> CheckAddressValidityAsync(string address)
+    public Task<AddressValidity> CheckAddressValidityAsync(string address)
     {
-        return CheckAddressValidityAsync(address, System.Threading.CancellationToken.None);
+        return CheckAddressValidityAsync(address, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -2550,36 +2550,36 @@ public partial class ErgoClient
     /// <param name="address">address to check</param>
     /// <returns>Address validity with validation error</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<AddressValidity> CheckAddressValidityAsync(string address, System.Threading.CancellationToken cancellationToken)
+    public async Task<AddressValidity> CheckAddressValidityAsync(string address, CancellationToken cancellationToken)
     {
         if (address == null)
-            throw new System.ArgumentNullException("address");
+            throw new ArgumentNullException("address");
 
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/utils/address/{address}");
-        urlBuilder_.Replace("{address}", System.Uri.EscapeDataString(ConvertToString(address, System.Globalization.CultureInfo.InvariantCulture)));
+        urlBuilder_.Replace("{address}", Uri.EscapeDataString(ConvertToString(address, System.Globalization.CultureInfo.InvariantCulture)));
 
         var client_ = _httpClient;
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                request_.Method = new System.Net.Http.HttpMethod("GET");
+                request_.Method = new HttpMethod("GET");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -2626,9 +2626,9 @@ public partial class ErgoClient
     /// <param name="address">address to extract public key from</param>
     /// <returns>hex-encoded public key (serialized secp256k1 element)</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<string> AddressToRawAsync(string address)
+    public Task<string> AddressToRawAsync(string address)
     {
-        return AddressToRawAsync(address, System.Threading.CancellationToken.None);
+        return AddressToRawAsync(address, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -2636,36 +2636,36 @@ public partial class ErgoClient
     /// <param name="address">address to extract public key from</param>
     /// <returns>hex-encoded public key (serialized secp256k1 element)</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<string> AddressToRawAsync(string address, System.Threading.CancellationToken cancellationToken)
+    public async Task<string> AddressToRawAsync(string address, CancellationToken cancellationToken)
     {
         if (address == null)
-            throw new System.ArgumentNullException("address");
+            throw new ArgumentNullException("address");
 
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/utils/addressToRaw/{address}");
-        urlBuilder_.Replace("{address}", System.Uri.EscapeDataString(ConvertToString(address, System.Globalization.CultureInfo.InvariantCulture)));
+        urlBuilder_.Replace("{address}", Uri.EscapeDataString(ConvertToString(address, System.Globalization.CultureInfo.InvariantCulture)));
 
         var client_ = _httpClient;
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                request_.Method = new System.Net.Http.HttpMethod("GET");
+                request_.Method = new HttpMethod("GET");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -2712,9 +2712,9 @@ public partial class ErgoClient
     /// <param name="pubkeyHex">public key to get address from</param>
     /// <returns>Pay-to-public-key (P2PK) address</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<string> RawToAddressAsync(string pubkeyHex)
+    public Task<string> RawToAddressAsync(string pubkeyHex)
     {
-        return RawToAddressAsync(pubkeyHex, System.Threading.CancellationToken.None);
+        return RawToAddressAsync(pubkeyHex, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -2722,36 +2722,36 @@ public partial class ErgoClient
     /// <param name="pubkeyHex">public key to get address from</param>
     /// <returns>Pay-to-public-key (P2PK) address</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<string> RawToAddressAsync(string pubkeyHex, System.Threading.CancellationToken cancellationToken)
+    public async Task<string> RawToAddressAsync(string pubkeyHex, CancellationToken cancellationToken)
     {
         if (pubkeyHex == null)
-            throw new System.ArgumentNullException("pubkeyHex");
+            throw new ArgumentNullException("pubkeyHex");
 
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/utils/rawToAddress/{pubkeyHex}");
-        urlBuilder_.Replace("{pubkeyHex}", System.Uri.EscapeDataString(ConvertToString(pubkeyHex, System.Globalization.CultureInfo.InvariantCulture)));
+        urlBuilder_.Replace("{pubkeyHex}", Uri.EscapeDataString(ConvertToString(pubkeyHex, System.Globalization.CultureInfo.InvariantCulture)));
 
         var client_ = _httpClient;
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                request_.Method = new System.Net.Http.HttpMethod("GET");
+                request_.Method = new HttpMethod("GET");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -2798,9 +2798,9 @@ public partial class ErgoClient
     /// <param name="ergoTreeHex">ErgoTree to derive an address from</param>
     /// <returns>Ergo address</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<AddressHolder> ErgoTreeToAddressAsync(string ergoTreeHex)
+    public Task<AddressHolder> ErgoTreeToAddressAsync(string ergoTreeHex)
     {
-        return ErgoTreeToAddressAsync(ergoTreeHex, System.Threading.CancellationToken.None);
+        return ErgoTreeToAddressAsync(ergoTreeHex, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -2808,36 +2808,36 @@ public partial class ErgoClient
     /// <param name="ergoTreeHex">ErgoTree to derive an address from</param>
     /// <returns>Ergo address</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<AddressHolder> ErgoTreeToAddressAsync(string ergoTreeHex, System.Threading.CancellationToken cancellationToken)
+    public async Task<AddressHolder> ErgoTreeToAddressAsync(string ergoTreeHex, CancellationToken cancellationToken)
     {
         if (ergoTreeHex == null)
-            throw new System.ArgumentNullException("ergoTreeHex");
+            throw new ArgumentNullException("ergoTreeHex");
 
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/utils/ergoTreeToAddress/{ergoTreeHex}");
-        urlBuilder_.Replace("{ergoTreeHex}", System.Uri.EscapeDataString(ConvertToString(ergoTreeHex, System.Globalization.CultureInfo.InvariantCulture)));
+        urlBuilder_.Replace("{ergoTreeHex}", Uri.EscapeDataString(ConvertToString(ergoTreeHex, System.Globalization.CultureInfo.InvariantCulture)));
 
         var client_ = _httpClient;
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                request_.Method = new System.Net.Http.HttpMethod("GET");
+                request_.Method = new HttpMethod("GET");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -2884,9 +2884,9 @@ public partial class ErgoClient
     /// <param name="length">seed length in bytes</param>
     /// <returns>Base16-encoded N byte seed</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<string> GetRandomSeedWithLengthAsync(string length)
+    public Task<string> GetRandomSeedWithLengthAsync(string length)
     {
-        return GetRandomSeedWithLengthAsync(length, System.Threading.CancellationToken.None);
+        return GetRandomSeedWithLengthAsync(length, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -2894,36 +2894,36 @@ public partial class ErgoClient
     /// <param name="length">seed length in bytes</param>
     /// <returns>Base16-encoded N byte seed</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<string> GetRandomSeedWithLengthAsync(string length, System.Threading.CancellationToken cancellationToken)
+    public async Task<string> GetRandomSeedWithLengthAsync(string length, CancellationToken cancellationToken)
     {
         if (length == null)
-            throw new System.ArgumentNullException("length");
+            throw new ArgumentNullException("length");
 
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/utils/seed/{length}");
-        urlBuilder_.Replace("{length}", System.Uri.EscapeDataString(ConvertToString(length, System.Globalization.CultureInfo.InvariantCulture)));
+        urlBuilder_.Replace("{length}", Uri.EscapeDataString(ConvertToString(length, System.Globalization.CultureInfo.InvariantCulture)));
 
         var client_ = _httpClient;
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                request_.Method = new System.Net.Http.HttpMethod("GET");
+                request_.Method = new HttpMethod("GET");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -2969,19 +2969,19 @@ public partial class ErgoClient
     /// <summary>Return Blake2b hash of specified message</summary>
     /// <returns>Base16-encoded 32 byte hash</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<string> HashBlake2bAsync(string body)
+    public Task<string> HashBlake2bAsync(string body)
     {
-        return HashBlake2bAsync(body, System.Threading.CancellationToken.None);
+        return HashBlake2bAsync(body, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
     /// <summary>Return Blake2b hash of specified message</summary>
     /// <returns>Base16-encoded 32 byte hash</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<string> HashBlake2bAsync(string body, System.Threading.CancellationToken cancellationToken)
+    public async Task<string> HashBlake2bAsync(string body, CancellationToken cancellationToken)
     {
         if (body == null)
-            throw new System.ArgumentNullException("body");
+            throw new ArgumentNullException("body");
 
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/utils/hash/blake2b");
@@ -2990,26 +2990,26 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                var content_ = new System.Net.Http.StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
+                var content_ = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
                 content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
                 request_.Content = content_;
-                request_.Method = new System.Net.Http.HttpMethod("POST");
+                request_.Method = new HttpMethod("POST");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -3055,19 +3055,19 @@ public partial class ErgoClient
     /// <summary>Initialize new wallet with randomly generated seed</summary>
     /// <returns>New wallet with randomly generated seed created successfully</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<Response> WalletInitAsync(Body body)
+    public Task<Response> WalletInitAsync(Body body)
     {
-        return WalletInitAsync(body, System.Threading.CancellationToken.None);
+        return WalletInitAsync(body, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
     /// <summary>Initialize new wallet with randomly generated seed</summary>
     /// <returns>New wallet with randomly generated seed created successfully</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<Response> WalletInitAsync(Body body, System.Threading.CancellationToken cancellationToken)
+    public async Task<Response> WalletInitAsync(Body body, CancellationToken cancellationToken)
     {
         if (body == null)
-            throw new System.ArgumentNullException("body");
+            throw new ArgumentNullException("body");
 
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/wallet/init");
@@ -3076,26 +3076,26 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                var content_ = new System.Net.Http.StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
+                var content_ = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
                 content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
                 request_.Content = content_;
-                request_.Method = new System.Net.Http.HttpMethod("POST");
+                request_.Method = new HttpMethod("POST");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -3141,19 +3141,19 @@ public partial class ErgoClient
     /// <summary>Create new wallet from existing mnemonic seed</summary>
     /// <returns>Wallet restored successfully</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task WalletRestoreAsync(Body2 body)
+    public Task WalletRestoreAsync(Body2 body)
     {
-        return WalletRestoreAsync(body, System.Threading.CancellationToken.None);
+        return WalletRestoreAsync(body, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
     /// <summary>Create new wallet from existing mnemonic seed</summary>
     /// <returns>Wallet restored successfully</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task WalletRestoreAsync(Body2 body, System.Threading.CancellationToken cancellationToken)
+    public async Task WalletRestoreAsync(Body2 body, CancellationToken cancellationToken)
     {
         if (body == null)
-            throw new System.ArgumentNullException("body");
+            throw new ArgumentNullException("body");
 
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/wallet/restore");
@@ -3162,25 +3162,25 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                var content_ = new System.Net.Http.StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
+                var content_ = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
                 content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
                 request_.Content = content_;
-                request_.Method = new System.Net.Http.HttpMethod("POST");
+                request_.Method = new HttpMethod("POST");
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -3221,19 +3221,19 @@ public partial class ErgoClient
     /// <summary>Check whether mnemonic phrase is corresponding to the wallet seed</summary>
     /// <returns>Whether passphrase match wallet</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<Response2> CheckSeedAsync(Body3 body)
+    public Task<Response2> CheckSeedAsync(Body3 body)
     {
-        return CheckSeedAsync(body, System.Threading.CancellationToken.None);
+        return CheckSeedAsync(body, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
     /// <summary>Check whether mnemonic phrase is corresponding to the wallet seed</summary>
     /// <returns>Whether passphrase match wallet</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<Response2> CheckSeedAsync(Body3 body, System.Threading.CancellationToken cancellationToken)
+    public async Task<Response2> CheckSeedAsync(Body3 body, CancellationToken cancellationToken)
     {
         if (body == null)
-            throw new System.ArgumentNullException("body");
+            throw new ArgumentNullException("body");
 
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/wallet/check");
@@ -3242,26 +3242,26 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                var content_ = new System.Net.Http.StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
+                var content_ = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
                 content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
                 request_.Content = content_;
-                request_.Method = new System.Net.Http.HttpMethod("POST");
+                request_.Method = new HttpMethod("POST");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -3307,19 +3307,19 @@ public partial class ErgoClient
     /// <summary>Unlock wallet</summary>
     /// <returns>Wallet unlocked successfully</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task WalletUnlockAsync(Body4 body)
+    public Task WalletUnlockAsync(Body4 body)
     {
-        return WalletUnlockAsync(body, System.Threading.CancellationToken.None);
+        return WalletUnlockAsync(body, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
     /// <summary>Unlock wallet</summary>
     /// <returns>Wallet unlocked successfully</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task WalletUnlockAsync(Body4 body, System.Threading.CancellationToken cancellationToken)
+    public async Task WalletUnlockAsync(Body4 body, CancellationToken cancellationToken)
     {
         if (body == null)
-            throw new System.ArgumentNullException("body");
+            throw new ArgumentNullException("body");
 
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/wallet/unlock");
@@ -3328,25 +3328,25 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                var content_ = new System.Net.Http.StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
+                var content_ = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
                 content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
                 request_.Content = content_;
-                request_.Method = new System.Net.Http.HttpMethod("POST");
+                request_.Method = new HttpMethod("POST");
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -3387,16 +3387,16 @@ public partial class ErgoClient
     /// <summary>Lock wallet</summary>
     /// <returns>Wallet locked successfully</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task WalletLockAsync()
+    public Task WalletLockAsync()
     {
-        return WalletLockAsync(System.Threading.CancellationToken.None);
+        return WalletLockAsync(CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
     /// <summary>Lock wallet</summary>
     /// <returns>Wallet locked successfully</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task WalletLockAsync(System.Threading.CancellationToken cancellationToken)
+    public async Task WalletLockAsync(CancellationToken cancellationToken)
     {
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/wallet/lock");
@@ -3405,22 +3405,22 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                request_.Method = new System.Net.Http.HttpMethod("GET");
+                request_.Method = new HttpMethod("GET");
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -3461,16 +3461,16 @@ public partial class ErgoClient
     /// <summary>Rescan wallet (all the available full blocks)</summary>
     /// <returns>Wallet storage recreated</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task WalletRescanAsync()
+    public Task WalletRescanAsync()
     {
-        return WalletRescanAsync(System.Threading.CancellationToken.None);
+        return WalletRescanAsync(CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
     /// <summary>Rescan wallet (all the available full blocks)</summary>
     /// <returns>Wallet storage recreated</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task WalletRescanAsync(System.Threading.CancellationToken cancellationToken)
+    public async Task WalletRescanAsync(CancellationToken cancellationToken)
     {
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/wallet/rescan");
@@ -3479,22 +3479,22 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                request_.Method = new System.Net.Http.HttpMethod("GET");
+                request_.Method = new HttpMethod("GET");
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -3535,16 +3535,16 @@ public partial class ErgoClient
     /// <summary>Get wallet status</summary>
     /// <returns>Wallet status</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<Response3> GetWalletStatusAsync()
+    public Task<Response3> GetWalletStatusAsync()
     {
-        return GetWalletStatusAsync(System.Threading.CancellationToken.None);
+        return GetWalletStatusAsync(CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
     /// <summary>Get wallet status</summary>
     /// <returns>Wallet status</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<Response3> GetWalletStatusAsync(System.Threading.CancellationToken cancellationToken)
+    public async Task<Response3> GetWalletStatusAsync(CancellationToken cancellationToken)
     {
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/wallet/status");
@@ -3553,23 +3553,23 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                request_.Method = new System.Net.Http.HttpMethod("GET");
+                request_.Method = new HttpMethod("GET");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -3615,19 +3615,19 @@ public partial class ErgoClient
     /// <summary>Update address to be used to send change to</summary>
     /// <returns>Change address updated successfully</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task WalletUpdateChangeAddressAsync(Body5 body)
+    public Task WalletUpdateChangeAddressAsync(Body5 body)
     {
-        return WalletUpdateChangeAddressAsync(body, System.Threading.CancellationToken.None);
+        return WalletUpdateChangeAddressAsync(body, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
     /// <summary>Update address to be used to send change to</summary>
     /// <returns>Change address updated successfully</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task WalletUpdateChangeAddressAsync(Body5 body, System.Threading.CancellationToken cancellationToken)
+    public async Task WalletUpdateChangeAddressAsync(Body5 body, CancellationToken cancellationToken)
     {
         if (body == null)
-            throw new System.ArgumentNullException("body");
+            throw new ArgumentNullException("body");
 
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/wallet/updateChangeAddress");
@@ -3636,25 +3636,25 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                var content_ = new System.Net.Http.StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
+                var content_ = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
                 content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
                 request_.Content = content_;
-                request_.Method = new System.Net.Http.HttpMethod("POST");
+                request_.Method = new HttpMethod("POST");
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -3695,19 +3695,19 @@ public partial class ErgoClient
     /// <summary>Derive new key according to a provided path</summary>
     /// <returns>Resulted address</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<Response4> WalletDeriveKeyAsync(Body6 body)
+    public Task<Response4> WalletDeriveKeyAsync(Body6 body)
     {
-        return WalletDeriveKeyAsync(body, System.Threading.CancellationToken.None);
+        return WalletDeriveKeyAsync(body, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
     /// <summary>Derive new key according to a provided path</summary>
     /// <returns>Resulted address</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<Response4> WalletDeriveKeyAsync(Body6 body, System.Threading.CancellationToken cancellationToken)
+    public async Task<Response4> WalletDeriveKeyAsync(Body6 body, CancellationToken cancellationToken)
     {
         if (body == null)
-            throw new System.ArgumentNullException("body");
+            throw new ArgumentNullException("body");
 
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/wallet/deriveKey");
@@ -3716,26 +3716,26 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                var content_ = new System.Net.Http.StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
+                var content_ = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
                 content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
                 request_.Content = content_;
-                request_.Method = new System.Net.Http.HttpMethod("POST");
+                request_.Method = new HttpMethod("POST");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -3781,16 +3781,16 @@ public partial class ErgoClient
     /// <summary>Derive next key</summary>
     /// <returns>Resulted secret path and address</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<Response5> WalletDeriveNextKeyAsync()
+    public Task<Response5> WalletDeriveNextKeyAsync()
     {
-        return WalletDeriveNextKeyAsync(System.Threading.CancellationToken.None);
+        return WalletDeriveNextKeyAsync(CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
     /// <summary>Derive next key</summary>
     /// <returns>Resulted secret path and address</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<Response5> WalletDeriveNextKeyAsync(System.Threading.CancellationToken cancellationToken)
+    public async Task<Response5> WalletDeriveNextKeyAsync(CancellationToken cancellationToken)
     {
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/wallet/deriveNextKey");
@@ -3799,23 +3799,23 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                request_.Method = new System.Net.Http.HttpMethod("GET");
+                request_.Method = new HttpMethod("GET");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -3861,16 +3861,16 @@ public partial class ErgoClient
     /// <summary>Get total amount of confirmed Ergo tokens and assets</summary>
     /// <returns>Get total amount of confirmed Ergo tokens and assets</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<BalancesSnapshot> WalletBalancesAsync()
+    public Task<BalancesSnapshot> WalletBalancesAsync()
     {
-        return WalletBalancesAsync(System.Threading.CancellationToken.None);
+        return WalletBalancesAsync(CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
     /// <summary>Get total amount of confirmed Ergo tokens and assets</summary>
     /// <returns>Get total amount of confirmed Ergo tokens and assets</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<BalancesSnapshot> WalletBalancesAsync(System.Threading.CancellationToken cancellationToken)
+    public async Task<BalancesSnapshot> WalletBalancesAsync(CancellationToken cancellationToken)
     {
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/wallet/balances");
@@ -3879,23 +3879,23 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                request_.Method = new System.Net.Http.HttpMethod("GET");
+                request_.Method = new HttpMethod("GET");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -3945,9 +3945,9 @@ public partial class ErgoClient
     /// <param name="maxConfirmations">Maximal confirmations number</param>
     /// <returns>A list of all wallet-related transactions</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<System.Collections.Generic.ICollection<WalletTransaction>> WalletTransactionsAsync(int? minInclusionHeight, int? maxInclusionHeight, int? minConfirmations, int? maxConfirmations)
+    public Task<ICollection<WalletTransaction>> WalletTransactionsAsync(int? minInclusionHeight, int? maxInclusionHeight, int? minConfirmations, int? maxConfirmations)
     {
-        return WalletTransactionsAsync(minInclusionHeight, maxInclusionHeight, minConfirmations, maxConfirmations, System.Threading.CancellationToken.None);
+        return WalletTransactionsAsync(minInclusionHeight, maxInclusionHeight, minConfirmations, maxConfirmations, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -3958,25 +3958,25 @@ public partial class ErgoClient
     /// <param name="maxConfirmations">Maximal confirmations number</param>
     /// <returns>A list of all wallet-related transactions</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<System.Collections.Generic.ICollection<WalletTransaction>> WalletTransactionsAsync(int? minInclusionHeight, int? maxInclusionHeight, int? minConfirmations, int? maxConfirmations, System.Threading.CancellationToken cancellationToken)
+    public async Task<ICollection<WalletTransaction>> WalletTransactionsAsync(int? minInclusionHeight, int? maxInclusionHeight, int? minConfirmations, int? maxConfirmations, CancellationToken cancellationToken)
     {
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/wallet/transactions?");
         if (minInclusionHeight != null)
         {
-            urlBuilder_.Append(System.Uri.EscapeDataString("minInclusionHeight") + "=").Append(System.Uri.EscapeDataString(ConvertToString(minInclusionHeight, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
+            urlBuilder_.Append(Uri.EscapeDataString("minInclusionHeight") + "=").Append(Uri.EscapeDataString(ConvertToString(minInclusionHeight, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
         }
         if (maxInclusionHeight != null)
         {
-            urlBuilder_.Append(System.Uri.EscapeDataString("maxInclusionHeight") + "=").Append(System.Uri.EscapeDataString(ConvertToString(maxInclusionHeight, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
+            urlBuilder_.Append(Uri.EscapeDataString("maxInclusionHeight") + "=").Append(Uri.EscapeDataString(ConvertToString(maxInclusionHeight, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
         }
         if (minConfirmations != null)
         {
-            urlBuilder_.Append(System.Uri.EscapeDataString("minConfirmations") + "=").Append(System.Uri.EscapeDataString(ConvertToString(minConfirmations, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
+            urlBuilder_.Append(Uri.EscapeDataString("minConfirmations") + "=").Append(Uri.EscapeDataString(ConvertToString(minConfirmations, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
         }
         if (maxConfirmations != null)
         {
-            urlBuilder_.Append(System.Uri.EscapeDataString("maxConfirmations") + "=").Append(System.Uri.EscapeDataString(ConvertToString(maxConfirmations, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
+            urlBuilder_.Append(Uri.EscapeDataString("maxConfirmations") + "=").Append(Uri.EscapeDataString(ConvertToString(maxConfirmations, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
         }
         urlBuilder_.Length--;
 
@@ -3984,23 +3984,23 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                request_.Method = new System.Net.Http.HttpMethod("GET");
+                request_.Method = new HttpMethod("GET");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -4012,7 +4012,7 @@ public partial class ErgoClient
                     var status_ = (int)response_.StatusCode;
                     if (status_ == 200)
                     {
-                        var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.ICollection<WalletTransaction>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                        var objectResponse_ = await ReadObjectResponseAsync<ICollection<WalletTransaction>>(response_, headers_, cancellationToken).ConfigureAwait(false);
                         if (objectResponse_.Object == null)
                         {
                             throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -4047,9 +4047,9 @@ public partial class ErgoClient
     /// <param name="id">Transaction id</param>
     /// <returns>Wallet-related transaction</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<WalletTransaction> WalletGetTransactionAsync(string id)
+    public Task<WalletTransaction> WalletGetTransactionAsync(string id)
     {
-        return WalletGetTransactionAsync(id, System.Threading.CancellationToken.None);
+        return WalletGetTransactionAsync(id, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -4057,37 +4057,37 @@ public partial class ErgoClient
     /// <param name="id">Transaction id</param>
     /// <returns>Wallet-related transaction</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<WalletTransaction> WalletGetTransactionAsync(string id, System.Threading.CancellationToken cancellationToken)
+    public async Task<WalletTransaction> WalletGetTransactionAsync(string id, CancellationToken cancellationToken)
     {
         if (id == null)
-            throw new System.ArgumentNullException("id");
+            throw new ArgumentNullException("id");
 
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/wallet/transactionById?");
-        urlBuilder_.Append(System.Uri.EscapeDataString("id") + "=").Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
+        urlBuilder_.Append(Uri.EscapeDataString("id") + "=").Append(Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
         urlBuilder_.Length--;
 
         var client_ = _httpClient;
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                request_.Method = new System.Net.Http.HttpMethod("GET");
+                request_.Method = new HttpMethod("GET");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -4144,9 +4144,9 @@ public partial class ErgoClient
     /// <param name="scanId">Scan id</param>
     /// <returns>Scan-related transactions</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<System.Collections.Generic.ICollection<WalletTransaction>> WalletTransactionsByScanIdAsync(string scanId)
+    public Task<ICollection<WalletTransaction>> WalletTransactionsByScanIdAsync(string scanId)
     {
-        return WalletTransactionsByScanIdAsync(scanId, System.Threading.CancellationToken.None);
+        return WalletTransactionsByScanIdAsync(scanId, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -4154,37 +4154,37 @@ public partial class ErgoClient
     /// <param name="scanId">Scan id</param>
     /// <returns>Scan-related transactions</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<System.Collections.Generic.ICollection<WalletTransaction>> WalletTransactionsByScanIdAsync(string scanId, System.Threading.CancellationToken cancellationToken)
+    public async Task<ICollection<WalletTransaction>> WalletTransactionsByScanIdAsync(string scanId, CancellationToken cancellationToken)
     {
         if (scanId == null)
-            throw new System.ArgumentNullException("scanId");
+            throw new ArgumentNullException("scanId");
 
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/wallet/transactionsByScanId?");
-        urlBuilder_.Append(System.Uri.EscapeDataString("scanId") + "=").Append(System.Uri.EscapeDataString(ConvertToString(scanId, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
+        urlBuilder_.Append(Uri.EscapeDataString("scanId") + "=").Append(Uri.EscapeDataString(ConvertToString(scanId, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
         urlBuilder_.Length--;
 
         var client_ = _httpClient;
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                request_.Method = new System.Net.Http.HttpMethod("GET");
+                request_.Method = new HttpMethod("GET");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -4196,7 +4196,7 @@ public partial class ErgoClient
                     var status_ = (int)response_.StatusCode;
                     if (status_ == 200)
                     {
-                        var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.ICollection<WalletTransaction>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                        var objectResponse_ = await ReadObjectResponseAsync<ICollection<WalletTransaction>>(response_, headers_, cancellationToken).ConfigureAwait(false);
                         if (objectResponse_.Object == null)
                         {
                             throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -4242,9 +4242,9 @@ public partial class ErgoClient
     /// <param name="minInclusionHeight">Minimal box inclusion height</param>
     /// <returns>A list of all wallet-related boxes</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<System.Collections.Generic.ICollection<WalletBox>> WalletBoxesAsync(int? minConfirmations, int? minInclusionHeight)
+    public Task<ICollection<WalletBox>> WalletBoxesAsync(int? minConfirmations, int? minInclusionHeight)
     {
-        return WalletBoxesAsync(minConfirmations, minInclusionHeight, System.Threading.CancellationToken.None);
+        return WalletBoxesAsync(minConfirmations, minInclusionHeight, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -4253,17 +4253,17 @@ public partial class ErgoClient
     /// <param name="minInclusionHeight">Minimal box inclusion height</param>
     /// <returns>A list of all wallet-related boxes</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<System.Collections.Generic.ICollection<WalletBox>> WalletBoxesAsync(int? minConfirmations, int? minInclusionHeight, System.Threading.CancellationToken cancellationToken)
+    public async Task<ICollection<WalletBox>> WalletBoxesAsync(int? minConfirmations, int? minInclusionHeight, CancellationToken cancellationToken)
     {
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/wallet/boxes?");
         if (minConfirmations != null)
         {
-            urlBuilder_.Append(System.Uri.EscapeDataString("minConfirmations") + "=").Append(System.Uri.EscapeDataString(ConvertToString(minConfirmations, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
+            urlBuilder_.Append(Uri.EscapeDataString("minConfirmations") + "=").Append(Uri.EscapeDataString(ConvertToString(minConfirmations, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
         }
         if (minInclusionHeight != null)
         {
-            urlBuilder_.Append(System.Uri.EscapeDataString("minInclusionHeight") + "=").Append(System.Uri.EscapeDataString(ConvertToString(minInclusionHeight, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
+            urlBuilder_.Append(Uri.EscapeDataString("minInclusionHeight") + "=").Append(Uri.EscapeDataString(ConvertToString(minInclusionHeight, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
         }
         urlBuilder_.Length--;
 
@@ -4271,23 +4271,23 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                request_.Method = new System.Net.Http.HttpMethod("GET");
+                request_.Method = new HttpMethod("GET");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -4299,7 +4299,7 @@ public partial class ErgoClient
                     var status_ = (int)response_.StatusCode;
                     if (status_ == 200)
                     {
-                        var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.ICollection<WalletBox>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                        var objectResponse_ = await ReadObjectResponseAsync<ICollection<WalletBox>>(response_, headers_, cancellationToken).ConfigureAwait(false);
                         if (objectResponse_.Object == null)
                         {
                             throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -4334,9 +4334,9 @@ public partial class ErgoClient
     /// <param name="body">This API method recieves balance and assets, according to which, it's collecting result</param>
     /// <returns>A list of all collected boxes</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<System.Collections.Generic.ICollection<WalletBox>> WalletBoxesCollectAsync(BoxesRequestHolder body)
+    public Task<ICollection<WalletBox>> WalletBoxesCollectAsync(BoxesRequestHolder body)
     {
-        return WalletBoxesCollectAsync(body, System.Threading.CancellationToken.None);
+        return WalletBoxesCollectAsync(body, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -4344,10 +4344,10 @@ public partial class ErgoClient
     /// <param name="body">This API method recieves balance and assets, according to which, it's collecting result</param>
     /// <returns>A list of all collected boxes</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<System.Collections.Generic.ICollection<WalletBox>> WalletBoxesCollectAsync(BoxesRequestHolder body, System.Threading.CancellationToken cancellationToken)
+    public async Task<ICollection<WalletBox>> WalletBoxesCollectAsync(BoxesRequestHolder body, CancellationToken cancellationToken)
     {
         if (body == null)
-            throw new System.ArgumentNullException("body");
+            throw new ArgumentNullException("body");
 
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/wallet/boxes/collect");
@@ -4356,26 +4356,26 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                var content_ = new System.Net.Http.StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
+                var content_ = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
                 content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
                 request_.Content = content_;
-                request_.Method = new System.Net.Http.HttpMethod("GET");
+                request_.Method = new HttpMethod("GET");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -4387,7 +4387,7 @@ public partial class ErgoClient
                     var status_ = (int)response_.StatusCode;
                     if (status_ == 200)
                     {
-                        var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.ICollection<WalletBox>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                        var objectResponse_ = await ReadObjectResponseAsync<ICollection<WalletBox>>(response_, headers_, cancellationToken).ConfigureAwait(false);
                         if (objectResponse_.Object == null)
                         {
                             throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -4423,9 +4423,9 @@ public partial class ErgoClient
     /// <param name="minInclusionHeight">Minimal box inclusion height</param>
     /// <returns>A list of unspent boxes</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<System.Collections.Generic.ICollection<WalletBox>> WalletUnspentBoxesAsync(int? minConfirmations, int? minInclusionHeight)
+    public Task<ICollection<WalletBox>> WalletUnspentBoxesAsync(int? minConfirmations, int? minInclusionHeight)
     {
-        return WalletUnspentBoxesAsync(minConfirmations, minInclusionHeight, System.Threading.CancellationToken.None);
+        return WalletUnspentBoxesAsync(minConfirmations, minInclusionHeight, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -4434,17 +4434,17 @@ public partial class ErgoClient
     /// <param name="minInclusionHeight">Minimal box inclusion height</param>
     /// <returns>A list of unspent boxes</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<System.Collections.Generic.ICollection<WalletBox>> WalletUnspentBoxesAsync(int? minConfirmations, int? minInclusionHeight, System.Threading.CancellationToken cancellationToken)
+    public async Task<ICollection<WalletBox>> WalletUnspentBoxesAsync(int? minConfirmations, int? minInclusionHeight, CancellationToken cancellationToken)
     {
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/wallet/boxes/unspent?");
         if (minConfirmations != null)
         {
-            urlBuilder_.Append(System.Uri.EscapeDataString("minConfirmations") + "=").Append(System.Uri.EscapeDataString(ConvertToString(minConfirmations, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
+            urlBuilder_.Append(Uri.EscapeDataString("minConfirmations") + "=").Append(Uri.EscapeDataString(ConvertToString(minConfirmations, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
         }
         if (minInclusionHeight != null)
         {
-            urlBuilder_.Append(System.Uri.EscapeDataString("minInclusionHeight") + "=").Append(System.Uri.EscapeDataString(ConvertToString(minInclusionHeight, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
+            urlBuilder_.Append(Uri.EscapeDataString("minInclusionHeight") + "=").Append(Uri.EscapeDataString(ConvertToString(minInclusionHeight, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
         }
         urlBuilder_.Length--;
 
@@ -4452,23 +4452,23 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                request_.Method = new System.Net.Http.HttpMethod("GET");
+                request_.Method = new HttpMethod("GET");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -4480,7 +4480,7 @@ public partial class ErgoClient
                     var status_ = (int)response_.StatusCode;
                     if (status_ == 200)
                     {
-                        var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.ICollection<WalletBox>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                        var objectResponse_ = await ReadObjectResponseAsync<ICollection<WalletBox>>(response_, headers_, cancellationToken).ConfigureAwait(false);
                         if (objectResponse_.Object == null)
                         {
                             throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -4514,16 +4514,16 @@ public partial class ErgoClient
     /// <summary>Get summary amount of confirmed plus unconfirmed Ergo tokens and assets</summary>
     /// <returns>Get summary amount of confirmed plus unconfirmed Ergo tokens and assets</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<BalancesSnapshot> WalletBalancesUnconfirmedAsync()
+    public Task<BalancesSnapshot> WalletBalancesUnconfirmedAsync()
     {
-        return WalletBalancesUnconfirmedAsync(System.Threading.CancellationToken.None);
+        return WalletBalancesUnconfirmedAsync(CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
     /// <summary>Get summary amount of confirmed plus unconfirmed Ergo tokens and assets</summary>
     /// <returns>Get summary amount of confirmed plus unconfirmed Ergo tokens and assets</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<BalancesSnapshot> WalletBalancesUnconfirmedAsync(System.Threading.CancellationToken cancellationToken)
+    public async Task<BalancesSnapshot> WalletBalancesUnconfirmedAsync(CancellationToken cancellationToken)
     {
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/wallet/balances/withUnconfirmed");
@@ -4532,23 +4532,23 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                request_.Method = new System.Net.Http.HttpMethod("GET");
+                request_.Method = new HttpMethod("GET");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -4594,16 +4594,16 @@ public partial class ErgoClient
     /// <summary>Get wallet addresses</summary>
     /// <returns>String with encoded wallet addresses</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<System.Collections.Generic.ICollection<string>> WalletAddressesAsync()
+    public Task<ICollection<string>> WalletAddressesAsync()
     {
-        return WalletAddressesAsync(System.Threading.CancellationToken.None);
+        return WalletAddressesAsync(CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
     /// <summary>Get wallet addresses</summary>
     /// <returns>String with encoded wallet addresses</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<System.Collections.Generic.ICollection<string>> WalletAddressesAsync(System.Threading.CancellationToken cancellationToken)
+    public async Task<ICollection<string>> WalletAddressesAsync(CancellationToken cancellationToken)
     {
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/wallet/addresses");
@@ -4612,23 +4612,23 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                request_.Method = new System.Net.Http.HttpMethod("GET");
+                request_.Method = new HttpMethod("GET");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -4640,7 +4640,7 @@ public partial class ErgoClient
                     var status_ = (int)response_.StatusCode;
                     if (status_ == 200)
                     {
-                        var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.ICollection<string>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                        var objectResponse_ = await ReadObjectResponseAsync<ICollection<string>>(response_, headers_, cancellationToken).ConfigureAwait(false);
                         if (objectResponse_.Object == null)
                         {
                             throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -4676,9 +4676,9 @@ public partial class ErgoClient
     /// You may specify boxes to spend by providing them in "inputsRaw". Please note you need to have strict equality between input and output total amounts of Ergs in this case. If you want wallet to pick up the boxes, leave "inputsRaw" empty.</param>
     /// <returns>Generated Ergo transaction</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<ErgoTransaction> WalletTransactionGenerateAsync(RequestsHolder body)
+    public Task<ErgoTransaction> WalletTransactionGenerateAsync(RequestsHolder body)
     {
-        return WalletTransactionGenerateAsync(body, System.Threading.CancellationToken.None);
+        return WalletTransactionGenerateAsync(body, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -4687,10 +4687,10 @@ public partial class ErgoClient
     /// You may specify boxes to spend by providing them in "inputsRaw". Please note you need to have strict equality between input and output total amounts of Ergs in this case. If you want wallet to pick up the boxes, leave "inputsRaw" empty.</param>
     /// <returns>Generated Ergo transaction</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<ErgoTransaction> WalletTransactionGenerateAsync(RequestsHolder body, System.Threading.CancellationToken cancellationToken)
+    public async Task<ErgoTransaction> WalletTransactionGenerateAsync(RequestsHolder body, CancellationToken cancellationToken)
     {
         if (body == null)
-            throw new System.ArgumentNullException("body");
+            throw new ArgumentNullException("body");
 
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/wallet/transaction/generate");
@@ -4699,26 +4699,26 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                var content_ = new System.Net.Http.StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
+                var content_ = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
                 content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
                 request_.Content = content_;
-                request_.Method = new System.Net.Http.HttpMethod("POST");
+                request_.Method = new HttpMethod("POST");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -4775,9 +4775,9 @@ public partial class ErgoClient
     /// <param name="body">The same as /wallet/transaction/generate but generates unsigned transaction.</param>
     /// <returns>Generated unsigned Ergo transaction</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<UnsignedErgoTransaction> WalletUnsignedTransactionGenerateAsync(RequestsHolder body)
+    public Task<UnsignedErgoTransaction> WalletUnsignedTransactionGenerateAsync(RequestsHolder body)
     {
-        return WalletUnsignedTransactionGenerateAsync(body, System.Threading.CancellationToken.None);
+        return WalletUnsignedTransactionGenerateAsync(body, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -4785,10 +4785,10 @@ public partial class ErgoClient
     /// <param name="body">The same as /wallet/transaction/generate but generates unsigned transaction.</param>
     /// <returns>Generated unsigned Ergo transaction</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<UnsignedErgoTransaction> WalletUnsignedTransactionGenerateAsync(RequestsHolder body, System.Threading.CancellationToken cancellationToken)
+    public async Task<UnsignedErgoTransaction> WalletUnsignedTransactionGenerateAsync(RequestsHolder body, CancellationToken cancellationToken)
     {
         if (body == null)
-            throw new System.ArgumentNullException("body");
+            throw new ArgumentNullException("body");
 
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/wallet/transaction/generateUnsigned");
@@ -4797,26 +4797,26 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                var content_ = new System.Net.Http.StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
+                var content_ = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
                 content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
                 request_.Content = content_;
-                request_.Method = new System.Net.Http.HttpMethod("POST");
+                request_.Method = new HttpMethod("POST");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -4874,9 +4874,9 @@ public partial class ErgoClient
     /// Please note that the unsigned transaction contains only identifiers of inputs and data inputs. If the node holds UTXO set, it is able to extract boxes needed. Otherwise, input (and data-input) boxes can be provided in "inputsRaw" and "dataInputsRaw" fields.</param>
     /// <returns>Generated Ergo transaction</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<ErgoTransaction> WalletTransactionSignAsync(TransactionSigningRequest body)
+    public Task<ErgoTransaction> WalletTransactionSignAsync(TransactionSigningRequest body)
     {
-        return WalletTransactionSignAsync(body, System.Threading.CancellationToken.None);
+        return WalletTransactionSignAsync(body, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -4885,10 +4885,10 @@ public partial class ErgoClient
     /// Please note that the unsigned transaction contains only identifiers of inputs and data inputs. If the node holds UTXO set, it is able to extract boxes needed. Otherwise, input (and data-input) boxes can be provided in "inputsRaw" and "dataInputsRaw" fields.</param>
     /// <returns>Generated Ergo transaction</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<ErgoTransaction> WalletTransactionSignAsync(TransactionSigningRequest body, System.Threading.CancellationToken cancellationToken)
+    public async Task<ErgoTransaction> WalletTransactionSignAsync(TransactionSigningRequest body, CancellationToken cancellationToken)
     {
         if (body == null)
-            throw new System.ArgumentNullException("body");
+            throw new ArgumentNullException("body");
 
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/wallet/transaction/sign");
@@ -4897,26 +4897,26 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                var content_ = new System.Net.Http.StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
+                var content_ = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
                 content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
                 request_.Content = content_;
-                request_.Method = new System.Net.Http.HttpMethod("POST");
+                request_.Method = new HttpMethod("POST");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -4973,9 +4973,9 @@ public partial class ErgoClient
     /// <param name="body">See description of /wallet/transaction/generate</param>
     /// <returns>Identifier of an Ergo transaction generated</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<string> WalletTransactionGenerateAndSendAsync(RequestsHolder body)
+    public Task<string> WalletTransactionGenerateAndSendAsync(RequestsHolder body)
     {
-        return WalletTransactionGenerateAndSendAsync(body, System.Threading.CancellationToken.None);
+        return WalletTransactionGenerateAndSendAsync(body, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -4983,10 +4983,10 @@ public partial class ErgoClient
     /// <param name="body">See description of /wallet/transaction/generate</param>
     /// <returns>Identifier of an Ergo transaction generated</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<string> WalletTransactionGenerateAndSendAsync(RequestsHolder body, System.Threading.CancellationToken cancellationToken)
+    public async Task<string> WalletTransactionGenerateAndSendAsync(RequestsHolder body, CancellationToken cancellationToken)
     {
         if (body == null)
-            throw new System.ArgumentNullException("body");
+            throw new ArgumentNullException("body");
 
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/wallet/transaction/send");
@@ -4995,26 +4995,26 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                var content_ = new System.Net.Http.StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
+                var content_ = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
                 content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
                 request_.Content = content_;
-                request_.Method = new System.Net.Http.HttpMethod("POST");
+                request_.Method = new HttpMethod("POST");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -5070,19 +5070,19 @@ public partial class ErgoClient
     /// <summary>Generate and send payment transaction (default fee of 0.001 Erg is used)</summary>
     /// <returns>Identifier of an Ergo transaction generated</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<string> WalletPaymentTransactionGenerateAndSendAsync(System.Collections.Generic.IEnumerable<PaymentRequest> body)
+    public Task<string> WalletPaymentTransactionGenerateAndSendAsync(IEnumerable<PaymentRequest> body)
     {
-        return WalletPaymentTransactionGenerateAndSendAsync(body, System.Threading.CancellationToken.None);
+        return WalletPaymentTransactionGenerateAndSendAsync(body, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
     /// <summary>Generate and send payment transaction (default fee of 0.001 Erg is used)</summary>
     /// <returns>Identifier of an Ergo transaction generated</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<string> WalletPaymentTransactionGenerateAndSendAsync(System.Collections.Generic.IEnumerable<PaymentRequest> body, System.Threading.CancellationToken cancellationToken)
+    public async Task<string> WalletPaymentTransactionGenerateAndSendAsync(IEnumerable<PaymentRequest> body, CancellationToken cancellationToken)
     {
         if (body == null)
-            throw new System.ArgumentNullException("body");
+            throw new ArgumentNullException("body");
 
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/wallet/payment/send");
@@ -5091,26 +5091,26 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                var content_ = new System.Net.Http.StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
+                var content_ = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
                 content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
                 request_.Content = content_;
-                request_.Method = new System.Net.Http.HttpMethod("POST");
+                request_.Method = new HttpMethod("POST");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -5166,16 +5166,16 @@ public partial class ErgoClient
     /// <summary>Request block candidate</summary>
     /// <returns>External candidate</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<WorkMessage> MiningRequestBlockCandidateAsync()
+    public Task<WorkMessage> MiningRequestBlockCandidateAsync()
     {
-        return MiningRequestBlockCandidateAsync(System.Threading.CancellationToken.None);
+        return MiningRequestBlockCandidateAsync(CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
     /// <summary>Request block candidate</summary>
     /// <returns>External candidate</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<WorkMessage> MiningRequestBlockCandidateAsync(System.Threading.CancellationToken cancellationToken)
+    public async Task<WorkMessage> MiningRequestBlockCandidateAsync(CancellationToken cancellationToken)
     {
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/mining/candidate");
@@ -5184,23 +5184,23 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                request_.Method = new System.Net.Http.HttpMethod("GET");
+                request_.Method = new HttpMethod("GET");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -5246,19 +5246,19 @@ public partial class ErgoClient
     /// <summary>Request block candidate</summary>
     /// <returns>External candidate</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<WorkMessage> MiningRequestBlockCandidateWithMandatoryTransactionsAsync(System.Collections.Generic.IEnumerable<ErgoTransaction> body)
+    public Task<WorkMessage> MiningRequestBlockCandidateWithMandatoryTransactionsAsync(IEnumerable<ErgoTransaction> body)
     {
-        return MiningRequestBlockCandidateWithMandatoryTransactionsAsync(body, System.Threading.CancellationToken.None);
+        return MiningRequestBlockCandidateWithMandatoryTransactionsAsync(body, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
     /// <summary>Request block candidate</summary>
     /// <returns>External candidate</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<WorkMessage> MiningRequestBlockCandidateWithMandatoryTransactionsAsync(System.Collections.Generic.IEnumerable<ErgoTransaction> body, System.Threading.CancellationToken cancellationToken)
+    public async Task<WorkMessage> MiningRequestBlockCandidateWithMandatoryTransactionsAsync(IEnumerable<ErgoTransaction> body, CancellationToken cancellationToken)
     {
         if (body == null)
-            throw new System.ArgumentNullException("body");
+            throw new ArgumentNullException("body");
 
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/mining/candidateWithTxs");
@@ -5267,26 +5267,26 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                var content_ = new System.Net.Http.StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
+                var content_ = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
                 content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
                 request_.Content = content_;
-                request_.Method = new System.Net.Http.HttpMethod("POST");
+                request_.Method = new HttpMethod("POST");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -5332,16 +5332,16 @@ public partial class ErgoClient
     /// <summary>Read miner reward address</summary>
     /// <returns>Miner Reward Script (in P2S format)</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<Response6> MiningReadMinerRewardAddressAsync()
+    public Task<Response6> MiningReadMinerRewardAddressAsync()
     {
-        return MiningReadMinerRewardAddressAsync(System.Threading.CancellationToken.None);
+        return MiningReadMinerRewardAddressAsync(CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
     /// <summary>Read miner reward address</summary>
     /// <returns>Miner Reward Script (in P2S format)</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<Response6> MiningReadMinerRewardAddressAsync(System.Threading.CancellationToken cancellationToken)
+    public async Task<Response6> MiningReadMinerRewardAddressAsync(CancellationToken cancellationToken)
     {
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/mining/rewardAddress");
@@ -5350,23 +5350,23 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                request_.Method = new System.Net.Http.HttpMethod("GET");
+                request_.Method = new HttpMethod("GET");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -5412,16 +5412,16 @@ public partial class ErgoClient
     /// <summary>Read public key associated with miner rewards</summary>
     /// <returns>Public key for miner rewards (as hex-encoded secp256k1 point)</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<Response7> MiningReadMinerRewardPubkeyAsync()
+    public Task<Response7> MiningReadMinerRewardPubkeyAsync()
     {
-        return MiningReadMinerRewardPubkeyAsync(System.Threading.CancellationToken.None);
+        return MiningReadMinerRewardPubkeyAsync(CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
     /// <summary>Read public key associated with miner rewards</summary>
     /// <returns>Public key for miner rewards (as hex-encoded secp256k1 point)</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<Response7> MiningReadMinerRewardPubkeyAsync(System.Threading.CancellationToken cancellationToken)
+    public async Task<Response7> MiningReadMinerRewardPubkeyAsync(CancellationToken cancellationToken)
     {
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/mining/rewardPublicKey");
@@ -5430,23 +5430,23 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                request_.Method = new System.Net.Http.HttpMethod("GET");
+                request_.Method = new HttpMethod("GET");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -5492,19 +5492,19 @@ public partial class ErgoClient
     /// <summary>Submit solution for current candidate</summary>
     /// <returns>Solution is valid</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task MiningSubmitSolutionAsync(PowSolutions body)
+    public Task MiningSubmitSolutionAsync(PowSolutions body)
     {
-        return MiningSubmitSolutionAsync(body, System.Threading.CancellationToken.None);
+        return MiningSubmitSolutionAsync(body, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
     /// <summary>Submit solution for current candidate</summary>
     /// <returns>Solution is valid</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task MiningSubmitSolutionAsync(PowSolutions body, System.Threading.CancellationToken cancellationToken)
+    public async Task MiningSubmitSolutionAsync(PowSolutions body, CancellationToken cancellationToken)
     {
         if (body == null)
-            throw new System.ArgumentNullException("body");
+            throw new ArgumentNullException("body");
 
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/mining/solution");
@@ -5513,25 +5513,25 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                var content_ = new System.Net.Http.StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
+                var content_ = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
                 content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
                 request_.Content = content_;
-                request_.Method = new System.Net.Http.HttpMethod("POST");
+                request_.Method = new HttpMethod("POST");
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -5583,9 +5583,9 @@ public partial class ErgoClient
     /// <param name="boxId">ID of a wanted box</param>
     /// <returns>Box object</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<ErgoTransactionOutput> GetBoxByIdAsync(string boxId)
+    public Task<ErgoTransactionOutput> GetBoxByIdAsync(string boxId)
     {
-        return GetBoxByIdAsync(boxId, System.Threading.CancellationToken.None);
+        return GetBoxByIdAsync(boxId, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -5593,36 +5593,36 @@ public partial class ErgoClient
     /// <param name="boxId">ID of a wanted box</param>
     /// <returns>Box object</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<ErgoTransactionOutput> GetBoxByIdAsync(string boxId, System.Threading.CancellationToken cancellationToken)
+    public async Task<ErgoTransactionOutput> GetBoxByIdAsync(string boxId, CancellationToken cancellationToken)
     {
         if (boxId == null)
-            throw new System.ArgumentNullException("boxId");
+            throw new ArgumentNullException("boxId");
 
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/utxo/byId/{boxId}");
-        urlBuilder_.Replace("{boxId}", System.Uri.EscapeDataString(ConvertToString(boxId, System.Globalization.CultureInfo.InvariantCulture)));
+        urlBuilder_.Replace("{boxId}", Uri.EscapeDataString(ConvertToString(boxId, System.Globalization.CultureInfo.InvariantCulture)));
 
         var client_ = _httpClient;
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                request_.Method = new System.Net.Http.HttpMethod("GET");
+                request_.Method = new HttpMethod("GET");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -5679,9 +5679,9 @@ public partial class ErgoClient
     /// <param name="boxId">ID of a wanted box</param>
     /// <returns>Json containing box identifier and hex-encoded box bytes</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<SerializedBox> GetBoxByIdBinaryAsync(string boxId)
+    public Task<SerializedBox> GetBoxByIdBinaryAsync(string boxId)
     {
-        return GetBoxByIdBinaryAsync(boxId, System.Threading.CancellationToken.None);
+        return GetBoxByIdBinaryAsync(boxId, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -5689,36 +5689,36 @@ public partial class ErgoClient
     /// <param name="boxId">ID of a wanted box</param>
     /// <returns>Json containing box identifier and hex-encoded box bytes</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<SerializedBox> GetBoxByIdBinaryAsync(string boxId, System.Threading.CancellationToken cancellationToken)
+    public async Task<SerializedBox> GetBoxByIdBinaryAsync(string boxId, CancellationToken cancellationToken)
     {
         if (boxId == null)
-            throw new System.ArgumentNullException("boxId");
+            throw new ArgumentNullException("boxId");
 
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/utxo/byIdBinary/{boxId}");
-        urlBuilder_.Replace("{boxId}", System.Uri.EscapeDataString(ConvertToString(boxId, System.Globalization.CultureInfo.InvariantCulture)));
+        urlBuilder_.Replace("{boxId}", Uri.EscapeDataString(ConvertToString(boxId, System.Globalization.CultureInfo.InvariantCulture)));
 
         var client_ = _httpClient;
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                request_.Method = new System.Net.Http.HttpMethod("GET");
+                request_.Method = new HttpMethod("GET");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -5775,9 +5775,9 @@ public partial class ErgoClient
     /// <param name="boxId">ID of a box to obtain</param>
     /// <returns>Box object</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<ErgoTransactionOutput> GetBoxWithPoolByIdAsync(string boxId)
+    public Task<ErgoTransactionOutput> GetBoxWithPoolByIdAsync(string boxId)
     {
-        return GetBoxWithPoolByIdAsync(boxId, System.Threading.CancellationToken.None);
+        return GetBoxWithPoolByIdAsync(boxId, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -5785,36 +5785,36 @@ public partial class ErgoClient
     /// <param name="boxId">ID of a box to obtain</param>
     /// <returns>Box object</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<ErgoTransactionOutput> GetBoxWithPoolByIdAsync(string boxId, System.Threading.CancellationToken cancellationToken)
+    public async Task<ErgoTransactionOutput> GetBoxWithPoolByIdAsync(string boxId, CancellationToken cancellationToken)
     {
         if (boxId == null)
-            throw new System.ArgumentNullException("boxId");
+            throw new ArgumentNullException("boxId");
 
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/utxo/withPool/byId/{boxId}");
-        urlBuilder_.Replace("{boxId}", System.Uri.EscapeDataString(ConvertToString(boxId, System.Globalization.CultureInfo.InvariantCulture)));
+        urlBuilder_.Replace("{boxId}", Uri.EscapeDataString(ConvertToString(boxId, System.Globalization.CultureInfo.InvariantCulture)));
 
         var client_ = _httpClient;
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                request_.Method = new System.Net.Http.HttpMethod("GET");
+                request_.Method = new HttpMethod("GET");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -5871,9 +5871,9 @@ public partial class ErgoClient
     /// <param name="boxId">ID of a wanted box</param>
     /// <returns>Json containing box identifier and hex-encoded box bytes</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<SerializedBox> GetBoxWithPoolByIdBinaryAsync(string boxId)
+    public Task<SerializedBox> GetBoxWithPoolByIdBinaryAsync(string boxId)
     {
-        return GetBoxWithPoolByIdBinaryAsync(boxId, System.Threading.CancellationToken.None);
+        return GetBoxWithPoolByIdBinaryAsync(boxId, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -5881,36 +5881,36 @@ public partial class ErgoClient
     /// <param name="boxId">ID of a wanted box</param>
     /// <returns>Json containing box identifier and hex-encoded box bytes</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<SerializedBox> GetBoxWithPoolByIdBinaryAsync(string boxId, System.Threading.CancellationToken cancellationToken)
+    public async Task<SerializedBox> GetBoxWithPoolByIdBinaryAsync(string boxId, CancellationToken cancellationToken)
     {
         if (boxId == null)
-            throw new System.ArgumentNullException("boxId");
+            throw new ArgumentNullException("boxId");
 
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/utxo/withPool/byIdBinary/{boxId}");
-        urlBuilder_.Replace("{boxId}", System.Uri.EscapeDataString(ConvertToString(boxId, System.Globalization.CultureInfo.InvariantCulture)));
+        urlBuilder_.Replace("{boxId}", Uri.EscapeDataString(ConvertToString(boxId, System.Globalization.CultureInfo.InvariantCulture)));
 
         var client_ = _httpClient;
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                request_.Method = new System.Net.Http.HttpMethod("GET");
+                request_.Method = new HttpMethod("GET");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -5966,16 +5966,16 @@ public partial class ErgoClient
     /// <summary>Get genesis boxes (boxes existed before the very first block)</summary>
     /// <returns>A list of all the genesis boxes</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<System.Collections.Generic.ICollection<ErgoTransactionOutput>> GenesisBoxesAsync()
+    public Task<ICollection<ErgoTransactionOutput>> GenesisBoxesAsync()
     {
-        return GenesisBoxesAsync(System.Threading.CancellationToken.None);
+        return GenesisBoxesAsync(CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
     /// <summary>Get genesis boxes (boxes existed before the very first block)</summary>
     /// <returns>A list of all the genesis boxes</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<System.Collections.Generic.ICollection<ErgoTransactionOutput>> GenesisBoxesAsync(System.Threading.CancellationToken cancellationToken)
+    public async Task<ICollection<ErgoTransactionOutput>> GenesisBoxesAsync(CancellationToken cancellationToken)
     {
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/utxo/genesis");
@@ -5984,23 +5984,23 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                request_.Method = new System.Net.Http.HttpMethod("GET");
+                request_.Method = new HttpMethod("GET");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -6012,7 +6012,7 @@ public partial class ErgoClient
                     var status_ = (int)response_.StatusCode;
                     if (status_ == 200)
                     {
-                        var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.ICollection<ErgoTransactionOutput>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                        var objectResponse_ = await ReadObjectResponseAsync<ICollection<ErgoTransactionOutput>>(response_, headers_, cancellationToken).ConfigureAwait(false);
                         if (objectResponse_.Object == null)
                         {
                             throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -6056,19 +6056,19 @@ public partial class ErgoClient
     /// <summary>Create P2SAddress from Sigma source</summary>
     /// <returns>Ergo address derived from source</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<AddressHolder> ScriptP2SAddressAsync(SourceHolder body)
+    public Task<AddressHolder> ScriptP2SAddressAsync(SourceHolder body)
     {
-        return ScriptP2SAddressAsync(body, System.Threading.CancellationToken.None);
+        return ScriptP2SAddressAsync(body, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
     /// <summary>Create P2SAddress from Sigma source</summary>
     /// <returns>Ergo address derived from source</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<AddressHolder> ScriptP2SAddressAsync(SourceHolder body, System.Threading.CancellationToken cancellationToken)
+    public async Task<AddressHolder> ScriptP2SAddressAsync(SourceHolder body, CancellationToken cancellationToken)
     {
         if (body == null)
-            throw new System.ArgumentNullException("body");
+            throw new ArgumentNullException("body");
 
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/script/p2sAddress");
@@ -6077,26 +6077,26 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                var content_ = new System.Net.Http.StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
+                var content_ = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
                 content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
                 request_.Content = content_;
-                request_.Method = new System.Net.Http.HttpMethod("POST");
+                request_.Method = new HttpMethod("POST");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -6152,19 +6152,19 @@ public partial class ErgoClient
     /// <summary>Create P2SHAddress from Sigma source</summary>
     /// <returns>Ergo address derived from source</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<AddressHolder> ScriptP2SHAddressAsync(SourceHolder body)
+    public Task<AddressHolder> ScriptP2SHAddressAsync(SourceHolder body)
     {
-        return ScriptP2SHAddressAsync(body, System.Threading.CancellationToken.None);
+        return ScriptP2SHAddressAsync(body, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
     /// <summary>Create P2SHAddress from Sigma source</summary>
     /// <returns>Ergo address derived from source</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<AddressHolder> ScriptP2SHAddressAsync(SourceHolder body, System.Threading.CancellationToken cancellationToken)
+    public async Task<AddressHolder> ScriptP2SHAddressAsync(SourceHolder body, CancellationToken cancellationToken)
     {
         if (body == null)
-            throw new System.ArgumentNullException("body");
+            throw new ArgumentNullException("body");
 
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/script/p2shAddress");
@@ -6173,26 +6173,26 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                var content_ = new System.Net.Http.StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
+                var content_ = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
                 content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
                 request_.Content = content_;
-                request_.Method = new System.Net.Http.HttpMethod("POST");
+                request_.Method = new HttpMethod("POST");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -6249,9 +6249,9 @@ public partial class ErgoClient
     /// <param name="address">address to get a script from</param>
     /// <returns>Base16-encoded ErgoTree (script)</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<Response8> AddressToTreeAsync(string address)
+    public Task<Response8> AddressToTreeAsync(string address)
     {
-        return AddressToTreeAsync(address, System.Threading.CancellationToken.None);
+        return AddressToTreeAsync(address, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -6259,36 +6259,36 @@ public partial class ErgoClient
     /// <param name="address">address to get a script from</param>
     /// <returns>Base16-encoded ErgoTree (script)</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<Response8> AddressToTreeAsync(string address, System.Threading.CancellationToken cancellationToken)
+    public async Task<Response8> AddressToTreeAsync(string address, CancellationToken cancellationToken)
     {
         if (address == null)
-            throw new System.ArgumentNullException("address");
+            throw new ArgumentNullException("address");
 
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/script/addressToTree/{address}");
-        urlBuilder_.Replace("{address}", System.Uri.EscapeDataString(ConvertToString(address, System.Globalization.CultureInfo.InvariantCulture)));
+        urlBuilder_.Replace("{address}", Uri.EscapeDataString(ConvertToString(address, System.Globalization.CultureInfo.InvariantCulture)));
 
         var client_ = _httpClient;
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                request_.Method = new System.Net.Http.HttpMethod("GET");
+                request_.Method = new HttpMethod("GET");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -6335,9 +6335,9 @@ public partial class ErgoClient
     /// <param name="address">address to get a script from</param>
     /// <returns>Base16-encoded Sigma byte array constant which contains script bytes</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<Response9> AddressToBytesAsync(string address)
+    public Task<Response9> AddressToBytesAsync(string address)
     {
-        return AddressToBytesAsync(address, System.Threading.CancellationToken.None);
+        return AddressToBytesAsync(address, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -6345,36 +6345,36 @@ public partial class ErgoClient
     /// <param name="address">address to get a script from</param>
     /// <returns>Base16-encoded Sigma byte array constant which contains script bytes</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<Response9> AddressToBytesAsync(string address, System.Threading.CancellationToken cancellationToken)
+    public async Task<Response9> AddressToBytesAsync(string address, CancellationToken cancellationToken)
     {
         if (address == null)
-            throw new System.ArgumentNullException("address");
+            throw new ArgumentNullException("address");
 
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/script/addressToBytes/{address}");
-        urlBuilder_.Replace("{address}", System.Uri.EscapeDataString(ConvertToString(address, System.Globalization.CultureInfo.InvariantCulture)));
+        urlBuilder_.Replace("{address}", Uri.EscapeDataString(ConvertToString(address, System.Globalization.CultureInfo.InvariantCulture)));
 
         var client_ = _httpClient;
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                request_.Method = new System.Net.Http.HttpMethod("GET");
+                request_.Method = new HttpMethod("GET");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -6420,19 +6420,19 @@ public partial class ErgoClient
     /// <summary>Execute script with context</summary>
     /// <returns>Result of reduceToCrypto</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<CryptoResult> ExecuteWithContextAsync(ExecuteScript body)
+    public Task<CryptoResult> ExecuteWithContextAsync(ExecuteScript body)
     {
-        return ExecuteWithContextAsync(body, System.Threading.CancellationToken.None);
+        return ExecuteWithContextAsync(body, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
     /// <summary>Execute script with context</summary>
     /// <returns>Result of reduceToCrypto</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<CryptoResult> ExecuteWithContextAsync(ExecuteScript body, System.Threading.CancellationToken cancellationToken)
+    public async Task<CryptoResult> ExecuteWithContextAsync(ExecuteScript body, CancellationToken cancellationToken)
     {
         if (body == null)
-            throw new System.ArgumentNullException("body");
+            throw new ArgumentNullException("body");
 
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/script/executeWithContext");
@@ -6441,26 +6441,26 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                var content_ = new System.Net.Http.StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
+                var content_ = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
                 content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
                 request_.Content = content_;
-                request_.Method = new System.Net.Http.HttpMethod("POST");
+                request_.Method = new HttpMethod("POST");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -6516,19 +6516,19 @@ public partial class ErgoClient
     /// <summary>Register a scan</summary>
     /// <returns>Identifier of a scan generated</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<ScanId> RegisterScanAsync(ScanRequest body)
+    public Task<ScanId> RegisterScanAsync(ScanRequest body)
     {
-        return RegisterScanAsync(body, System.Threading.CancellationToken.None);
+        return RegisterScanAsync(body, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
     /// <summary>Register a scan</summary>
     /// <returns>Identifier of a scan generated</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<ScanId> RegisterScanAsync(ScanRequest body, System.Threading.CancellationToken cancellationToken)
+    public async Task<ScanId> RegisterScanAsync(ScanRequest body, CancellationToken cancellationToken)
     {
         if (body == null)
-            throw new System.ArgumentNullException("body");
+            throw new ArgumentNullException("body");
 
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/scan/register");
@@ -6537,26 +6537,26 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                var content_ = new System.Net.Http.StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
+                var content_ = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
                 content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
                 request_.Content = content_;
-                request_.Method = new System.Net.Http.HttpMethod("POST");
+                request_.Method = new HttpMethod("POST");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -6612,19 +6612,19 @@ public partial class ErgoClient
     /// <summary>Stop tracking and deregister scan</summary>
     /// <returns>Identifier of a scan removed</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<ScanId> DeregisterScanAsync(ScanId body)
+    public Task<ScanId> DeregisterScanAsync(ScanId body)
     {
-        return DeregisterScanAsync(body, System.Threading.CancellationToken.None);
+        return DeregisterScanAsync(body, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
     /// <summary>Stop tracking and deregister scan</summary>
     /// <returns>Identifier of a scan removed</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<ScanId> DeregisterScanAsync(ScanId body, System.Threading.CancellationToken cancellationToken)
+    public async Task<ScanId> DeregisterScanAsync(ScanId body, CancellationToken cancellationToken)
     {
         if (body == null)
-            throw new System.ArgumentNullException("body");
+            throw new ArgumentNullException("body");
 
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/scan/deregister");
@@ -6633,26 +6633,26 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                var content_ = new System.Net.Http.StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
+                var content_ = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
                 content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
                 request_.Content = content_;
-                request_.Method = new System.Net.Http.HttpMethod("POST");
+                request_.Method = new HttpMethod("POST");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -6708,16 +6708,16 @@ public partial class ErgoClient
     /// <summary>List all the registered scans</summary>
     /// <returns>List of scans registered</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<System.Collections.Generic.ICollection<Scan>> ListAllScansAsync()
+    public Task<ICollection<Scan>> ListAllScansAsync()
     {
-        return ListAllScansAsync(System.Threading.CancellationToken.None);
+        return ListAllScansAsync(CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
     /// <summary>List all the registered scans</summary>
     /// <returns>List of scans registered</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<System.Collections.Generic.ICollection<Scan>> ListAllScansAsync(System.Threading.CancellationToken cancellationToken)
+    public async Task<ICollection<Scan>> ListAllScansAsync(CancellationToken cancellationToken)
     {
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/scan/listAll");
@@ -6726,23 +6726,23 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                request_.Method = new System.Net.Http.HttpMethod("GET");
+                request_.Method = new HttpMethod("GET");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -6754,7 +6754,7 @@ public partial class ErgoClient
                     var status_ = (int)response_.StatusCode;
                     if (status_ == 200)
                     {
-                        var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.ICollection<Scan>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                        var objectResponse_ = await ReadObjectResponseAsync<ICollection<Scan>>(response_, headers_, cancellationToken).ConfigureAwait(false);
                         if (objectResponse_.Object == null)
                         {
                             throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -6791,9 +6791,9 @@ public partial class ErgoClient
     /// <param name="minInclusionHeight">Minimal box inclusion height</param>
     /// <returns>List of unspent boxes</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<System.Collections.Generic.ICollection<WalletBox>> ListUnspentScansAsync(int scanId, int? minConfirmations, int? minInclusionHeight)
+    public Task<ICollection<WalletBox>> ListUnspentScansAsync(int scanId, int? minConfirmations, int? minInclusionHeight)
     {
-        return ListUnspentScansAsync(scanId, minConfirmations, minInclusionHeight, System.Threading.CancellationToken.None);
+        return ListUnspentScansAsync(scanId, minConfirmations, minInclusionHeight, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -6803,21 +6803,21 @@ public partial class ErgoClient
     /// <param name="minInclusionHeight">Minimal box inclusion height</param>
     /// <returns>List of unspent boxes</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<System.Collections.Generic.ICollection<WalletBox>> ListUnspentScansAsync(int scanId, int? minConfirmations, int? minInclusionHeight, System.Threading.CancellationToken cancellationToken)
+    public async Task<ICollection<WalletBox>> ListUnspentScansAsync(int scanId, int? minConfirmations, int? minInclusionHeight, CancellationToken cancellationToken)
     {
         if (scanId == null)
-            throw new System.ArgumentNullException("scanId");
+            throw new ArgumentNullException("scanId");
 
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/scan/unspentBoxes/{scanId}?");
-        urlBuilder_.Replace("{scanId}", System.Uri.EscapeDataString(ConvertToString(scanId, System.Globalization.CultureInfo.InvariantCulture)));
+        urlBuilder_.Replace("{scanId}", Uri.EscapeDataString(ConvertToString(scanId, System.Globalization.CultureInfo.InvariantCulture)));
         if (minConfirmations != null)
         {
-            urlBuilder_.Append(System.Uri.EscapeDataString("minConfirmations") + "=").Append(System.Uri.EscapeDataString(ConvertToString(minConfirmations, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
+            urlBuilder_.Append(Uri.EscapeDataString("minConfirmations") + "=").Append(Uri.EscapeDataString(ConvertToString(minConfirmations, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
         }
         if (minInclusionHeight != null)
         {
-            urlBuilder_.Append(System.Uri.EscapeDataString("minInclusionHeight") + "=").Append(System.Uri.EscapeDataString(ConvertToString(minInclusionHeight, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
+            urlBuilder_.Append(Uri.EscapeDataString("minInclusionHeight") + "=").Append(Uri.EscapeDataString(ConvertToString(minInclusionHeight, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
         }
         urlBuilder_.Length--;
 
@@ -6825,23 +6825,23 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                request_.Method = new System.Net.Http.HttpMethod("GET");
+                request_.Method = new HttpMethod("GET");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -6853,7 +6853,7 @@ public partial class ErgoClient
                     var status_ = (int)response_.StatusCode;
                     if (status_ == 200)
                     {
-                        var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.ICollection<WalletBox>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                        var objectResponse_ = await ReadObjectResponseAsync<ICollection<WalletBox>>(response_, headers_, cancellationToken).ConfigureAwait(false);
                         if (objectResponse_.Object == null)
                         {
                             throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -6887,19 +6887,19 @@ public partial class ErgoClient
     /// <summary>Stop scan-related box tracking</summary>
     /// <returns>The box is not tracked anymore</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<ScanIdBoxId> ScanStopTrackingAsync(ScanIdBoxId body)
+    public Task<ScanIdBoxId> ScanStopTrackingAsync(ScanIdBoxId body)
     {
-        return ScanStopTrackingAsync(body, System.Threading.CancellationToken.None);
+        return ScanStopTrackingAsync(body, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
     /// <summary>Stop scan-related box tracking</summary>
     /// <returns>The box is not tracked anymore</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<ScanIdBoxId> ScanStopTrackingAsync(ScanIdBoxId body, System.Threading.CancellationToken cancellationToken)
+    public async Task<ScanIdBoxId> ScanStopTrackingAsync(ScanIdBoxId body, CancellationToken cancellationToken)
     {
         if (body == null)
-            throw new System.ArgumentNullException("body");
+            throw new ArgumentNullException("body");
 
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/scan/stopTracking");
@@ -6908,26 +6908,26 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                var content_ = new System.Net.Http.StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
+                var content_ = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
                 content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
                 request_.Content = content_;
-                request_.Method = new System.Net.Http.HttpMethod("POST");
+                request_.Method = new HttpMethod("POST");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -6973,19 +6973,19 @@ public partial class ErgoClient
     /// <summary>Generate signature commitments for inputs of an unsigned transaction</summary>
     /// <returns>Transaction-related hints</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<TransactionHintsBag> GenerateCommitmentsAsync(GenerateCommitmentsRequest body)
+    public Task<TransactionHintsBag> GenerateCommitmentsAsync(GenerateCommitmentsRequest body)
     {
-        return GenerateCommitmentsAsync(body, System.Threading.CancellationToken.None);
+        return GenerateCommitmentsAsync(body, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
     /// <summary>Generate signature commitments for inputs of an unsigned transaction</summary>
     /// <returns>Transaction-related hints</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<TransactionHintsBag> GenerateCommitmentsAsync(GenerateCommitmentsRequest body, System.Threading.CancellationToken cancellationToken)
+    public async Task<TransactionHintsBag> GenerateCommitmentsAsync(GenerateCommitmentsRequest body, CancellationToken cancellationToken)
     {
         if (body == null)
-            throw new System.ArgumentNullException("body");
+            throw new ArgumentNullException("body");
 
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/wallet/generateCommitments");
@@ -6994,26 +6994,26 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                var content_ = new System.Net.Http.StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
+                var content_ = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
                 content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
                 request_.Content = content_;
-                request_.Method = new System.Net.Http.HttpMethod("POST");
+                request_.Method = new HttpMethod("POST");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -7069,19 +7069,19 @@ public partial class ErgoClient
     /// <summary>Extract hints from a transaction</summary>
     /// <returns>Hints for the transaction</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<TransactionHintsBag> ExtractHintsAsync(HintExtractionRequest body)
+    public Task<TransactionHintsBag> ExtractHintsAsync(HintExtractionRequest body)
     {
-        return ExtractHintsAsync(body, System.Threading.CancellationToken.None);
+        return ExtractHintsAsync(body, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
     /// <summary>Extract hints from a transaction</summary>
     /// <returns>Hints for the transaction</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<TransactionHintsBag> ExtractHintsAsync(HintExtractionRequest body, System.Threading.CancellationToken cancellationToken)
+    public async Task<TransactionHintsBag> ExtractHintsAsync(HintExtractionRequest body, CancellationToken cancellationToken)
     {
         if (body == null)
-            throw new System.ArgumentNullException("body");
+            throw new ArgumentNullException("body");
 
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/wallet/extractHints");
@@ -7090,26 +7090,26 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                var content_ = new System.Net.Http.StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
+                var content_ = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
                 content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
                 request_.Content = content_;
-                request_.Method = new System.Net.Http.HttpMethod("POST");
+                request_.Method = new HttpMethod("POST");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -7165,19 +7165,19 @@ public partial class ErgoClient
     /// <summary>Adds a box to scans, writes box to database if it is not there. You can use scan number 10 to add a box to the wallet.</summary>
     /// <returns>It the box is added successfully, then its id is returned</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task<string> AddBoxAsync(ScanIdsBox body)
+    public Task<string> AddBoxAsync(ScanIdsBox body)
     {
-        return AddBoxAsync(body, System.Threading.CancellationToken.None);
+        return AddBoxAsync(body, CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
     /// <summary>Adds a box to scans, writes box to database if it is not there. You can use scan number 10 to add a box to the wallet.</summary>
     /// <returns>It the box is added successfully, then its id is returned</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task<string> AddBoxAsync(ScanIdsBox body, System.Threading.CancellationToken cancellationToken)
+    public async Task<string> AddBoxAsync(ScanIdsBox body, CancellationToken cancellationToken)
     {
         if (body == null)
-            throw new System.ArgumentNullException("body");
+            throw new ArgumentNullException("body");
 
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/scan/addBox");
@@ -7186,26 +7186,26 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                var content_ = new System.Net.Http.StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
+                var content_ = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
                 content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
                 request_.Content = content_;
-                request_.Method = new System.Net.Http.HttpMethod("POST");
+                request_.Method = new HttpMethod("POST");
                 request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -7251,16 +7251,16 @@ public partial class ErgoClient
     /// <summary>Shuts down the node</summary>
     /// <returns>The node will be shut down in 5 seconds</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public System.Threading.Tasks.Task NodeShutdownAsync()
+    public Task NodeShutdownAsync()
     {
-        return NodeShutdownAsync(System.Threading.CancellationToken.None);
+        return NodeShutdownAsync(CancellationToken.None);
     }
 
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
     /// <summary>Shuts down the node</summary>
     /// <returns>The node will be shut down in 5 seconds</returns>
     /// <exception cref="ApiException">A server side error occurred.</exception>
-    public async System.Threading.Tasks.Task NodeShutdownAsync(System.Threading.CancellationToken cancellationToken)
+    public async Task NodeShutdownAsync(CancellationToken cancellationToken)
     {
         var urlBuilder_ = new System.Text.StringBuilder();
         urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/node/shutdown");
@@ -7269,23 +7269,23 @@ public partial class ErgoClient
         var disposeClient_ = false;
         try
         {
-            using (var request_ = new System.Net.Http.HttpRequestMessage())
+            using (var request_ = new HttpRequestMessage())
             {
-                request_.Content = new System.Net.Http.StringContent(string.Empty, System.Text.Encoding.UTF8, "application/json");
-                request_.Method = new System.Net.Http.HttpMethod("POST");
+                request_.Content = new StringContent(string.Empty, System.Text.Encoding.UTF8, "application/json");
+                request_.Method = new HttpMethod("POST");
 
                 await PrepareRequestAsync(client_, request_, urlBuilder_).ConfigureAwait(false);
 
                 var url_ = urlBuilder_.ToString();
-                request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+                request_.RequestUri = new Uri(url_, UriKind.RelativeOrAbsolute);
 
                 await PrepareRequestAsync(client_, request_, url_).ConfigureAwait(false);
 
-                var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var response_ = await client_.SendAsync(request_, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)
@@ -7327,8 +7327,8 @@ public partial class ErgoClient
     {
         public ObjectResponseResult(T responseObject, string responseText)
         {
-            this.Object = responseObject;
-            this.Text = responseText;
+            Object = responseObject;
+            Text = responseText;
         }
 
         public T Object { get; }
@@ -7338,7 +7338,7 @@ public partial class ErgoClient
 
     public bool ReadResponseAsString { get; set; }
 
-    protected virtual async System.Threading.Tasks.Task<ObjectResponseResult<T>> ReadObjectResponseAsync<T>(System.Net.Http.HttpResponseMessage response, System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IEnumerable<string>> headers, System.Threading.CancellationToken cancellationToken)
+    protected virtual async Task<ObjectResponseResult<T>> ReadObjectResponseAsync<T>(HttpResponseMessage response, IReadOnlyDictionary<string, IEnumerable<string>> headers, CancellationToken cancellationToken)
     {
         if (response == null || response.Content == null)
         {
@@ -7364,7 +7364,7 @@ public partial class ErgoClient
             try
             {
                 using (var responseStream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false))
-                using (var streamReader = new System.IO.StreamReader(responseStream))
+                using (var streamReader = new StreamReader(responseStream))
                 using (var jsonTextReader = new Newtonsoft.Json.JsonTextReader(streamReader))
                 {
                     var serializer = Newtonsoft.Json.JsonSerializer.Create(JsonSerializerSettings);
@@ -7387,9 +7387,9 @@ public partial class ErgoClient
             return "";
         }
 
-        if (value is System.Enum)
+        if (value is Enum)
         {
-            var name = System.Enum.GetName(value.GetType(), value);
+            var name = Enum.GetName(value.GetType(), value);
             if (name != null)
             {
                 var field = System.Reflection.IntrospectionExtensions.GetTypeInfo(value.GetType()).GetDeclaredField(name);
@@ -7403,25 +7403,25 @@ public partial class ErgoClient
                     }
                 }
 
-                var converted = System.Convert.ToString(System.Convert.ChangeType(value, System.Enum.GetUnderlyingType(value.GetType()), cultureInfo));
+                var converted = Convert.ToString(Convert.ChangeType(value, Enum.GetUnderlyingType(value.GetType()), cultureInfo));
                 return converted == null ? string.Empty : converted;
             }
         }
         else if (value is bool)
         {
-            return System.Convert.ToString((bool)value, cultureInfo).ToLowerInvariant();
+            return Convert.ToString((bool)value, cultureInfo).ToLowerInvariant();
         }
         else if (value is byte[])
         {
-            return System.Convert.ToBase64String((byte[]) value);
+            return Convert.ToBase64String((byte[]) value);
         }
         else if (value.GetType().IsArray)
         {
-            var array = System.Linq.Enumerable.OfType<object>((System.Array) value);
-            return string.Join(",", System.Linq.Enumerable.Select(array, o => ConvertToString(o, cultureInfo)));
+            var array = Enumerable.OfType<object>((Array) value);
+            return string.Join(",", Enumerable.Select(array, o => ConvertToString(o, cultureInfo)));
         }
 
-        var result = System.Convert.ToString(value, cultureInfo);
+        var result = Convert.ToString(value, cultureInfo);
         return result == null ? "" : result;
     }
 }
@@ -7438,12 +7438,12 @@ public partial class ErgoTransactionInput
     public SpendingProof SpendingProof { get; set; } = new SpendingProof();
 
     [Newtonsoft.Json.JsonProperty("extension", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-    public System.Collections.Generic.IDictionary<string, string> Extension { get; set; }= default!;
+    public IDictionary<string, string> Extension { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -7460,12 +7460,12 @@ public partial class ErgoTransactionDataInput
     public string BoxId { get; set; }= default!;
 
     [Newtonsoft.Json.JsonProperty("extension", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-    public System.Collections.Generic.IDictionary<string, string> Extension { get; set; }= default!;
+    public IDictionary<string, string> Extension { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -7482,12 +7482,12 @@ public partial class ErgoTransactionUnsignedInput
     public string BoxId { get; set; }= default!;
 
     [Newtonsoft.Json.JsonProperty("extension", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-    public System.Collections.Generic.IDictionary<string, string> Extension { get; set; }= default!;
+    public IDictionary<string, string> Extension { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -7507,12 +7507,12 @@ public partial class SpendingProof
     /// <summary>Variables to be put into context</summary>
     [Newtonsoft.Json.JsonProperty("extension", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     [System.ComponentModel.DataAnnotations.Required]
-    public System.Collections.Generic.IDictionary<string, string> Extension { get; set; } = new System.Collections.Generic.Dictionary<string, string>();
+    public IDictionary<string, string> Extension { get; set; } = new Dictionary<string, string>();
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -7532,10 +7532,10 @@ public partial class SerializedBox
     [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
     public string Bytes { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -7569,7 +7569,7 @@ public partial class ErgoTransactionOutput
 
     /// <summary>Assets list in the transaction</summary>
     [Newtonsoft.Json.JsonProperty("assets", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-    public System.Collections.Generic.ICollection<Asset> Assets { get; set; }= default!;
+    public ICollection<Asset> Assets { get; set; }= default!;
 
     [Newtonsoft.Json.JsonProperty("additionalRegisters", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     [System.ComponentModel.DataAnnotations.Required]
@@ -7582,10 +7582,10 @@ public partial class ErgoTransactionOutput
     [Newtonsoft.Json.JsonProperty("index", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     public int Index { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -7644,12 +7644,12 @@ public partial class WalletBox
     /// <summary>Scan identifiers the box relates to</summary>
     [Newtonsoft.Json.JsonProperty("scans", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     [System.ComponentModel.DataAnnotations.Required]
-    public System.Collections.Generic.ICollection<int> Scans { get; set; } = new System.Collections.ObjectModel.Collection<int>();
+    public ICollection<int> Scans { get; set; } = new System.Collections.ObjectModel.Collection<int>();
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -7668,22 +7668,22 @@ public partial class UnsignedErgoTransaction
     /// <summary>Unsigned inputs of the transaction</summary>
     [Newtonsoft.Json.JsonProperty("inputs", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     [System.ComponentModel.DataAnnotations.Required]
-    public System.Collections.Generic.ICollection<ErgoTransactionUnsignedInput> Inputs { get; set; } = new System.Collections.ObjectModel.Collection<ErgoTransactionUnsignedInput>();
+    public ICollection<ErgoTransactionUnsignedInput> Inputs { get; set; } = new System.Collections.ObjectModel.Collection<ErgoTransactionUnsignedInput>();
 
     /// <summary>Data inputs of the transaction</summary>
     [Newtonsoft.Json.JsonProperty("dataInputs", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     [System.ComponentModel.DataAnnotations.Required]
-    public System.Collections.Generic.ICollection<ErgoTransactionDataInput> DataInputs { get; set; } = new System.Collections.ObjectModel.Collection<ErgoTransactionDataInput>();
+    public ICollection<ErgoTransactionDataInput> DataInputs { get; set; } = new System.Collections.ObjectModel.Collection<ErgoTransactionDataInput>();
 
     /// <summary>Outputs of the transaction</summary>
     [Newtonsoft.Json.JsonProperty("outputs", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     [System.ComponentModel.DataAnnotations.Required]
-    public System.Collections.Generic.ICollection<ErgoTransactionOutput> Outputs { get; set; } = new System.Collections.ObjectModel.Collection<ErgoTransactionOutput>();
+    public ICollection<ErgoTransactionOutput> Outputs { get; set; } = new System.Collections.ObjectModel.Collection<ErgoTransactionOutput>();
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -7702,26 +7702,26 @@ public partial class ErgoTransaction
     /// <summary>Inputs of the transaction</summary>
     [Newtonsoft.Json.JsonProperty("inputs", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     [System.ComponentModel.DataAnnotations.Required]
-    public System.Collections.Generic.ICollection<ErgoTransactionInput> Inputs { get; set; } = new System.Collections.ObjectModel.Collection<ErgoTransactionInput>();
+    public ICollection<ErgoTransactionInput> Inputs { get; set; } = new System.Collections.ObjectModel.Collection<ErgoTransactionInput>();
 
     /// <summary>Data inputs of the transaction</summary>
     [Newtonsoft.Json.JsonProperty("dataInputs", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     [System.ComponentModel.DataAnnotations.Required]
-    public System.Collections.Generic.ICollection<ErgoTransactionDataInput> DataInputs { get; set; } = new System.Collections.ObjectModel.Collection<ErgoTransactionDataInput>();
+    public ICollection<ErgoTransactionDataInput> DataInputs { get; set; } = new System.Collections.ObjectModel.Collection<ErgoTransactionDataInput>();
 
     /// <summary>Outputs of the transaction</summary>
     [Newtonsoft.Json.JsonProperty("outputs", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     [System.ComponentModel.DataAnnotations.Required]
-    public System.Collections.Generic.ICollection<ErgoTransactionOutput> Outputs { get; set; } = new System.Collections.ObjectModel.Collection<ErgoTransactionOutput>();
+    public ICollection<ErgoTransactionOutput> Outputs { get; set; } = new System.Collections.ObjectModel.Collection<ErgoTransactionOutput>();
 
     /// <summary>Size in bytes</summary>
     [Newtonsoft.Json.JsonProperty("size", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     public int Size { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -7740,17 +7740,17 @@ public partial class WalletTransaction
     /// <summary>Transaction inputs</summary>
     [Newtonsoft.Json.JsonProperty("inputs", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     [System.ComponentModel.DataAnnotations.Required]
-    public System.Collections.Generic.ICollection<ErgoTransactionInput> Inputs { get; set; } = new System.Collections.ObjectModel.Collection<ErgoTransactionInput>();
+    public ICollection<ErgoTransactionInput> Inputs { get; set; } = new System.Collections.ObjectModel.Collection<ErgoTransactionInput>();
 
     /// <summary>Transaction data inputs</summary>
     [Newtonsoft.Json.JsonProperty("dataInputs", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     [System.ComponentModel.DataAnnotations.Required]
-    public System.Collections.Generic.ICollection<ErgoTransactionDataInput> DataInputs { get; set; } = new System.Collections.ObjectModel.Collection<ErgoTransactionDataInput>();
+    public ICollection<ErgoTransactionDataInput> DataInputs { get; set; } = new System.Collections.ObjectModel.Collection<ErgoTransactionDataInput>();
 
     /// <summary>Transaction outputs</summary>
     [Newtonsoft.Json.JsonProperty("outputs", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     [System.ComponentModel.DataAnnotations.Required]
-    public System.Collections.Generic.ICollection<ErgoTransactionOutput> Outputs { get; set; } = new System.Collections.ObjectModel.Collection<ErgoTransactionOutput>();
+    public ICollection<ErgoTransactionOutput> Outputs { get; set; } = new System.Collections.ObjectModel.Collection<ErgoTransactionOutput>();
 
     /// <summary>Height of a block the transaction was included in</summary>
     [Newtonsoft.Json.JsonProperty("inclusionHeight", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
@@ -7763,16 +7763,16 @@ public partial class WalletTransaction
     /// <summary>Scan identifiers the transaction relates to</summary>
     [Newtonsoft.Json.JsonProperty("scans", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     [System.ComponentModel.DataAnnotations.Required]
-    public System.Collections.Generic.ICollection<int> Scans { get; set; } = new System.Collections.ObjectModel.Collection<int>();
+    public ICollection<int> Scans { get; set; } = new System.Collections.ObjectModel.Collection<int>();
 
     /// <summary>Size in bytes</summary>
     [Newtonsoft.Json.JsonProperty("size", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     public int Size { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -7810,10 +7810,10 @@ public partial class DhtSecret
     [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
     public string V { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -7833,11 +7833,11 @@ public partial class TransactionSigningRequest
 
     /// <summary>Optional list of inputs to be used in serialized form</summary>
     [Newtonsoft.Json.JsonProperty("inputsRaw", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-    public System.Collections.Generic.ICollection<string> InputsRaw { get; set; }= default!;
+    public ICollection<string> InputsRaw { get; set; }= default!;
 
     /// <summary>Optional list of inputs to be used in serialized form</summary>
     [Newtonsoft.Json.JsonProperty("dataInputsRaw", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-    public System.Collections.Generic.ICollection<string> DataInputsRaw { get; set; }= default!;
+    public ICollection<string> DataInputsRaw { get; set; }= default!;
 
     /// <summary>Optional list of hints used for signing</summary>
     [Newtonsoft.Json.JsonProperty("hints", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
@@ -7848,10 +7848,10 @@ public partial class TransactionSigningRequest
     [System.ComponentModel.DataAnnotations.Required]
     public Secrets Secrets { get; set; } = new Secrets();
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -7868,10 +7868,10 @@ public partial class AddressHolder
     [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
     public string Address { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -7887,16 +7887,16 @@ public partial class BoxesRequestHolder
     /// <summary>Target assets</summary>
     [Newtonsoft.Json.JsonProperty("targetAssets", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     [System.ComponentModel.DataAnnotations.Required]
-    public System.Collections.Generic.ICollection<System.Collections.Generic.ICollection<object>> TargetAssets { get; set; } = new List<ICollection<object>>();
+    public ICollection<ICollection<object>> TargetAssets { get; set; } = new List<ICollection<object>>();
 
     /// <summary>Target balance</summary>
     [Newtonsoft.Json.JsonProperty("targetBalance", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     public long TargetBalance { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -7912,7 +7912,7 @@ public partial class RequestsHolder
     /// <summary>Sequence of transaction requests</summary>
     [Newtonsoft.Json.JsonProperty("requests", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     [System.ComponentModel.DataAnnotations.Required]
-    public System.Collections.Generic.ICollection<Requests> Requests { get; set; } = new System.Collections.ObjectModel.Collection<Requests>();
+    public ICollection<Requests> Requests { get; set; } = new System.Collections.ObjectModel.Collection<Requests>();
 
     /// <summary>Transaction fee</summary>
     [Newtonsoft.Json.JsonProperty("fee", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
@@ -7920,16 +7920,16 @@ public partial class RequestsHolder
 
     /// <summary>List of inputs to be used in serialized form</summary>
     [Newtonsoft.Json.JsonProperty("inputsRaw", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-    public System.Collections.Generic.ICollection<string> InputsRaw { get; set; }= default!;
+    public ICollection<string> InputsRaw { get; set; }= default!;
 
     /// <summary>List of data inputs to be used in serialized form</summary>
     [Newtonsoft.Json.JsonProperty("dataInputsRaw", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-    public System.Collections.Generic.ICollection<string> DataInputsRaw { get; set; }= default!;
+    public ICollection<string> DataInputsRaw { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -7946,10 +7946,10 @@ public partial class SourceHolder
     [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
     public string Source { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -7967,20 +7967,20 @@ public partial class ErgoLikeTransaction
 
     [Newtonsoft.Json.JsonProperty("inputs", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     [System.ComponentModel.DataAnnotations.Required]
-    public System.Collections.Generic.ICollection<ErgoTransactionInput> Inputs { get; set; } = new System.Collections.ObjectModel.Collection<ErgoTransactionInput>();
+    public ICollection<ErgoTransactionInput> Inputs { get; set; } = new System.Collections.ObjectModel.Collection<ErgoTransactionInput>();
 
     [Newtonsoft.Json.JsonProperty("dataInputs", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     [System.ComponentModel.DataAnnotations.Required]
-    public System.Collections.Generic.ICollection<ErgoTransactionDataInput> DataInputs { get; set; } = new System.Collections.ObjectModel.Collection<ErgoTransactionDataInput>();
+    public ICollection<ErgoTransactionDataInput> DataInputs { get; set; } = new System.Collections.ObjectModel.Collection<ErgoTransactionDataInput>();
 
     [Newtonsoft.Json.JsonProperty("outputs", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     [System.ComponentModel.DataAnnotations.Required]
-    public System.Collections.Generic.ICollection<ErgoTransactionOutput> Outputs { get; set; } = new System.Collections.ObjectModel.Collection<ErgoTransactionOutput>();
+    public ICollection<ErgoTransactionOutput> Outputs { get; set; } = new System.Collections.ObjectModel.Collection<ErgoTransactionOutput>();
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -8065,10 +8065,10 @@ public partial class SigmaHeader
     [Newtonsoft.Json.JsonProperty("powDistance", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     public double PowDistance { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -8105,10 +8105,10 @@ public partial class PreHeader
     [Newtonsoft.Json.JsonProperty("minerPk", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     public string MinerPk { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -8133,10 +8133,10 @@ public partial class AvlTreeData
     [Newtonsoft.Json.JsonProperty("valueLength", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     public int? ValueLength { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -8155,7 +8155,7 @@ public partial class ErgoLikeContext
     /// <summary>fixed number of last block headers in descending order (first header is the newest one)</summary>
     [Newtonsoft.Json.JsonProperty("headers", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     [System.ComponentModel.DataAnnotations.Required]
-    public System.Collections.Generic.ICollection<SigmaHeader> Headers { get; set; } = new System.Collections.ObjectModel.Collection<SigmaHeader>();
+    public ICollection<SigmaHeader> Headers { get; set; } = new System.Collections.ObjectModel.Collection<SigmaHeader>();
 
     /// <summary>fields of block header with the current `spendingTransaction`, that can be predicted by a miner before its formation</summary>
     [Newtonsoft.Json.JsonProperty("preHeader", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
@@ -8165,12 +8165,12 @@ public partial class ErgoLikeContext
     /// <summary>boxes, that corresponds to id's of `spendingTransaction.dataInputs`</summary>
     [Newtonsoft.Json.JsonProperty("dataBoxes", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     [System.ComponentModel.DataAnnotations.Required]
-    public System.Collections.Generic.ICollection<ErgoTransactionOutput> DataBoxes { get; set; } = new System.Collections.ObjectModel.Collection<ErgoTransactionOutput>();
+    public ICollection<ErgoTransactionOutput> DataBoxes { get; set; } = new System.Collections.ObjectModel.Collection<ErgoTransactionOutput>();
 
     /// <summary>boxes, that corresponds to id's of `spendingTransaction.inputs`</summary>
     [Newtonsoft.Json.JsonProperty("boxesToSpend", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     [System.ComponentModel.DataAnnotations.Required]
-    public System.Collections.Generic.ICollection<ErgoTransactionOutput> BoxesToSpend { get; set; } = new System.Collections.ObjectModel.Collection<ErgoTransactionOutput>();
+    public ICollection<ErgoTransactionOutput> BoxesToSpend { get; set; } = new System.Collections.ObjectModel.Collection<ErgoTransactionOutput>();
 
     /// <summary>transaction that contains `self` box</summary>
     [Newtonsoft.Json.JsonProperty("spendingTransaction", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
@@ -8199,10 +8199,10 @@ public partial class ErgoLikeContext
     [Newtonsoft.Json.JsonProperty("initCost", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     public long InitCost { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -8227,10 +8227,10 @@ public partial class ExecuteScript
     [Newtonsoft.Json.JsonProperty("context", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     public ErgoLikeContext? Context { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -8262,10 +8262,10 @@ public partial class SigmaBoolean
     [Newtonsoft.Json.JsonProperty("condition", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     public bool Condition { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -8278,12 +8278,12 @@ public partial class SigmaBoolean
 public partial class SigmaBooleanAndPredicate : SigmaBoolean
 {
     [Newtonsoft.Json.JsonProperty("args", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-    public System.Collections.Generic.ICollection<SigmaBoolean> Args { get; set; }= default!;
+    public ICollection<SigmaBoolean> Args { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -8296,12 +8296,12 @@ public partial class SigmaBooleanAndPredicate : SigmaBoolean
 public partial class SigmaBooleanOrPredicate : SigmaBoolean
 {
     [Newtonsoft.Json.JsonProperty("args", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-    public System.Collections.Generic.ICollection<SigmaBoolean> Args { get; set; }= default!;
+    public ICollection<SigmaBoolean> Args { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -8314,12 +8314,12 @@ public partial class SigmaBooleanOrPredicate : SigmaBoolean
 public partial class SigmaBooleanThresholdPredicate : SigmaBoolean
 {
     [Newtonsoft.Json.JsonProperty("args", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-    public System.Collections.Generic.ICollection<SigmaBoolean> Args { get; set; }= default!;
+    public ICollection<SigmaBoolean> Args { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -8340,10 +8340,10 @@ public partial class CryptoResult
     [Newtonsoft.Json.JsonProperty("cost", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     public long Cost { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -8359,10 +8359,10 @@ public partial class ScanningPredicate
     [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
     public string Predicate { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -8380,10 +8380,10 @@ public partial class ContainsPredicate : ScanningPredicate
     [Newtonsoft.Json.JsonProperty("bytes", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     public string Bytes { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -8401,10 +8401,10 @@ public partial class EqualsPredicate : ScanningPredicate
     [Newtonsoft.Json.JsonProperty("bytes", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     public string Bytes { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -8419,10 +8419,10 @@ public partial class ContainsAssetPredicate : ScanningPredicate
     [Newtonsoft.Json.JsonProperty("assetId", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     public string AssetId { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -8435,12 +8435,12 @@ public partial class ContainsAssetPredicate : ScanningPredicate
 public partial class AndPredicate : ScanningPredicate
 {
     [Newtonsoft.Json.JsonProperty("args", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-    public System.Collections.Generic.ICollection<ScanningPredicate> Args { get; set; }= default!;
+    public ICollection<ScanningPredicate> Args { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -8453,12 +8453,12 @@ public partial class AndPredicate : ScanningPredicate
 public partial class OrPredicate : ScanningPredicate
 {
     [Newtonsoft.Json.JsonProperty("args", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-    public System.Collections.Generic.ICollection<ScanningPredicate> Args { get; set; }= default!;
+    public ICollection<ScanningPredicate> Args { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -8476,10 +8476,10 @@ public partial class ScanRequest
     [Newtonsoft.Json.JsonProperty("trackingRule", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     public ScanningPredicate TrackingRule { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -8500,10 +8500,10 @@ public partial class Scan
     [Newtonsoft.Json.JsonProperty("trackingRule", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     public ScanningPredicate TrackingRule { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -8518,10 +8518,10 @@ public partial class ScanId
     [Newtonsoft.Json.JsonProperty("scanId", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     public int ScanId1 { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -8540,10 +8540,10 @@ public partial class ScanIdBoxId
     [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
     public string BoxId { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -8558,16 +8558,16 @@ public partial class ScanIdsBox
 {
     [Newtonsoft.Json.JsonProperty("scanIds", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     [System.ComponentModel.DataAnnotations.Required]
-    public System.Collections.Generic.ICollection<int> ScanIds { get; set; } = new System.Collections.ObjectModel.Collection<int>();
+    public ICollection<int> ScanIds { get; set; } = new System.Collections.ObjectModel.Collection<int>();
 
     [Newtonsoft.Json.JsonProperty("box", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     [System.ComponentModel.DataAnnotations.Required]
     public ErgoTransactionOutput Box { get; set; } = new ErgoTransactionOutput();
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -8590,10 +8590,10 @@ public partial class DlogCommitment
     [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
     public string A { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -8614,25 +8614,25 @@ public partial class HintExtractionRequest
     /// <summary>Real signers of the transaction</summary>
     [Newtonsoft.Json.JsonProperty("real", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     [System.ComponentModel.DataAnnotations.Required]
-    public System.Collections.Generic.ICollection<SigmaBoolean> Real { get; set; } = new System.Collections.ObjectModel.Collection<SigmaBoolean>();
+    public ICollection<SigmaBoolean> Real { get; set; } = new System.Collections.ObjectModel.Collection<SigmaBoolean>();
 
     /// <summary>Simulated signers of the transaction</summary>
     [Newtonsoft.Json.JsonProperty("simulated", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     [System.ComponentModel.DataAnnotations.Required]
-    public System.Collections.Generic.ICollection<SigmaBoolean> Simulated { get; set; } = new System.Collections.ObjectModel.Collection<SigmaBoolean>();
+    public ICollection<SigmaBoolean> Simulated { get; set; } = new System.Collections.ObjectModel.Collection<SigmaBoolean>();
 
     /// <summary>Optional list of inputs to be used in serialized form</summary>
     [Newtonsoft.Json.JsonProperty("inputsRaw", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-    public System.Collections.Generic.ICollection<string> InputsRaw { get; set; }= default!;
+    public ICollection<string> InputsRaw { get; set; }= default!;
 
     /// <summary>Optional list of inputs to be used in serialized form</summary>
     [Newtonsoft.Json.JsonProperty("dataInputsRaw", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-    public System.Collections.Generic.ICollection<string> DataInputsRaw { get; set; }= default!;
+    public ICollection<string> DataInputsRaw { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -8670,10 +8670,10 @@ public partial class Commitment
     [Newtonsoft.Json.JsonProperty("b", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     public string B { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -8705,10 +8705,10 @@ public partial class SecretProven
     [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
     public string Position { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -8719,7 +8719,7 @@ public partial class SecretProven
 
 /// <summary>hints for inputs, key is input index, values is a set of hints for the input</summary>
 [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "10.4.4.0 (Newtonsoft.Json v12.0.0.0)")]
-public partial class InputHints : System.Collections.Generic.Dictionary<string, System.Collections.ObjectModel.Collection<Commitment>>
+public partial class InputHints : Dictionary<string, System.Collections.ObjectModel.Collection<Commitment>>
 {
 
 }
@@ -8730,16 +8730,16 @@ public partial class TransactionHintsBag
 {
     /// <summary>Hints which contain secrets, do not share them!</summary>
     [Newtonsoft.Json.JsonProperty("secretHints", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-    public System.Collections.Generic.ICollection<InputHints> SecretHints { get; set; }= default!;
+    public ICollection<InputHints> SecretHints { get; set; }= default!;
 
     /// <summary>Hints which contain public data only, share them freely!</summary>
     [Newtonsoft.Json.JsonProperty("publicHints", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-    public System.Collections.Generic.ICollection<InputHints> PublicHints { get; set; }= default!;
+    public ICollection<InputHints> PublicHints { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -8763,16 +8763,16 @@ public partial class GenerateCommitmentsRequest
 
     /// <summary>Optional list of inputs to be used in serialized form</summary>
     [Newtonsoft.Json.JsonProperty("inputsRaw", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-    public System.Collections.Generic.ICollection<string> InputsRaw { get; set; }= default!;
+    public ICollection<string> InputsRaw { get; set; }= default!;
 
     /// <summary>Optional list of inputs to be used in serialized form</summary>
     [Newtonsoft.Json.JsonProperty("dataInputsRaw", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-    public System.Collections.Generic.ICollection<string> DataInputsRaw { get; set; }= default!;
+    public ICollection<string> DataInputsRaw { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -8795,15 +8795,15 @@ public partial class PaymentRequest
 
     /// <summary>Assets list in the transaction</summary>
     [Newtonsoft.Json.JsonProperty("assets", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-    public System.Collections.Generic.ICollection<Asset> Assets { get; set; }= default!;
+    public ICollection<Asset> Assets { get; set; }= default!;
 
     [Newtonsoft.Json.JsonProperty("registers", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     public Registers Registers { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -8846,10 +8846,10 @@ public partial class AssetIssueRequest
     [Newtonsoft.Json.JsonProperty("registers", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     public Registers Registers { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -8882,10 +8882,10 @@ public partial class FullBlock
     [Newtonsoft.Json.JsonProperty("size", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     public int Size { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -8914,10 +8914,10 @@ public partial class PowSolutions
     [Newtonsoft.Json.JsonProperty("d", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     public int D { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -8988,10 +8988,10 @@ public partial class BlockHeaderWithoutPow
     [Newtonsoft.Json.JsonProperty("adProofsId", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     public string AdProofsId { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -9010,12 +9010,12 @@ public partial class PopowHeader
     /// <summary>Array of header interlinks</summary>
     [Newtonsoft.Json.JsonProperty("interlinks", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     [System.ComponentModel.DataAnnotations.Required]
-    public System.Collections.Generic.ICollection<string> Interlinks { get; set; } = new System.Collections.ObjectModel.Collection<string>();
+    public ICollection<string> Interlinks { get; set; } = new System.Collections.ObjectModel.Collection<string>();
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -9038,7 +9038,7 @@ public partial class NipopowProof
     /// <summary>proof prefix headers</summary>
     [Newtonsoft.Json.JsonProperty("prefix", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     [System.ComponentModel.DataAnnotations.Required]
-    public System.Collections.Generic.ICollection<PopowHeader> Prefix { get; set; } = new System.Collections.ObjectModel.Collection<PopowHeader>();
+    public ICollection<PopowHeader> Prefix { get; set; } = new System.Collections.ObjectModel.Collection<PopowHeader>();
 
     [Newtonsoft.Json.JsonProperty("suffixHead", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     [System.ComponentModel.DataAnnotations.Required]
@@ -9047,12 +9047,12 @@ public partial class NipopowProof
     /// <summary>tail of the proof suffix headers</summary>
     [Newtonsoft.Json.JsonProperty("suffixTail", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     [System.ComponentModel.DataAnnotations.Required]
-    public System.Collections.Generic.ICollection<BlockHeader> SuffixTail { get; set; } = new System.Collections.ObjectModel.Collection<BlockHeader>();
+    public ICollection<BlockHeader> SuffixTail { get; set; } = new System.Collections.ObjectModel.Collection<BlockHeader>();
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -9127,10 +9127,10 @@ public partial class BlockHeader
     [Newtonsoft.Json.JsonProperty("adProofsId", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     public string AdProofsId { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -9154,10 +9154,10 @@ public partial class BlockTransactions
     [Newtonsoft.Json.JsonProperty("size", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     public int Size { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -9185,10 +9185,10 @@ public partial class BlockADProofs
     [Newtonsoft.Json.JsonProperty("size", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     public int Size { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -9210,12 +9210,12 @@ public partial class Extension
 
     /// <summary>List of key-value records</summary>
     [Newtonsoft.Json.JsonProperty("fields", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-    public System.Collections.Generic.ICollection<KeyValueItem>? Fields { get; set; }= default!;
+    public ICollection<KeyValueItem>? Fields { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -9267,10 +9267,10 @@ public partial class CandidateBlock
     [Newtonsoft.Json.JsonProperty("votes", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     public string Votes { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -9290,12 +9290,12 @@ public partial class MerkleProof
 
     [Newtonsoft.Json.JsonProperty("levels", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     [System.ComponentModel.DataAnnotations.Required]
-    public System.Collections.Generic.ICollection<System.Collections.Generic.ICollection<object>> Levels { get; set; } = new List<ICollection<object>>();
+    public ICollection<ICollection<object>> Levels { get; set; } = new List<ICollection<object>>();
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -9316,12 +9316,12 @@ public partial class ProofOfUpcomingTransactions
     /// <summary>Merkle proofs of transactions included into blocks (not necessarily all the block transactions)</summary>
     [Newtonsoft.Json.JsonProperty("txProofs", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     [System.ComponentModel.DataAnnotations.Required]
-    public System.Collections.Generic.ICollection<MerkleProof> TxProofs { get; set; } = new System.Collections.ObjectModel.Collection<MerkleProof>();
+    public ICollection<MerkleProof> TxProofs { get; set; } = new System.Collections.ObjectModel.Collection<MerkleProof>();
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -9355,10 +9355,10 @@ public partial class WorkMessage
     [Newtonsoft.Json.JsonProperty("proof", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     public ProofOfUpcomingTransactions Proof { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -9384,10 +9384,10 @@ public partial class Peer
     [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
     public PeerConnectionType? ConnectionType { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -9405,10 +9405,10 @@ public partial class PeersStatus
     [Newtonsoft.Json.JsonProperty("currentNetworkTime", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     public int CurrentNetworkTime { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -9506,10 +9506,10 @@ public partial class NodeInfo
     [System.ComponentModel.DataAnnotations.Required]
     public Parameters Parameters { get; set; } = new Parameters();
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -9569,10 +9569,10 @@ public partial class Parameters
     [System.ComponentModel.DataAnnotations.Range(0, int.MaxValue)]
     public int OutputCost { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -9598,10 +9598,10 @@ public partial class FeeHistogramBin
     [Newtonsoft.Json.JsonProperty("totalFee", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     public long TotalFee { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -9629,10 +9629,10 @@ public partial class Asset
     [Newtonsoft.Json.JsonProperty("amount", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     public long Amount { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -9643,7 +9643,7 @@ public partial class Asset
 
 /// <summary>Ergo box registers</summary>
 [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "10.4.4.0 (Newtonsoft.Json v12.0.0.0)")]
-public partial class Registers : System.Collections.Generic.Dictionary<string, string>
+public partial class Registers : Dictionary<string, string>
 {
 
 }
@@ -9661,10 +9661,10 @@ public partial class EmissionInfo
     [Newtonsoft.Json.JsonProperty("totalRemainCoins", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     public long TotalRemainCoins { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -9687,10 +9687,10 @@ public partial class BalancesSnapshot
     //[Newtonsoft.Json.JsonProperty("assets", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     //public System.Collections.Generic.ICollection<Asset> Assets { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -9713,10 +9713,10 @@ public partial class AddressValidity
     [Newtonsoft.Json.JsonProperty("error", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     public string Error { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -9741,10 +9741,10 @@ public partial class ApiError
     [Newtonsoft.Json.JsonProperty("detail", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     public string? Detail { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -9776,10 +9776,10 @@ public partial class PeersInfo
     [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
     public string Status { get; set; } = default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -9799,10 +9799,10 @@ public partial class Body
     [Newtonsoft.Json.JsonProperty("mnemonicPass", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     public string MnemonicPass { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -9828,10 +9828,10 @@ public partial class Body2
     [Newtonsoft.Json.JsonProperty("mnemonicPass", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     public string MnemonicPass { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -9852,10 +9852,10 @@ public partial class Body3
     [Newtonsoft.Json.JsonProperty("mnemonicPass", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     public string MnemonicPass { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -9872,10 +9872,10 @@ public partial class Body4
     [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
     public string Pass { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -9892,10 +9892,10 @@ public partial class Body5
     [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
     public string Address { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -9912,10 +9912,10 @@ public partial class Body6
     [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
     public string DerivationPath { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -9932,10 +9932,10 @@ public partial class Response
     [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
     public string Mnemonic { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -9951,10 +9951,10 @@ public partial class Response2
     [Newtonsoft.Json.JsonProperty("matched", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     public bool Matched { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -9983,10 +9983,10 @@ public partial class Response3
     [Newtonsoft.Json.JsonProperty("walletHeight", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     public int WalletHeight { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -10002,10 +10002,10 @@ public partial class Response4
     [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
     public string Address { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -10026,10 +10026,10 @@ public partial class Response5
     [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
     public string Address { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -10045,10 +10045,10 @@ public partial class Response6
     [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
     public string RewardAddress { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -10062,10 +10062,10 @@ public partial class Response7
     [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
     public string RewardPubKey { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -10079,10 +10079,10 @@ public partial class Response8
     [Newtonsoft.Json.JsonProperty("tree", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     public string Tree { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -10098,10 +10098,10 @@ public partial class Response9
     [Newtonsoft.Json.JsonProperty("tree", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     public string Tree { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -10115,16 +10115,16 @@ public partial class Secrets
 {
     /// <summary>Sequence of secret exponents (DLOG secrets)</summary>
     [Newtonsoft.Json.JsonProperty("dlog", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-    public System.Collections.Generic.ICollection<string> Dlog { get; set; }= default!;
+    public ICollection<string> Dlog { get; set; }= default!;
 
     /// <summary>Sequence of secret Diffie-Hellman tuple exponents (DHT secrets)</summary>
     [Newtonsoft.Json.JsonProperty("dht", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-    public System.Collections.Generic.ICollection<DhtSecret> Dht { get; set; }= default!;
+    public ICollection<DhtSecret> Dht { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -10145,12 +10145,12 @@ public partial class Requests
     public long Value { get; set; }= default!;
 
     [Newtonsoft.Json.JsonProperty("assets", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-    public System.Collections.Generic.ICollection<Asset> Assets { get; set; }= default!;
+    public ICollection<Asset> Assets { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -10200,16 +10200,16 @@ public partial class Secrets2
 {
     /// <summary>Sequence of secret exponents (DLOG secrets)</summary>
     [Newtonsoft.Json.JsonProperty("dlog", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-    public System.Collections.Generic.ICollection<string> Dlog { get; set; }= default!;
+    public ICollection<string> Dlog { get; set; }= default!;
 
     /// <summary>Sequence of secret Diffie-Hellman tuple exponents (DHT secrets)</summary>
     [Newtonsoft.Json.JsonProperty("dht", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-    public System.Collections.Generic.ICollection<DhtSecret> Dht { get; set; }= default!;
+    public ICollection<DhtSecret> Dht { get; set; }= default!;
 
-    private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
+    private IDictionary<string, object> _additionalProperties = new Dictionary<string, object>();
 
     [Newtonsoft.Json.JsonExtensionData]
-    public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+    public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties; }
         set { _additionalProperties = value; }
@@ -10241,15 +10241,15 @@ public enum NodeInfoStateType
 }
 
 [System.CodeDom.Compiler.GeneratedCode("NSwag", "13.11.3.0 (NJsonSchema v10.4.4.0 (Newtonsoft.Json v12.0.0.0))")]
-public partial class ApiException : System.Exception
+public partial class ApiException : Exception
 {
     public int StatusCode { get; private set; }
 
     public string? Response { get; private set; }
 
-    public System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IEnumerable<string>> Headers { get; private set; }
+    public IReadOnlyDictionary<string, IEnumerable<string>> Headers { get; private set; }
 
-    public ApiException(string message, int statusCode, string? response, System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IEnumerable<string>> headers, System.Exception? innerException)
+    public ApiException(string message, int statusCode, string? response, IReadOnlyDictionary<string, IEnumerable<string>> headers, Exception? innerException)
         : base(message + "\n\nStatus: " + statusCode + "\nResponse: \n" + ((response == null) ? "(null)" : response.Substring(0, response.Length >= 512 ? 512 : response.Length)), innerException)
     {
         StatusCode = statusCode;
@@ -10268,7 +10268,7 @@ public partial class ApiException<TResult> : ApiException
 {
     public TResult Result { get; private set; }
 
-    public ApiException(string message, int statusCode, string? response, System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IEnumerable<string>> headers, TResult result, System.Exception? innerException)
+    public ApiException(string message, int statusCode, string? response, IReadOnlyDictionary<string, IEnumerable<string>> headers, TResult result, Exception? innerException)
         : base(message, statusCode, response, headers, innerException)
     {
         Result = result;

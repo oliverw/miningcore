@@ -30,7 +30,7 @@ public class RpcClient
         Contract.RequiresNonNull(messageBus, nameof(messageBus));
         Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(poolId), $"{nameof(poolId)} must not be empty");
 
-        this.config = endPoint;
+        config = endPoint;
         this.serializerSettings = serializerSettings;
         this.messageBus = messageBus;
         this.poolId = poolId;

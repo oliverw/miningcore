@@ -233,8 +233,8 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
         Contract.RequiresNonNull(cc, nameof(cc));
 
         logger = LogUtil.GetPoolScopedLogger(typeof(JobManagerBase<CryptonoteJob>), pc);
-        this.poolConfig = pc;
-        this.clusterConfig = cc;
+        poolConfig = pc;
+        clusterConfig = cc;
         extraPoolConfig = pc.Extra.SafeExtensionDataAs<CryptonotePoolConfigExtra>();
         coin = pc.Template.As<CryptonoteCoinTemplate>();
 

@@ -13,7 +13,7 @@ public class EquihashBlockHeader : IBitcoinSerializable
 
     public EquihashBlockHeader(byte[] bytes)
     {
-        this.ReadWrite(new BitcoinStream(bytes));
+        ReadWrite(new BitcoinStream(bytes));
     }
 
     public EquihashBlockHeader()

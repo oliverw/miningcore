@@ -93,8 +93,8 @@ public abstract class JobManagerBase<TJob>
         Contract.RequiresNonNull(cc, nameof(cc));
 
         logger = LogUtil.GetPoolScopedLogger(typeof(JobManagerBase<TJob>), pc);
-        this.poolConfig = pc;
-        this.clusterConfig = cc;
+        poolConfig = pc;
+        clusterConfig = cc;
 
         ConfigureDaemons();
     }

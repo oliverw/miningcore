@@ -3,7 +3,6 @@ using System.Net;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Text.RegularExpressions;
 using AspNetCoreRateLimit;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
@@ -330,10 +329,7 @@ public class Program : BackgroundService
     private static bool isShareRecoveryMode;
     private static ClusterConfig clusterConfig;
     private static readonly ConcurrentDictionary<string, IMiningPool> pools = new();
-
     private static readonly AdminGcStats gcStats = new();
-    private static readonly Regex regexJsonTypeConversionError =
-    new("\"([^\"]+)\"[^\']+\'([^\']+)\'.+\\s(\\d+),.+\\s(\\d+)", RegexOptions.Compiled);
 
     public Program(IComponentContext container)
     {

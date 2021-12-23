@@ -47,18 +47,18 @@ public class EquihashPayoutHandler : BitcoinPayoutHandler
 
     #region IPayoutHandler
 
-    public override async Task ConfigureAsync(ClusterConfig clusterConfig, PoolConfig poolConfig, CancellationToken ct)
+    public override async Task ConfigureAsync(ClusterConfig cc, PoolConfig pc, CancellationToken ct)
     {
-        await base.ConfigureAsync(clusterConfig, poolConfig, ct);
+        await base.ConfigureAsync(cc, pc, ct);
 
-        poolExtraConfig = poolConfig.Extra.SafeExtensionDataAs<EquihashPoolConfigExtra>();
+        poolExtraConfig = pc.Extra.SafeExtensionDataAs<EquihashPoolConfigExtra>();
 
         // detect network
         var blockchainInfoResponse = await rpcClient.ExecuteAsync<BlockchainInfo>(logger, BitcoinCommands.GetBlockchainInfo, ct);
 
         network = Network.GetNetwork(blockchainInfoResponse.Response.Chain.ToLower());
 
-        chainConfig = poolConfig.Template.As<EquihashCoinTemplate>().GetNetwork(network.ChainName);
+        chainConfig = pc.Template.As<EquihashCoinTemplate>().GetNetwork(network.ChainName);
 
         // detect z_shieldcoinbase support
         var response = await rpcClient.ExecuteAsync<JObject>(logger, EquihashCommands.ZShieldCoinbase, ct);

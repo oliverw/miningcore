@@ -287,20 +287,20 @@ public class CryptonotePayoutHandler : PayoutHandlerBase,
 
     #region IPayoutHandler
 
-    public async Task ConfigureAsync(ClusterConfig clusterConfig, PoolConfig poolConfig, CancellationToken ct)
+    public async Task ConfigureAsync(ClusterConfig cc, PoolConfig pc, CancellationToken ct)
     {
-        Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
+        Contract.RequiresNonNull(pc, nameof(pc));
 
-        this.poolConfig = poolConfig;
-        this.clusterConfig = clusterConfig;
-        extraConfig = poolConfig.PaymentProcessing.Extra.SafeExtensionDataAs<CryptonotePoolPaymentProcessingConfigExtra>();
+        poolConfig = pc;
+        clusterConfig = cc;
+        extraConfig = pc.PaymentProcessing.Extra.SafeExtensionDataAs<CryptonotePoolPaymentProcessingConfigExtra>();
 
-        logger = LogUtil.GetPoolScopedLogger(typeof(CryptonotePayoutHandler), poolConfig);
+        logger = LogUtil.GetPoolScopedLogger(typeof(CryptonotePayoutHandler), pc);
 
         // configure standard daemon
         var jsonSerializerSettings = ctx.Resolve<JsonSerializerSettings>();
 
-        var daemonEndpoints = poolConfig.Daemons
+        var daemonEndpoints = pc.Daemons
             .Where(x => string.IsNullOrEmpty(x.Category))
             .Select(x =>
             {
@@ -311,10 +311,10 @@ public class CryptonotePayoutHandler : PayoutHandlerBase,
             })
             .ToArray();
 
-        rpcClient = new RpcClient(daemonEndpoints.First(), jsonSerializerSettings, messageBus, poolConfig.Id);
+        rpcClient = new RpcClient(daemonEndpoints.First(), jsonSerializerSettings, messageBus, pc.Id);
 
         // configure wallet daemon
-        var walletDaemonEndpoints = poolConfig.Daemons
+        var walletDaemonEndpoints = pc.Daemons
             .Where(x => x.Category?.ToLower() == CryptonoteConstants.WalletDaemonCategory)
             .Select(x =>
             {
@@ -325,7 +325,7 @@ public class CryptonotePayoutHandler : PayoutHandlerBase,
             })
             .ToArray();
 
-        rpcClientWallet = new RpcClient(walletDaemonEndpoints.First(), jsonSerializerSettings, messageBus, poolConfig.Id);
+        rpcClientWallet = new RpcClient(walletDaemonEndpoints.First(), jsonSerializerSettings, messageBus, pc.Id);
 
         // detect network
         await UpdateNetworkTypeAsync(ct);
