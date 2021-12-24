@@ -16,9 +16,7 @@ namespace Miningcore.Mining;
 
 public class ShareRelay : IHostedService
 {
-    public ShareRelay(
-        ClusterConfig clusterConfig,
-        IMessageBus messageBus)
+    public ShareRelay(ClusterConfig clusterConfig, IMessageBus messageBus)
     {
         Contract.RequiresNonNull(messageBus, nameof(messageBus));
 
