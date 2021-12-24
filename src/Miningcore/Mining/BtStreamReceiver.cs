@@ -67,10 +67,6 @@ public class BtStreamReceiver : BackgroundService
         var data = msg[2].Read();
         var sent = DateTimeOffset.FromUnixTimeMilliseconds(msg[3].ReadInt64()).DateTime;
 
-        // TMP FIX
-        if(flags != 0 && ((flags & 1) == 0))
-            flags = BitConverter.ToUInt32(BitConverter.GetBytes(flags).ToNewReverseArray());
-
         // compressed
         if((flags & 1) == 1)
         {

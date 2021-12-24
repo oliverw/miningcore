@@ -1,4 +1,4 @@
-namespace Miningcore.Persistence.Repositories;
+namespace Miningcore.Persistence.Model;
 
 public enum SampleRange
 {
