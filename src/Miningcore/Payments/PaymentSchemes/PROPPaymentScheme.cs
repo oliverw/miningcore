@@ -20,7 +20,8 @@ namespace Miningcore.Payments.PaymentSchemes;
 // ReSharper disable once InconsistentNaming
 public class PROPPaymentScheme : IPayoutScheme
 {
-    public PROPPaymentScheme(IConnectionFactory cf,
+    public PROPPaymentScheme(
+        IConnectionFactory cf,
         IShareRepository shareRepo,
         IBlockRepository blockRepo,
         IBalanceRepository balanceRepo)

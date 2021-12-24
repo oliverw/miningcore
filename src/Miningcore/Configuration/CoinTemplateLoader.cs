@@ -21,11 +21,11 @@ public static class CoinTemplateLoader
             foreach(var o in jo)
             {
                 if(o.Value.Type != JTokenType.Object)
-                    throw new PoolStartupAbortException("Invalid coin-template file: dictionary of coin-templates expected");
+                    throw new PoolStartupException("Invalid coin-template file: dictionary of coin-templates expected");
 
                 var value = o.Value[nameof(CoinTemplate.Family).ToLower()];
                 if(value == null)
-                    throw new PoolStartupAbortException($"Invalid coin-template '{o.Key}': missing 'family' property");
+                    throw new PoolStartupException($"Invalid coin-template '{o.Key}': missing 'family' property");
 
                 var family = value.ToObject<CoinFamily>();
                 var result = (CoinTemplate) o.Value.ToObject(CoinTemplate.Families[family]);

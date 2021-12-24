@@ -86,7 +86,7 @@ public static class ZmqExtensions
             return;
 
         if(!ZContext.Has("curve"))
-            throw new PoolStartupAbortException("Unable to initialize ZMQ Curve Transport-Layer-Security. Your ZMQ library was compiled without Curve support!");
+            throw new PoolStartupException("Unable to initialize ZMQ Curve Transport-Layer-Security. Your ZMQ library was compiled without Curve support!");
 
         // Get server's public key
         byte[] keyBytes = null;
@@ -124,7 +124,7 @@ public static class ZmqExtensions
             return;
 
         if(!ZContext.Has("curve"))
-            throw new PoolStartupAbortException("Unable to initialize ZMQ Curve Transport-Layer-Security. Your ZMQ library was compiled without Curve support!");
+            throw new PoolStartupException("Unable to initialize ZMQ Curve Transport-Layer-Security. Your ZMQ library was compiled without Curve support!");
 
         // Get server's public key
         byte[] serverPubKey = null;

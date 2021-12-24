@@ -121,7 +121,7 @@ public class ShareRelay : IHostedService
         else
         {
             if(!string.IsNullOrEmpty(clusterConfig.ShareRelay.SharedEncryptionKey?.Trim()))
-                throw new PoolStartupAbortException("ZeroMQ Curve is not supported in ShareRelay Connect-Mode");
+                throw new PoolStartupException("ZeroMQ Curve is not supported in ShareRelay Connect-Mode");
 
             pubSocket.Connect(clusterConfig.ShareRelay.PublishUrl);
 

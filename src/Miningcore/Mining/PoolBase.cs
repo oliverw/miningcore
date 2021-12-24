@@ -386,7 +386,7 @@ Pool Fee:               {(poolConfig.RewardRecipients?.Any() == true ? poolConfi
             }
         }
 
-        catch(PoolStartupAbortException)
+        catch(PoolStartupException)
         {
             // just forward these
             throw;

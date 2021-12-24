@@ -20,7 +20,8 @@ namespace Miningcore.Payments.PaymentSchemes;
 // ReSharper disable once InconsistentNaming
 public class PPLNSPaymentScheme : IPayoutScheme
 {
-    public PPLNSPaymentScheme(IConnectionFactory cf,
+    public PPLNSPaymentScheme(
+        IConnectionFactory cf,
         IShareRepository shareRepo,
         IBlockRepository blockRepo,
         IBalanceRepository balanceRepo)
@@ -87,10 +88,9 @@ public class PPLNSPaymentScheme : IPayoutScheme
             if(cutOffCount > 0)
             {
                 await LogDiscardedSharesAsync(poolConfig, block, shareCutOffDate.Value);
-#if !DEBUG
-                    logger.Info(() => $"Deleting {cutOffCount} discarded shares before {shareCutOffDate.Value:O}");
-                    await shareRepo.DeleteSharesBeforeCreatedAsync(con, tx, poolConfig.Id, shareCutOffDate.Value);
-#endif
+
+                logger.Info(() => $"Deleting {cutOffCount} discarded shares before {shareCutOffDate.Value:O}");
+                await shareRepo.DeleteSharesBeforeCreatedAsync(con, tx, poolConfig.Id, shareCutOffDate.Value);
             }
         }
 

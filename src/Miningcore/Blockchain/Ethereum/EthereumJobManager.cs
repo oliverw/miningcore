@@ -15,7 +15,6 @@ using Miningcore.Messaging;
 using Miningcore.Notifications.Messages;
 using Miningcore.Stratum;
 using Miningcore.Time;
-using Miningcore.Util;
 using Newtonsoft.Json;
 using NLog;
 using Block = Miningcore.Blockchain.Ethereum.DaemonResponses.Block;
@@ -34,8 +33,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
         IComponentContext ctx,
         IMasterClock clock,
         IMessageBus messageBus,
-        IExtraNonceProvider extraNonceProvider,
-        JsonSerializerSettings serializerSettings) :
+        IExtraNonceProvider extraNonceProvider) :
         base(ctx, messageBus)
     {
         Contract.RequiresNonNull(ctx, nameof(ctx));
@@ -45,11 +43,6 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
 
         this.clock = clock;
         this.extraNonceProvider = extraNonceProvider;
-
-        serializer = new JsonSerializer
-        {
-            ContractResolver = serializerSettings.ContractResolver!
-        };
     }
 
     private DaemonEndpointConfig[] daemonEndpoints;
@@ -63,7 +56,6 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
     private const int MaxBlockBacklog = 3;
     protected readonly Dictionary<string, EthereumJob> validJobs = new();
     private EthereumPoolConfigExtra extraPoolConfig;
-    private readonly JsonSerializer serializer;
 
     protected async Task<bool> UpdateJob(CancellationToken ct, string via = null)
     {
@@ -164,10 +156,16 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
         var work = responses[0].Response.ToObject<string[]>();
         var block = responses[1].Response.ToObject<Block>();
 
+        if(work == null)
+            return null;
+
         // append blockheight (Recent versions of geth return this as the 4th element in the getWork response, older geth does not)
         if(work.Length < 4)
         {
-            var currentHeight = block.Height.Value;
+            if(block == null)
+                return null;
+
+            var currentHeight = block.Height!.Value;
             work = work.Concat(new[] { (currentHeight + 1).ToStringHexWithPrefix() }).ToArray();
         }
 
@@ -262,11 +260,11 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
 
             // extract results
             var peerCount = responses[0].Response.ToObject<string>().IntegralFromHex<int>();
-            var latestBlockInfo = responses[1].Response.ToObject<Block>();
+            var blockInfo = responses[1].Response.ToObject<Block>();
 
-            var latestBlockHeight = latestBlockInfo.Height.Value;
-            var latestBlockTimestamp = latestBlockInfo.Timestamp;
-            var latestBlockDifficulty = latestBlockInfo.Difficulty.IntegralFromHex<ulong>();
+            var latestBlockHeight = blockInfo!.Height!.Value;
+            var latestBlockTimestamp = blockInfo.Timestamp;
+            var latestBlockDifficulty = blockInfo.Difficulty.IntegralFromHex<ulong>();
 
             var sampleSize = (ulong) 300;
             var sampleBlockNumber = latestBlockHeight - sampleSize;
@@ -527,13 +525,13 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
                 .ToArray();
 
             if(errors.Any())
-                throw new PoolStartupAbortException($"Init RPC failed: {string.Join(", ", errors.Select(y => y.Error.Message))}");
+                throw new PoolStartupException($"Init RPC failed: {string.Join(", ", errors.Select(y => y.Error.Message))}");
         }
 
         // extract results
         var netVersion = responses[0].Response.ToObject<string>();
-        var accounts = responses[1].Response.ToObject<string[]>();
-        var coinbase = responses[2].Response.ToObject<string>();
+        // var accounts = responses[1].Response.ToObject<string[]>();
+        // var coinbase = responses[2].Response.ToObject<string>();
         var gethChain = extraPoolConfig?.ChainTypeOverride ?? "Ethereum";
 
         EthereumUtils.DetectNetworkAndChain(netVersion, gethChain, out networkType, out chainType);
@@ -601,7 +599,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
             var wsEndpointConfig = new DaemonEndpointConfig
             {
                 Host = endpointConfig.Host,
-                Port = extra.PortWs.Value,
+                Port = extra.PortWs!.Value,
                 HttpPath = extra.HttpPathWs,
                 Ssl = extra.SslWs
             };
@@ -634,7 +632,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
                     goto retry;
                 }
 
-                throw new PoolStartupAbortException($"Unable to subscribe to geth websocket '{wsSubscription}': {subcriptionResponse.Error.Message} [{subcriptionResponse.Error.Code}]");
+                throw new PoolStartupException($"Unable to subscribe to geth websocket '{wsSubscription}': {subcriptionResponse.Error.Message} [{subcriptionResponse.Error.Code}]");
             }
 
             var websocketNotify = getWorkObs.Where(x => x != null)

@@ -58,11 +58,9 @@ public class SOLOPaymentScheme : IPayoutScheme
 
             if(cutOffCount > 0)
             {
-#if !DEBUG
-                    logger.Info(() => $"Deleting {cutOffCount} discarded shares for {block.Miner}");
+                logger.Info(() => $"Deleting {cutOffCount} discarded shares for {block.Miner}");
 
-                    await shareRepo.DeleteSharesByMinerAsync(con, tx, poolConfig.Id, block.Miner);
-#endif
+                await shareRepo.DeleteSharesByMinerAsync(con, tx, poolConfig.Id, block.Miner);
             }
         }
     }

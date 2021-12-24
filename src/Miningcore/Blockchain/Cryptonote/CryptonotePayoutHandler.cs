@@ -62,7 +62,7 @@ public class CryptonotePayoutHandler : PayoutHandlerBase,
         if(response.Error == null)
         {
             var txHash = response.Response.TxHash;
-            var txFee = (decimal) response.Response.Fee / coin.SmallestUnit;
+            var txFee = response.Response.Fee / coin.SmallestUnit;
 
             logger.Info(() => $"[{LogCategory}] Payment transaction id: {txHash}, TxFee {FormatAmount(txFee)}, TxKey {response.Response.TxKey}");
 
@@ -87,7 +87,7 @@ public class CryptonotePayoutHandler : PayoutHandlerBase,
         if(response.Error == null)
         {
             var txHashes = response.Response.TxHashList;
-            var txFees = response.Response.FeeList.Select(x => (decimal) x / coin.SmallestUnit).ToArray();
+            var txFees = response.Response.FeeList.Select(x => x / coin.SmallestUnit).ToArray();
 
             logger.Info(() => $"[{LogCategory}] Split-Payment transaction ids: {string.Join(", ", txHashes)}, Corresponding TxFees were {string.Join(", ", txFees.Select(FormatAmount))}");
 
@@ -112,6 +112,9 @@ public class CryptonotePayoutHandler : PayoutHandlerBase,
             var infoResponse = await rpcClient.ExecuteAsync(logger, CNC.GetInfo, ct, true);
             var info = infoResponse.Response.ToObject<GetInfoResponse>();
 
+            if(info == null)
+                throw new PoolStartupException($"{LogCategory}] Unable to determine network type");
+
             // chain detection
             if(!string.IsNullOrEmpty(info.NetType))
             {
@@ -127,7 +130,7 @@ public class CryptonotePayoutHandler : PayoutHandlerBase,
                         networkType = CryptonoteNetworkType.Test;
                         break;
                     default:
-                        throw new PoolStartupAbortException($"Unsupport net type '{info.NetType}'");
+                        throw new PoolStartupException($"Unsupported net type '{info.NetType}'");
                 }
             }
 
@@ -174,7 +177,7 @@ public class CryptonotePayoutHandler : PayoutHandlerBase,
                 .Where(x => x.Amount > 0)
                 .Select(x =>
                 {
-                    ExtractAddressAndPaymentId(x.Address, out var address, out var paymentId);
+                    ExtractAddressAndPaymentId(x.Address, out var address, out _);
 
                     return new TransferDestination
                     {
@@ -400,7 +403,7 @@ public class CryptonotePayoutHandler : PayoutHandlerBase,
                 {
                     block.Status = BlockStatus.Confirmed;
                     block.ConfirmationProgress = 1;
-                    block.Reward = ((decimal) blockHeader.Reward / coin.SmallestUnit) * coin.BlockrewardMultiplier;
+                    block.Reward = (blockHeader.Reward / coin.SmallestUnit) * coin.BlockrewardMultiplier;
 
                     logger.Info(() => $"[{LogCategory}] Unlocked block {block.BlockHeight} worth {FormatAmount(block.Reward)}");
 
@@ -449,7 +452,7 @@ public class CryptonotePayoutHandler : PayoutHandlerBase,
         balances = balances
             .Where(x =>
             {
-                ExtractAddressAndPaymentId(x.Address, out var address, out var paymentId);
+                ExtractAddressAndPaymentId(x.Address, out var address, out _);
 
                 var addressPrefix = CryptonoteBindings.DecodeAddress(address);
                 var addressIntegratedPrefix = CryptonoteBindings.DecodeIntegratedAddress(address);

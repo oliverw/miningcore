@@ -139,7 +139,7 @@ public class Program : BackgroundService
                 if(apiTlsEnable)
                 {
                     if(!File.Exists(clusterConfig.Api.Tls.TlsPfxFile))
-                        throw new PoolStartupAbortException($"Certificate file {clusterConfig.Api.Tls.TlsPfxFile} does not exist!");
+                        throw new PoolStartupException($"Certificate file {clusterConfig.Api.Tls.TlsPfxFile} does not exist!");
                 }
 
                 hostBuilder.ConfigureWebHost(builder =>
@@ -233,7 +233,7 @@ public class Program : BackgroundService
             await host.RunAsync();
         }
 
-        catch(PoolStartupAbortException ex)
+        catch(PoolStartupException ex)
         {
             if(!string.IsNullOrEmpty(ex.Message))
                 await Console.Error.WriteLineAsync(ex.Message);
@@ -253,7 +253,7 @@ public class Program : BackgroundService
 
         catch(AggregateException ex)
         {
-            if(ex.InnerExceptions.First() is not PoolStartupAbortException)
+            if(ex.InnerExceptions.First() is not PoolStartupException)
                 Console.Error.WriteLine(ex);
 
             await Console.Error.WriteLineAsync("Cluster cannot start. Good Bye!");
@@ -274,9 +274,7 @@ public class Program : BackgroundService
 
     private static void ConfigureBackgroundServices(IServiceCollection services)
     {
-        // Notifications
         services.AddHostedService<NotificationService>();
-
         services.AddHostedService<BtStreamReceiver>();
 
         // Share processing
@@ -299,7 +297,6 @@ public class Program : BackgroundService
             services.AddHostedService<PayoutManager>();
         else
             logger.Info("Payment processing is not enabled");
-
 
         if(clusterConfig.ShareRelay == null)
         {
@@ -365,7 +362,7 @@ public class Program : BackgroundService
         {
             // Lookup coin
             if(!coinTemplates.TryGetValue(poolConfig.Coin, out var template))
-                throw new PoolStartupAbortException($"Pool {poolConfig.Id} references undefined coin '{poolConfig.Coin}'");
+                throw new PoolStartupException($"Pool {poolConfig.Id} references undefined coin '{poolConfig.Coin}'");
 
             poolConfig.Template = template;
 
@@ -417,7 +414,7 @@ public class Program : BackgroundService
     private static void ValidateConfig()
     {
         if(!clusterConfig.Pools.Any(x => x.Enabled))
-            throw new PoolStartupAbortException("No pools are enabled.");
+            throw new PoolStartupException("No pools are enabled.");
 
         // set some defaults
         foreach(var config in clusterConfig.Pools)
@@ -432,13 +429,13 @@ public class Program : BackgroundService
             if(clusterConfig.Notifications?.Admin?.Enabled == true)
             {
                 if(string.IsNullOrEmpty(clusterConfig.Notifications?.Email?.FromName))
-                    throw new PoolStartupAbortException($"Notifications are enabled but email sender name is not configured (notifications.email.fromName)");
+                    throw new PoolStartupException($"Notifications are enabled but email sender name is not configured (notifications.email.fromName)");
 
                 if(string.IsNullOrEmpty(clusterConfig.Notifications?.Email?.FromAddress))
-                    throw new PoolStartupAbortException($"Notifications are enabled but email sender address name is not configured (notifications.email.fromAddress)");
+                    throw new PoolStartupException($"Notifications are enabled but email sender address name is not configured (notifications.email.fromAddress)");
 
                 if(string.IsNullOrEmpty(clusterConfig.Notifications?.Admin?.EmailAddress))
-                    throw new PoolStartupAbortException($"Admin notifications are enabled but recipient address is not configured (notifications.admin.emailAddress)");
+                    throw new PoolStartupException($"Admin notifications are enabled but recipient address is not configured (notifications.admin.emailAddress)");
             }
 
             if(string.IsNullOrEmpty(clusterConfig.Logging.LogFile))
@@ -451,7 +448,7 @@ public class Program : BackgroundService
         catch(ValidationException ex)
         {
             Console.Error.WriteLine($"Configuration is not valid:\n\n{string.Join("\n", ex.Errors.Select(x => "=> " + x.ErrorMessage))}");
-            throw new PoolStartupAbortException(string.Empty);
+            throw new PoolStartupException(string.Empty);
         }
     }
 
@@ -543,22 +540,22 @@ public class Program : BackgroundService
 
         catch(JSchemaValidationException ex)
         {
-            throw new PoolStartupAbortException($"Configuration file error: {ex.Message}");
+            throw new PoolStartupException($"Configuration file error: {ex.Message}");
         }
 
         catch(JsonSerializationException ex)
         {
-            throw new PoolStartupAbortException($"Configuration file error: {ex.Message}");
+            throw new PoolStartupException($"Configuration file error: {ex.Message}");
         }
 
         catch(JsonException ex)
         {
-            throw new PoolStartupAbortException($"Configuration file error: {ex.Message}");
+            throw new PoolStartupException($"Configuration file error: {ex.Message}");
         }
 
         catch(IOException ex)
         {
-            throw new PoolStartupAbortException($"Configuration file error: {ex.Message}");
+            throw new PoolStartupException($"Configuration file error: {ex.Message}");
         }
     }
 
@@ -581,7 +578,7 @@ public class Program : BackgroundService
 
         // require 64-bit on Windows
         if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && RuntimeInformation.ProcessArchitecture == Architecture.X86)
-            throw new PoolStartupAbortException("Miningcore requires 64-Bit Windows");
+            throw new PoolStartupException("Miningcore requires 64-Bit Windows");
     }
 
     private static void Logo()
@@ -792,7 +789,7 @@ public class Program : BackgroundService
         if(clusterConfig.Persistence == null &&
            clusterConfig.PaymentProcessing?.Enabled == true &&
            clusterConfig.ShareRelay == null)
-            throw new PoolStartupAbortException("Persistence is not configured!");
+            throw new PoolStartupException("Persistence is not configured!");
 
         if(clusterConfig.Persistence?.Postgres != null)
             ConfigurePostgres(clusterConfig.Persistence.Postgres, builder);
@@ -804,16 +801,16 @@ public class Program : BackgroundService
     {
         // validate config
         if(string.IsNullOrEmpty(pgConfig.Host))
-            throw new PoolStartupAbortException("Postgres configuration: invalid or missing 'host'");
+            throw new PoolStartupException("Postgres configuration: invalid or missing 'host'");
 
         if(pgConfig.Port == 0)
-            throw new PoolStartupAbortException("Postgres configuration: invalid or missing 'port'");
+            throw new PoolStartupException("Postgres configuration: invalid or missing 'port'");
 
         if(string.IsNullOrEmpty(pgConfig.Database))
-            throw new PoolStartupAbortException("Postgres configuration: invalid or missing 'database'");
+            throw new PoolStartupException("Postgres configuration: invalid or missing 'database'");
 
         if(string.IsNullOrEmpty(pgConfig.User))
-            throw new PoolStartupAbortException("Postgres configuration: invalid or missing 'user'");
+            throw new PoolStartupException("Postgres configuration: invalid or missing 'user'");
 
         // build connection string
         var connectionString = $"Server={pgConfig.Host};Port={pgConfig.Port};Database={pgConfig.Database};User Id={pgConfig.User};Password={pgConfig.Password};CommandTimeout=900;";
