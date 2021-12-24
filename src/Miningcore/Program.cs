@@ -396,7 +396,7 @@ public class Program : BackgroundService
     private Task RecoverSharesAsync(string recoveryFilename)
     {
         var shareRecorder = container.Resolve<ShareRecorder>();
-        return shareRecorder.RecoverSharesAsync(clusterConfig, recoveryFilename);
+        return shareRecorder.RecoverSharesAsync(recoveryFilename);
     }
 
     private static void LogRuntimeInfo()
