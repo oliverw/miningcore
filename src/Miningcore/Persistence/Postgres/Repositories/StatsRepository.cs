@@ -335,7 +335,7 @@ public class StatsRepository : IStatsRepository
 
     public async Task<MinerWorkerPerformanceStats[]> PagePoolMinersByHashrateAsync(IDbConnection con, string poolId, DateTime from, int page, int pageSize)
     {
-        logger.LogInvoke(new object[] { (object) poolId, from, page, pageSize });
+        logger.LogInvoke(new object[] { poolId, from, page, pageSize });
 
         const string query = "WITH tmp AS " +
             "( " +

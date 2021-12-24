@@ -194,7 +194,7 @@ public class EquihashPayoutHandler : BitcoinPayoutHandler
 
                         var unlockResponse = await rpcClient.ExecuteAsync<JToken>(logger, BitcoinCommands.WalletPassphrase, ct, new[]
                         {
-                            (object) extraPoolPaymentProcessingConfig.WalletPassword,
+                            extraPoolPaymentProcessingConfig.WalletPassword,
                             (object) 5 // unlock for N seconds
                         });
 

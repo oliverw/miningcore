@@ -228,7 +228,7 @@ public class BitcoinJob
         ops.Add(Op.GetPushOp(now));
 
         // push placeholder
-        ops.Add(Op.GetPushOp((uint) 0));
+        ops.Add(Op.GetPushOp(0));
 
         return new Script(ops);
     }

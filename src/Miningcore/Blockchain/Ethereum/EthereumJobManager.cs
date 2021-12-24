@@ -63,7 +63,12 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
 
         try
         {
-            return UpdateJob(await GetBlockTemplateAsync(ct), via);
+            var bt = await GetBlockTemplateAsync(ct);
+
+            if(bt == null)
+                return false;
+
+            return UpdateJob(bt, via);
         }
 
         catch(Exception ex)
@@ -272,7 +277,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
             var sampleBlockTimestamp = sampleBlockResults.Response.Timestamp;
 
             var blockTime = (double) (latestBlockTimestamp - sampleBlockTimestamp) / sampleSize;
-            var networkHashrate = (double) (latestBlockDifficulty / blockTime);
+            var networkHashrate = latestBlockDifficulty / blockTime;
 
             BlockchainStats.NetworkHashrate = blockTime > 0 ? networkHashrate : 0;
             BlockchainStats.ConnectedPeers = peerCount;
@@ -584,7 +589,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
 
         var triggers = new List<IObservable<(string Via, string Data)>>
         {
-            blockSubmission.Select(x => (JobRefreshBy.BlockFound, (string) null))
+            blockSubmission.Select(_ => (JobRefreshBy.BlockFound, (string) null))
         };
 
         var endpointExtra = daemonEndpoints
@@ -621,7 +626,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
                 .Select(x => JsonConvert.DeserializeObject<JsonRpcResponse<string>>(Encoding.UTF8.GetString(x)))
                 .ToTask(ct);
 
-            if(subcriptionResponse.Error != null)
+            if(subcriptionResponse!.Error != null)
             {
                 // older versions of geth only support subscriptions to "newBlocks"
                 if(!isRetry && subcriptionResponse.Error.Code == (int) BitcoinRPCErrorCode.RPC_METHOD_NOT_FOUND)

@@ -169,7 +169,7 @@ public class ShareRepository : IShareRepository
 
     public async Task<MinerWorkerHashes[]> GetAccumulatedShareDifficultyTotalAsync(IDbConnection con, string poolId)
     {
-        logger.LogInvoke(new object[] { (object) poolId });
+        logger.LogInvoke(new object[] { poolId });
 
         const string query = "SELECT SUM(difficulty) AS sum, COUNT(difficulty) AS count, miner, worker FROM shares WHERE poolid = @poolid group by miner, worker";
 
