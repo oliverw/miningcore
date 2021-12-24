@@ -349,7 +349,7 @@ public class Program : BackgroundService
             logger.Info($"This is cluster node {clusterConfig.InstanceId.Value}{(!string.IsNullOrEmpty(clusterConfig.ClusterName) ? $" [{clusterConfig.ClusterName}]" : string.Empty)}");
 
         var coinTemplates = LoadCoinTemplates();
-        logger.Info($"{coinTemplates.Keys.Count} coins loaded from {string.Join(", ", clusterConfig.CoinTemplates)}");
+        logger.Info($"{coinTemplates.Keys.Count} coins loaded from '{string.Join(", ", clusterConfig.CoinTemplates)}'");
 
         await Task.WhenAll(clusterConfig.Pools
             .Where(config => config.Enabled)
@@ -590,8 +590,8 @@ public class Program : BackgroundService
  ██║╚██╔╝██║██║██║╚██╗██║██║██║╚██╗██║██║   ██║██║     ██║   ██║██╔══██╗██╔══╝
  ██║ ╚═╝ ██║██║██║ ╚████║██║██║ ╚████║╚██████╔╝╚██████╗╚██████╔╝██║  ██║███████╗
 ");
-        Console.WriteLine(" https://github.com/coinfoundry/miningcore\n");
-        Console.WriteLine(" Please contribute to the development of the project by donating:\n");
+        Console.WriteLine(" https://github.com/oliverw/miningcore\n");
+        Console.WriteLine(" Donate to one of these addresses to support the project:\n");
         Console.WriteLine(" BTC  - 17QnVor1B6oK1rWnVVBrdX9gFzVkZZbhDm");
         Console.WriteLine(" LTC  - LTK6CWastkmBzGxgQhTTtCUjkjDA14kxzC");
         Console.WriteLine(" DASH - XqpBAV9QCaoLnz42uF5frSSfrJTrqHoxjp");

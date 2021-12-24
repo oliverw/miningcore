@@ -12,7 +12,6 @@ using Miningcore.Messaging;
 using Miningcore.Mining;
 using Miningcore.Notifications.Messages;
 using Miningcore.Time;
-using Miningcore.Util;
 using NBitcoin;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -109,9 +108,8 @@ public abstract class BitcoinJobManagerBase<TJob> : JobManagerBase<TJob>
                     .Publish()
                     .RefCount();
 
-                pollTimerRestart = Observable.Merge(
-                        blockFound,
-                        blockNotify.Select(_ => Unit.Default))
+                pollTimerRestart = blockFound
+                    .Merge(blockNotify.Select(_ => Unit.Default))
                     .Publish()
                     .RefCount();
 
@@ -206,6 +204,7 @@ public abstract class BitcoinJobManagerBase<TJob> : JobManagerBase<TJob>
         if(info != null)
         {
             var blockCount = info.Response?.Blocks;
+            var totalBlocks = info.Response?.Headers;
 
             if(blockCount.HasValue)
             {
@@ -213,12 +212,8 @@ public abstract class BitcoinJobManagerBase<TJob> : JobManagerBase<TJob>
                 var peerInfo = await rpc.ExecuteAsync<PeerInfo[]>(logger, BitcoinCommands.GetPeerInfo, ct);
                 var peers = peerInfo.Response;
 
-                if(peers is {Length: > 0})
-                {
-                    var totalBlocks = peers.Max(x => x.StartingHeight);
-                    var percent = totalBlocks > 0 ? (double) blockCount / totalBlocks * 100 : 0;
-                    logger.Info(() => $"Daemons have downloaded {percent:0.00}% of blockchain from {peers.Length} peers");
-                }
+                var percent = totalBlocks > 0 ? (double) blockCount / totalBlocks * 100 : 0;
+                logger.Info(() => $"Daemon has downloaded {percent:0.00}% of blockchain from {peers.Length} peers");
             }
         }
     }
@@ -330,7 +325,7 @@ public abstract class BitcoinJobManagerBase<TJob> : JobManagerBase<TJob>
                 {
                     var totalBlocks = peers.Max(x => x.StartingHeight);
                     var percent = totalBlocks > 0 ? (double) blockCount / totalBlocks * 100 : 0;
-                    logger.Info(() => $"Daemons have downloaded {percent:0.00}% of blockchain from {peers.Length} peers");
+                    logger.Info(() => $"Daemon has downloaded {percent:0.00}% of blockchain from {peers.Length} peers");
                 }
             }
         }
@@ -416,7 +411,7 @@ public abstract class BitcoinJobManagerBase<TJob> : JobManagerBase<TJob>
 
             if(!syncPendingNotificationShown)
             {
-                logger.Info(() => "Daemons still syncing with network. Manager will be started once synced");
+                logger.Info(() => "Daemon is still syncing with network. Manager will be started once synced.");
                 syncPendingNotificationShown = true;
             }
 

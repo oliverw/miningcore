@@ -175,7 +175,7 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
             var totalBlocks = info.TargetHeight;
             var percent = (double) lowestHeight / totalBlocks * 100;
 
-            logger.Info(() => $"Daemons have downloaded {percent:0.00}% of blockchain from {info.OutgoingConnectionsCount} peers");
+            logger.Info(() => $"Daemon has downloaded {percent:0.00}% of blockchain from {info.OutgoingConnectionsCount} peers");
         }
     }
 
@@ -489,7 +489,7 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
 
             if(!syncPendingNotificationShown)
             {
-                logger.Info(() => "Daemons still syncing with network. Manager will be started once synced");
+                logger.Info(() => "Daemon is still syncing with network. Manager will be started once synced.");
                 syncPendingNotificationShown = true;
             }
 

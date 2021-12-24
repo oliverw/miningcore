@@ -215,7 +215,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
                     var warpChunkProcessed = syncState.WarpChunksProcessed!.Value;
                     var percent = (double) warpChunkProcessed / warpChunkAmount * 100;
 
-                    logger.Info(() => $"Daemons have downloaded {percent:0.00}% of warp-chunks from {peerCount} peers");
+                    logger.Info(() => $"Daemon has downloaded {percent:0.00}% of warp-chunks from {peerCount} peers");
                 }
 
                 else if(syncState?.HighestBlock.HasValue == true && syncState.CurrentBlock.HasValue)
@@ -230,11 +230,11 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
                         var pulledStates = syncState.PulledStates!.Value;
                         var statesPercent = (double) pulledStates / knownStates * 100;
 
-                        logger.Info(() => $"Daemons have downloaded {blocksPercent:0.00}% of blocks and {statesPercent:0.00}% of states from {peerCount} peers");
+                        logger.Info(() => $"Daemon has downloaded {blocksPercent:0.00}% of blocks and {statesPercent:0.00}% of states from {peerCount} peers");
                     }
 
                     else
-                        logger.Info(() => $"Daemons have downloaded {blocksPercent:0.00}% of blocks from {peerCount} peers");
+                        logger.Info(() => $"Daemon has downloaded {blocksPercent:0.00}% of blocks from {peerCount} peers");
                 }
             }
         }
@@ -502,7 +502,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
 
             if(!syncPendingNotificationShown)
             {
-                logger.Info(() => "Daemons still syncing with network. Manager will be started once synced");
+                logger.Info(() => "Daemon is still syncing with network. Manager will be started once synced.");
                 syncPendingNotificationShown = true;
             }
 

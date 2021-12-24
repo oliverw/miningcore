@@ -446,7 +446,7 @@ public class ErgoJobManager : JobManagerBase<ErgoJob>
 
             if(!syncPendingNotificationShown)
             {
-                logger.Info(() => "Daemon is still syncing with network. Manager will be started once synced");
+                logger.Info(() => "Daemon is still syncing with network. Manager will be started once synced.");
                 syncPendingNotificationShown = true;
             }
 
