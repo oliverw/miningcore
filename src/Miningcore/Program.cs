@@ -129,15 +129,12 @@ public class Program : BackgroundService
             if(clusterConfig.Api == null || clusterConfig.Api.Enabled)
             {
                 var address = clusterConfig.Api?.ListenAddress != null
-                ? (clusterConfig.Api.ListenAddress != "*" ? IPAddress.Parse(clusterConfig.Api.ListenAddress) : IPAddress.Any)
-                : IPAddress.Parse("127.0.0.1");
+                    ? (clusterConfig.Api.ListenAddress != "*" ? IPAddress.Parse(clusterConfig.Api.ListenAddress) : IPAddress.Any)
+                    : IPAddress.Parse("127.0.0.1");
 
                 var port = clusterConfig.Api?.Port ?? 4000;
                 var enableApiRateLimiting = clusterConfig.Api?.RateLimiting?.Disabled != true;
-
-                var apiTlsEnable =
-                clusterConfig.Api?.Tls?.Enabled == true ||
-                !string.IsNullOrEmpty(clusterConfig.Api?.Tls?.TlsPfxFile);
+                var apiTlsEnable = clusterConfig.Api?.Tls?.Enabled == true || !string.IsNullOrEmpty(clusterConfig.Api?.Tls?.TlsPfxFile);
 
                 if(apiTlsEnable)
                 {
@@ -184,13 +181,8 @@ public class Program : BackgroundService
                         });
                         #endif
 
-                        // Gzip Compression
                         services.AddResponseCompression();
-
-                        // Cors
                         services.AddCors();
-
-                        // WebSockets
                         services.AddWebSocketManager();
                     })
                     .UseKestrel(options =>
@@ -234,9 +226,7 @@ public class Program : BackgroundService
                 });
             }
 
-            host = hostBuilder
-                .UseConsoleLifetime()
-                .Build();
+            host = hostBuilder.UseConsoleLifetime().Build();
 
             await PreFlightChecks(host.Services);
 
