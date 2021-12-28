@@ -1568,7 +1568,7 @@
         },
         "blockHasher": {
             "hash": "reverse",
-            "args": [ { "hash": "ghostrider" } ]
+            "args": [ { "hash": "sha256d" } ]
         },
         "hasFounderFee": true,
         "hasMasterNodes": true,

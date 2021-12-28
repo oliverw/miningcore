@@ -452,12 +452,9 @@ public class BitcoinJob
                         var payeeDestination = BitcoinUtils.AddressToDestination(masterNode.Payee, network);
                         var payeeReward = masterNode.Amount;
 
-                        if(coin.Symbol != SymbolRaptoreum)
-                        {
-                            reward -= payeeReward;
-                        }
-
                         tx.Outputs.Add(payeeReward, payeeDestination);
+
+                        reward -= payeeReward;
                     }
                 }
             }
@@ -515,9 +512,10 @@ public class BitcoinJob
                     {
                         var payeeAddress = BitcoinUtils.AddressToDestination(Founder.Payee, network);
                         var payeeReward = Founder.Amount;
-                        reward -= payeeReward;
-                        rewardToPool -= payeeReward;
+
                         tx.Outputs.Add(payeeReward, payeeAddress);
+
+                        reward -= payeeReward;
                     }
                 }
             }
