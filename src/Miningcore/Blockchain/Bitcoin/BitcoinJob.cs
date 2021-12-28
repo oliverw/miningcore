@@ -20,6 +20,7 @@ namespace Miningcore.Blockchain.Bitcoin;
 
 public class BitcoinJob
 {
+    private const string SymbolRaptoreum = "RTM";
     protected IHashAlgorithm blockHasher;
     protected IMasterClock clock;
     protected IHashAlgorithm coinbaseHasher;
@@ -451,7 +452,7 @@ public class BitcoinJob
                         var payeeDestination = BitcoinUtils.AddressToDestination(masterNode.Payee, network);
                         var payeeReward = masterNode.Amount;
 
-                        if(coin.Symbol != "RTM")
+                        if(coin.Symbol != SymbolRaptoreum)
                         {
                             reward -= payeeReward;
                         }
@@ -479,7 +480,7 @@ public class BitcoinJob
             var payeeAddress = BitcoinUtils.AddressToDestination(masterNodeParameters.Payee, network);
             var payeeReward = masterNodeParameters.PayeeAmount;
 
-            if(coin.Symbol != "RTM")
+            if(coin.Symbol != SymbolRaptoreum)
             {
                 reward -= payeeReward;
             }
@@ -576,6 +577,14 @@ public class BitcoinJob
         if(coin.HasMasterNodes)
         {
             masterNodeParameters = BlockTemplate.Extra.SafeExtensionDataAs<MasterNodeBlockTemplateExtra>();
+
+            if(coin.Symbol == SymbolRaptoreum)
+            {
+                if(masterNodeParameters.Extra?.ContainsKey("smartnode") == true)
+                {
+                    masterNodeParameters.Masternode = JToken.FromObject(masterNodeParameters.Extra["smartnode"]);
+                }
+            }
 
             if(!string.IsNullOrEmpty(masterNodeParameters.CoinbasePayload))
             {

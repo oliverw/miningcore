@@ -49,4 +49,7 @@ public class MasterNodeBlockTemplateExtra : PayeeBlockTemplateExtra
 
     [JsonProperty("coinbase_payload")]
     public string CoinbasePayload { get; set; }
+
+    [JsonExtensionData]
+    public IDictionary<string, object> Extra { get; set; }
 }

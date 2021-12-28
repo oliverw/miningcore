@@ -15,6 +15,7 @@ using Miningcore.Time;
 using NBitcoin;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Linq;
 using static Miningcore.Util.ActionUtils;
 
 namespace Miningcore.Blockchain.Bitcoin;
@@ -204,13 +205,14 @@ public abstract class BitcoinJobManagerBase<TJob> : JobManagerBase<TJob>
         if(info != null)
         {
             var blockCount = info.Response?.Blocks;
-            var totalBlocks = info.Response?.Headers;
 
             if(blockCount.HasValue)
             {
                 // get list of peers and their highest block height to compare to ours
                 var peerInfo = await rpc.ExecuteAsync<PeerInfo[]>(logger, BitcoinCommands.GetPeerInfo, ct);
                 var peers = peerInfo.Response;
+
+                var totalBlocks = Math.Max(info.Response.Headers, peers.Any() ? peers.Max(y => y.StartingHeight) : 0);
 
                 var percent = totalBlocks > 0 ? (double) blockCount / totalBlocks * 100 : 0;
                 logger.Info(() => $"Daemon has downloaded {percent:0.00}% of blockchain from {peers.Length} peers");
