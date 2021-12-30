@@ -1,3 +1,4 @@
+using JetBrains.Annotations;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -10,6 +11,7 @@ public class Masternode
     public long Amount { get; set; }
 }
 
+[UsedImplicitly]
 public class SuperBlock
 {
     public string Payee { get; set; }

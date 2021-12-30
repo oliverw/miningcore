@@ -1,5 +1,8 @@
+using JetBrains.Annotations;
+
 namespace Miningcore.Blockchain.Bitcoin.DaemonResponses;
 
+[UsedImplicitly]
 public class Utxo
 {
     public string TxId { get; set; }
