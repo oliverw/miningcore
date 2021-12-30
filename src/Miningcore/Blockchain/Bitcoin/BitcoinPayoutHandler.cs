@@ -214,18 +214,11 @@ public class BitcoinPayoutHandler : PayoutHandlerBase,
             {
                 args = new object[]
                 {
-                    string.Empty, // default account
-                    amounts, // addresses and associated amounts
-                    1, // only spend funds covered by this many confirmations
-                    comment, // tx comment
-                    subtractFeesFrom, // distribute transaction fee equally over all recipients,
-
-                    // workaround for https://bitcoin.stackexchange.com/questions/102508/bitcoin-cli-sendtoaddress-error-fallbackfee-is-disabled-wait-a-few-blocks-or-en
-                    // using bitcoin regtest
-                    //true,
-                    //null,
-                    //"unset",
-                    //"1"
+                    string.Empty,       // default account
+                    amounts,            // addresses and associated amounts
+                    1,                  // only spend funds covered by this many confirmations
+                    comment,            // tx comment
+                    subtractFeesFrom,   // distribute transaction fee equally over all recipients
                 };
             }
 
@@ -233,14 +226,14 @@ public class BitcoinPayoutHandler : PayoutHandlerBase,
             {
                 args = new object[]
                 {
-                    string.Empty, // default account
-                    amounts, // addresses and associated amounts
-                    1, // only spend funds covered by this many confirmations
-                    false, // Whether to add confirmations to transactions locked via InstantSend
-                    comment, // tx comment
-                    subtractFeesFrom, // distribute transaction fee equally over all recipients
-                    false, // use_is: Send this transaction as InstantSend
-                    false, // Use anonymized funds only
+                    string.Empty,       // default account
+                    amounts,            // addresses and associated amounts
+                    1,                  // only spend funds covered by this many confirmations
+                    false,              // Whether to add confirmations to transactions locked via InstantSend
+                    comment,            // tx comment
+                    subtractFeesFrom,   // distribute transaction fee equally over all recipients
+                    false,              // use_is: Send this transaction as InstantSend
+                    false,              // Use anonymized funds only
                 };
             }
         }

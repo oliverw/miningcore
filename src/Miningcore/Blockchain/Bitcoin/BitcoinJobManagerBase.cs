@@ -242,8 +242,8 @@ public abstract class BitcoinJobManagerBase<TJob> : JobManagerBase<TJob>
             var miningInfoResponse = results[0].Response.ToObject<MiningInfo>();
             var networkInfoResponse = results[1].Response.ToObject<NetworkInfo>();
 
-            BlockchainStats.NetworkHashrate = miningInfoResponse!.NetworkHashps;
-            BlockchainStats.ConnectedPeers = networkInfoResponse!.Connections;
+            BlockchainStats.NetworkHashrate = miningInfoResponse.NetworkHashps;
+            BlockchainStats.ConnectedPeers = networkInfoResponse.Connections;
 
             // Fall back to alternative RPC if coin does not report Network HPS (Digibyte)
             if(BlockchainStats.NetworkHashrate == 0 && results[2].Error == null)
@@ -258,7 +258,7 @@ public abstract class BitcoinJobManagerBase<TJob> : JobManagerBase<TJob>
 
     protected record SubmitResult(bool Accepted, string CoinbaseTx);
 
-    protected virtual async Task<SubmitResult> SubmitBlockAsync(Share share, string blockHex, CancellationToken ct)
+    protected async Task<SubmitResult> SubmitBlockAsync(Share share, string blockHex, CancellationToken ct)
     {
         var submitBlockRequest = hasSubmitBlockMethod
             ? new RpcRequest(BitcoinCommands.SubmitBlock, new[] { blockHex })
@@ -299,21 +299,21 @@ public abstract class BitcoinJobManagerBase<TJob> : JobManagerBase<TJob>
         return new SubmitResult(accepted, block?.Transactions.FirstOrDefault());
     }
 
-    protected virtual async Task<bool> AreDaemonsHealthyLegacyAsync(CancellationToken ct)
+    protected async Task<bool> AreDaemonsHealthyLegacyAsync(CancellationToken ct)
     {
         var response = await rpc.ExecuteAsync<DaemonInfo>(logger, BitcoinCommands.GetInfo, ct);
 
         return response.Error == null;
     }
 
-    protected virtual async Task<bool> AreDaemonsConnectedLegacyAsync(CancellationToken ct)
+    protected async Task<bool> AreDaemonsConnectedLegacyAsync(CancellationToken ct)
     {
         var response = await rpc.ExecuteAsync<DaemonInfo>(logger, BitcoinCommands.GetInfo, ct);
 
         return response.Error == null && response.Response.Connections > 0;
     }
 
-    protected virtual async Task ShowDaemonSyncProgressLegacyAsync(CancellationToken ct)
+    protected async Task ShowDaemonSyncProgressLegacyAsync(CancellationToken ct)
     {
         var info = await rpc.ExecuteAsync<DaemonInfo>(logger, BitcoinCommands.GetInfo, ct);
 
@@ -464,9 +464,9 @@ public abstract class BitcoinJobManagerBase<TJob> : JobManagerBase<TJob>
 
         // chain detection
         if(!hasLegacyDaemon)
-            network = Network.GetNetwork(blockchainInfoResponse!.Chain.ToLower());
+            network = Network.GetNetwork(blockchainInfoResponse.Chain.ToLower());
         else
-            network = daemonInfoResponse!.Testnet ? Network.TestNet : Network.Main;
+            network = daemonInfoResponse.Testnet ? Network.TestNet : Network.Main;
 
         PostChainIdentifyConfigure();
 
@@ -474,7 +474,7 @@ public abstract class BitcoinJobManagerBase<TJob> : JobManagerBase<TJob>
         if(validateAddressResponse is not {IsValid: true})
             throw new PoolStartupException($"Daemon reports pool-address '{poolConfig.Address}' as invalid");
 
-        isPoS = poolConfig.Template is BitcoinTemplate {IsPseudoPoS: true} || difficultyResponse!.Values().Any(x => x.Path == "proof-of-stake");
+        isPoS = poolConfig.Template is BitcoinTemplate {IsPseudoPoS: true} || difficultyResponse.Values().Any(x => x.Path == "proof-of-stake");
 
         // Create pool address script from response
         if(!isPoS)
@@ -543,7 +543,7 @@ public abstract class BitcoinJobManagerBase<TJob> : JobManagerBase<TJob>
         }
     }
 
-    protected virtual void SetupCrypto()
+    protected void SetupCrypto()
     {
 
     }

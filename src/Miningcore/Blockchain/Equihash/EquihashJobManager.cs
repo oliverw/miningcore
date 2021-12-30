@@ -270,7 +270,7 @@ public class EquihashJobManager : BitcoinJobManagerBase<EquihashJob>
         {
             logger.Info(() => $"Submitting block {share.BlockHeight} [{share.BlockHash}]");
 
-            var acceptResponse = await SubmitBlockAsync(share, blockHex);
+            var acceptResponse = await SubmitBlockAsync(share, blockHex, ct);
 
             // is it still a block candidate?
             share.IsBlockCandidate = acceptResponse.Accepted;

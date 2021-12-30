@@ -170,7 +170,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
             if(block == null)
                 return null;
 
-            var currentHeight = block.Height!.Value;
+            var currentHeight = block.Height.Value;
             work = work.Concat(new[] { (currentHeight + 1).ToStringHexWithPrefix() }).ToArray();
         }
 
@@ -212,7 +212,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
                 if(syncState?.WarpChunksAmount.HasValue == true)
                 {
                     var warpChunkAmount = syncState.WarpChunksAmount.Value;
-                    var warpChunkProcessed = syncState.WarpChunksProcessed!.Value;
+                    var warpChunkProcessed = syncState.WarpChunksProcessed.Value;
                     var percent = (double) warpChunkProcessed / warpChunkAmount * 100;
 
                     logger.Info(() => $"Daemon has downloaded {percent:0.00}% of warp-chunks from {peerCount} peers");
@@ -227,7 +227,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
                     if(syncState.KnownStates.HasValue)
                     {
                         var knownStates = syncState.KnownStates.Value;
-                        var pulledStates = syncState.PulledStates!.Value;
+                        var pulledStates = syncState.PulledStates.Value;
                         var statesPercent = (double) pulledStates / knownStates * 100;
 
                         logger.Info(() => $"Daemon has downloaded {blocksPercent:0.00}% of blocks and {statesPercent:0.00}% of states from {peerCount} peers");
@@ -267,7 +267,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
             var peerCount = responses[0].Response.ToObject<string>().IntegralFromHex<int>();
             var blockInfo = responses[1].Response.ToObject<Block>();
 
-            var latestBlockHeight = blockInfo!.Height!.Value;
+            var latestBlockHeight = blockInfo!.Height.Value;
             var latestBlockTimestamp = blockInfo.Timestamp;
             var latestBlockDifficulty = blockInfo.Difficulty.IntegralFromHex<ulong>();
 
@@ -626,7 +626,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
                 .Select(x => JsonConvert.DeserializeObject<JsonRpcResponse<string>>(Encoding.UTF8.GetString(x)))
                 .ToTask(ct);
 
-            if(subcriptionResponse!.Error != null)
+            if(subcriptionResponse.Error != null)
             {
                 // older versions of geth only support subscriptions to "newBlocks"
                 if(!isRetry && subcriptionResponse.Error.Code == (int) BitcoinRPCErrorCode.RPC_METHOD_NOT_FOUND)
