@@ -206,7 +206,7 @@ public class BitcoinJobManager : BitcoinJobManagerBase<BitcoinJob>
     }
 
     public virtual async ValueTask<Share> SubmitShareAsync(StratumConnection worker, object submission,
-        double stratumDifficultyBase, CancellationToken ct)
+        CancellationToken ct)
     {
         Contract.RequiresNonNull(worker, nameof(worker));
         Contract.RequiresNonNull(submission, nameof(submission));
@@ -256,7 +256,7 @@ public class BitcoinJobManager : BitcoinJobManagerBase<BitcoinJob>
         {
             logger.Info(() => $"Submitting block {share.BlockHeight} [{share.BlockHash}]");
 
-            var acceptResponse = await SubmitBlockAsync(share, blockHex);
+            var acceptResponse = await SubmitBlockAsync(share, blockHex, ct);
 
             // is it still a block candidate?
             share.IsBlockCandidate = acceptResponse.Accepted;

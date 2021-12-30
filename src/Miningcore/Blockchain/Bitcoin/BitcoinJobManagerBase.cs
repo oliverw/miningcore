@@ -258,14 +258,19 @@ public abstract class BitcoinJobManagerBase<TJob> : JobManagerBase<TJob>
 
     protected record SubmitResult(bool Accepted, string CoinbaseTx);
 
-    protected virtual async Task<SubmitResult> SubmitBlockAsync(Share share, string blockHex)
+    protected virtual async Task<SubmitResult> SubmitBlockAsync(Share share, string blockHex, CancellationToken ct)
     {
-        // execute command batch
-        var results = await rpc.ExecuteBatchAsync(logger, CancellationToken.None,
-            hasSubmitBlockMethod
-                ? new RpcRequest(BitcoinCommands.SubmitBlock, new[] { blockHex })
-                : new RpcRequest(BitcoinCommands.GetBlockTemplate, new { mode = "submit", data = blockHex }),
-            new RpcRequest(BitcoinCommands.GetBlock, new[] { share.BlockHash }));
+        var submitBlockRequest = hasSubmitBlockMethod
+            ? new RpcRequest(BitcoinCommands.SubmitBlock, new[] { blockHex })
+            : new RpcRequest(BitcoinCommands.GetBlockTemplate, new { mode = "submit", data = blockHex });
+
+        var batch = new []
+        {
+            submitBlockRequest,
+            new RpcRequest(BitcoinCommands.GetBlock, new[] { share.BlockHash })
+        };
+
+        var results = await rpc.ExecuteBatchAsync(logger, ct, batch);
 
         // did submission succeed?
         var submitResult = results[0];
