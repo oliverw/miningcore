@@ -113,7 +113,7 @@ public class BitcoinJobManager : BitcoinJobManagerBase<BitcoinJob>
             {
                 job = CreateJob();
 
-                job.Init(ctx, blockTemplate, NextJobId(),
+                job.Init(blockTemplate, NextJobId(),
                     poolConfig, extraPoolConfig, clusterConfig, clock, poolAddressDestination, network, isPoS,
                     ShareMultiplier, coin.CoinbaseHasherValue, coin.HeaderHasherValue,
                     !isPoS ? coin.BlockHasherValue : coin.PoSBlockHasherValue ?? coin.BlockHasherValue);

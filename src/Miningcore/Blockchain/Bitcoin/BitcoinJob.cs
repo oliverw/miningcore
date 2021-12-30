@@ -1,7 +1,6 @@
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Text;
-using Autofac;
 using Miningcore.Blockchain.Bitcoin.Configuration;
 using Miningcore.Blockchain.Bitcoin.DaemonResponses;
 using Miningcore.Configuration;
@@ -514,10 +513,11 @@ public class BitcoinJob
                 }
             }
         }
+
         return reward;
     }
 
-    #endregion
+    #endregion // Founder
 
     #region API-Surface
 
@@ -526,42 +526,42 @@ public class BitcoinJob
 
     public string JobId { get; protected set; }
 
-    public void Init(IComponentContext ctx, BlockTemplate blockTemplate, string jobId,
-        PoolConfig _poolConfig, BitcoinPoolConfigExtra extraPoolConfig,
-        ClusterConfig _clusterConfig, IMasterClock _clock,
-        IDestination _poolAddressDestination, Network _network,
-        bool _isPoS, double _shareMultiplier, IHashAlgorithm _coinbaseHasher,
-        IHashAlgorithm _headerHasher, IHashAlgorithm _blockHasher)
+    public void Init(BlockTemplate blockTemplate, string jobId,
+        PoolConfig pc, BitcoinPoolConfigExtra extraPoolConfig,
+        ClusterConfig cc, IMasterClock clock,
+        IDestination poolAddressDestination, Network network,
+        bool isPoS, double shareMultiplier, IHashAlgorithm coinbaseHasher,
+        IHashAlgorithm headerHasher, IHashAlgorithm blockHasher)
     {
         Contract.RequiresNonNull(blockTemplate, nameof(blockTemplate));
-        Contract.RequiresNonNull(_poolConfig, nameof(_poolConfig));
-        Contract.RequiresNonNull(_clusterConfig, nameof(_clusterConfig));
-        Contract.RequiresNonNull(_clock, nameof(_clock));
-        Contract.RequiresNonNull(_poolAddressDestination, nameof(_poolAddressDestination));
-        Contract.RequiresNonNull(_coinbaseHasher, nameof(_coinbaseHasher));
-        Contract.RequiresNonNull(_headerHasher, nameof(_headerHasher));
-        Contract.RequiresNonNull(_blockHasher, nameof(_blockHasher));
+        Contract.RequiresNonNull(pc, nameof(pc));
+        Contract.RequiresNonNull(cc, nameof(cc));
+        Contract.RequiresNonNull(clock, nameof(clock));
+        Contract.RequiresNonNull(poolAddressDestination, nameof(poolAddressDestination));
+        Contract.RequiresNonNull(coinbaseHasher, nameof(coinbaseHasher));
+        Contract.RequiresNonNull(headerHasher, nameof(headerHasher));
+        Contract.RequiresNonNull(blockHasher, nameof(blockHasher));
         Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(jobId), $"{nameof(jobId)} must not be empty");
 
-        coin = _poolConfig.Template.As<BitcoinTemplate>();
-        networkParams = coin.GetNetwork(_network.ChainName);
+        coin = pc.Template.As<BitcoinTemplate>();
+        networkParams = coin.GetNetwork(network.ChainName);
         txVersion = coin.CoinbaseTxVersion;
-        network = _network;
-        clock = _clock;
-        poolAddressDestination = _poolAddressDestination;
+        this.network = network;
+        this.clock = clock;
+        this.poolAddressDestination = poolAddressDestination;
         BlockTemplate = blockTemplate;
         JobId = jobId;
 
-        var coinbaseString = !string.IsNullOrEmpty(_clusterConfig.PaymentProcessing?.CoinbaseString) ?
-            _clusterConfig.PaymentProcessing?.CoinbaseString.Trim() : "Miningcore";
+        var coinbaseString = !string.IsNullOrEmpty(cc.PaymentProcessing?.CoinbaseString) ?
+            cc.PaymentProcessing?.CoinbaseString.Trim() : "Miningcore";
 
         scriptSigFinalBytes = new Script(Op.GetPushOp(Encoding.UTF8.GetBytes(coinbaseString))).ToBytes();
 
         Difficulty = new Target(System.Numerics.BigInteger.Parse(BlockTemplate.Target, NumberStyles.HexNumber)).Difficulty;
 
         extraNoncePlaceHolderLength = BitcoinConstants.ExtranoncePlaceHolderLength;
-        isPoS = _isPoS;
-        shareMultiplier = _shareMultiplier;
+        this.isPoS = isPoS;
+        this.shareMultiplier = shareMultiplier;
 
         txComment = !string.IsNullOrEmpty(extraPoolConfig?.CoinbaseTxComment) ?
             extraPoolConfig.CoinbaseTxComment : coin.CoinbaseTxComment;
@@ -581,8 +581,8 @@ public class BitcoinJob
             if(!string.IsNullOrEmpty(masterNodeParameters.CoinbasePayload))
             {
                 txVersion = 3;
-                var txType = 5;
-                txVersion += ((uint) (txType << 16));
+                const uint txType = 5;
+                txVersion += txType << 16;
             }
         }
 
@@ -592,9 +592,9 @@ public class BitcoinJob
         if (coin.HasFounderFee)
             founderParameters = BlockTemplate.Extra.SafeExtensionDataAs<FounderBlockTemplateExtra>();
 
-        coinbaseHasher = _coinbaseHasher;
-        headerHasher = _headerHasher;
-        blockHasher = _blockHasher;
+        this.coinbaseHasher = coinbaseHasher;
+        this.headerHasher = headerHasher;
+        this.blockHasher = blockHasher;
 
         if(!string.IsNullOrEmpty(BlockTemplate.Target))
             blockTargetValue = new uint256(BlockTemplate.Target);
