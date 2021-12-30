@@ -15,7 +15,6 @@ using Miningcore.Time;
 using NBitcoin;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System.Linq;
 using static Miningcore.Util.ActionUtils;
 
 namespace Miningcore.Blockchain.Bitcoin;
@@ -73,7 +72,7 @@ public abstract class BitcoinJobManagerBase<TJob> : JobManagerBase<TJob>
 
         var triggers = new List<IObservable<(bool Force, string Via, string Data)>>
         {
-            blockFound.Select(x => (false, JobRefreshBy.BlockFound, (string) null))
+            blockFound.Select(_ => (false, JobRefreshBy.BlockFound, (string) null))
         };
 
         if(extraPoolConfig?.BtStream == null)
@@ -243,8 +242,8 @@ public abstract class BitcoinJobManagerBase<TJob> : JobManagerBase<TJob>
             var miningInfoResponse = results[0].Response.ToObject<MiningInfo>();
             var networkInfoResponse = results[1].Response.ToObject<NetworkInfo>();
 
-            BlockchainStats.NetworkHashrate = miningInfoResponse.NetworkHashps;
-            BlockchainStats.ConnectedPeers = networkInfoResponse.Connections;
+            BlockchainStats.NetworkHashrate = miningInfoResponse!.NetworkHashps;
+            BlockchainStats.ConnectedPeers = networkInfoResponse!.Connections;
 
             // Fall back to alternative RPC if coin does not report Network HPS (Digibyte)
             if(BlockchainStats.NetworkHashrate == 0 && results[2].Error == null)
@@ -354,7 +353,7 @@ public abstract class BitcoinJobManagerBase<TJob> : JobManagerBase<TJob>
             var connectionCountResponse = results[0].Response.ToObject<object>();
 
             //BlockchainStats.NetworkHashrate = miningInfoResponse.NetworkHashps;
-            BlockchainStats.ConnectedPeers = (int) (long) connectionCountResponse;
+            BlockchainStats.ConnectedPeers = (int) (long) connectionCountResponse!;
         }
 
         catch(Exception e)
@@ -460,9 +459,9 @@ public abstract class BitcoinJobManagerBase<TJob> : JobManagerBase<TJob>
 
         // chain detection
         if(!hasLegacyDaemon)
-            network = Network.GetNetwork(blockchainInfoResponse.Chain.ToLower());
+            network = Network.GetNetwork(blockchainInfoResponse!.Chain.ToLower());
         else
-            network = daemonInfoResponse.Testnet ? Network.TestNet : Network.Main;
+            network = daemonInfoResponse!.Testnet ? Network.TestNet : Network.Main;
 
         PostChainIdentifyConfigure();
 
@@ -470,7 +469,7 @@ public abstract class BitcoinJobManagerBase<TJob> : JobManagerBase<TJob>
         if(validateAddressResponse is not {IsValid: true})
             throw new PoolStartupException($"Daemon reports pool-address '{poolConfig.Address}' as invalid");
 
-        isPoS = poolConfig.Template is BitcoinTemplate {IsPseudoPoS: true} || difficultyResponse.Values().Any(x => x.Path == "proof-of-stake");
+        isPoS = poolConfig.Template is BitcoinTemplate {IsPseudoPoS: true} || difficultyResponse!.Values().Any(x => x.Path == "proof-of-stake");
 
         // Create pool address script from response
         if(!isPoS)
