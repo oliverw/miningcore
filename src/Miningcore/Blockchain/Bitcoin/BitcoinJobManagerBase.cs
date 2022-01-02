@@ -513,8 +513,8 @@ public abstract class BitcoinJobManagerBase<TJob> : JobManagerBase<TJob>
 
         // Periodically update network stats
         Observable.Interval(TimeSpan.FromMinutes(10))
-            .Select(via => Observable.FromAsync(() =>
-                Guard(()=> (!hasLegacyDaemon ? UpdateNetworkStatsAsync(ct) : UpdateNetworkStatsLegacyAsync(ct)),
+            .Select(_ => Observable.FromAsync(() =>
+                Guard(()=> !hasLegacyDaemon ? UpdateNetworkStatsAsync(ct) : UpdateNetworkStatsLegacyAsync(ct),
                     ex => logger.Error(ex))))
             .Concat()
             .Subscribe();
