@@ -3,6 +3,8 @@ using Miningcore.Native;
 
 namespace Miningcore.Crypto.Hashing.Algorithms;
 
+[Identifier("blake")]
+
 public unsafe class Blake : IHashAlgorithm
 {
     public void Digest(ReadOnlySpan<byte> data, Span<byte> result, params object[] extra)
@@ -13,7 +15,7 @@ public unsafe class Blake : IHashAlgorithm
         {
             fixed (byte* output = result)
             {
-                LibMultihash.blake(input, output, (uint) data.Length);
+                Multihash.blake(input, output, (uint) data.Length);
             }
         }
     }

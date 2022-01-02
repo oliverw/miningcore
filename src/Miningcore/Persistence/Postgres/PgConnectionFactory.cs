@@ -12,10 +12,6 @@ public class PgConnectionFactory : IConnectionFactory
 
     private readonly string connectionString;
 
-    /// <summary>
-    /// This implementation ensures that Glimpse.ADO is able to collect data
-    /// </summary>
-    /// <returns></returns>
     public async Task<IDbConnection> OpenConnectionAsync()
     {
         var con = new NpgsqlConnection(connectionString);

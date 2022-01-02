@@ -3,6 +3,7 @@ using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
 using Autofac;
 using AutoMapper;
+using JetBrains.Annotations;
 using Miningcore.Configuration;
 using Miningcore.JsonRpc;
 using Miningcore.Messaging;
@@ -19,6 +20,7 @@ using static Miningcore.Util.ActionUtils;
 namespace Miningcore.Blockchain.Ethereum;
 
 [CoinFamily(CoinFamily.Ethereum)]
+[UsedImplicitly]
 public class EthereumPool : PoolBase
 {
     public EthereumPool(IComponentContext ctx,
@@ -33,9 +35,10 @@ public class EthereumPool : PoolBase
     {
     }
 
-    private object currentJobParams;
     private EthereumJobManager manager;
     private EthereumCoinTemplate coin;
+
+    #region // Protcol V2 handlers
 
     private async Task OnSubscribeAsync(StratumConnection connection, Timestamped<JsonRpcRequest> tsRequest)
     {
@@ -53,22 +56,22 @@ public class EthereumPool : PoolBase
         manager.PrepareWorker(connection);
 
         var data = new object[]
+        {
+            new object[]
             {
-                new object[]
-                {
-                    EthereumStratumMethods.MiningNotify,
-                    connection.ConnectionId,
-                    EthereumConstants.EthereumStratumVersion
-                },
-                context.ExtraNonce1
-            }
-            .ToArray();
+                EthereumStratumMethods.MiningNotify,
+                connection.ConnectionId,
+                EthereumConstants.EthereumStratumVersion
+            },
+            context.ExtraNonce1
+        }
+        .ToArray();
 
         await connection.RespondAsync(data, request.Id);
 
         // setup worker context
         context.IsSubscribed = true;
-        context.UserAgent = requestParams[0].Trim();
+        context.UserAgent = requestParams.FirstOrDefault()?.Trim();
     }
 
     private async Task OnAuthorizeAsync(StratumConnection connection, Timestamped<JsonRpcRequest> tsRequest)
@@ -89,7 +92,6 @@ public class EthereumPool : PoolBase
         var minerName = workerParts?.Length > 0 ? workerParts[0].Trim() : null;
         var workerName = workerParts?.Length > 1 ? workerParts[1].Trim() : "0";
 
-        // assumes that workerName is an address
         context.IsAuthorized = manager.ValidateAddress(minerName);
 
         // respond
@@ -97,14 +99,14 @@ public class EthereumPool : PoolBase
 
         if(context.IsAuthorized)
         {
-            context.Miner = minerName.ToLower();
+            context.Miner = minerName?.ToLower();
             context.Worker = workerName;
 
             // extract control vars from password
             var staticDiff = GetStaticDiffFromPassparts(passParts);
 
             // Nicehash support
-            var nicehashDiff = await GetNicehashStaticMinDiff(connection, context.UserAgent, coin.Name, coin.GetAlgorithmName());
+            var nicehashDiff = await GetNicehashStaticMinDiff(context, coin.Name, coin.GetAlgorithmName());
 
             if(nicehashDiff.HasValue)
             {
@@ -130,7 +132,8 @@ public class EthereumPool : PoolBase
                 logger.Info(() => $"[{connection.ConnectionId}] Setting static difficulty of {staticDiff.Value}");
             }
 
-            await EnsureInitialWorkSent(connection);
+            await connection.NotifyAsync(EthereumStratumMethods.SetDifficulty, new object[] { context.Difficulty });
+            await connection.NotifyAsync(EthereumStratumMethods.MiningNotify, manager.GetJobParamsForStratum());
 
             logger.Info(() => $"[{connection.ConnectionId}] Authorized worker {workerValue}");
         }
@@ -145,7 +148,7 @@ public class EthereumPool : PoolBase
         }
     }
 
-    private async Task OnSubmitAsync(StratumConnection connection, Timestamped<JsonRpcRequest> tsRequest, CancellationToken ct)
+    private async Task OnSubmitAsync(StratumConnection connection, Timestamped<JsonRpcRequest> tsRequest, CancellationToken ct, bool v1 = false)
     {
         var request = tsRequest.Value;
         var context = connection.ContextAs<EthereumWorkerContext>();
@@ -180,9 +183,9 @@ public class EthereumPool : PoolBase
             // recognize activity
             context.LastActivity = clock.Now;
 
-            var poolEndpoint = poolConfig.Ports[connection.LocalEndpoint.Port];
-
-            var share = await manager.SubmitShareAsync(connection, submitRequest, ct);
+            var share = v1 ?
+                await manager.SubmitShareV1Async(connection, submitRequest, ct) :
+                await manager.SubmitShareV2Async(connection, submitRequest, ct);
 
             await connection.RespondAsync(true, request.Id);
 
@@ -193,7 +196,6 @@ public class EthereumPool : PoolBase
             PublishTelemetry(TelemetryCategory.Share, clock.Now - tsRequest.Timestamp.UtcDateTime, true);
 
             logger.Info(() => $"[{connection.ConnectionId}] Share accepted: D={Math.Round(share.Difficulty / EthereumConstants.Pow2x32, 3)}");
-            await EnsureInitialWorkSent(connection);
 
             // update pool stats
             if(share.IsBlockCandidate)
@@ -220,60 +222,125 @@ public class EthereumPool : PoolBase
         }
     }
 
-    private async Task EnsureInitialWorkSent(StratumConnection connection)
+    private async Task SendJob(EthereumWorkerContext context, StratumConnection connection, object parameters)
     {
-        var context = connection.ContextAs<EthereumWorkerContext>();
-        var sendInitialWork = false;
-
-        lock(context)
-        {
-            if(context.IsSubscribed && context.IsAuthorized && !context.IsInitialWorkSent)
-            {
-                context.IsInitialWorkSent = true;
-                sendInitialWork = true;
-            }
-        }
-
-        if(sendInitialWork)
-        {
-            // send intial update
+        // varDiff: if the client has a pending difficulty change, apply it now
+        if(context.ApplyPendingDifficulty())
             await connection.NotifyAsync(EthereumStratumMethods.SetDifficulty, new object[] { context.Difficulty });
-            await connection.NotifyAsync(EthereumStratumMethods.MiningNotify, currentJobParams);
+
+        // send job
+        await connection.NotifyAsync(EthereumStratumMethods.MiningNotify, parameters);
+    }
+
+    #endregion // Protcol V2 handlers
+
+    #region // Protcol V1 handlers
+
+    private async Task OnSubmitLoginAsync(StratumConnection connection, Timestamped<JsonRpcRequest> tsRequest)
+    {
+        var request = tsRequest.Value;
+        var context = connection.ContextAs<EthereumWorkerContext>();
+
+        if(request.Id == null)
+            throw new StratumException(StratumError.Other, "missing request id");
+
+        var requestParams = request.ParamsAs<string[]>();
+
+        if(requestParams?.Length < 1)
+            throw new StratumException(StratumError.MinusOne, "invalid request");
+
+        var workerValue = requestParams?.Length > 0 ? requestParams[0] : "0";
+        var password = requestParams?.Length > 1 ? requestParams[1] : null;
+        var passParts = password?.Split(PasswordControlVarsSeparator);
+
+        // extract worker/miner
+        var workerParts = workerValue?.Split('.');
+        var minerName = workerParts?.Length > 0 ? workerParts[0].Trim() : null;
+        var workerName = workerParts?.Length > 1 ? workerParts[1].Trim() : "0";
+
+        manager.PrepareWorker(connection);
+
+        context.IsAuthorized = manager.ValidateAddress(minerName);
+
+        // respond
+        await connection.RespondAsync(context.IsAuthorized, request.Id);
+
+        if(context.IsAuthorized)
+        {
+            context.Miner = minerName?.ToLower();
+            context.Worker = workerName;
+
+            // extract control vars from password
+            var staticDiff = GetStaticDiffFromPassparts(passParts);
+
+            // Nicehash support
+            var nicehashDiff = await GetNicehashStaticMinDiff(context, coin.Name, coin.GetAlgorithmName());
+
+            if(nicehashDiff.HasValue)
+            {
+                if(!staticDiff.HasValue || nicehashDiff > staticDiff)
+                {
+                    logger.Info(() => $"[{connection.ConnectionId}] Nicehash detected. Using API supplied difficulty of {nicehashDiff.Value}");
+
+                    staticDiff = nicehashDiff;
+                }
+
+                else
+                    logger.Info(() => $"[{connection.ConnectionId}] Nicehash detected. Using miner supplied difficulty of {staticDiff.Value}");
+            }
+
+            // Static diff
+            if(staticDiff.HasValue &&
+               (context.VarDiff != null && staticDiff.Value >= context.VarDiff.Config.MinDiff ||
+                   context.VarDiff == null && staticDiff.Value > context.Difficulty))
+            {
+                context.VarDiff = null; // disable vardiff
+                context.SetDifficulty(staticDiff.Value);
+
+                logger.Info(() => $"[{connection.ConnectionId}] Setting static difficulty of {staticDiff.Value}");
+            }
+
+            logger.Info(() => $"[{connection.ConnectionId}] Authorized worker {workerValue}");
+
+            // setup worker context
+            context.IsSubscribed = true;
+        }
+
+        else
+        {
+            logger.Info(() => $"[{connection.ConnectionId}] Banning unauthorized worker {minerName} for {loginFailureBanTimeout.TotalSeconds} sec");
+
+            banManager.Ban(connection.RemoteEndpoint.Address, loginFailureBanTimeout);
+
+            CloseConnection(connection);
         }
     }
 
-    protected virtual Task OnNewJobAsync(object jobParams)
+    private async Task OnGetWorkAsync(StratumConnection connection, Timestamped<JsonRpcRequest> tsRequest)
     {
-        currentJobParams = jobParams;
+        var request = tsRequest.Value;
+        var context = connection.ContextAs<EthereumWorkerContext>();
 
-        logger.Info(() => "Broadcasting job");
-
-        return Guard(()=> Task.WhenAll(ForEachConnection(async connection =>
-        {
-            if(!connection.IsAlive)
-                return;
-
-            var context = connection.ContextAs<EthereumWorkerContext>();
-
-            if(!context.IsSubscribed || !context.IsAuthorized || CloseIfDead(connection, context))
-                return;
-
-            // varDiff: if the client has a pending difficulty change, apply it now
-            if(context.ApplyPendingDifficulty())
-                await connection.NotifyAsync(EthereumStratumMethods.SetDifficulty, new object[] { context.Difficulty });
-
-            // send job
-            await connection.NotifyAsync(EthereumStratumMethods.MiningNotify, currentJobParams);
-        })), ex=> logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}"));
+        await SendWork(context, connection, request.Id);
     }
+
+    private async Task SendWork(EthereumWorkerContext context, StratumConnection connection, object requestId)
+    {
+        var parameters = manager.GetWorkParamsForStratum(context);
+
+        // respond
+        await connection.RespondAsync(parameters, requestId);
+    }
+
+    #endregion // Protcol V1 handlers
 
     #region Overrides
 
-    public override void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
+    public override void Configure(PoolConfig pc, ClusterConfig cc)
     {
-        coin = poolConfig.Template.As<EthereumCoinTemplate>();
+        coin = pc.Template.As<EthereumCoinTemplate>();
 
-        base.Configure(poolConfig, clusterConfig);
+        base.Configure(pc, cc);
     }
 
     protected override async Task SetupJobManager(CancellationToken ct)
@@ -288,8 +355,8 @@ public class EthereumPool : PoolBase
         if(poolConfig.EnableInternalStratum == true)
         {
             disposables.Add(manager.Jobs
-                .Select(job => Observable.FromAsync(() =>
-                    Guard(()=> OnNewJobAsync(job),
+                .Select(_ => Observable.FromAsync(() =>
+                    Guard(OnNewJobAsync,
                         ex=> logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}"))))
                 .Concat()
                 .Subscribe(_ => { }, ex =>
@@ -320,43 +387,111 @@ public class EthereumPool : PoolBase
         return new EthereumWorkerContext();
     }
 
-    protected override async Task OnRequestAsync(StratumConnection client,
+    protected virtual Task OnNewJobAsync()
+    {
+        var currentJobParams = manager.GetJobParamsForStratum();
+
+        logger.Info(() => "Broadcasting job");
+
+        return Guard(()=> Task.WhenAll(ForEachConnection(async connection =>
+        {
+            if(!connection.IsAlive)
+                return;
+
+            var context = connection.ContextAs<EthereumWorkerContext>();
+
+            if(!context.IsSubscribed || !context.IsAuthorized || CloseIfDead(connection, context))
+                return;
+
+            switch(context.ProtocolVersion)
+            {
+                case 1:
+                    await SendWork(context, connection, null);
+                    break;
+
+                case 2:
+                    await SendJob(context, connection, currentJobParams);
+                    break;
+            }
+        })), ex=> logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}"));
+    }
+
+    protected void EnsureProtocolVersion(EthereumWorkerContext context, int version)
+    {
+        if(context.ProtocolVersion != version)
+            throw new StratumException(StratumError.MinusOne, $"protocol mismatch");
+    }
+
+    protected override async Task OnRequestAsync(StratumConnection connection,
         Timestamped<JsonRpcRequest> tsRequest, CancellationToken ct)
     {
         var request = tsRequest.Value;
+        var context = connection.ContextAs<EthereumWorkerContext>();
 
         try
         {
             switch(request.Method)
             {
+                // V2/Nicehash Stratum Methods
                 case EthereumStratumMethods.Subscribe:
-                    await OnSubscribeAsync(client, tsRequest);
+                    context.ProtocolVersion = 2;    // lock in protocol version
+
+                    await OnSubscribeAsync(connection, tsRequest);
                     break;
 
                 case EthereumStratumMethods.Authorize:
-                    await OnAuthorizeAsync(client, tsRequest);
+                    EnsureProtocolVersion(context, 2);
+
+                    await OnAuthorizeAsync(connection, tsRequest);
                     break;
 
                 case EthereumStratumMethods.SubmitShare:
-                    await OnSubmitAsync(client, tsRequest, ct);
+                    EnsureProtocolVersion(context, 2);
+
+                    await OnSubmitAsync(connection, tsRequest, ct);
                     break;
 
                 case EthereumStratumMethods.ExtraNonceSubscribe:
+                    EnsureProtocolVersion(context, 2);
+
                     // Pretend to support it even though we actually do not. Some miners drop the connection upon receiving an error from this
-                    await client.RespondAsync(true, request.Id);
+                    await connection.RespondAsync(true, request.Id);
+                    break;
+
+                // V1 Stratum methods
+                case EthereumStratumMethods.SubmitLogin:
+                    context.ProtocolVersion = 1;    // lock in protocol version
+
+                    await OnSubmitLoginAsync(connection, tsRequest);
+                    break;
+
+                case EthereumStratumMethods.GetWork:
+                    EnsureProtocolVersion(context, 1);
+
+                    await OnGetWorkAsync(connection, tsRequest);
+                    break;
+
+                case EthereumStratumMethods.SubmitWork:
+                    EnsureProtocolVersion(context, 1);
+
+                    await OnSubmitAsync(connection, tsRequest, ct, true);
+                    break;
+
+                case EthereumStratumMethods.SubmitHashrate:
+                    // just ignore this
                     break;
 
                 default:
-                    logger.Info(() => $"[{client.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
+                    logger.Info(() => $"[{connection.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
 
-                    await client.RespondErrorAsync(StratumError.Other, $"Unsupported request {request.Method}", request.Id);
+                    await connection.RespondErrorAsync(StratumError.Other, $"Unsupported request {request.Method}", request.Id);
                     break;
             }
         }
 
         catch(StratumException ex)
         {
-            await client.RespondErrorAsync(ex.Code, ex.Message, request.Id, false);
+            await connection.RespondErrorAsync(ex.Code, ex.Message, request.Id, false);
         }
     }
 
@@ -368,20 +503,27 @@ public class EthereumPool : PoolBase
 
     public override double ShareMultiplier => 1;
 
-    protected override async Task OnVarDiffUpdateAsync(StratumConnection client, double newDiff)
+    protected override async Task OnVarDiffUpdateAsync(StratumConnection connection, double newDiff)
     {
-        await base.OnVarDiffUpdateAsync(client, newDiff);
+        await base.OnVarDiffUpdateAsync(connection, newDiff);
 
         // apply immediately and notify client
-        var context = client.ContextAs<EthereumWorkerContext>();
+        var context = connection.ContextAs<EthereumWorkerContext>();
 
         if(context.HasPendingDifficulty)
         {
             context.ApplyPendingDifficulty();
 
-            // send job
-            await client.NotifyAsync(EthereumStratumMethods.SetDifficulty, new object[] { context.Difficulty });
-            await client.NotifyAsync(EthereumStratumMethods.MiningNotify, currentJobParams);
+            switch(context.ProtocolVersion)
+            {
+                case 1:
+                    await SendWork(context, connection, null);
+                    break;
+
+                case 2:
+                    await SendJob(context, connection, manager.GetJobParamsForStratum());
+                    break;
+            }
         }
     }
 

@@ -1,9 +1,13 @@
 using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using System.Runtime.Serialization;
 using AspNetCoreRateLimit;
+using JetBrains.Annotations;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
+// ReSharper disable UnusedAutoPropertyAccessor.Global
+// ReSharper disable PropertyCanBeMadeInitOnly.Global
 
 // ReSharper disable InconsistentNaming
 
@@ -50,6 +54,12 @@ public abstract partial class CoinTemplate
     public string Symbol { get; set; }
 
     /// <summary>
+    /// Website
+    /// </summary>
+    [JsonProperty(Order = -9)]
+    public string Website { get; set; }
+
+    /// <summary>
     /// Family
     /// </summary>
     [JsonConverter(typeof(StringEnumConverter), true)]
@@ -82,6 +92,24 @@ public abstract partial class CoinTemplate
     public string ExplorerAccountLink { get; set; }
 
     /// <summary>
+    /// Twitter Link
+    /// </summary>
+    [JsonProperty(Order = -9)]
+    public string Twitter { get; set; }
+
+    /// <summary>
+    /// Discord Link
+    /// </summary>
+    [JsonProperty(Order = -9)]
+    public string Discord { get; set; }
+
+    /// <summary>
+    /// Telegram Group Link
+    /// </summary>
+    [JsonProperty(Order = -9)]
+    public string Telegram { get; set; }
+
+    /// <summary>
     /// Arbitrary extension data
     /// </summary>
     [JsonExtensionData]
@@ -112,7 +140,7 @@ public enum BitcoinSubfamily
 
 public partial class BitcoinTemplate : CoinTemplate
 {
-    public partial class BitcoinNetworkParams
+    public class BitcoinNetworkParams
     {
         /// <summary>
         /// Arbitrary extension data
@@ -148,6 +176,9 @@ public partial class BitcoinTemplate : CoinTemplate
     [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
     public bool HasMasterNodes { get; set; }
 
+    [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+    public bool HasFounderFee { get; set; }
+
     [JsonProperty(DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
     [DefaultValue(1.0d)]
     public double ShareMultiplier { get; set; } = 1.0d;
@@ -166,6 +197,9 @@ public partial class BitcoinTemplate : CoinTemplate
 
     [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
     public int? CoinbaseMinConfimations { get; set; }
+
+    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+    public string BlockSerializer { get; set; }
 }
 
 public enum EquihashSubfamily
@@ -357,6 +391,7 @@ public enum PayoutScheme
     PPBS = 5,
 }
 
+[UsedImplicitly]
 public partial class ClusterLoggingConfig
 {
     public string Level { get; set; }
@@ -409,11 +444,13 @@ public class DaemonEndpointConfig : AuthenticatedNetworkEndpointConfig
     public IDictionary<string, object> Extra { get; set; }
 }
 
+[UsedImplicitly]
 public class DatabaseConfig : AuthenticatedNetworkEndpointConfig
 {
     public string Database { get; set; }
 }
 
+[UsedImplicitly]
 public class TcpProxyProtocolConfig
 {
     /// <summary>
@@ -432,6 +469,7 @@ public class TcpProxyProtocolConfig
     public string[] ProxyAddresses { get; set; }
 }
 
+[UsedImplicitly]
 public class PoolEndpoint
 {
     public string ListenAddress { get; set; }
@@ -448,6 +486,12 @@ public class PoolEndpoint
     public bool Tls { get; set; }
 
     /// <summary>
+    /// Enable TLS sniffing
+    /// Check incoming stratum connections for TLS handshake indicator and default to non-TLS if not present
+    /// </summary>
+    public bool TlsAuto { get; set; }
+
+    /// <summary>
     /// PKCS certificate file
     /// </summary>
     public string TlsPfxFile { get; set; }
@@ -458,6 +502,7 @@ public class PoolEndpoint
     public string TlsPfxPassword { get; set; }
 }
 
+[UsedImplicitly]
 public partial class VarDiffConfig
 {
     /// <summary>
@@ -497,6 +542,7 @@ public enum BanManagerKind
     IpTables
 }
 
+[UsedImplicitly]
 public class ClusterBanningConfig
 {
     public BanManagerKind? Manager { get; set; }
@@ -512,6 +558,7 @@ public class ClusterBanningConfig
     public bool? BanOnInvalidShares { get; set; }
 }
 
+[UsedImplicitly]
 public partial class PoolShareBasedBanningConfig
 {
     public bool Enabled { get; set; }
@@ -520,6 +567,7 @@ public partial class PoolShareBasedBanningConfig
     public int Time { get; set; } // How many seconds to ban worker for
 }
 
+[UsedImplicitly]
 public partial class PoolPaymentProcessingConfig
 {
     public bool Enabled { get; set; }
@@ -534,6 +582,7 @@ public partial class PoolPaymentProcessingConfig
     public IDictionary<string, object> Extra { get; set; }
 }
 
+[UsedImplicitly]
 public partial class ClusterPaymentProcessingConfig
 {
     public bool Enabled { get; set; }
@@ -545,6 +594,7 @@ public partial class ClusterPaymentProcessingConfig
     public string CoinbaseString  { get; set; }
 }
 
+[UsedImplicitly]
 public partial class PersistenceConfig
 {
     public DatabaseConfig Postgres { get; set; }
@@ -561,19 +611,22 @@ public class RewardRecipient
     public string Type { get; set; }
 }
 
+[UsedImplicitly]
 public partial class EmailSenderConfig : AuthenticatedNetworkEndpointConfig
 {
     public string FromAddress { get; set; }
     public string FromName { get; set; }
 }
 
-public partial class PushoverConfig
+[UsedImplicitly]
+public class PushoverConfig
 {
     public bool Enabled { get; set; }
     public string User { get; set; }
     public string Token { get; set; }
 }
 
+[UsedImplicitly]
 public partial class AdminNotifications
 {
     public bool Enabled { get; set; }
@@ -582,6 +635,7 @@ public partial class AdminNotifications
     public bool NotifyPaymentSuccess { get; set; }
 }
 
+[UsedImplicitly]
 public partial class NotificationsConfig
 {
     public bool Enabled { get; set; }
@@ -591,7 +645,8 @@ public partial class NotificationsConfig
     public AdminNotifications Admin { get; set; }
 }
 
-public partial class ApiRateLimitConfig
+[UsedImplicitly]
+public class ApiRateLimitConfig
 {
     public bool Disabled { get; set; }
 
@@ -599,6 +654,7 @@ public partial class ApiRateLimitConfig
     public string[] IpWhitelist { get; set; }
 }
 
+[UsedImplicitly]
 public class ApiTlsConfig
 {
     public bool Enabled { get; set; }
@@ -607,6 +663,7 @@ public class ApiTlsConfig
 }
 
 
+[UsedImplicitly]
 public partial class ApiConfig
 {
     public bool Enabled { get; set; }
@@ -640,7 +697,8 @@ public partial class ApiConfig
     public string[] MetricsIpWhitelist { get; set; }
 }
 
-public partial class ZmqPubSubEndpointConfig
+[UsedImplicitly]
+public class ZmqPubSubEndpointConfig
 {
     public string Url { get; set; }
     public string Topic { get; set; }
@@ -649,7 +707,8 @@ public partial class ZmqPubSubEndpointConfig
     public string SharedEncryptionKey { get; set; }
 }
 
-public partial class ShareRelayEndpointConfig
+[UsedImplicitly]
+public class ShareRelayEndpointConfig
 {
     public string Url { get; set; }
 
@@ -659,7 +718,8 @@ public partial class ShareRelayEndpointConfig
     public string SharedEncryptionKey { get; set; }
 }
 
-public partial class ShareRelayConfig
+[UsedImplicitly]
+public class ShareRelayConfig
 {
     public string PublishUrl { get; set; }
 
@@ -672,7 +732,8 @@ public partial class ShareRelayConfig
     public string SharedEncryptionKey { get; set; }
 }
 
-public partial class Statistics
+[UsedImplicitly]
+public class Statistics
 {
     /// <summary>
     /// Statistics update interval in seconds
@@ -695,6 +756,7 @@ public partial class Statistics
     public int? CleanupDays { get; set; }
 
 }
+[UsedImplicitly]
 public class NicehashClusterConfig
 {
     /// <summary>
@@ -703,26 +765,29 @@ public class NicehashClusterConfig
     public bool EnableAutoDiff { get; set; }
 }
 
+[UsedImplicitly]
 public partial class PoolConfig
 {
     /// <summary>
     /// unique id
     /// </summary>
+    [Required]
     public string Id { get; set; }
 
     /// <summary>
     /// Coin template reference
     /// </summary>
+    [Required]
     public string Coin { get; set; }
 
-    /// <summary>
-    /// Display name
-    /// </summary>
-    public string PoolName { get; set; }
-
     public bool Enabled { get; set; }
+
+    [Required]
     public Dictionary<int, PoolEndpoint> Ports { get; set; }
+
+    [Required]
     public DaemonEndpointConfig[] Daemons { get; set; }
+
     public PoolPaymentProcessingConfig PaymentProcessing { get; set; }
     public PoolShareBasedBanningConfig Banning { get; set; }
     public RewardRecipient[] RewardRecipients { get; set; }
@@ -744,6 +809,7 @@ public partial class PoolConfig
     public IDictionary<string, object> Extra { get; set; }
 }
 
+[UsedImplicitly]
 public partial class ClusterConfig
 {
     /// <summary>
@@ -784,7 +850,13 @@ public partial class ClusterConfig
     /// </summary>
     public int? EquihashMaxThreads { get; set; }
 
+    /// <summary>
+    /// Cryptonight maximum parallelism
+    /// </summary>
+    public int? CryptonightMaxThreads { get; set; }
+
     public string ShareRecoveryFile { get; set; }
 
+    [Required]
     public PoolConfig[] Pools { get; set; }
 }

@@ -4,6 +4,7 @@ using System.Text;
 using Miningcore.Blockchain.Ergo.Configuration;
 using Miningcore.Configuration;
 using Miningcore.Extensions;
+using Miningcore.Mining;
 using Miningcore.Util;
 using NLog;
 
@@ -18,7 +19,7 @@ public static class ErgoClientFactory
 
         if(logger != null && clusterConfig.PaymentProcessing?.Enabled == true &&
            poolConfig.PaymentProcessing?.Enabled == true && string.IsNullOrEmpty(extra?.ApiKey))
-            logger.ThrowLogPoolStartupException("Ergo daemon apiKey not provided");
+            throw new PoolStartupException("Ergo daemon apiKey not provided");
 
         var baseUrl = new UriBuilder(epConfig.Ssl || epConfig.Http2 ? Uri.UriSchemeHttps : Uri.UriSchemeHttp,
             epConfig.Host, epConfig.Port, epConfig.HttpPath);
@@ -36,9 +37,7 @@ public static class ErgoClientFactory
         if(!string.IsNullOrEmpty(epConfig.User))
         {
             var auth = $"{epConfig.User}:{epConfig.Password}";
-            var base64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(auth));
-
-            result.RequestHeaders["Authorization"] = new AuthenticationHeaderValue("Basic", base64).ToString();
+            result.RequestHeaders["Authorization"] = new AuthenticationHeaderValue("Basic", auth.ToByteArrayBase64()).ToString();
         }
 #if DEBUG
         result.ReadResponseAsString = true;

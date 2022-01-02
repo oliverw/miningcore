@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using Autofac;
-using Miningcore.Crypto.Hashing.Algorithms;
 using Newtonsoft.Json.Linq;
 
 namespace Miningcore.Crypto;
@@ -11,39 +10,41 @@ public static class HashAlgorithmFactory
 
     public static IHashAlgorithm GetHash(IComponentContext ctx, JObject definition)
     {
-        var hash = definition["hash"]?.Value<string>().ToLower();
+        if(definition == null)
+            return null;
+
+        var hash = definition["hash"]?.Value<string>()?.ToLower();
 
         if(string.IsNullOrEmpty(hash))
             throw new NotSupportedException("$Invalid or empty hash value {hash}");
 
-        var args = definition["args"]?
+        var parameters = definition["args"]?
             .Select(token => token.Type == JTokenType.Object ? GetHash(ctx, (JObject) token) : token.Value<object>())
             .ToArray();
 
-        return InstantiateHash(ctx, hash, args);
+        return InstantiateHash(ctx, hash, parameters);
     }
 
-    private static IHashAlgorithm InstantiateHash(IComponentContext ctx, string name, object[] args)
+    private static IHashAlgorithm InstantiateHash(IComponentContext ctx, string name, object[] parameters)
     {
-        // special handling for DigestReverser
-        if(name == "reverse")
-            name = nameof(DigestReverser);
+        var isParameterized = parameters is { Length: > 0 };
 
-        // check cache if possible
-        var hasArgs = args != null && args.Length > 0;
-        if(!hasArgs && cache.TryGetValue(name, out var result))
+        // check cache
+        if(!isParameterized && cache.TryGetValue(name, out var result))
             return result;
 
-        var hashClass = (typeof(Sha256D).Namespace + "." + name).ToLower();
-        var hashType = typeof(Sha256D).Assembly.GetType(hashClass, true, true);
+        if(!isParameterized)
+        {
+            result = ctx.ResolveNamed<IHashAlgorithm>(name);
 
-        // create it (we'll let Autofac do the heavy lifting)
-        if(hasArgs)
-            result = (IHashAlgorithm) ctx.Resolve(hashType, args.Select((x, i) => new PositionalParameter(i, x)));
+            cache.TryAdd(name, result);
+        }
+
         else
         {
-            result = (IHashAlgorithm) ctx.Resolve(hashType);
-            cache.TryAdd(name, result);
+            var positionalParameters = parameters.Select((x, i) => new PositionalParameter(i, x));
+
+            result = ctx.ResolveNamed<IHashAlgorithm>(name, positionalParameters);
         }
 
         return result;

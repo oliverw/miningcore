@@ -3,6 +3,7 @@ using Miningcore.Native;
 
 namespace Miningcore.Crypto.Hashing.Algorithms;
 
+[Identifier("x21s")]
 public unsafe class X21S : IHashAlgorithm
 {
     public void Digest(ReadOnlySpan<byte> data, Span<byte> result, params object[] extra)
@@ -13,7 +14,7 @@ public unsafe class X21S : IHashAlgorithm
         {
             fixed (byte* output = result)
             {
-                LibMultihash.x21s(input, output, (uint) data.Length);
+                Multihash.x21s(input, output, (uint) data.Length);
             }
         }
     }

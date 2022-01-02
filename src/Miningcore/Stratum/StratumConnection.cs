@@ -42,11 +42,6 @@ public class StratumConnection
         IsAlive = true;
     }
 
-    public StratumConnection()
-    {
-        // For unit testing only
-    }
-
     private readonly ILogger logger;
     private readonly IMasterClock clock;
 
@@ -94,7 +89,13 @@ public class StratumConnection
 
             using(var disposables = new CompositeDisposable(networkStream))
             {
-                if(endpoint.PoolEndpoint.Tls)
+                var tls = endpoint.PoolEndpoint.Tls;
+
+                // auto-detect SSL
+                if(endpoint.PoolEndpoint.TlsAuto)
+                    tls = await DetectSslHandshake(socket, cts.Token);
+
+                if(tls)
                 {
                     var sslStream = new SslStream(networkStream, false);
                     disposables.Add(sslStream);
@@ -292,6 +293,39 @@ public class StratumConnection
         }
     }
 
+    private async Task<bool> DetectSslHandshake(Socket socket, CancellationToken ct)
+    {
+        // https://tls.ulfheim.net/
+        // https://tls13.ulfheim.net/
+
+        const int BufSize = 1;
+        var buf = ArrayPool<byte>.Shared.Rent(BufSize);
+
+        try
+        {
+            var cb = await socket.ReceiveAsync(buf.AsMemory()[..BufSize], SocketFlags.Peek, ct);
+
+            if(cb == 0)
+                return false;   // End of stream
+
+            if(cb < BufSize)
+                throw new Exception($"Failed to peek at connection's first {BufSize} byte(s)");
+
+            switch(buf[0])
+            {
+                case 0x16: // TLS 1.0 - 1.3
+                    return true;
+            }
+        }
+
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(buf);
+        }
+
+        return false;
+    }
+
     private async Task ProcessSendQueueAsync(CancellationToken ct)
     {
         while(!ct.IsCancellationRequested)
@@ -396,7 +430,7 @@ public class StratumConnection
             return true;
         }
 
-        else if(proxyProtocol.Mandatory)
+        if(proxyProtocol.Mandatory)
         {
             throw new InvalidDataException($"[{ConnectionId}] Missing mandatory Proxy-Protocol header from {peerAddress}. Closing connection.");
         }

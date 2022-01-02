@@ -160,9 +160,9 @@ public class ShareRecorder : BackgroundService
         writer.WriteLine("# miningcore -c <path-to-config> -rs <path-to-this-file>\n");
     }
 
-    public async Task RecoverSharesAsync(ClusterConfig clusterConfig, string recoveryFilename)
+    public async Task RecoverSharesAsync(string filename)
     {
-        logger.Info(() => $"Recovering shares using {recoveryFilename} ...");
+        logger.Info(() => $"Recovering shares using {filename} ...");
 
         try
         {
@@ -170,7 +170,7 @@ public class ShareRecorder : BackgroundService
             var failCount = 0;
             const int bufferSize = 100;
 
-            await using(var stream = new FileStream(recoveryFilename, FileMode.Open, FileAccess.Read))
+            await using(var stream = new FileStream(filename, FileMode.Open, FileAccess.Read))
             {
                 using(var reader = new StreamReader(stream, new UTF8Encoding(false)))
                 {
@@ -179,9 +179,14 @@ public class ShareRecorder : BackgroundService
 
                     while(!reader.EndOfStream)
                     {
-                        var line = reader.ReadLine().Trim();
+                        var line = await reader.ReadLineAsync();
+
+                        if(string.IsNullOrEmpty(line))
+                            continue;
 
                         // skip blank lines
+                        line = line.Trim();
+
                         if(line.Length == 0)
                             continue;
 
@@ -222,6 +227,7 @@ public class ShareRecorder : BackgroundService
 
                         // progress
                         var now = DateTime.UtcNow;
+
                         if(now - lastProgressUpdate > TimeSpan.FromSeconds(10))
                         {
                             logger.Info($"{successCount} shares imported");
@@ -256,7 +262,7 @@ public class ShareRecorder : BackgroundService
 
         catch(FileNotFoundException)
         {
-            logger.Error(() => $"Recovery file {recoveryFilename} was not found");
+            logger.Error(() => $"Recovery file {filename} was not found");
         }
     }
 

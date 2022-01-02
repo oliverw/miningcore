@@ -3,6 +3,7 @@ using Miningcore.Native;
 
 namespace Miningcore.Crypto.Hashing.Algorithms;
 
+[Identifier("skein")]
 public unsafe class Skein : IHashAlgorithm
 {
     public void Digest(ReadOnlySpan<byte> data, Span<byte> result, params object[] extra)
@@ -13,7 +14,7 @@ public unsafe class Skein : IHashAlgorithm
         {
             fixed (byte* output = result)
             {
-                LibMultihash.skein(input, output, (uint) data.Length);
+                Multihash.skein(input, output, (uint) data.Length);
             }
         }
     }

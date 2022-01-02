@@ -52,20 +52,20 @@ public class BitcoinPayoutHandler : PayoutHandlerBase,
 
     #region IPayoutHandler
 
-    public virtual Task ConfigureAsync(ClusterConfig clusterConfig, PoolConfig poolConfig, CancellationToken ct)
+    public virtual Task ConfigureAsync(ClusterConfig cc, PoolConfig pc, CancellationToken ct)
     {
-        Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
+        Contract.RequiresNonNull(pc, nameof(pc));
 
-        this.poolConfig = poolConfig;
-        this.clusterConfig = clusterConfig;
+        poolConfig = pc;
+        clusterConfig = cc;
 
-        extraPoolConfig = poolConfig.Extra.SafeExtensionDataAs<BitcoinDaemonEndpointConfigExtra>();
-        extraPoolPaymentProcessingConfig = poolConfig.PaymentProcessing.Extra.SafeExtensionDataAs<BitcoinPoolPaymentProcessingConfigExtra>();
+        extraPoolConfig = pc.Extra.SafeExtensionDataAs<BitcoinDaemonEndpointConfigExtra>();
+        extraPoolPaymentProcessingConfig = pc.PaymentProcessing.Extra.SafeExtensionDataAs<BitcoinPoolPaymentProcessingConfigExtra>();
 
-        logger = LogUtil.GetPoolScopedLogger(typeof(BitcoinPayoutHandler), poolConfig);
+        logger = LogUtil.GetPoolScopedLogger(typeof(BitcoinPayoutHandler), pc);
 
         var jsonSerializerSettings = ctx.Resolve<JsonSerializerSettings>();
-        rpcClient = new RpcClient(poolConfig.Daemons.First(), jsonSerializerSettings, messageBus, poolConfig.Id);
+        rpcClient = new RpcClient(pc.Daemons.First(), jsonSerializerSettings, messageBus, pc.Id);
 
         return Task.FromResult(true);
     }
@@ -214,18 +214,11 @@ public class BitcoinPayoutHandler : PayoutHandlerBase,
             {
                 args = new object[]
                 {
-                    string.Empty, // default account
-                    amounts, // addresses and associated amounts
-                    1, // only spend funds covered by this many confirmations
-                    comment, // tx comment
-                    subtractFeesFrom, // distribute transaction fee equally over all recipients,
-
-                    // workaround for https://bitcoin.stackexchange.com/questions/102508/bitcoin-cli-sendtoaddress-error-fallbackfee-is-disabled-wait-a-few-blocks-or-en
-                    // using bitcoin regtest
-                    //true,
-                    //null,
-                    //"unset",
-                    //"1"
+                    string.Empty,       // default account
+                    amounts,            // addresses and associated amounts
+                    1,                  // only spend funds covered by this many confirmations
+                    comment,            // tx comment
+                    subtractFeesFrom,   // distribute transaction fee equally over all recipients
                 };
             }
 
@@ -233,14 +226,14 @@ public class BitcoinPayoutHandler : PayoutHandlerBase,
             {
                 args = new object[]
                 {
-                    string.Empty, // default account
-                    amounts, // addresses and associated amounts
-                    1, // only spend funds covered by this many confirmations
-                    false, // Whether to add confirmations to transactions locked via InstantSend
-                    comment, // tx comment
-                    subtractFeesFrom, // distribute transaction fee equally over all recipients
-                    false, // use_is: Send this transaction as InstantSend
-                    false, // Use anonymized funds only
+                    string.Empty,       // default account
+                    amounts,            // addresses and associated amounts
+                    1,                  // only spend funds covered by this many confirmations
+                    false,              // Whether to add confirmations to transactions locked via InstantSend
+                    comment,            // tx comment
+                    subtractFeesFrom,   // distribute transaction fee equally over all recipients
+                    false,              // use_is: Send this transaction as InstantSend
+                    false,              // Use anonymized funds only
                 };
             }
         }
@@ -292,7 +285,7 @@ public class BitcoinPayoutHandler : PayoutHandlerBase,
 
                     var unlockResult = await rpcClient.ExecuteAsync<JToken>(logger, BitcoinCommands.WalletPassphrase, ct, new[]
                     {
-                        (object) extraPoolPaymentProcessingConfig.WalletPassword,
+                        extraPoolPaymentProcessingConfig.WalletPassword,
                         (object) 5 // unlock for N seconds
                     });
 

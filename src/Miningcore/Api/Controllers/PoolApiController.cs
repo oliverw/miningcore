@@ -45,7 +45,7 @@ public class PoolApiController : ApiControllerBase
     private readonly IActionDescriptorCollectionProvider adcp;
     private readonly ConcurrentDictionary<string, IMiningPool> pools;
 
-    private static readonly NLog.ILogger logger = LogManager.GetCurrentClassLogger();
+    private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
     #region Actions
 

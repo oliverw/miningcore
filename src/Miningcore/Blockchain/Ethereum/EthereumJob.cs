@@ -50,17 +50,15 @@ public class EthereumJob
     }
 
     public async ValueTask<(Share Share, string FullNonceHex, string HeaderHash, string MixHash)> ProcessShareAsync(
-        StratumConnection worker, string nonce, EthashFull ethash, CancellationToken ct)
+        StratumConnection worker, string fullNonceHex, EthashFull ethash, CancellationToken ct)
     {
         // duplicate nonce?
         lock(workerNonces)
         {
-            RegisterNonce(worker, nonce);
+            RegisterNonce(worker, fullNonceHex);
         }
 
-        // assemble full-nonce
         var context = worker.ContextAs<EthereumWorkerContext>();
-        var fullNonceHex = context.ExtraNonce1 + nonce;
 
         if(!ulong.TryParse(fullNonceHex, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var fullNonce))
             throw new StratumException(StratumError.MinusOne, "bad nonce " + fullNonceHex);
@@ -123,5 +121,30 @@ public class EthereumJob
         }
 
         return (share, null, null, null);
+    }
+
+    public object[] GetJobParamsForStratum()
+    {
+        return new object[]
+        {
+            Id,
+            BlockTemplate.Seed.StripHexPrefix(),
+            BlockTemplate.Header.StripHexPrefix(),
+            true
+        };
+    }
+
+    public object[] GetWorkParamsForStratum(EthereumWorkerContext context)
+    {
+        // https://github.com/edsonayllon/Stratum-Implementation-For-Pantheon
+        var workerTarget = BigInteger.Divide(EthereumConstants.BigMaxValue, new BigInteger(context.Difficulty * EthereumConstants.Pow2x32));
+        var workerTargetString = workerTarget.ToByteArray(false, true).ToHexString(true);
+
+        return new object[]
+        {
+            BlockTemplate.Header,
+            BlockTemplate.Seed,
+            workerTargetString,
+        };
     }
 }

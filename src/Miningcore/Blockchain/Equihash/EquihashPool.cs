@@ -4,6 +4,7 @@ using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
 using Autofac;
 using AutoMapper;
+using JetBrains.Annotations;
 using Miningcore.Blockchain.Bitcoin;
 using Miningcore.Blockchain.Equihash.Configuration;
 using Miningcore.Configuration;
@@ -24,6 +25,7 @@ using static Miningcore.Util.ActionUtils;
 namespace Miningcore.Blockchain.Equihash;
 
 [CoinFamily(CoinFamily.Equihash)]
+[UsedImplicitly]
 public class EquihashPool : PoolBase
 {
     public EquihashPool(IComponentContext ctx,
@@ -44,17 +46,17 @@ public class EquihashPool : PoolBase
     private EquihashPoolConfigExtra extraConfig;
     private EquihashCoinTemplate coin;
 
-    public override void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
+    public override void Configure(PoolConfig pc, ClusterConfig cc)
     {
-        coin = poolConfig.Template.As<EquihashCoinTemplate>();
+        coin = pc.Template.As<EquihashCoinTemplate>();
 
-        base.Configure(poolConfig, clusterConfig);
+        base.Configure(pc, cc);
 
-        extraConfig = poolConfig.Extra.SafeExtensionDataAs<EquihashPoolConfigExtra>();
+        extraConfig = pc.Extra.SafeExtensionDataAs<EquihashPoolConfigExtra>();
 
-        if(poolConfig.Template.As<EquihashCoinTemplate>().UsesZCashAddressFormat &&
+        if(pc.Template.As<EquihashCoinTemplate>().UsesZCashAddressFormat &&
            string.IsNullOrEmpty(extraConfig?.ZAddress))
-            logger.ThrowLogPoolStartupException("Pool z-address is not configured");
+            throw new PoolStartupException("Pool z-address is not configured");
     }
 
     protected override async Task SetupJobManager(CancellationToken ct)
@@ -109,17 +111,17 @@ public class EquihashPool : PoolBase
         var requestParams = request.ParamsAs<string[]>();
 
         var data = new object[]
-            {
-                connection.ConnectionId,
-            }
-            .Concat(manager.GetSubscriberData(connection))
-            .ToArray();
+        {
+            connection.ConnectionId,
+        }
+        .Concat(manager.GetSubscriberData(connection))
+        .ToArray();
 
         await connection.RespondAsync(data, request.Id);
 
         // setup worker context
         context.IsSubscribed = true;
-        context.UserAgent = requestParams?.Length > 0 ? requestParams[0].Trim() : null;
+        context.UserAgent = requestParams.FirstOrDefault()?.Trim();
     }
 
     protected async Task OnAuthorizeAsync(StratumConnection connection, Timestamped<JsonRpcRequest> tsRequest, CancellationToken ct)
@@ -157,7 +159,7 @@ public class EquihashPool : PoolBase
             var staticDiff = GetStaticDiffFromPassparts(passParts);
 
             // Nicehash support
-            var nicehashDiff = await GetNicehashStaticMinDiff(connection, context.UserAgent, coin.Name, coin.GetAlgorithmName());
+            var nicehashDiff = await GetNicehashStaticMinDiff(context, coin.Name, coin.GetAlgorithmName());
 
             if(nicehashDiff.HasValue)
             {

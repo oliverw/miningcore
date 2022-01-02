@@ -228,7 +228,7 @@ public class ErgoJob
             string.Empty,
             string.Empty,
             blockVersion,
-            null,   // to filled out by ErgoPool.SendJob
+            null,   // to be filled out by ErgoPool.SendJob
             string.Empty,
             false
         };

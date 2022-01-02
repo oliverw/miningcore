@@ -51,7 +51,7 @@ public class BtStreamReceiver : BackgroundService
         if(!silent)
         {
             if(subSocket.CurveServerKey != null && subSocket.CurveServerKey.Any(x => x != 0))
-                logger.Info($"Monitoring Bt-Stream source {relay.Url} using Curve public-key {subSocket.CurveServerKey.ToHexString()}");
+                logger.Info($"Monitoring Bt-Stream source {relay.Url} using key {subSocket.CurveServerKey.ToHexString()}");
             else
                 logger.Info($"Monitoring Bt-Stream source {relay.Url}");
         }
@@ -66,10 +66,6 @@ public class BtStreamReceiver : BackgroundService
         var flags = msg[1].ReadUInt32();
         var data = msg[2].Read();
         var sent = DateTimeOffset.FromUnixTimeMilliseconds(msg[3].ReadInt64()).DateTime;
-
-        // TMP FIX
-        if(flags != 0 && ((flags & 1) == 0))
-            flags = BitConverter.ToUInt32(BitConverter.GetBytes(flags).ToNewReverseArray());
 
         // compressed
         if((flags & 1) == 1)

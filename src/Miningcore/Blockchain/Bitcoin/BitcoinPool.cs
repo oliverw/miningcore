@@ -4,6 +4,7 @@ using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
 using Autofac;
 using AutoMapper;
+using JetBrains.Annotations;
 using Miningcore.Configuration;
 using Miningcore.Extensions;
 using Miningcore.JsonRpc;
@@ -23,6 +24,7 @@ using static Miningcore.Util.ActionUtils;
 namespace Miningcore.Blockchain.Bitcoin;
 
 [CoinFamily(CoinFamily.Bitcoin)]
+[UsedImplicitly]
 public class BitcoinPool : PoolBase
 {
     public BitcoinPool(IComponentContext ctx,
@@ -52,21 +54,32 @@ public class BitcoinPool : PoolBase
         var requestParams = request.ParamsAs<string[]>();
 
         var data = new object[]
+        {
+            new object[]
             {
-                new object[]
-                {
-                    new object[] { BitcoinStratumMethods.SetDifficulty, connection.ConnectionId },
-                    new object[] { BitcoinStratumMethods.MiningNotify, connection.ConnectionId }
-                }
+                new object[] { BitcoinStratumMethods.SetDifficulty, connection.ConnectionId },
+                new object[] { BitcoinStratumMethods.MiningNotify, connection.ConnectionId }
             }
-            .Concat(manager.GetSubscriberData(connection))
-            .ToArray();
+        }
+        .Concat(manager.GetSubscriberData(connection))
+        .ToArray();
 
         await connection.RespondAsync(data, request.Id);
 
         // setup worker context
         context.IsSubscribed = true;
-        context.UserAgent = requestParams?.Length > 0 ? requestParams[0].Trim() : null;
+        context.UserAgent = requestParams.FirstOrDefault()?.Trim();
+
+        // Nicehash support
+        var nicehashDiff = await GetNicehashStaticMinDiff(context, coin.Name, coin.GetAlgorithmName());
+
+        if(nicehashDiff.HasValue)
+        {
+            logger.Info(() => $"[{connection.ConnectionId}] Nicehash detected. Using API supplied difficulty of {nicehashDiff.Value}");
+
+            context.VarDiff = null; // disable vardiff
+            context.SetDifficulty(nicehashDiff.Value);
+        }
 
         // send intial update
         await connection.NotifyAsync(BitcoinStratumMethods.SetDifficulty, new object[] { context.Difficulty });
@@ -106,22 +119,6 @@ public class BitcoinPool : PoolBase
 
             // extract control vars from password
             var staticDiff = GetStaticDiffFromPassparts(passParts);
-
-            // Nicehash support
-            var nicehashDiff = await GetNicehashStaticMinDiff(connection, context.UserAgent, coin.Name, coin.GetAlgorithmName());
-
-            if(nicehashDiff.HasValue)
-            {
-                if(!staticDiff.HasValue || nicehashDiff > staticDiff)
-                {
-                    logger.Info(() => $"[{connection.ConnectionId}] Nicehash detected. Using API supplied difficulty of {nicehashDiff.Value}");
-
-                    staticDiff = nicehashDiff;
-                }
-
-                else
-                    logger.Info(() => $"[{connection.ConnectionId}] Nicehash detected. Using miner supplied difficulty of {staticDiff.Value}");
-            }
 
             // Static diff
             if(staticDiff.HasValue &&
@@ -182,7 +179,7 @@ public class BitcoinPool : PoolBase
             var requestParams = request.ParamsAs<string[]>();
             var poolEndpoint = poolConfig.Ports[connection.LocalEndpoint.Port];
 
-            var share = await manager.SubmitShareAsync(connection, requestParams, poolEndpoint.Difficulty, ct);
+            var share = await manager.SubmitShareAsync(connection, requestParams, ct);
 
             await connection.RespondAsync(true, request.Id);
 
@@ -229,7 +226,7 @@ public class BitcoinPool : PoolBase
 
         try
         {
-            var requestedDiff = (double) Convert.ChangeType(request.Params, TypeCode.Double);
+            var requestedDiff = (double) Convert.ChangeType(request.Params, TypeCode.Double)!;
 
             // client may suggest higher-than-base difficulty, but not a lower one
             var poolEndpoint = poolConfig.Ports[connection.LocalEndpoint.Port];
@@ -259,17 +256,20 @@ public class BitcoinPool : PoolBase
         var extensionParams = requestParams[1].ToObject<Dictionary<string, JToken>>();
         var result = new Dictionary<string, object>();
 
-        foreach(var extension in extensions)
+        if(extensions != null)
         {
-            switch(extension)
+            foreach(var extension in extensions)
             {
-                case BitcoinStratumExtensions.VersionRolling:
-                    ConfigureVersionRolling(connection, context, extensionParams, result);
-                    break;
+                switch(extension)
+                {
+                    case BitcoinStratumExtensions.VersionRolling:
+                        ConfigureVersionRolling(connection, context, extensionParams, result);
+                        break;
 
-                case BitcoinStratumExtensions.MinimumDiff:
-                    ConfigureMinimumDiff(connection, context, extensionParams, result);
-                    break;
+                    case BitcoinStratumExtensions.MinimumDiff:
+                        ConfigureMinimumDiff(connection, context, extensionParams, result);
+                        break;
+                }
             }
         }
 
@@ -354,11 +354,11 @@ public class BitcoinPool : PoolBase
 
     #region Overrides
 
-    public override void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
+    public override void Configure(PoolConfig pc, ClusterConfig cc)
     {
-        coin = poolConfig.Template.As<BitcoinTemplate>();
+        coin = pc.Template.As<BitcoinTemplate>();
 
-        base.Configure(poolConfig, clusterConfig);
+        base.Configure(pc, cc);
     }
 
     protected override async Task SetupJobManager(CancellationToken ct)

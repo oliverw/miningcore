@@ -9,6 +9,7 @@ using NLog;
 
 namespace Miningcore.Crypto.Hashing.Algorithms;
 
+[Identifier("verthash")]
 public unsafe class Verthash :
     IHashAlgorithm,
     IHashAlgorithmInit
@@ -26,7 +27,7 @@ public unsafe class Verthash :
         {
             fixed (byte* output = result)
             {
-                LibMultihash.verthash(input, output, data.Length);
+                Multihash.verthash(input, output, data.Length);
             }
         }
 
@@ -44,6 +45,6 @@ public unsafe class Verthash :
 
         logger.Info(()=> $"Loading verthash data file {vertHashDataFile}");
 
-        return LibMultihash.verthash_init(vertHashDataFile, false) == 0;
+        return Multihash.verthash_init(vertHashDataFile, false) == 0;
     }
 }

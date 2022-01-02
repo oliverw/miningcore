@@ -1,5 +1,6 @@
 namespace Miningcore.Crypto.Hashing.Algorithms;
 
+[Identifier("reverse")]
 public class DigestReverser : IHashAlgorithm
 {
     public DigestReverser(IHashAlgorithm upstream)

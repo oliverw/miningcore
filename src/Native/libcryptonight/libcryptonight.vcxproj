@@ -1,0 +1,292 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>15.0</VCProjectVersion>
+    <ProjectGuid>{2DE74E14-BF6D-4046-951B-8EBC8A1BA009}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>netmultihashnative</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>libcryptonight</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.props" />
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <IncludePath>$(SolutionDir)\..\..\..\..\boost_1_62_0;$(IncludePath);$(ProjectDir)</IncludePath>
+    <LibraryPath>$(SolutionDir)\..\..\..\..\boost_1_62_0\lib32-msvc-14.0;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <IncludePath>$(SolutionDir)\..\..\..\..\boost_1_62_0;$(IncludePath);$(ProjectDir)</IncludePath>
+    <LibraryPath>$(SolutionDir)\..\..\..\..\boost_1_62_0\lib64-msvc-14.0;$(ProjectDir)windows\lib\x64;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(SolutionDir)\..\..\..\..\boost_1_62_0;$(IncludePath);$(ProjectDir)</IncludePath>
+    <LibraryPath>$(SolutionDir)\..\..\..\..\boost_1_62_0\lib32-msvc-14.0;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(SolutionDir)\..\..\..\..\boost_1_62_0;$(IncludePath);$(ProjectDir)</IncludePath>
+    <LibraryPath>$(SolutionDir)\..\..\..\..\boost_1_62_0\lib64-msvc-14.0;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;__AES__;CPU_INTEL</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <LanguageStandard>stdcpp14</LanguageStandard>
+      <AdditionalIncludeDirectories>xmrig\3rdparty\argon2\include;xmrig\3rdparty\argon2\lib;xmrig;xmrig-override;(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;__AES__;CPU_INTEL</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <LanguageStandard>stdcpp14</LanguageStandard>
+      <AdditionalIncludeDirectories>xmrig\3rdparty\argon2\include;xmrig\3rdparty\argon2\lib;xmrig;xmrig-override;(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;__AES__;CPU_INTEL</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <LanguageStandard>stdcpp14</LanguageStandard>
+      <AdditionalIncludeDirectories>xmrig\3rdparty\argon2\include;xmrig\3rdparty\argon2\lib;xmrig;xmrig-override;(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;__AES__;CPU_INTEL</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <LanguageStandard>stdcpp14</LanguageStandard>
+      <AdditionalIncludeDirectories>xmrig\3rdparty\argon2\include;xmrig\3rdparty\argon2\lib;xmrig;xmrig-override;(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="c29.h" />
+    <ClInclude Include="targetver.h" />
+    <ClInclude Include="xmrig-override\backend\cpu\Cpu.h" />
+    <ClInclude Include="xmrig-override\backend\cpu\platform\BasicCpuInfo.h" />
+    <ClInclude Include="xmrig-override\crypto\ghostrider\ghostrider.h" />
+    <ClInclude Include="xmrig\3rdparty\argon2\arch\x86_64\lib\argon2-avx2.h" />
+    <ClInclude Include="xmrig\3rdparty\argon2\arch\x86_64\lib\argon2-avx512f.h" />
+    <ClInclude Include="xmrig\3rdparty\argon2\arch\x86_64\lib\argon2-sse2.h" />
+    <ClInclude Include="xmrig\3rdparty\argon2\arch\x86_64\lib\argon2-ssse3.h" />
+    <ClInclude Include="xmrig\3rdparty\argon2\arch\x86_64\lib\argon2-xop.h" />
+    <ClInclude Include="xmrig\3rdparty\argon2\lib\blake2\blake2.h" />
+    <ClInclude Include="xmrig\3rdparty\argon2\lib\core.h" />
+    <ClInclude Include="xmrig\3rdparty\argon2\lib\encoding.h" />
+    <ClInclude Include="xmrig\3rdparty\argon2\lib\genkat.h" />
+    <ClInclude Include="xmrig\3rdparty\argon2\lib\impl-select.h" />
+    <ClInclude Include="xmrig\base\crypto\keccak.h" />
+    <ClInclude Include="xmrig\base\crypto\sha3.h" />
+    <ClInclude Include="xmrig\crypto\cn\CnCtx.h" />
+    <ClInclude Include="xmrig\crypto\cn\CnHash.h" />
+    <ClInclude Include="xmrig\crypto\cn\c_blake256.h" />
+    <ClInclude Include="xmrig\crypto\cn\c_groestl.h" />
+    <ClInclude Include="xmrig\crypto\cn\c_jh.h" />
+    <ClInclude Include="xmrig\crypto\cn\c_skein.h" />
+    <ClInclude Include="xmrig\crypto\common\MemoryPool.h" />
+    <ClInclude Include="xmrig\crypto\common\VirtualMemory.h" />
+    <ClInclude Include="xmrig\crypto\ghostrider\sph_blake.h" />
+    <ClInclude Include="xmrig\crypto\ghostrider\sph_bmw.h" />
+    <ClInclude Include="xmrig\crypto\ghostrider\sph_cubehash.h" />
+    <ClInclude Include="xmrig\crypto\ghostrider\sph_echo.h" />
+    <ClInclude Include="xmrig\crypto\ghostrider\sph_fugue.h" />
+    <ClInclude Include="xmrig\crypto\ghostrider\sph_groestl.h" />
+    <ClInclude Include="xmrig\crypto\ghostrider\sph_hamsi.h" />
+    <ClInclude Include="xmrig\crypto\ghostrider\sph_jh.h" />
+    <ClInclude Include="xmrig\crypto\ghostrider\sph_keccak.h" />
+    <ClInclude Include="xmrig\crypto\ghostrider\sph_luffa.h" />
+    <ClInclude Include="xmrig\crypto\ghostrider\sph_sha2.h" />
+    <ClInclude Include="xmrig\crypto\ghostrider\sph_shabal.h" />
+    <ClInclude Include="xmrig\crypto\ghostrider\sph_shavite.h" />
+    <ClInclude Include="xmrig\crypto\ghostrider\sph_simd.h" />
+    <ClInclude Include="xmrig\crypto\ghostrider\sph_skein.h" />
+    <ClInclude Include="xmrig\crypto\ghostrider\sph_types.h" />
+    <ClInclude Include="xmrig\crypto\ghostrider\sph_whirlpool.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="c29b.cc" />
+    <ClCompile Include="c29i.cc" />
+    <ClCompile Include="c29s.cc" />
+    <ClCompile Include="c29v.cc" />
+    <ClCompile Include="dllmain.cpp" />
+    <ClCompile Include="exports.cpp" />
+    <ClCompile Include="xmrig-override\backend\cpu\Cpu.cpp" />
+    <ClCompile Include="xmrig-override\backend\cpu\platform\BasicCpuInfo.cpp" />
+    <ClCompile Include="xmrig-override\crypto\ghostrider\ghostrider.cpp" />
+    <ClCompile Include="xmrig\3rdparty\argon2\arch\x86_64\lib\argon2-arch.c" />
+    <ClCompile Include="xmrig\3rdparty\argon2\arch\x86_64\lib\argon2-avx2.c" />
+    <ClCompile Include="xmrig\3rdparty\argon2\arch\x86_64\lib\argon2-avx512f.c" />
+    <ClCompile Include="xmrig\3rdparty\argon2\arch\x86_64\lib\argon2-sse2.c" />
+    <ClCompile Include="xmrig\3rdparty\argon2\arch\x86_64\lib\argon2-ssse3.c" />
+    <ClCompile Include="xmrig\3rdparty\argon2\arch\x86_64\lib\argon2-xop.c" />
+    <ClCompile Include="xmrig\3rdparty\argon2\lib\argon2.c" />
+    <ClCompile Include="xmrig\3rdparty\argon2\lib\blake2\blake2.c" />
+    <ClCompile Include="xmrig\3rdparty\argon2\lib\core.c" />
+    <ClCompile Include="xmrig\3rdparty\argon2\lib\encoding.c" />
+    <ClCompile Include="xmrig\3rdparty\argon2\lib\genkat.c" />
+    <ClCompile Include="xmrig\3rdparty\argon2\lib\impl-select.c" />
+    <ClCompile Include="xmrig\base\crypto\keccak.cpp" />
+    <ClCompile Include="xmrig\base\crypto\sha3.cpp" />
+    <ClCompile Include="xmrig\crypto\cn\CnCtx.cpp" />
+    <ClCompile Include="xmrig\crypto\cn\CnHash.cpp" />
+    <ClCompile Include="xmrig\crypto\cn\c_blake256.c" />
+    <ClCompile Include="xmrig\crypto\cn\c_groestl.c" />
+    <ClCompile Include="xmrig\crypto\cn\c_jh.c" />
+    <ClCompile Include="xmrig\crypto\cn\c_skein.c" />
+    <ClCompile Include="xmrig\crypto\cn\gpu\cn_gpu_avx.cpp" />
+    <ClCompile Include="xmrig\crypto\cn\gpu\cn_gpu_ssse3.cpp" />
+    <ClCompile Include="xmrig\crypto\cn\r\CryptonightR_gen.cpp" />
+    <ClCompile Include="xmrig\crypto\common\MemoryPool.cpp" />
+    <ClCompile Include="xmrig\crypto\common\VirtualMemory.cpp" />
+    <ClCompile Include="xmrig\crypto\common\VirtualMemory_win.cpp" />
+    <ClCompile Include="xmrig\crypto\ghostrider\sph_blake.c" />
+    <ClCompile Include="xmrig\crypto\ghostrider\sph_bmw.c" />
+    <ClCompile Include="xmrig\crypto\ghostrider\sph_cubehash.c" />
+    <ClCompile Include="xmrig\crypto\ghostrider\sph_echo.c" />
+    <ClCompile Include="xmrig\crypto\ghostrider\sph_fugue.c" />
+    <ClCompile Include="xmrig\crypto\ghostrider\sph_groestl.c" />
+    <ClCompile Include="xmrig\crypto\ghostrider\sph_hamsi.c" />
+    <ClCompile Include="xmrig\crypto\ghostrider\sph_hamsi_helper.c" />
+    <ClCompile Include="xmrig\crypto\ghostrider\sph_jh.c" />
+    <ClCompile Include="xmrig\crypto\ghostrider\sph_keccak.c" />
+    <ClCompile Include="xmrig\crypto\ghostrider\sph_luffa.c" />
+    <ClCompile Include="xmrig\crypto\ghostrider\sph_sha2.c" />
+    <ClCompile Include="xmrig\crypto\ghostrider\sph_shabal.c" />
+    <ClCompile Include="xmrig\crypto\ghostrider\sph_shavite.c" />
+    <ClCompile Include="xmrig\crypto\ghostrider\sph_simd.c" />
+    <ClCompile Include="xmrig\crypto\ghostrider\sph_skein.c" />
+    <ClCompile Include="xmrig\crypto\ghostrider\sph_whirlpool.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Makefile" />
+    <MASM Include="xmrig\crypto\cn\asm\cn_main_loop.asm">
+      <FileType>Document</FileType>
+    </MASM>
+    <MASM Include="xmrig\crypto\cn\asm\CryptonightR_template.asm">
+      <FileType>Document</FileType>
+    </MASM>
+    <MASM Include="xmrig\crypto\cn\asm\win64\cn_main_loop.asm">
+      <FileType>Document</FileType>
+    </MASM>
+    <MASM Include="xmrig\crypto\cn\asm\win64\CryptonightR_template.asm">
+      <FileType>Document</FileType>
+    </MASM>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.targets" />
+  </ImportGroup>
+</Project>

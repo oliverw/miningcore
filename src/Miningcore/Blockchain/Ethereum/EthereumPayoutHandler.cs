@@ -58,19 +58,19 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
 
     #region IPayoutHandler
 
-    public async Task ConfigureAsync(ClusterConfig clusterConfig, PoolConfig poolConfig, CancellationToken ct)
+    public async Task ConfigureAsync(ClusterConfig cc, PoolConfig pc, CancellationToken ct)
     {
-        this.poolConfig = poolConfig;
-        this.clusterConfig = clusterConfig;
-        extraPoolConfig = poolConfig.Extra.SafeExtensionDataAs<EthereumPoolConfigExtra>();
-        extraConfig = poolConfig.PaymentProcessing.Extra.SafeExtensionDataAs<EthereumPoolPaymentProcessingConfigExtra>();
+        poolConfig = pc;
+        clusterConfig = cc;
+        extraPoolConfig = pc.Extra.SafeExtensionDataAs<EthereumPoolConfigExtra>();
+        extraConfig = pc.PaymentProcessing.Extra.SafeExtensionDataAs<EthereumPoolPaymentProcessingConfigExtra>();
 
-        logger = LogUtil.GetPoolScopedLogger(typeof(EthereumPayoutHandler), poolConfig);
+        logger = LogUtil.GetPoolScopedLogger(typeof(EthereumPayoutHandler), pc);
 
         // configure standard daemon
         var jsonSerializerSettings = ctx.Resolve<JsonSerializerSettings>();
 
-        rpcClient = new RpcClient(poolConfig.Daemons.First(x => string.IsNullOrEmpty(x.Category)), jsonSerializerSettings, messageBus, poolConfig.Id);
+        rpcClient = new RpcClient(pc.Daemons.First(x => string.IsNullOrEmpty(x.Category)), jsonSerializerSettings, messageBus, pc.Id);
 
         await DetectChainAsync(ct);
     }

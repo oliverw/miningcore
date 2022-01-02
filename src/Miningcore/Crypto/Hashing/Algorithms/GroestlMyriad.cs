@@ -3,6 +3,7 @@ using Miningcore.Native;
 
 namespace Miningcore.Crypto.Hashing.Algorithms;
 
+[Identifier("groestl-myriad")]
 public unsafe class GroestlMyriad : IHashAlgorithm
 {
     public void Digest(ReadOnlySpan<byte> data, Span<byte> result, params object[] extra)
@@ -13,7 +14,7 @@ public unsafe class GroestlMyriad : IHashAlgorithm
         {
             fixed (byte* output = result)
             {
-                LibMultihash.groestl_myriad(input, output, (uint) data.Length);
+                Multihash.groestl_myriad(input, output, (uint) data.Length);
             }
         }
     }

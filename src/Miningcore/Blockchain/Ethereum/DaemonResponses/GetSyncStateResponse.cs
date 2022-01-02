@@ -15,23 +15,29 @@ public class SyncState
     /// The current block, same as eth_blockNumber
     /// </summary>
     [JsonConverter(typeof(HexToIntegralTypeJsonConverter<ulong?>))]
-    public ulong CurrentBlock { get; set; }
+    public ulong? CurrentBlock { get; set; }
 
     /// <summary>
     /// The estimated highest block
     /// </summary>
     [JsonConverter(typeof(HexToIntegralTypeJsonConverter<ulong?>))]
-    public ulong HighestBlock { get; set; }
+    public ulong? HighestBlock { get; set; }
+
+    [JsonConverter(typeof(HexToIntegralTypeJsonConverter<ulong?>))]
+    public ulong? KnownStates { get; set; }
+
+    [JsonConverter(typeof(HexToIntegralTypeJsonConverter<ulong?>))]
+    public ulong? PulledStates { get; set; }
 
     /// <summary>
     /// Parity: Total amount of snapshot chunks
     /// </summary>
     [JsonConverter(typeof(HexToIntegralTypeJsonConverter<ulong?>))]
-    public ulong WarpChunksAmount { get; set; }
+    public ulong? WarpChunksAmount { get; set; }
 
     /// <summary>
     /// Parity: Total amount of snapshot chunks
     /// </summary>
     [JsonConverter(typeof(HexToIntegralTypeJsonConverter<ulong?>))]
-    public ulong WarpChunksProcessed { get; set; }
+    public ulong? WarpChunksProcessed { get; set; }
 }

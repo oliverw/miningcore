@@ -26,7 +26,7 @@ public class NotificationService : BackgroundService
         Contract.RequiresNonNull(messageBus, nameof(messageBus));
 
         this.clusterConfig = clusterConfig;
-        this.emailSenderConfig = clusterConfig.Notifications.Email;
+        emailSenderConfig = clusterConfig.Notifications.Email;
         this.messageBus = messageBus;
         this.pushoverClient = pushoverClient;
 
@@ -78,7 +78,7 @@ public class NotificationService : BackgroundService
             var coin = poolConfigs[notification.PoolId].Template;
 
             // prepare tx links
-            var txLinks = new string[0];
+            var txLinks = Array.Empty<string>();
 
             if(!string.IsNullOrEmpty(coin.ExplorerTxLink))
                 txLinks = notification.TxIds.Select(txHash => string.Format(coin.ExplorerTxLink, txHash)).ToArray();
@@ -133,7 +133,7 @@ public class NotificationService : BackgroundService
         logger.Error(ex);
     }
 
-    private IObservable<IObservable<Unit>> OnMessageBus<T>(Func<T, CancellationToken, Task> handler, CancellationToken ct)
+    private IObservable<IObservable<Unit>> Subscribe<T>(Func<T, CancellationToken, Task> handler, CancellationToken ct)
     {
         return messageBus.Listen<T>()
             .Select(msg => Observable.FromAsync(() =>
@@ -146,9 +146,9 @@ public class NotificationService : BackgroundService
 
         if(clusterConfig.Notifications?.Admin?.Enabled == true)
         {
-            obs.Add(OnMessageBus<AdminNotification>(OnAdminNotificationAsync, ct));
-            obs.Add(OnMessageBus<BlockFoundNotification>(OnBlockFoundNotificationAsync, ct));
-            obs.Add(OnMessageBus<PaymentNotification>(OnPaymentNotificationAsync, ct));
+            obs.Add(Subscribe<AdminNotification>(OnAdminNotificationAsync, ct));
+            obs.Add(Subscribe<BlockFoundNotification>(OnBlockFoundNotificationAsync, ct));
+            obs.Add(Subscribe<PaymentNotification>(OnPaymentNotificationAsync, ct));
         }
 
         if(obs.Count > 0)

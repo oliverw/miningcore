@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using Miningcore.Mining;
 using Miningcore.Util;
 using NLog;
 
@@ -6,9 +7,9 @@ namespace Miningcore.Blockchain;
 
 public class ExtraNonceProviderBase : IExtraNonceProvider
 {
-    public ExtraNonceProviderBase(string poolId, int extranonceBytes, byte? instanceId)
+    protected ExtraNonceProviderBase(string poolId, int extranonceBytes, byte? instanceId)
     {
-        this.logger = LogUtil.GetPoolScopedLogger(this.GetType(), poolId);
+        logger = LogUtil.GetPoolScopedLogger(GetType(), poolId);
 
         this.extranonceBytes = extranonceBytes;
         idShift = (extranonceBytes * 8) - IdBits;
@@ -24,7 +25,7 @@ public class ExtraNonceProviderBase : IExtraNonceProvider
             id = instanceId.Value;
 
             if(id > idMax)
-                logger.ThrowLogPoolStartupException($"Provided instance id to large to fit into {IdBits} bits (limit {idMax})");
+                throw new PoolStartupException($"Provided instance id too large to fit into {IdBits} bits (limit {idMax})");
         }
 
         else

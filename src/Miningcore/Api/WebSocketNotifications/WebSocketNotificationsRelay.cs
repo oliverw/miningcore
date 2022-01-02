@@ -20,12 +20,12 @@ public class WebSocketNotificationsRelay : WebSocketHandler
         base(webSocketConnectionManager, new StringMethodInvocationStrategy())
     {
         messageBus = ctx.Resolve<IMessageBus>();
-        clusterConfig = ctx.Resolve<ClusterConfig>();
+        var clusterConfig = ctx.Resolve<ClusterConfig>();
         pools = clusterConfig.Pools.ToDictionary(x => x.Id, x => x);
 
         serializer = new JsonSerializer
         {
-            ContractResolver = ctx.Resolve<JsonSerializerSettings>().ContractResolver
+            ContractResolver = ctx.Resolve<JsonSerializerSettings>().ContractResolver!
         };
 
         Relay<BlockFoundNotification>(WsNotificationType.BlockFound);
@@ -37,7 +37,6 @@ public class WebSocketNotificationsRelay : WebSocketHandler
     }
 
     private readonly IMessageBus messageBus;
-    private readonly ClusterConfig clusterConfig;
     private readonly Dictionary<string, PoolConfig> pools;
     private readonly JsonSerializer serializer;
     private static readonly ILogger logger = LogManager.GetCurrentClassLogger();

@@ -3,6 +3,7 @@ using Miningcore.Native;
 
 namespace Miningcore.Crypto.Hashing.Algorithms;
 
+[Identifier("groestl")]
 public unsafe class Groestl : IHashAlgorithm
 {
     public void Digest(ReadOnlySpan<byte> data, Span<byte> result, params object[] extra)
@@ -13,7 +14,7 @@ public unsafe class Groestl : IHashAlgorithm
         {
             fixed (byte* output = result)
             {
-                LibMultihash.groestl(input, output, (uint) data.Length);
+                Multihash.groestl(input, output, (uint) data.Length);
             }
         }
     }

@@ -4,6 +4,7 @@ using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
 using Autofac;
 using AutoMapper;
+using JetBrains.Annotations;
 using Miningcore.Blockchain.Cryptonote.StratumRequests;
 using Miningcore.Blockchain.Cryptonote.StratumResponses;
 using Miningcore.Configuration;
@@ -23,6 +24,7 @@ using static Miningcore.Util.ActionUtils;
 namespace Miningcore.Blockchain.Cryptonote;
 
 [CoinFamily(CoinFamily.Cryptonote)]
+[UsedImplicitly]
 public class CryptonotePool : PoolBase
 {
     public CryptonotePool(IComponentContext ctx,
@@ -91,7 +93,7 @@ public class CryptonotePool : PoolBase
             var staticDiff = GetStaticDiffFromPassparts(passParts);
 
             // Nicehash support
-            var nicehashDiff = await GetNicehashStaticMinDiff(connection, context.UserAgent, manager.Coin.Name, manager.Coin.GetAlgorithmName());
+            var nicehashDiff = await GetNicehashStaticMinDiff(context, manager.Coin.Name, manager.Coin.GetAlgorithmName());
 
             if(nicehashDiff.HasValue)
             {

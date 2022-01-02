@@ -62,11 +62,11 @@ public class PayoutManager : BackgroundService
     private readonly ClusterConfig clusterConfig;
     private readonly CompositeDisposable disposables = new();
 
-        #if !DEBUG
-        private static readonly TimeSpan initialRunDelay = TimeSpan.FromMinutes(1);
-        #else
+    #if !DEBUG
+    private static readonly TimeSpan initialRunDelay = TimeSpan.FromMinutes(1);
+    #else
     private static readonly TimeSpan initialRunDelay = TimeSpan.FromSeconds(15);
-        #endif
+    #endif
 
     private void AttachPool(IMiningPool pool)
     {

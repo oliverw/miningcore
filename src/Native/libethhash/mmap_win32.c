@@ -53,7 +53,7 @@ void* mmap(void* start, size_t length, int prot, int flags, int fd, off_t offset
 		mmap_fd = INVALID_HANDLE_VALUE;
 	else
 		mmap_fd = (HANDLE)_get_osfhandle(fd);
-	h = CreateFileMapping(mmap_fd, NULL, flProtect, DWORD_HI(end), DWORD_LO(end), NULL);
+	h = CreateFileMapping(mmap_fd, NULL, flProtect, 0, 0, NULL);
 	if (h == NULL)
 		return MAP_FAILED;
 

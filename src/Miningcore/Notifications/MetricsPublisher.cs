@@ -10,8 +10,7 @@ namespace Miningcore.Notifications;
 
 public class MetricsPublisher : BackgroundService
 {
-    public MetricsPublisher(
-        IMessageBus messageBus)
+    public MetricsPublisher(IMessageBus messageBus)
     {
         CreateMetrics();
 

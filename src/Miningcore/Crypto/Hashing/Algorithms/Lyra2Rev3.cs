@@ -3,6 +3,7 @@ using Miningcore.Native;
 
 namespace Miningcore.Crypto.Hashing.Algorithms;
 
+[Identifier("lyra2-rev3")]
 public unsafe class Lyra2Rev3 : IHashAlgorithm
 {
     public void Digest(ReadOnlySpan<byte> data, Span<byte> result, params object[] extra)
@@ -14,7 +15,7 @@ public unsafe class Lyra2Rev3 : IHashAlgorithm
         {
             fixed (byte* output = result)
             {
-                LibMultihash.lyra2rev3(input, output);
+                Multihash.lyra2rev3(input, output);
             }
         }
     }

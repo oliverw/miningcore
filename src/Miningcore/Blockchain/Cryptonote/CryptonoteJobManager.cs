@@ -13,6 +13,7 @@ using Miningcore.Configuration;
 using Miningcore.Extensions;
 using Miningcore.JsonRpc;
 using Miningcore.Messaging;
+using Miningcore.Mining;
 using Miningcore.Native;
 using Miningcore.Notifications.Messages;
 using Miningcore.Stratum;
@@ -43,13 +44,13 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
 
     private byte[] instanceId;
     private DaemonEndpointConfig[] daemonEndpoints;
-    private RpcClient rpcClient;
-    private RpcClient rpcClientWallet;
+    private RpcClient rpc;
+    private RpcClient walletRpc;
     private readonly IMasterClock clock;
     private CryptonoteNetworkType networkType;
     private CryptonotePoolConfigExtra extraPoolConfig;
-    private LibRandomX.randomx_flags? randomXFlagsOverride;
-    private LibRandomX.randomx_flags? randomXFlagsAdd;
+    private RandomX.randomx_flags? randomXFlagsOverride;
+    private RandomX.randomx_flags? randomXFlagsAdd;
     private string currentSeedHash;
     private string randomXRealm;
     private ulong poolAddressBase58Prefix;
@@ -93,15 +94,15 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
 
                     if(poolConfig.EnableInternalStratum == true)
                     {
-                        LibRandomX.WithLock(() =>
+                        RandomX.WithLock(() =>
                         {
                             // delete old seed
                             if(currentSeedHash != null)
-                                LibRandomX.DeleteSeed(randomXRealm, currentSeedHash);
+                                RandomX.DeleteSeed(randomXRealm, currentSeedHash);
 
                             // activate new one
                             currentSeedHash = blockTemplate.SeedHash;
-                            LibRandomX.CreateSeed(randomXRealm, currentSeedHash, randomXFlagsOverride, randomXFlagsAdd, extraPoolConfig.RandomXVMCount);
+                            RandomX.CreateSeed(randomXRealm, currentSeedHash, randomXFlagsOverride, randomXFlagsAdd, extraPoolConfig.RandomXVMCount);
                         });
                     }
 
@@ -150,7 +151,7 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
             ReserveSize = CryptonoteConstants.ReserveSize
         };
 
-        return await rpcClient.ExecuteAsync<GetBlockTemplateResponse>(logger, CryptonoteCommands.GetBlockTemplate, ct, request);
+        return await rpc.ExecuteAsync<GetBlockTemplateResponse>(logger, CryptonoteCommands.GetBlockTemplate, ct, request);
     }
 
     private RpcResponse<GetBlockTemplateResponse> GetBlockTemplateFromJson(string json)
@@ -164,7 +165,7 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
 
     private async Task ShowDaemonSyncProgressAsync(CancellationToken ct)
     {
-        var response = await rpcClient.ExecuteAsync<GetInfoResponse>(logger, CryptonoteCommands.GetInfo, ct);
+        var response = await rpc.ExecuteAsync<GetInfoResponse>(logger, CryptonoteCommands.GetInfo, ct);
         var info = response.Response;
 
         if(info != null)
@@ -174,7 +175,7 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
             var totalBlocks = info.TargetHeight;
             var percent = (double) lowestHeight / totalBlocks * 100;
 
-            logger.Info(() => $"Daemons have downloaded {percent:0.00}% of blockchain from {info.OutgoingConnectionsCount} peers");
+            logger.Info(() => $"Daemon has downloaded {percent:0.00}% of blockchain from {info.OutgoingConnectionsCount} peers");
         }
     }
 
@@ -184,7 +185,7 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
 
         try
         {
-            var response = await rpcClient.ExecuteAsync(logger, CryptonoteCommands.GetInfo, ct);
+            var response = await rpc.ExecuteAsync(logger, CryptonoteCommands.GetInfo, ct);
 
             if(response.Error != null)
                 logger.Warn(() => $"Error(s) refreshing network stats: {response.Error.Message} (Code {response.Error.Code})");
@@ -206,7 +207,7 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
 
     private async Task<bool> SubmitBlockAsync(Share share, string blobHex, string blobHash)
     {
-        var response = await rpcClient.ExecuteAsync<SubmitResponse>(logger, CryptonoteCommands.SubmitBlock, CancellationToken.None, new[] { blobHex });
+        var response = await rpc.ExecuteAsync<SubmitResponse>(logger, CryptonoteCommands.SubmitBlock, CancellationToken.None, new[] { blobHex });
 
         if(response.Error != null || response?.Response?.Status != "OK")
         {
@@ -232,8 +233,8 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
         Contract.RequiresNonNull(cc, nameof(cc));
 
         logger = LogUtil.GetPoolScopedLogger(typeof(JobManagerBase<CryptonoteJob>), pc);
-        this.poolConfig = pc;
-        this.clusterConfig = cc;
+        poolConfig = pc;
+        clusterConfig = cc;
         extraPoolConfig = pc.Extra.SafeExtensionDataAs<CryptonotePoolConfigExtra>();
         coin = pc.Template.As<CryptonoteCoinTemplate>();
 
@@ -271,7 +272,7 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
                 .ToArray();
 
             if(walletDaemonEndpoints.Length == 0)
-                logger.ThrowLogPoolStartupException("Wallet-RPC daemon is not configured (Daemon configuration for monero-pools require an additional entry of category \'wallet' pointing to the wallet daemon)");
+                throw new PoolStartupException("Wallet-RPC daemon is not configured (Daemon configuration for monero-pools require an additional entry of category \'wallet' pointing to the wallet daemon)");
         }
 
         ConfigureDaemons();
@@ -282,8 +283,8 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
         if(string.IsNullOrEmpty(address))
             return false;
 
-        var addressPrefix = LibCryptonote.DecodeAddress(address);
-        var addressIntegratedPrefix = LibCryptonote.DecodeIntegratedAddress(address);
+        var addressPrefix = CryptonoteBindings.DecodeAddress(address);
+        var addressIntegratedPrefix = CryptonoteBindings.DecodeIntegratedAddress(address);
         var coin = poolConfig.Template.As<CryptonoteCoinTemplate>();
 
         switch(networkType)
@@ -397,22 +398,22 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
         return JToken.Parse(json);
     }
 
-    private LibRandomX.randomx_flags? MakeRandomXFlags(JToken token)
+    private RandomX.randomx_flags? MakeRandomXFlags(JToken token)
     {
         if(token == null)
             return null;
 
         if(token.Type == JTokenType.Integer)
-            return (LibRandomX.randomx_flags) token.Value<ulong>();
+            return (RandomX.randomx_flags) token.Value<ulong>();
         else if(token.Type == JTokenType.String)
         {
-            LibRandomX.randomx_flags result = 0;
+            RandomX.randomx_flags result = 0;
             var value = token.Value<string>();
 
             foreach(var flag in value.Split("|").Select(x=> x.Trim()).Where(x=> !string.IsNullOrEmpty(x)))
             {
-                if(Enum.TryParse(typeof(LibRandomX.randomx_flags), flag, true, out var flagVal))
-                    result |= (LibRandomX.randomx_flags) flagVal;
+                if(Enum.TryParse(typeof(RandomX.randomx_flags), flag, true, out var flagVal))
+                    result |= (RandomX.randomx_flags) flagVal;
             }
 
             return result;
@@ -427,19 +428,19 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
     {
         var jsonSerializerSettings = ctx.Resolve<JsonSerializerSettings>();
 
-        rpcClient = new RpcClient(daemonEndpoints.First(), jsonSerializerSettings, messageBus, poolConfig.Id);
+        rpc = new RpcClient(daemonEndpoints.First(), jsonSerializerSettings, messageBus, poolConfig.Id);
 
         if(clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
         {
             // also setup wallet daemon
-            rpcClientWallet = new RpcClient(walletDaemonEndpoints.First(), jsonSerializerSettings, messageBus, poolConfig.Id);
+            walletRpc = new RpcClient(walletDaemonEndpoints.First(), jsonSerializerSettings, messageBus, poolConfig.Id);
         }
     }
 
     protected override async Task<bool> AreDaemonsHealthyAsync(CancellationToken ct)
     {
         // test daemons
-        var response = await rpcClient.ExecuteAsync<GetInfoResponse>(logger, CryptonoteCommands.GetInfo, ct);
+        var response = await rpc.ExecuteAsync<GetInfoResponse>(logger, CryptonoteCommands.GetInfo, ct);
 
         if(response.Error != null)
             return false;
@@ -447,7 +448,7 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
         if(clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
         {
             // test wallet daemons
-            var responses2 = await rpcClientWallet.ExecuteAsync<object>(logger, CryptonoteWalletCommands.GetAddress, ct);
+            var responses2 = await walletRpc.ExecuteAsync<object>(logger, CryptonoteWalletCommands.GetAddress, ct);
 
             return responses2.Error == null;
         }
@@ -457,7 +458,7 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
 
     protected override async Task<bool> AreDaemonsConnectedAsync(CancellationToken ct)
     {
-        var response = await rpcClient.ExecuteAsync<GetInfoResponse>(logger, CryptonoteCommands.GetInfo, ct);
+        var response = await rpc.ExecuteAsync<GetInfoResponse>(logger, CryptonoteCommands.GetInfo, ct);
 
         return response.Error == null && response.Response != null &&
             (response.Response.OutgoingConnectionsCount + response.Response.IncomingConnectionsCount) > 0;
@@ -475,7 +476,7 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
                 ReserveSize = CryptonoteConstants.ReserveSize
             };
 
-            var response = await rpcClient.ExecuteAsync<GetBlockTemplateResponse>(logger,
+            var response = await rpc.ExecuteAsync<GetBlockTemplateResponse>(logger,
                 CryptonoteCommands.GetBlockTemplate, ct, request);
 
             var isSynched = response.Error is not {Code: -9};
@@ -488,7 +489,7 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
 
             if(!syncPendingNotificationShown)
             {
-                logger.Info(() => "Daemons still syncing with network. Manager will be started once synced");
+                logger.Info(() => "Daemon is still syncing with network. Manager will be started once synced.");
                 syncPendingNotificationShown = true;
             }
 
@@ -505,18 +506,18 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
 
         // coin config
         var coin = poolConfig.Template.As<CryptonoteCoinTemplate>();
-        var infoResponse = await rpcClient.ExecuteAsync(logger, CryptonoteCommands.GetInfo, ct);
+        var infoResponse = await rpc.ExecuteAsync(logger, CryptonoteCommands.GetInfo, ct);
 
         if(infoResponse.Error != null)
-            logger.ThrowLogPoolStartupException($"Init RPC failed: {infoResponse.Error.Message} (Code {infoResponse.Error.Code})");
+            throw new PoolStartupException($"Init RPC failed: {infoResponse.Error.Message} (Code {infoResponse.Error.Code})");
 
         if(clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
         {
-            var addressResponse = await rpcClientWallet.ExecuteAsync<GetAddressResponse>(logger, CryptonoteWalletCommands.GetAddress, ct);
+            var addressResponse = await walletRpc.ExecuteAsync<GetAddressResponse>(logger, CryptonoteWalletCommands.GetAddress, ct);
 
             // ensure pool owns wallet
             if(clusterConfig.PaymentProcessing?.Enabled == true && addressResponse.Response?.Address != poolConfig.Address)
-                logger.ThrowLogPoolStartupException($"Wallet-Daemon does not own pool-address '{poolConfig.Address}'");
+                throw new PoolStartupException($"Wallet-Daemon does not own pool-address '{poolConfig.Address}'");
         }
 
         var info = infoResponse.Response.ToObject<GetInfoResponse>();
@@ -536,8 +537,7 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
                     networkType = CryptonoteNetworkType.Test;
                     break;
                 default:
-                    logger.ThrowLogPoolStartupException($"Unsupport net type '{info.NetType}'");
-                    break;
+                    throw new PoolStartupException($"Unsupport net type '{info.NetType}'");
             }
         }
 
@@ -545,30 +545,27 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
             networkType = info.IsTestnet ? CryptonoteNetworkType.Test : CryptonoteNetworkType.Main;
 
         // address validation
-        poolAddressBase58Prefix = LibCryptonote.DecodeAddress(poolConfig.Address);
+        poolAddressBase58Prefix = CryptonoteBindings.DecodeAddress(poolConfig.Address);
         if(poolAddressBase58Prefix == 0)
-            logger.ThrowLogPoolStartupException("Unable to decode pool-address");
+            throw new PoolStartupException("Unable to decode pool-address");
 
         switch(networkType)
         {
             case CryptonoteNetworkType.Main:
                 if(poolAddressBase58Prefix != coin.AddressPrefix)
-                    logger.ThrowLogPoolStartupException($"Invalid pool address prefix. Expected {coin.AddressPrefix}, got {poolAddressBase58Prefix}");
+                    throw new PoolStartupException($"Invalid pool address prefix. Expected {coin.AddressPrefix}, got {poolAddressBase58Prefix}");
                 break;
 
             case CryptonoteNetworkType.Stage:
                 if(poolAddressBase58Prefix != coin.AddressPrefixStagenet)
-                    logger.ThrowLogPoolStartupException($"Invalid pool address prefix. Expected {coin.AddressPrefixStagenet}, got {poolAddressBase58Prefix}");
+                    throw new PoolStartupException($"Invalid pool address prefix. Expected {coin.AddressPrefixStagenet}, got {poolAddressBase58Prefix}");
                 break;
 
             case CryptonoteNetworkType.Test:
                 if(poolAddressBase58Prefix != coin.AddressPrefixTestnet)
-                    logger.ThrowLogPoolStartupException($"Invalid pool address prefix. Expected {coin.AddressPrefixTestnet}, got {poolAddressBase58Prefix}");
+                    throw new PoolStartupException($"Invalid pool address prefix. Expected {coin.AddressPrefixTestnet}, got {poolAddressBase58Prefix}");
                 break;
         }
-
-        if(clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
-            ConfigureRewards();
 
         // update stats
         BlockchainStats.RewardType = "POW";
@@ -600,24 +597,6 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
             instanceId[0] = clusterConfig.InstanceId.Value;
     }
 
-    private void ConfigureRewards()
-    {
-        // Donation to MiningCore development
-        if(networkType == CryptonoteNetworkType.Main &&
-           DevDonation.Addresses.TryGetValue(poolConfig.Template.Symbol, out var address))
-        {
-            poolConfig.RewardRecipients = poolConfig.RewardRecipients.Concat(new[]
-            {
-                new RewardRecipient
-                {
-                    Address = address,
-                    Percentage = DevDonation.Percent,
-                    Type = "dev"
-                }
-            }).ToArray();
-        }
-    }
-
     protected virtual void SetupJobUpdates(CancellationToken ct)
     {
         var blockSubmission = blockFoundSubject.Synchronize();
@@ -645,7 +624,7 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
             {
                 logger.Info(() => $"Subscribing to ZMQ push-updates from {string.Join(", ", zmq.Values)}");
 
-                var blockNotify = rpcClient.ZmqSubscribe(logger, ct, zmq)
+                var blockNotify = rpc.ZmqSubscribe(logger, ct, zmq)
                     .Where(msg =>
                     {
                         bool result = false;
@@ -727,7 +706,7 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
                 .TakeWhile(_ => !hasInitialBlockTemplate));
         }
 
-        Blocks = Observable.Merge(triggers)
+        Blocks = triggers.Merge()
             .Select(x => Observable.FromAsync(() => UpdateJob(ct, x.Via, x.Data)))
             .Concat()
             .Where(isNew => isNew)

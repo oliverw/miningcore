@@ -45,10 +45,14 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "Lyra2.h"
 #include "x16r.h"
 #include "x16s.h"
+#include "x16rv2.h"
 #include "x21s.h"
-#include "x25x.h"
+#include "sha256csm.h"
+#include "hmq17.h"
+#include "phi.h"
 #include "verthash/h2.h"
 #include "equi/equihashverify.h"
+#include "heavyhash/heavyhash.h"
 
 #ifdef _WIN32
 #include "blake2/ref/blake2.h"
@@ -70,6 +74,21 @@ extern "C" MODULE_API void scrypt_export(const char* input, char* output, uint32
 extern "C" MODULE_API void quark_export(const char* input, char* output, uint32_t input_len)
 {
 	quark_hash(input, output, input_len);
+}
+
+extern "C" MODULE_API void sha256csm_export(const char* input, char* output, uint32_t input_len)
+{
+    sha256csm_hash(input, output, input_len);
+}
+
+extern "C" MODULE_API void hmq17_export(const char* input, char* output, uint32_t input_len)
+{
+    hmq17_hash(input, output, input_len);
+}
+
+extern "C" MODULE_API void phi_export(const char* input, char* output, uint32_t input_len)
+{
+    phi_hash(input, output, input_len);
 }
 
 extern "C" MODULE_API void x11_export(const char* input, char* output, uint32_t input_len)
@@ -224,6 +243,11 @@ extern "C" MODULE_API void x16r_export(const char* input, char* output, uint32_t
     x16r_hash(input, output, input_len);
 }
 
+extern "C" MODULE_API void x16rv2_export(const char* input, char* output, uint32_t input_len)
+{
+    x16rv2_hash(input, output, input_len);
+}
+
 extern "C" MODULE_API void x21s_export(const char* input, char* output, uint32_t input_len)
 {
 	x21s_hash(input, output, input_len);
@@ -232,11 +256,6 @@ extern "C" MODULE_API void x21s_export(const char* input, char* output, uint32_t
 extern "C" MODULE_API void x22i_export(const char* input, char* output, uint32_t input_len)
 {
     x22i_hash(input, output, input_len);
-}
-
-extern "C" MODULE_API void x25x_export(const char* input, char* output, uint32_t input_len)
-{
-    x25x_hash(input, output, input_len);
 }
 
 extern "C" MODULE_API int verthash_init_export(const char* filename, int createIfMissing)
@@ -254,13 +273,18 @@ extern "C" MODULE_API void x16s_export(const char* input, char* output, uint32_t
     x16s_hash(input, output, input_len);
 }
 
+extern "C" MODULE_API void heavyhash_export(const char* input, char* output, uint32_t input_len)
+{
+    heavyhash_hash(input, output, input_len);
+}
+
 extern "C" MODULE_API bool equihash_verify_200_9_export(const char* header, int header_length, const char* solution, int solution_length, const char *personalization)
 {
     if (header_length != 140) {
         return false;
     }
 
-    std::vector<unsigned char> vecSolution(solution, solution + solution_length);
+    const std::vector<unsigned char> vecSolution(solution, solution + solution_length);
 
     return verifyEH_200_9(header, vecSolution, personalization);
 }
@@ -271,7 +295,7 @@ extern "C" MODULE_API bool equihash_verify_144_5_export(const char* header, int 
         return false;
     }
 
-    std::vector<unsigned char> vecSolution(solution, solution + solution_length);
+    const std::vector<unsigned char> vecSolution(solution, solution + solution_length);
 
     return verifyEH_144_5(header, vecSolution, personalization);
 }
@@ -282,7 +306,7 @@ extern "C" MODULE_API bool equihash_verify_96_5_export(const char* header, int h
         return false;
     }
 
-    std::vector<unsigned char> vecSolution(solution, solution + solution_length);
+    const std::vector<unsigned char> vecSolution(solution, solution + solution_length);
 
     return verifyEH_96_5(header, vecSolution, personalization);
 }

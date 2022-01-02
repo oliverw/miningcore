@@ -37,7 +37,7 @@ public class SimpleRestClient
     protected readonly HttpClient httpClient;
     protected readonly string baseUrl;
 
-    protected JsonSerializerOptions jsonSerializerOptions = new()
+    protected readonly JsonSerializerOptions jsonSerializerOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,

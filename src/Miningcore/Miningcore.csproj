@@ -14,7 +14,7 @@
         <IsLinux Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))' == 'true'">true</IsLinux>
         <IsOSX Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::OSX)))' == 'true'">true</IsOSX>
     </PropertyGroup>
-
+    
     <ItemGroup>
         <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
             <_Parameter1>$(AssemblyName).Tests</_Parameter1>
@@ -45,19 +45,27 @@
         <PackageReference Include="AspNetCoreRateLimit" Version="4.0.1" />
         <PackageReference Include="Autofac" Version="6.3.0" />
         <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="7.2.0" />
-        <PackageReference Include="GitVersion.MsBuild" Version="5.8.0">
+        <PackageReference Include="GitVersion.MsBuild" Version="5.8.1">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Newtonsoft.Json.Schema" Version="3.0.14" />
+        <PackageReference Include="Npgsql" Version="6.0.2" />
+        <PackageReference Include="NSwag.AspNetCore" Version="13.15.5" />
+        <PackageReference Include="NSwag.CodeGeneration.CSharp" Version="13.15.5" />
+        <PackageReference Include="NSwag.MSBuild" Version="13.15.5">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="NBitcoin.Altcoins" Version="3.0.8" />
         <PackageReference Include="NLog.Extensions.Hosting" Version="1.7.4" />
         <PackageReference Include="AutoMapper" Version="10.1.1" />
         <PackageReference Include="Dapper" Version="2.0.123" />
-        <PackageReference Include="FluentValidation" Version="10.3.4" />
-        <PackageReference Include="FluentValidation.AspNetCore" Version="10.3.4" />
-        <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="10.3.4" />
+        <PackageReference Include="FluentValidation" Version="10.3.6" />
+        <PackageReference Include="FluentValidation.AspNetCore" Version="10.3.6" />
+        <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="10.3.6" />
         <PackageReference Include="JetBrains.Annotations" Version="2021.3.0" />
-        <PackageReference Include="MailKit" Version="2.15.0" />
+        <PackageReference Include="MailKit" Version="3.0.0" />
         <PackageReference Include="McMaster.Extensions.CommandLineUtils" Version="3.1.0" />
         <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="6.0.0" />
         <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="6.0.0" />
@@ -65,13 +73,12 @@
         <PackageReference Include="NBitcoin" Version="6.0.18" />
         <PackageReference Include="NBitcoin.Zcash" Version="3.0.0" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-        <PackageReference Include="NLog" Version="4.7.12" />
+        <PackageReference Include="NLog" Version="4.7.13" />
         <PackageReference Include="NLog.Extensions.Logging" Version="1.7.4" />
-        <PackageReference Include="Npgsql" Version="5.0.11" />
         <PackageReference Include="Polly" Version="7.2.2" />
         <PackageReference Include="Portable.BouncyCastle" Version="1.9.0" />
-        <PackageReference Include="prometheus-net.AspNetCore" Version="5.0.1" />
-        <PackageReference Include="prometheus-net" Version="5.0.1" />
+        <PackageReference Include="prometheus-net.AspNetCore" Version="5.0.2" />
+        <PackageReference Include="prometheus-net" Version="5.0.2" />
         <PackageReference Include="protobuf-net" Version="3.0.101" />
         <PackageReference Include="System.Diagnostics.Process" Version="4.3.0" />
         <PackageReference Include="System.Reactive" Version="5.0.0" />
@@ -103,13 +110,20 @@
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
     </ItemGroup>
+    <ItemGroup>
+      <None Remove="schema.json" />
+      <Content Include="config.schema.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+    </ItemGroup>
 
     <!-- Build library binaries from source on Linux -->
     <Target Name="BuildNativeLibsLinux" AfterTargets="AfterBuild" Condition="'$(IsLinux)' == 'true'">
         <Exec Command="(cd $(ProjectDir)../Native/libmultihash &amp;&amp; make clean &amp;&amp; make) &amp;&amp; mv $(ProjectDir)../Native/libmultihash/libmultihash.so $(OutDir)" />
         <Exec Command="(cd $(ProjectDir)../Native/libethhash &amp;&amp; make clean &amp;&amp; make) &amp;&amp; mv $(ProjectDir)../Native/libethhash/libethhash.so $(OutDir)" />
         <Exec Command="(cd $(ProjectDir)../Native/libcryptonote &amp;&amp; make clean &amp;&amp; make) &amp;&amp; mv $(ProjectDir)../Native/libcryptonote/libcryptonote.so $(OutDir)" />
-        <Exec Command="(cd /tmp &amp;&amp; rm -rf RandomX &amp;&amp; git clone https://github.com/tevador/RandomX &amp;&amp; cd RandomX &amp;&amp; git checkout tags/v1.1.9 &amp;&amp; mkdir build &amp;&amp; cd build &amp;&amp; cmake -DARCH=native .. &amp;&amp; make &amp;&amp; cp librandomx.a $(ProjectDir)../Native/librandomx) &amp;&amp; (cd $(ProjectDir)../Native/librandomx &amp;&amp; make clean &amp;&amp; make) &amp;&amp; mv $(ProjectDir)../Native/librandomx/librandomx.so $(OutDir)" />
+        <Exec Command="(cd $(ProjectDir)../Native/libcryptonight &amp;&amp; make clean &amp;&amp; make) &amp;&amp; mv $(ProjectDir)../Native/libcryptonight/libcryptonight.so $(OutDir)" />
+        <Exec Command="(cd /tmp &amp;&amp; rm -rf RandomX &amp;&amp; git clone https://github.com/tevador/RandomX &amp;&amp; cd RandomX &amp;&amp; git checkout tags/v1.1.10 &amp;&amp; mkdir build &amp;&amp; cd build &amp;&amp; cmake -DARCH=native .. &amp;&amp; make &amp;&amp; cp librandomx.a $(ProjectDir)../Native/librandomx) &amp;&amp; (cd $(ProjectDir)../Native/librandomx &amp;&amp; make clean &amp;&amp; make) &amp;&amp; mv $(ProjectDir)../Native/librandomx/librandomx.so $(OutDir)" />
     </Target>
 
     <!-- Include library binaries in publish on Windows -->

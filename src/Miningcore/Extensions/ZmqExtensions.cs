@@ -3,6 +3,7 @@ using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using Miningcore.Mining;
 using Miningcore.Util;
 using NLog;
 using ZeroMQ;
@@ -85,7 +86,7 @@ public static class ZmqExtensions
             return;
 
         if(!ZContext.Has("curve"))
-            logger.ThrowLogPoolStartupException("Unable to initialize ZMQ Curve Transport-Layer-Security. Your ZMQ library was compiled without Curve support!");
+            throw new PoolStartupException("Unable to initialize ZMQ Curve Transport-Layer-Security. Your ZMQ library was compiled without Curve support!");
 
         // Get server's public key
         byte[] keyBytes = null;
@@ -123,7 +124,7 @@ public static class ZmqExtensions
             return;
 
         if(!ZContext.Has("curve"))
-            logger.ThrowLogPoolStartupException("Unable to initialize ZMQ Curve Transport-Layer-Security. Your ZMQ library was compiled without Curve support!");
+            throw new PoolStartupException("Unable to initialize ZMQ Curve Transport-Layer-Security. Your ZMQ library was compiled without Curve support!");
 
         // Get server's public key
         byte[] serverPubKey = null;

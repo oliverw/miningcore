@@ -38,6 +38,10 @@ public class AutoMapperProfile : Profile
             .ForMember(dest => dest.Type, opt => opt.MapFrom(src => src.Symbol))
             .ForMember(dest => dest.Family, opt => opt.MapFrom(src => src.Family.ToString().ToLower()))
             .ForMember(dest => dest.Symbol, opt => opt.MapFrom(src => src.Symbol))
+            .ForMember(dest => dest.Website, opt => opt.MapFrom(src => src.Website))
+            .ForMember(dest => dest.Twitter, opt => opt.MapFrom(src => src.Twitter))
+            .ForMember(dest => dest.Discord, opt => opt.MapFrom(src => src.Discord))
+            .ForMember(dest => dest.Telegram, opt => opt.MapFrom(src => src.Telegram))
             .ForMember(dest => dest.Algorithm, opt => opt.MapFrom(src => src.GetAlgorithmName()));
 
         CreateMap<PoolConfig, Api.Responses.PoolInfo>()

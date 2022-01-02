@@ -167,7 +167,7 @@ public abstract class PayoutHandlerBase
         // admin notifications
         var explorerLinks = !string.IsNullOrEmpty(coin.ExplorerTxLink) ?
             txHashes.Select(x => string.Format(coin.ExplorerTxLink, x)).ToArray() :
-            new string[0];
+            Array.Empty<string>();
 
         messageBus.SendMessage(new PaymentNotification(poolId, null, balances.Sum(x => x.Amount), coin.Symbol, balances.Length, txHashes, explorerLinks, txFee));
     }

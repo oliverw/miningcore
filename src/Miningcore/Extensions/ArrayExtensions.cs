@@ -1,4 +1,5 @@
 using System.Numerics;
+using System.Text;
 
 namespace Miningcore.Extensions;
 
@@ -47,6 +48,10 @@ public static class ArrayExtensions
     public static string ToHexString(this ReadOnlySpan<byte> value, bool withPrefix = false)
     {
         return ToHexString(value, null, null, withPrefix);
+    }
+    public static string ToByteArrayBase64(this string value)
+    {
+        return Convert.ToBase64String(Encoding.UTF8.GetBytes(value));
     }
 
     public static string ToHexString(this ReadOnlySpan<byte> value, int? off, int? len, bool withPrefix = false)

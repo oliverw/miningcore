@@ -81,18 +81,12 @@ public class StatsRepository : IStatsRepository
     {
         logger.LogInvoke(new object[] { poolId });
 
-        string trunc = null;
-
-        switch(interval)
+        string trunc = interval switch
         {
-            case SampleInterval.Hour:
-                trunc = "hour";
-                break;
-
-            case SampleInterval.Day:
-                trunc = "day";
-                break;
-        }
+            SampleInterval.Hour => "hour",
+            SampleInterval.Day => "day",
+            _ => null
+        };
 
         var query = $"SELECT date_trunc('{trunc}', created) AS created, " +
             "AVG(poolhashrate) AS poolhashrate, AVG(networkhashrate) AS networkhashrate, AVG(networkdifficulty) AS networkdifficulty, " +
@@ -341,7 +335,7 @@ public class StatsRepository : IStatsRepository
 
     public async Task<MinerWorkerPerformanceStats[]> PagePoolMinersByHashrateAsync(IDbConnection con, string poolId, DateTime from, int page, int pageSize)
     {
-        logger.LogInvoke(new object[] { (object) poolId, from, page, pageSize });
+        logger.LogInvoke(new object[] { poolId, from, page, pageSize });
 
         const string query = "WITH tmp AS " +
             "( " +

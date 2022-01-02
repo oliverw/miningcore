@@ -4,6 +4,7 @@ using System.Reactive.Threading.Tasks;
 using System.Numerics;
 using Autofac;
 using AutoMapper;
+using JetBrains.Annotations;
 using Miningcore.Blockchain.Bitcoin;
 using Miningcore.Blockchain.Ergo.Configuration;
 using Miningcore.Configuration;
@@ -24,6 +25,7 @@ using static Miningcore.Util.ActionUtils;
 namespace Miningcore.Blockchain.Ergo;
 
 [CoinFamily(CoinFamily.Ergo)]
+[UsedImplicitly]
 public class ErgoPool : PoolBase
 {
     public ErgoPool(IComponentContext ctx,
@@ -54,21 +56,21 @@ public class ErgoPool : PoolBase
         var requestParams = request.ParamsAs<string[]>();
 
         var data = new object[]
+        {
+            new object[]
             {
-                new object[]
-                {
-                    new object[] { BitcoinStratumMethods.SetDifficulty, connection.ConnectionId },
-                    new object[] { BitcoinStratumMethods.MiningNotify, connection.ConnectionId }
-                }
+                new object[] { BitcoinStratumMethods.SetDifficulty, connection.ConnectionId },
+                new object[] { BitcoinStratumMethods.MiningNotify, connection.ConnectionId }
             }
-            .Concat(manager.GetSubscriberData(connection))
-            .ToArray();
+        }
+        .Concat(manager.GetSubscriberData(connection))
+        .ToArray();
 
         await connection.RespondAsync(data, request.Id);
 
         // setup worker context
         context.IsSubscribed = true;
-        context.UserAgent = requestParams?.Length > 0 ? requestParams[0].Trim() : null;
+        context.UserAgent = requestParams.FirstOrDefault()?.Trim();
     }
 
     protected virtual async Task OnAuthorizeAsync(StratumConnection connection, Timestamped<JsonRpcRequest> tsRequest, CancellationToken ct)
@@ -106,7 +108,7 @@ public class ErgoPool : PoolBase
             var staticDiff = GetStaticDiffFromPassparts(passParts);
 
             // Nicehash support
-            var nicehashDiff = await GetNicehashStaticMinDiff(connection, context.UserAgent, coin.Name, coin.GetAlgorithmName());
+            var nicehashDiff = await GetNicehashStaticMinDiff(context, coin.Name, coin.GetAlgorithmName());
 
             if(nicehashDiff.HasValue)
             {
@@ -249,8 +251,11 @@ public class ErgoPool : PoolBase
         var target = new BigRational(BitcoinConstants.Diff1 * (BigInteger) (1 / context.Difficulty * 0x10000), 0x10000).GetWholePart();
         jobParamsActual[6] = target.ToString();
 
-        // send static diff of 1 since actual diff gets pre-multiplied to target
-        await connection.NotifyAsync(BitcoinStratumMethods.SetDifficulty, new object[] { 1 });
+        var notifyArgs = !context.IsNicehash ?
+            new object[] { 1 } :  // send static diff of 1 since actual diff gets pre-multiplied to target
+            new object[] { context.Difficulty * BitcoinConstants.Pow2x32 };
+
+        await connection.NotifyAsync(BitcoinStratumMethods.SetDifficulty, notifyArgs);
 
         // send target
         await connection.NotifyAsync(BitcoinStratumMethods.MiningNotify, jobParamsActual);
@@ -271,12 +276,12 @@ public class ErgoPool : PoolBase
 
     #region Overrides
 
-    public override void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
+    public override void Configure(PoolConfig pc, ClusterConfig cc)
     {
-        coin = poolConfig.Template.As<ErgoCoinTemplate>();
-        extraPoolConfig = poolConfig.Extra.SafeExtensionDataAs<ErgoPoolConfigExtra>();
+        coin = pc.Template.As<ErgoCoinTemplate>();
+        extraPoolConfig = pc.Extra.SafeExtensionDataAs<ErgoPoolConfigExtra>();
 
-        base.Configure(poolConfig, clusterConfig);
+        base.Configure(pc, cc);
     }
 
     protected override async Task SetupJobManager(CancellationToken ct)
@@ -360,9 +365,9 @@ public class ErgoPool : PoolBase
         }
     }
 
-    protected override async Task<double?> GetNicehashStaticMinDiff(StratumConnection connection, string userAgent, string coinName, string algoName)
+    protected override async Task<double?> GetNicehashStaticMinDiff(WorkerContextBase context, string coinName, string algoName)
     {
-        var result= await base.GetNicehashStaticMinDiff(connection, userAgent, coinName, algoName);
+        var result= await base.GetNicehashStaticMinDiff(context, coinName, algoName);
 
         // adjust value to fit with our target value calculation
         if(result.HasValue)

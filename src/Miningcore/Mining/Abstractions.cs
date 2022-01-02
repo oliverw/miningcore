@@ -9,7 +9,7 @@ public interface IMiningPool
     PoolStats PoolStats { get; }
     BlockchainStats NetworkStats { get; }
     double ShareMultiplier { get; }
-    void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig);
+    void Configure(PoolConfig pc, ClusterConfig cc);
     double HashrateFromShares(double shares, double interval);
     Task RunAsync(CancellationToken ct);
 }

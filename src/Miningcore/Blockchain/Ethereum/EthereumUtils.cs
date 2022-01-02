@@ -1,6 +1,6 @@
 namespace Miningcore.Blockchain.Ethereum;
 
-public class EthereumUtils
+public static class EthereumUtils
 {
     public static void DetectNetworkAndChain(string netVersionResponse, string gethChainResponse,
         out EthereumNetworkType networkType, out GethChainType chainType)

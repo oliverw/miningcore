@@ -16,9 +16,7 @@ namespace Miningcore.Mining;
 
 public class ShareRelay : IHostedService
 {
-    public ShareRelay(
-        ClusterConfig clusterConfig,
-        IMessageBus messageBus)
+    public ShareRelay(ClusterConfig clusterConfig, IMessageBus messageBus)
     {
         Contract.RequiresNonNull(messageBus, nameof(messageBus));
 
@@ -115,7 +113,7 @@ public class ShareRelay : IHostedService
             pubSocket.Bind(clusterConfig.ShareRelay.PublishUrl);
 
             if(pubSocket.CurveServer)
-                logger.Info(() => $"Bound to {clusterConfig.ShareRelay.PublishUrl} using Curve public-key {pubSocket.CurvePublicKey.ToHexString()}");
+                logger.Info(() => $"Bound to {clusterConfig.ShareRelay.PublishUrl} using key {pubSocket.CurvePublicKey.ToHexString()}");
             else
                 logger.Info(() => $"Bound to {clusterConfig.ShareRelay.PublishUrl}");
         }
@@ -123,7 +121,7 @@ public class ShareRelay : IHostedService
         else
         {
             if(!string.IsNullOrEmpty(clusterConfig.ShareRelay.SharedEncryptionKey?.Trim()))
-                logger.ThrowLogPoolStartupException("ZeroMQ Curve is not supported in ShareRelay Connect-Mode");
+                throw new PoolStartupException("ZeroMQ Curve is not supported in ShareRelay Connect-Mode");
 
             pubSocket.Connect(clusterConfig.ShareRelay.PublishUrl);
 

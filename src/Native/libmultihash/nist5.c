@@ -37,7 +37,7 @@ void nist5_hash(const char* input, char* output, uint32_t len)
     sph_keccak512_init(&ctx_keccak);
     sph_keccak512 (&ctx_keccak, hash, 64);
     sph_keccak512_close(&ctx_keccak, hash);
-    
+
     sph_skein512_init(&ctx_skein);
     sph_skein512 (&ctx_skein, hash, 64);
     sph_skein512_close (&ctx_skein, hash);

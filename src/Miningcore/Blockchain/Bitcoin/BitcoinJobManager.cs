@@ -47,7 +47,7 @@ public class BitcoinJobManager : BitcoinJobManagerBase<BitcoinJob>
     {
         logger.LogInvoke();
 
-        var result = await rpcClient.ExecuteAsync<BlockTemplate>(logger,
+        var result = await rpc.ExecuteAsync<BlockTemplate>(logger,
             BitcoinCommands.GetBlockTemplate, ct, extraPoolConfig?.GBTArgs ?? (object) GetBlockTemplateParams());
 
         return result;
@@ -206,7 +206,7 @@ public class BitcoinJobManager : BitcoinJobManagerBase<BitcoinJob>
     }
 
     public virtual async ValueTask<Share> SubmitShareAsync(StratumConnection worker, object submission,
-        double stratumDifficultyBase, CancellationToken ct)
+        CancellationToken ct)
     {
         Contract.RequiresNonNull(worker, nameof(worker));
         Contract.RequiresNonNull(submission, nameof(submission));

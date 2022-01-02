@@ -3,12 +3,12 @@ using System.Net;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Text.RegularExpressions;
 using AspNetCoreRateLimit;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Autofac.Features.Metadata;
 using AutoMapper;
+using Dapper;
 using FluentValidation;
 using McMaster.Extensions.CommandLineUtils;
 using Microsoft.AspNetCore.Builder;
@@ -25,17 +25,21 @@ using Miningcore.Configuration;
 using Miningcore.Crypto.Hashing.Algorithms;
 using Miningcore.Crypto.Hashing.Equihash;
 using Miningcore.Crypto.Hashing.Ethash;
+using Miningcore.Extensions;
 using Miningcore.Messaging;
 using Miningcore.Mining;
 using Miningcore.Native;
 using Miningcore.Notifications;
 using Miningcore.Payments;
+using Miningcore.Persistence;
 using Miningcore.Persistence.Dummy;
 using Miningcore.Persistence.Postgres;
 using Miningcore.Persistence.Postgres.Repositories;
 using Miningcore.Util;
 using NBitcoin.Zcash;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Schema;
+using Newtonsoft.Json.Schema.Generation;
 using Newtonsoft.Json.Serialization;
 using NLog;
 using NLog.Conditions;
@@ -62,13 +66,13 @@ public class Program : BackgroundService
         {
             AppDomain.CurrentDomain.UnhandledException += OnAppDomainUnhandledException;
 
-            if(!ParseCommandLine(args, out var configFile))
+            var app = ParseCommandLine(args);
+
+            if(versionOption.HasValue())
+            {
+                app.ShowVersion();
                 return;
-
-            isShareRecoveryMode = shareRecoveryOption.HasValue();
-
-            Logo();
-            clusterConfig = ReadConfig(configFile);
+            }
 
             if(dumpConfigOption.HasValue())
             {
@@ -76,7 +80,25 @@ public class Program : BackgroundService
                 return;
             }
 
+            if(generateSchemaOption.HasValue())
+            {
+                GenerateJsonConfigSchema();
+                return;
+            }
+
+            if(!configFileOption.HasValue())
+            {
+                app.ShowHelp();
+                return;
+            }
+
+            Logo();
+
+            isShareRecoveryMode = shareRecoveryOption.HasValue();
+            clusterConfig = ReadConfig(configFileOption.Value());
+
             ValidateConfig();
+
             ConfigureLogging();
             LogRuntimeInfo();
             ValidateRuntimeEnvironment();
@@ -112,15 +134,12 @@ public class Program : BackgroundService
 
                 var port = clusterConfig.Api?.Port ?? 4000;
                 var enableApiRateLimiting = clusterConfig.Api?.RateLimiting?.Disabled != true;
-
-                var apiTlsEnable =
-                    clusterConfig.Api?.Tls?.Enabled == true ||
-                    !string.IsNullOrEmpty(clusterConfig.Api?.Tls?.TlsPfxFile);
+                var apiTlsEnable = clusterConfig.Api?.Tls?.Enabled == true || !string.IsNullOrEmpty(clusterConfig.Api?.Tls?.TlsPfxFile);
 
                 if(apiTlsEnable)
                 {
                     if(!File.Exists(clusterConfig.Api.Tls.TlsPfxFile))
-                        logger.ThrowLogPoolStartupException($"Certificate file {clusterConfig.Api.Tls.TlsPfxFile} does not exist!");
+                        throw new PoolStartupException($"Certificate file {clusterConfig.Api.Tls.TlsPfxFile} does not exist!");
                 }
 
                 hostBuilder.ConfigureWebHost(builder =>
@@ -141,6 +160,7 @@ public class Program : BackgroundService
                         services.AddSingleton<PoolApiController, PoolApiController>();
                         services.AddSingleton<AdminApiController, AdminApiController>();
 
+                        // MVC
                         services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
                         services.AddMvc(options =>
@@ -152,6 +172,14 @@ public class Program : BackgroundService
                         {
                             options.JsonSerializerOptions.WriteIndented = true;
                         });
+
+                        // NSwag
+                        #if DEBUG
+                        services.AddOpenApiDocument(settings =>
+                        {
+                            settings.DocumentProcessors.Insert(0, new NSwagDocumentProcessor());
+                        });
+                        #endif
 
                         services.AddResponseCompression();
                         services.AddCors();
@@ -172,8 +200,18 @@ public class Program : BackgroundService
 
                         app.UseMiddleware<ApiExceptionHandlingMiddleware>();
 
-                        UseIpWhiteList(app, true, new[] { "/api/admin" }, clusterConfig.Api?.AdminIpWhitelist);
-                        UseIpWhiteList(app, true, new[] { "/metrics" }, clusterConfig.Api?.MetricsIpWhitelist);
+                        UseIpWhiteList(app, true, new[]
+                        {
+                            "/api/admin"
+                        }, clusterConfig.Api?.AdminIpWhitelist);
+                        UseIpWhiteList(app, true, new[]
+                        {
+                            "/metrics"
+                        }, clusterConfig.Api?.MetricsIpWhitelist);
+
+                        #if DEBUG
+                        app.UseOpenApi();
+                        #endif
 
                         app.UseResponseCompression();
                         app.UseCors(corsPolicyBuilder => corsPolicyBuilder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
@@ -188,14 +226,14 @@ public class Program : BackgroundService
                 });
             }
 
-            host = hostBuilder
-                .UseConsoleLifetime()
-                .Build();
+            host = hostBuilder.UseConsoleLifetime().Build();
+
+            await PreFlightChecks(host.Services);
 
             await host.RunAsync();
         }
 
-        catch(PoolStartupAbortException ex)
+        catch(PoolStartupException ex)
         {
             if(!string.IsNullOrEmpty(ex.Message))
                 await Console.Error.WriteLineAsync(ex.Message);
@@ -215,7 +253,7 @@ public class Program : BackgroundService
 
         catch(AggregateException ex)
         {
-            if(ex.InnerExceptions.First() is not PoolStartupAbortException)
+            if(ex.InnerExceptions.First() is not PoolStartupException)
                 Console.Error.WriteLine(ex);
 
             await Console.Error.WriteLineAsync("Cluster cannot start. Good Bye!");
@@ -236,9 +274,7 @@ public class Program : BackgroundService
 
     private static void ConfigureBackgroundServices(IServiceCollection services)
     {
-        // Notifications
         services.AddHostedService<NotificationService>();
-
         services.AddHostedService<BtStreamReceiver>();
 
         // Share processing
@@ -262,7 +298,6 @@ public class Program : BackgroundService
         else
             logger.Info("Payment processing is not enabled");
 
-
         if(clusterConfig.ShareRelay == null)
         {
             // Pool stats
@@ -273,15 +308,15 @@ public class Program : BackgroundService
     private static IHost host;
     private readonly IComponentContext container;
     private static ILogger logger;
+    private static CommandOption versionOption;
+    private static CommandOption configFileOption;
     private static CommandOption dumpConfigOption;
     private static CommandOption shareRecoveryOption;
+    private static CommandOption generateSchemaOption;
     private static bool isShareRecoveryMode;
     private static ClusterConfig clusterConfig;
     private static readonly ConcurrentDictionary<string, IMiningPool> pools = new();
-
     private static readonly AdminGcStats gcStats = new();
-    private static readonly Regex regexJsonTypeConversionError =
-        new("\"([^\"]+)\"[^\']+\'([^\']+)\'.+\\s(\\d+),.+\\s(\\d+)", RegexOptions.Compiled);
 
     public Program(IComponentContext container)
     {
@@ -310,17 +345,15 @@ public class Program : BackgroundService
             return;
         }
 
-        ConfigureMisc();
-
         if(clusterConfig.InstanceId.HasValue)
             logger.Info($"This is cluster node {clusterConfig.InstanceId.Value}{(!string.IsNullOrEmpty(clusterConfig.ClusterName) ? $" [{clusterConfig.ClusterName}]" : string.Empty)}");
 
         var coinTemplates = LoadCoinTemplates();
-        logger.Info($"{coinTemplates.Keys.Count} coins loaded from {string.Join(", ", clusterConfig.CoinTemplates)}");
+        logger.Info($"{coinTemplates.Keys.Count} coins loaded from '{string.Join(", ", clusterConfig.CoinTemplates)}'");
 
         await Task.WhenAll(clusterConfig.Pools
             .Where(config => config.Enabled)
-            .Select(config=> RunPool(config, coinTemplates, ct)));
+            .Select(config => RunPool(config, coinTemplates, ct)));
     }
 
     private Task RunPool(PoolConfig poolConfig, Dictionary<string, CoinTemplate> coinTemplates, CancellationToken ct)
@@ -329,7 +362,7 @@ public class Program : BackgroundService
         {
             // Lookup coin
             if(!coinTemplates.TryGetValue(poolConfig.Coin, out var template))
-                logger.ThrowLogPoolStartupException($"Pool {poolConfig.Id} references undefined coin '{poolConfig.Coin}'");
+                throw new PoolStartupException($"Pool {poolConfig.Id} references undefined coin '{poolConfig.Coin}'");
 
             poolConfig.Template = template;
 
@@ -350,24 +383,39 @@ public class Program : BackgroundService
     private Task RecoverSharesAsync(string recoveryFilename)
     {
         var shareRecorder = container.Resolve<ShareRecorder>();
-        return shareRecorder.RecoverSharesAsync(clusterConfig, recoveryFilename);
+        return shareRecorder.RecoverSharesAsync(recoveryFilename);
     }
 
     private static void LogRuntimeInfo()
     {
+        logger.Info(() => $"Version {GetVersion()}");
+
+        logger.Info(() => $"Runtime {RuntimeInformation.FrameworkDescription.Trim()} on {RuntimeInformation.OSDescription.Trim()} [{RuntimeInformation.ProcessArchitecture}]");
+    }
+
+    private static string GetVersion()
+    {
         var assembly = Assembly.GetEntryAssembly();
         var gitVersionInformationType = assembly.GetType("GitVersionInformation");
 
-        var assemblySemVer = gitVersionInformationType.GetField("AssemblySemVer").GetValue(null);
-        var branchName = gitVersionInformationType.GetField("BranchName").GetValue(null);
-        var sha = gitVersionInformationType.GetField("Sha").GetValue(null);
+        if(gitVersionInformationType != null)
+        {
+            var assemblySemVer = gitVersionInformationType.GetField("AssemblySemVer").GetValue(null);
+            var branchName = gitVersionInformationType.GetField("BranchName").GetValue(null);
+            var sha = gitVersionInformationType.GetField("Sha").GetValue(null);
 
-        logger.Info(() => $"Version {assemblySemVer}-{branchName} [{sha}]");
-        logger.Info(() => $"Runtime {RuntimeInformation.FrameworkDescription.Trim()} on {RuntimeInformation.OSDescription.Trim()} [{RuntimeInformation.ProcessArchitecture}]");
+            return $"{assemblySemVer}-{branchName} [{sha}]";
+        }
+
+        else
+            return "unknown";
     }
 
     private static void ValidateConfig()
     {
+        if(!clusterConfig.Pools.Any(x => x.Enabled))
+            throw new PoolStartupException("No pools are enabled.");
+
         // set some defaults
         foreach(var config in clusterConfig.Pools)
         {
@@ -381,20 +429,26 @@ public class Program : BackgroundService
             if(clusterConfig.Notifications?.Admin?.Enabled == true)
             {
                 if(string.IsNullOrEmpty(clusterConfig.Notifications?.Email?.FromName))
-                    logger.ThrowLogPoolStartupException($"Notifications are enabled but email sender name is not configured (notifications.email.fromName)");
+                    throw new PoolStartupException($"Notifications are enabled but email sender name is not configured (notifications.email.fromName)");
 
                 if(string.IsNullOrEmpty(clusterConfig.Notifications?.Email?.FromAddress))
-                    logger.ThrowLogPoolStartupException($"Notifications are enabled but email sender address name is not configured (notifications.email.fromAddress)");
+                    throw new PoolStartupException($"Notifications are enabled but email sender address name is not configured (notifications.email.fromAddress)");
 
                 if(string.IsNullOrEmpty(clusterConfig.Notifications?.Admin?.EmailAddress))
-                    logger.ThrowLogPoolStartupException($"Admin notifications are enabled but recipient address is not configured (notifications.admin.emailAddress)");
+                    throw new PoolStartupException($"Admin notifications are enabled but recipient address is not configured (notifications.admin.emailAddress)");
+            }
+
+            if(string.IsNullOrEmpty(clusterConfig.Logging.LogFile))
+            {
+                // emit a newline before regular logging output starts
+                Console.WriteLine();
             }
         }
 
         catch(ValidationException ex)
         {
             Console.Error.WriteLine($"Configuration is not valid:\n\n{string.Join("\n", ex.Errors.Select(x => "=> " + x.ErrorMessage))}");
-            throw new PoolStartupAbortException(string.Empty);
+            throw new PoolStartupException(string.Empty);
         }
     }
 
@@ -409,51 +463,60 @@ public class Program : BackgroundService
         }));
     }
 
-    private static bool ParseCommandLine(string[] args, out string configFile)
+    private static void GenerateJsonConfigSchema()
     {
-        configFile = null;
+        var filename = generateSchemaOption.Value();
 
-        var app = new CommandLineApplication
+        var generator = new JSchemaGenerator
         {
-            FullName = "Miningcore - Mining Pool Engine",
-            ShortVersionGetter = () => $"v{Assembly.GetEntryAssembly().GetName().Version}",
-            LongVersionGetter = () => $"v{Assembly.GetEntryAssembly().GetName().Version}"
+            DefaultRequired = Required.Default,
+            SchemaPropertyOrderHandling = SchemaPropertyOrderHandling.Alphabetical,
+            ContractResolver = new CamelCasePropertyNamesContractResolver(),
+            GenerationProviders =
+            {
+                new StringEnumGenerationProvider()
+            }
         };
 
-        var versionOption = app.Option("-v|--version", "Version Information", CommandOptionType.NoValue);
-        var configFileOption = app.Option("-c|--config <configfile>", "Configuration File",
-            CommandOptionType.SingleValue);
-        dumpConfigOption = app.Option("-dc|--dumpconfig",
-            "Dump the configuration (useful for trouble-shooting typos in the config file)",
-            CommandOptionType.NoValue);
-        shareRecoveryOption = app.Option("-rs", "Import lost shares using existing recovery file",
-            CommandOptionType.SingleValue);
+        var schema = generator.Generate(typeof(ClusterConfig));
+
+        using(var stream = File.Create(filename))
+        {
+            using(var writer = new JsonTextWriter(new StreamWriter(stream, Encoding.UTF8)))
+            {
+                schema.WriteTo(writer);
+
+                writer.Flush();
+            }
+        }
+    }
+
+    private static CommandLineApplication ParseCommandLine(string[] args)
+    {
+        var app = new CommandLineApplication
+        {
+            FullName = "Miningcore",
+            ShortVersionGetter = GetVersion,
+            LongVersionGetter = GetVersion
+        };
+
+        versionOption = app.Option("-v|--version", "Version Information", CommandOptionType.NoValue);
+        configFileOption = app.Option("-c|--config <configfile>", "Configuration File", CommandOptionType.SingleValue);
+        dumpConfigOption = app.Option("-dc|--dumpconfig", "Dump the configuration (useful for trouble-shooting typos in the config file)",CommandOptionType.NoValue);
+        shareRecoveryOption = app.Option("-rs", "Import lost shares using existing recovery file", CommandOptionType.SingleValue);
+        generateSchemaOption = app.Option("-gcs|--generate-config-schema <outputfile>", "Generate JSON schema from configuration options", CommandOptionType.SingleValue);
         app.HelpOption("-? | -h | --help");
 
         app.Execute(args);
 
-        if(versionOption.HasValue())
-        {
-            app.ShowVersion();
-            return false;
-        }
-
-        if(!configFileOption.HasValue())
-        {
-            app.ShowHelp();
-            return false;
-        }
-
-        configFile = configFileOption.Value();
-
-        return true;
+        return app;
     }
 
     private static ClusterConfig ReadConfig(string file)
     {
         try
         {
-            Console.WriteLine($"Using configuration file {file}\n");
+            Console.WriteLine($"Using configuration file '{file}'");
 
             var serializer = JsonSerializer.Create(new JsonSerializerSettings
             {
@@ -464,48 +527,46 @@ public class Program : BackgroundService
             {
                 using(var jsonReader = new JsonTextReader(reader))
                 {
-                    return serializer.Deserialize<ClusterConfig>(jsonReader);
+                    using(var validatingReader = new JSchemaValidatingReader(jsonReader)
+                    {
+                        Schema =  LoadSchema()
+                    })
+                    {
+                        return serializer.Deserialize<ClusterConfig>(validatingReader);
+                    }
                 }
             }
         }
 
+        catch(JSchemaValidationException ex)
+        {
+            throw new PoolStartupException($"Configuration file error: {ex.Message}");
+        }
+
         catch(JsonSerializationException ex)
         {
-            HumanizeJsonParseException(ex);
-            throw;
+            throw new PoolStartupException($"Configuration file error: {ex.Message}");
         }
 
         catch(JsonException ex)
         {
-            Console.Error.WriteLine($"Error: {ex.Message}");
-            throw;
+            throw new PoolStartupException($"Configuration file error: {ex.Message}");
         }
 
         catch(IOException ex)
         {
-            Console.Error.WriteLine($"Error: {ex.Message}");
-            throw;
+            throw new PoolStartupException($"Configuration file error: {ex.Message}");
         }
     }
 
-    private static void HumanizeJsonParseException(JsonSerializationException ex)
+    private static JSchema LoadSchema()
     {
-        var m = regexJsonTypeConversionError.Match(ex.Message);
+        var basePath = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+        var path = Path.Combine(basePath, "config.schema.json");
 
-        if(m.Success)
+        using(var reader = new JsonTextReader(new StreamReader(File.OpenRead(path))))
         {
-            var value = m.Groups[1].Value;
-            var type = Type.GetType(m.Groups[2].Value);
-            var line = m.Groups[3].Value;
-            var col = m.Groups[4].Value;
-
-            if(type == typeof(PayoutScheme))
-                Console.Error.WriteLine($"Error: Payout scheme '{value}' is not (yet) supported (line {line}, column {col})");
-        }
-
-        else
-        {
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            return JSchema.Load(reader);
         }
     }
 
@@ -517,7 +578,7 @@ public class Program : BackgroundService
 
         // require 64-bit on Windows
         if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && RuntimeInformation.ProcessArchitecture == Architecture.X86)
-            throw new PoolStartupAbortException("Miningcore requires 64-Bit Windows");
+            throw new PoolStartupException("Miningcore requires 64-Bit Windows");
     }
 
     private static void Logo()
@@ -529,8 +590,8 @@ public class Program : BackgroundService
  ██║╚██╔╝██║██║██║╚██╗██║██║██║╚██╗██║██║   ██║██║     ██║   ██║██╔══██╗██╔══╝
  ██║ ╚═╝ ██║██║██║ ╚████║██║██║ ╚████║╚██████╔╝╚██████╗╚██████╔╝██║  ██║███████╗
 ");
-        Console.WriteLine(" https://github.com/coinfoundry/miningcore\n");
-        Console.WriteLine(" Please contribute to the development of the project by donating:\n");
+        Console.WriteLine(" https://github.com/oliverw/miningcore\n");
+        Console.WriteLine(" Donate to one of these addresses to support the project:\n");
         Console.WriteLine(" BTC  - 17QnVor1B6oK1rWnVVBrdX9gFzVkZZbhDm");
         Console.WriteLine(" LTC  - LTK6CWastkmBzGxgQhTTtCUjkjDA14kxzC");
         Console.WriteLine(" DASH - XqpBAV9QCaoLnz42uF5frSSfrJTrqHoxjp");
@@ -551,8 +612,8 @@ public class Program : BackgroundService
         {
             // parse level
             var level = !string.IsNullOrEmpty(config.Level)
-                ? NLog.LogLevel.FromString(config.Level)
-                : NLog.LogLevel.Info;
+            ? NLog.LogLevel.FromString(config.Level)
+            : NLog.LogLevel.Info;
 
             var layout = "[${longdate}] [${level:format=FirstCharacter:uppercase=true}] [${logger:shortName=true}] ${message} ${exception:format=ToString,StackTrace}";
 
@@ -589,28 +650,28 @@ public class Program : BackgroundService
                     };
 
                     target.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(
-                        ConditionParser.ParseExpression("level == LogLevel.Trace"),
-                        ConsoleOutputColor.DarkMagenta, ConsoleOutputColor.NoChange));
+                    ConditionParser.ParseExpression("level == LogLevel.Trace"),
+                    ConsoleOutputColor.DarkMagenta, ConsoleOutputColor.NoChange));
 
                     target.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(
-                        ConditionParser.ParseExpression("level == LogLevel.Debug"),
-                        ConsoleOutputColor.Gray, ConsoleOutputColor.NoChange));
+                    ConditionParser.ParseExpression("level == LogLevel.Debug"),
+                    ConsoleOutputColor.Gray, ConsoleOutputColor.NoChange));
 
                     target.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(
-                        ConditionParser.ParseExpression("level == LogLevel.Info"),
-                        ConsoleOutputColor.White, ConsoleOutputColor.NoChange));
+                    ConditionParser.ParseExpression("level == LogLevel.Info"),
+                    ConsoleOutputColor.White, ConsoleOutputColor.NoChange));
 
                     target.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(
-                        ConditionParser.ParseExpression("level == LogLevel.Warn"),
-                        ConsoleOutputColor.Yellow, ConsoleOutputColor.NoChange));
+                    ConditionParser.ParseExpression("level == LogLevel.Warn"),
+                    ConsoleOutputColor.Yellow, ConsoleOutputColor.NoChange));
 
                     target.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(
-                        ConditionParser.ParseExpression("level == LogLevel.Error"),
-                        ConsoleOutputColor.Red, ConsoleOutputColor.NoChange));
+                    ConditionParser.ParseExpression("level == LogLevel.Error"),
+                    ConsoleOutputColor.Red, ConsoleOutputColor.NoChange));
 
                     target.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(
-                        ConditionParser.ParseExpression("level == LogLevel.Fatal"),
-                        ConsoleOutputColor.DarkRed, ConsoleOutputColor.White));
+                    ConditionParser.ParseExpression("level == LogLevel.Fatal"),
+                    ConsoleOutputColor.DarkRed, ConsoleOutputColor.White));
 
                     loggingConfig.AddTarget(target);
                     loggingConfig.AddRule(level, NLog.LogLevel.Fatal, target);
@@ -671,17 +732,17 @@ public class Program : BackgroundService
         return Path.Combine(config.LogBaseDirectory, name);
     }
 
-    private void ConfigureMisc()
+    private static async Task PreFlightChecks(IServiceProvider services)
     {
+        await ConfigurePostgresCompatibilityOptions(services);
+
         ZcashNetworks.Instance.EnsureRegistered();
 
-        var messageBus = container.Resolve<IMessageBus>();
+        var messageBus = services.GetService<IMessageBus>();
 
         // Configure Equihash
         EquihashSolver.messageBus = messageBus;
-
-        if(clusterConfig.EquihashMaxThreads.HasValue)
-            EquihashSolver.MaxThreads = clusterConfig.EquihashMaxThreads.Value;
+        EquihashSolver.MaxThreads = clusterConfig.EquihashMaxThreads ?? 1;
 
         // Configure Ethhash
         Dag.messageBus = messageBus;
@@ -689,8 +750,38 @@ public class Program : BackgroundService
         // Configure Verthash
         Verthash.messageBus = messageBus;
 
+        // Configure Cryptonight
+        Cryptonight.messageBus = messageBus;
+        Cryptonight.InitContexts(clusterConfig.CryptonightMaxThreads ?? 1);
+
         // Configure RandomX
-        LibRandomX.messageBus = messageBus;
+        RandomX.messageBus = messageBus;
+    }
+
+    private static async Task ConfigurePostgresCompatibilityOptions(IServiceProvider services)
+    {
+        if(clusterConfig.Persistence?.Postgres == null)
+            return;
+
+        var cf = services.GetService<IConnectionFactory>();
+
+        // check if 'shares.created' is legacy timestamp (without timezone)
+        var columnType = await GetPostgresColumnType(cf, "shares", "created");
+        var isLegacyTimestamps = columnType.ToLower().Contains("without time zone");
+
+        if(isLegacyTimestamps)
+        {
+            logger.Info(()=> "Enabling Npgsql Legacy Timestamp Behavior");
+
+            AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+        }
+    }
+
+    private static Task<string> GetPostgresColumnType(IConnectionFactory cf, string table, string column)
+    {
+        const string query = "SELECT data_type FROM information_schema.columns WHERE table_name = @table AND column_name = @column";
+
+        return cf.Run(con => con.ExecuteScalarAsync<string>(query, new { table, column }));
     }
 
     private static void ConfigurePersistence(ContainerBuilder builder)
@@ -698,7 +789,7 @@ public class Program : BackgroundService
         if(clusterConfig.Persistence == null &&
            clusterConfig.PaymentProcessing?.Enabled == true &&
            clusterConfig.ShareRelay == null)
-            logger.ThrowLogPoolStartupException("Persistence is not configured!");
+            throw new PoolStartupException("Persistence is not configured!");
 
         if(clusterConfig.Persistence?.Postgres != null)
             ConfigurePostgres(clusterConfig.Persistence.Postgres, builder);
@@ -710,18 +801,16 @@ public class Program : BackgroundService
     {
         // validate config
         if(string.IsNullOrEmpty(pgConfig.Host))
-            logger.ThrowLogPoolStartupException("Postgres configuration: invalid or missing 'host'");
+            throw new PoolStartupException("Postgres configuration: invalid or missing 'host'");
 
         if(pgConfig.Port == 0)
-            logger.ThrowLogPoolStartupException("Postgres configuration: invalid or missing 'port'");
+            throw new PoolStartupException("Postgres configuration: invalid or missing 'port'");
 
         if(string.IsNullOrEmpty(pgConfig.Database))
-            logger.ThrowLogPoolStartupException("Postgres configuration: invalid or missing 'database'");
+            throw new PoolStartupException("Postgres configuration: invalid or missing 'database'");
 
         if(string.IsNullOrEmpty(pgConfig.User))
-            logger.ThrowLogPoolStartupException("Postgres configuration: invalid or missing 'user'");
-
-        //AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+            throw new PoolStartupException("Postgres configuration: invalid or missing 'user'");
 
         // build connection string
         var connectionString = $"Server={pgConfig.Host};Port={pgConfig.Port};Database={pgConfig.Database};User Id={pgConfig.User};Password={pgConfig.Password};CommandTimeout=900;";
@@ -733,7 +822,7 @@ public class Program : BackgroundService
         // register repositories
         builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
             .Where(t =>
-                t?.Namespace?.StartsWith(typeof(ShareRepository).Namespace) == true)
+            t?.Namespace?.StartsWith(typeof(ShareRepository).Namespace) == true)
             .AsImplementedInterfaces()
             .SingleInstance();
     }
@@ -746,8 +835,7 @@ public class Program : BackgroundService
 
         // register repositories
         builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
-            .Where(t =>
-                t?.Namespace?.StartsWith(typeof(ShareRepository).Namespace) == true)
+            .Where(t => t?.Namespace?.StartsWith(typeof(ShareRepository).Namespace) == true)
             .AsImplementedInterfaces()
             .SingleInstance();
     }
@@ -762,8 +850,7 @@ public class Program : BackgroundService
         {
             defaultTemplates
         }
-        .Concat(clusterConfig.CoinTemplates != null ?
-            clusterConfig.CoinTemplates.Where(x => x != defaultTemplates) : Array.Empty<string>())
+        .Concat(clusterConfig.CoinTemplates != null ? clusterConfig.CoinTemplates.Where(x => x != defaultTemplates) : Array.Empty<string>())
         .ToArray();
 
         return CoinTemplateLoader.Load(container, clusterConfig.CoinTemplates);
@@ -773,7 +860,10 @@ public class Program : BackgroundService
     {
         var ipList = whitelist?.Select(IPAddress.Parse).ToList();
         if(defaultToLoopback && (ipList == null || ipList.Count == 0))
-            ipList = new List<IPAddress>(new[] { IPAddress.Loopback, IPAddress.IPv6Loopback, IPUtils.IPv4LoopBackOnIPv6 });
+            ipList = new List<IPAddress>(new[]
+            {
+                IPAddress.Loopback, IPAddress.IPv6Loopback, IPUtils.IPv4LoopBackOnIPv6
+            });
 
         if(ipList.Count > 0)
         {

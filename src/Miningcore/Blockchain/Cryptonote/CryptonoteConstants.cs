@@ -11,12 +11,11 @@ public enum CryptonoteNetworkType
     Stage
 }
 
-public class CryptonoteConstants
+public static class CryptonoteConstants
 {
     public const string WalletDaemonCategory = "wallet";
 
     public const string DaemonRpcLocation = "json_rpc";
-    public const string DaemonRpcDigestAuthRealm = "monero_rpc";
     public const int MoneroRpcMethodNotFound = -32601;
     public const int PaymentIdHexLength = 64;
     public static readonly Regex RegexValidNonce = new("^[0-9a-f]{8}$", RegexOptions.Compiled);

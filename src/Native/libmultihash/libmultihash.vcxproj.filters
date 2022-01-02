@@ -254,9 +254,6 @@
     <ClInclude Include="brg_endian.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="x25x.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="lane.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -276,6 +273,24 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="blake2\ref\blake2-impl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="sha256csm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hmq17.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="phi.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="x16rv2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="heavyhash\heavyhash.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="heavyhash\keccak_tiny.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -502,9 +517,6 @@
     <ClCompile Include="KeccakP-800-reference.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="x25x.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="lane.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -536,6 +548,24 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="blake2\ref\blake2xs-ref.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sha256csm.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hmq17.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="phi.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="x16rv2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="heavyhash\heavyhash.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="heavyhash\keccak_tiny.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

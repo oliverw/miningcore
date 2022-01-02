@@ -4,6 +4,7 @@ using System.Net.Http.Headers;
 using System.Net.WebSockets;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
+using System.Reactive.Threading.Tasks;
 using System.Text;
 using Miningcore.Configuration;
 using Miningcore.Extensions;
@@ -29,19 +30,19 @@ public class RpcClient
         Contract.RequiresNonNull(messageBus, nameof(messageBus));
         Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(poolId), $"{nameof(poolId)} must not be empty");
 
-        this.endPoint = endPoint;
+        config = endPoint;
         this.serializerSettings = serializerSettings;
         this.messageBus = messageBus;
         this.poolId = poolId;
 
         serializer = new JsonSerializer
         {
-            ContractResolver = serializerSettings.ContractResolver
+            ContractResolver = serializerSettings.ContractResolver!
         };
     }
 
     private readonly JsonSerializerSettings serializerSettings;
-    protected readonly DaemonEndpointConfig endPoint;
+    protected readonly DaemonEndpointConfig config;
     private readonly JsonSerializer serializer;
     private readonly IMessageBus messageBus;
     private readonly string poolId;
@@ -65,7 +66,7 @@ public class RpcClient
 
         try
         {
-            var response = await RequestAsync(logger, ct, endPoint, method, payload);
+            var response = await RequestAsync(logger, ct, config, method, payload);
 
             if(response.Result is JToken token)
                 return new RpcResponse<TResponse>(token.ToObject<TResponse>(serializer), response.Error);
@@ -100,7 +101,7 @@ public class RpcClient
 
         try
         {
-            var response = await BatchRequestAsync(logger, ct, endPoint, batch);
+            var response = await BatchRequestAsync(logger, ct, config, batch);
 
             return response
                 .Select(x => new RpcResponse<JToken>(x.Result != null ? JToken.FromObject(x.Result) : null, x.Error))
@@ -130,8 +131,9 @@ public class RpcClient
     {
         logger.LogInvoke();
 
-        return Observable.Merge(portMap.Keys
-                .Select(endPoint => ZmqSubscribeEndpoint(logger, ct, portMap[endPoint].Socket, portMap[endPoint].Topic)))
+        return portMap.Keys
+            .Select(endPoint => ZmqSubscribeEndpoint(logger, ct, portMap[endPoint].Socket, portMap[endPoint].Topic))
+            .Merge()
             .Publish()
             .RefCount();
     }
@@ -148,10 +150,10 @@ public class RpcClient
         // build url
         var protocol = endPoint.Ssl || endPoint.Http2 ? Uri.UriSchemeHttps : Uri.UriSchemeHttp;
         var requestUrl = $"{protocol}://{endPoint.Host}:{endPoint.Port}";
+
         if(!string.IsNullOrEmpty(endPoint.HttpPath))
             requestUrl += $"{(endPoint.HttpPath.StartsWith("/") ? string.Empty : "/")}{endPoint.HttpPath}";
 
-        // build request
         using(var request = new HttpRequestMessage(HttpMethod.Post, requestUrl))
         {
             if(endPoint.Http2)
@@ -159,16 +161,15 @@ public class RpcClient
             else
                 request.Headers.ConnectionClose = false;    // enable keep-alive
 
-            // build content
+            // content
             var json = JsonConvert.SerializeObject(rpcRequest, serializerSettings);
             request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            // build auth header
+            // auth header
             if(!string.IsNullOrEmpty(endPoint.User))
             {
                 var auth = $"{endPoint.User}:{endPoint.Password}";
-                var base64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(auth));
-                request.Headers.Authorization = new AuthenticationHeaderValue("Basic", base64);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Basic", auth.ToByteArrayBase64());
             }
 
             logger.Trace(() => $"Sending RPC request to {requestUrl}: {json}");
@@ -196,16 +197,15 @@ public class RpcClient
     {
         var sw = Stopwatch.StartNew();
 
-        // build rpc request
         var rpcRequests = batch.Select(x => new JsonRpcRequest<object>(x.Method, x.Payload, GetRequestId()));
 
-        // build url
+        // url
         var protocol = (endPoint.Ssl || endPoint.Http2) ? Uri.UriSchemeHttps : Uri.UriSchemeHttp;
         var requestUrl = $"{protocol}://{endPoint.Host}:{endPoint.Port}";
+
         if(!string.IsNullOrEmpty(endPoint.HttpPath))
             requestUrl += $"{(endPoint.HttpPath.StartsWith("/") ? string.Empty : "/")}{endPoint.HttpPath}";
 
-        // build request
         using(var request = new HttpRequestMessage(HttpMethod.Post, requestUrl))
         {
             if(endPoint.Http2)
@@ -213,16 +213,15 @@ public class RpcClient
             else
                 request.Headers.ConnectionClose = false;    // enable keep-alive
 
-            // build request content
+            // content
             var json = JsonConvert.SerializeObject(rpcRequests, serializerSettings);
             request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            // build auth header
+            // auth header
             if(!string.IsNullOrEmpty(endPoint.User))
             {
                 var auth = $"{endPoint.User}:{endPoint.Password}";
-                var base64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(auth));
-                request.Headers.Authorization = new AuthenticationHeaderValue("Basic", base64);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Basic", auth.ToByteArrayBase64());
             }
 
             logger.Trace(() => $"Sending RPC request to {requestUrl}: {json}");
@@ -275,7 +274,7 @@ public class RpcClient
                                 // connect
                                 var protocol = endPoint.Ssl ? "wss" : "ws";
                                 var uri = new Uri($"{protocol}://{endPoint.Host}:{endPoint.Port}{endPoint.HttpPath}");
-                                client.Options.RemoteCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
+                                client.Options.RemoteCertificateValidationCallback = (_, _, _, _) => true;
 
                                 logger.Debug(() => $"Establishing WebSocket connection to {uri}");
                                 await client.ConnectAsync(uri, cts.Token);
@@ -289,33 +288,22 @@ public class RpcClient
                                 await client.SendAsync(requestData, WebSocketMessageType.Text, true, cts.Token);
 
                                 // stream response
-                                var stream = new MemoryStream();
-
                                 while(!cts.IsCancellationRequested && client.State == WebSocketState.Open)
                                 {
-                                    stream.SetLength(0);
-                                    var complete = false;
+                                    var stream = new MemoryStream();
 
-                                    // read until EndOfMessage
                                     do
                                     {
-                                        using(var ctsTimeout = new CancellationTokenSource())
-                                        {
-                                            using(var ctsComposite = CancellationTokenSource.CreateLinkedTokenSource(cts.Token, ctsTimeout.Token))
-                                            {
-                                                ctsTimeout.CancelAfter(TimeSpan.FromMinutes(10));
+                                        var response = await client.ReceiveAsync(buf, cts.Token);
 
-                                                var response = await client.ReceiveAsync(buf, ctsComposite.Token);
+                                        if(response.MessageType == WebSocketMessageType.Binary)
+                                            throw new InvalidDataException("expected text, received binary data");
 
-                                                if(response.MessageType == WebSocketMessageType.Binary)
-                                                    throw new InvalidDataException("expected text, received binary data");
+                                        await stream.WriteAsync(buf, 0, response.Count, cts.Token);
 
-                                                await stream.WriteAsync(buf, 0, response.Count, ctsComposite.Token);
-
-                                                complete = response.EndOfMessage;
-                                            }
-                                        }
-                                    } while(!complete && !cts.IsCancellationRequested && client.State == WebSocketState.Open);
+                                        if(response.EndOfMessage)
+                                            break;
+                                    } while(!cts.IsCancellationRequested && client.State == WebSocketState.Open);
 
                                     logger.Debug(() => $"Received WebSocket message with length {stream.Length}");
 
@@ -323,6 +311,16 @@ public class RpcClient
                                     obs.OnNext(stream.ToArray());
                                 }
                             }
+                        }
+
+                        catch (TaskCanceledException)
+                        {
+                            break;
+                        }
+
+                        catch (ObjectDisposedException)
+                        {
+                            break;
                         }
 
                         catch(Exception ex)
@@ -346,42 +344,45 @@ public class RpcClient
         {
             var tcs = CancellationTokenSource.CreateLinkedTokenSource(ct);
 
-            Task.Run(() =>
+            var thread = new Thread(() =>
             {
-                using(tcs)
+                while(!tcs.IsCancellationRequested)
                 {
-                    while(!tcs.IsCancellationRequested)
+                    try
                     {
-                        try
+                        using(var subSocket = new ZSocket(ZSocketType.SUB))
                         {
-                            using(var subSocket = new ZSocket(ZSocketType.SUB))
+                            //subSocket.Options.ReceiveHighWatermark = 1000;
+                            subSocket.Connect(url);
+                            subSocket.Subscribe(topic);
+
+                            logger.Debug($"Subscribed to {url}/{topic}");
+
+                            while(!tcs.IsCancellationRequested)
                             {
-                                //subSocket.Options.ReceiveHighWatermark = 1000;
-                                subSocket.Connect(url);
-                                subSocket.Subscribe(topic);
-
-                                logger.Debug($"Subscribed to {url}/{topic}");
-
-                                while(!tcs.IsCancellationRequested)
-                                {
-                                    var msg = subSocket.ReceiveMessage();
-                                    obs.OnNext(msg);
-                                }
+                                var msg = subSocket.ReceiveMessage();
+                                obs.OnNext(msg);
                             }
                         }
+                    }
 
-                        catch(Exception ex)
-                        {
-                            logger.Error(ex);
-                        }
+                    catch(Exception ex)
+                    {
+                        logger.Error(ex);
 
-                        // do not consume all CPU cycles in case of a long lasting error condition
+                        // do not run wild in case of a persistent error condition
                         Thread.Sleep(1000);
                     }
                 }
-            }, tcs.Token);
+            });
 
-            return Disposable.Create(() => { tcs.Cancel(); });
+            thread.Start();
+
+            return Disposable.Create(() =>
+            {
+                tcs.Cancel();
+                tcs.Dispose();
+            });
         }));
     }
 }

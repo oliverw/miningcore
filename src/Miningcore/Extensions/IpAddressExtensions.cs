@@ -1,4 +1,5 @@
 using System.Net;
+using Miningcore.Contracts;
 
 namespace Miningcore.Extensions;
 
@@ -6,6 +7,9 @@ public static class IpAddressExtensions
 {
     public static bool IsEqual(this IPAddress address, IPAddress other)
     {
+        Contract.RequiresNonNull(address, nameof(address));
+        Contract.RequiresNonNull(other, nameof(other));
+
         if(address.Equals(other))
             return true;
 

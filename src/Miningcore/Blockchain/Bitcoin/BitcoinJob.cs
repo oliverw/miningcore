@@ -19,6 +19,7 @@ namespace Miningcore.Blockchain.Bitcoin;
 
 public class BitcoinJob
 {
+    private const string SymbolRaptoreum = "RTM";
     protected IHashAlgorithm blockHasher;
     protected IMasterClock clock;
     protected IHashAlgorithm coinbaseHasher;
@@ -31,7 +32,6 @@ public class BitcoinJob
 
     protected Network network;
     protected IDestination poolAddressDestination;
-    protected PoolConfig poolConfig;
     protected BitcoinTemplate coin;
     private BitcoinTemplate.BitcoinNetworkParams networkParams;
     protected readonly ConcurrentDictionary<string, bool> submissions = new(StringComparer.OrdinalIgnoreCase);
@@ -228,7 +228,7 @@ public class BitcoinJob
         ops.Add(Op.GetPushOp(now));
 
         // push placeholder
-        ops.Add(Op.GetPushOp((uint) 0));
+        ops.Add(Op.GetPushOp(0));
 
         return new Script(ops);
     }
@@ -243,6 +243,9 @@ public class BitcoinJob
 
         if(coin.HasMasterNodes)
             rewardToPool = CreateMasternodeOutputs(tx, rewardToPool);
+
+        if (coin.HasFounderFee)
+            rewardToPool = CreateFounderOutputs(tx, rewardToPool);
 
         // Remaining amount goes to pool
         tx.Outputs.Add(rewardToPool, poolAddressDestination);
@@ -388,8 +391,8 @@ public class BitcoinJob
 
     protected virtual byte[] SerializeBlock(byte[] header, byte[] coinbase)
     {
-        var transactionCount = (uint) BlockTemplate.Transactions.Length + 1; // +1 for prepended coinbase tx
         var rawTransactionBuffer = BuildRawTransactionBuffer();
+        var transactionCount = (uint) BlockTemplate.Transactions.Length + 1; // +1 for prepended coinbase tx
 
         using(var stream = new MemoryStream())
         {
@@ -397,6 +400,7 @@ public class BitcoinJob
 
             bs.ReadWrite(ref header);
             bs.ReadWriteAsVarInt(ref transactionCount);
+
             bs.ReadWrite(ref coinbase);
             bs.ReadWrite(ref rawTransactionBuffer);
 
@@ -438,45 +442,82 @@ public class BitcoinJob
             else
                 masternodes = new[] { masterNodeParameters.Masternode.ToObject<Masternode>() };
 
-            foreach(var masterNode in masternodes)
+            if(masternodes != null)
             {
-                if(!string.IsNullOrEmpty(masterNode.Payee))
+                foreach(var masterNode in masternodes)
                 {
-                    var payeeDestination = BitcoinUtils.AddressToDestination(masterNode.Payee, network);
-                    var payeeReward = masterNode.Amount;
-                    reward -= payeeReward;
+                    if(!string.IsNullOrEmpty(masterNode.Payee))
+                    {
+                        var payeeDestination = BitcoinUtils.AddressToDestination(masterNode.Payee, network);
+                        var payeeReward = masterNode.Amount;
 
-                    tx.Outputs.Add(payeeReward, payeeDestination);
+                        tx.Outputs.Add(payeeReward, payeeDestination);
+                        reward -= payeeReward;
+                    }
                 }
             }
         }
 
-        if(masterNodeParameters.SuperBlocks != null && masterNodeParameters.SuperBlocks.Length > 0)
+        if(masterNodeParameters.SuperBlocks is { Length: > 0 })
         {
             foreach(var superBlock in masterNodeParameters.SuperBlocks)
             {
                 var payeeAddress = BitcoinUtils.AddressToDestination(superBlock.Payee, network);
                 var payeeReward = superBlock.Amount;
-                reward -= payeeReward;
 
                 tx.Outputs.Add(payeeReward, payeeAddress);
+                reward -= payeeReward;
             }
         }
 
         if(!coin.HasPayee && !string.IsNullOrEmpty(masterNodeParameters.Payee))
         {
             var payeeAddress = BitcoinUtils.AddressToDestination(masterNodeParameters.Payee, network);
-            var payeeReward = masterNodeParameters.PayeeAmount ?? (reward / 5);
-
-            reward -= payeeReward;
+            var payeeReward = masterNodeParameters.PayeeAmount;
 
             tx.Outputs.Add(payeeReward, payeeAddress);
+            reward -= payeeReward;
         }
 
         return reward;
     }
 
     #endregion // Masternodes
+
+    #region Founder
+
+    protected FounderBlockTemplateExtra founderParameters;
+
+    protected virtual Money CreateFounderOutputs(Transaction tx, Money reward)
+    {
+        if (founderParameters.Founder != null)
+        {
+            Founder[] founders;
+            if (founderParameters.Founder.Type == JTokenType.Array)
+                founders = founderParameters.Founder.ToObject<Founder[]>();
+            else
+                founders = new[] { founderParameters.Founder.ToObject<Founder>() };
+
+            if(founders != null)
+            {
+                foreach(var Founder in founders)
+                {
+                    if(!string.IsNullOrEmpty(Founder.Payee))
+                    {
+                        var payeeAddress = BitcoinUtils.AddressToDestination(Founder.Payee, network);
+                        var payeeReward = Founder.Amount;
+
+                        tx.Outputs.Add(payeeReward, payeeAddress);
+                        reward -= payeeReward;
+                    }
+                }
+            }
+        }
+
+        return reward;
+    }
+
+    #endregion // Founder
 
     #region API-Surface
 
@@ -486,15 +527,15 @@ public class BitcoinJob
     public string JobId { get; protected set; }
 
     public void Init(BlockTemplate blockTemplate, string jobId,
-        PoolConfig poolConfig, BitcoinPoolConfigExtra extraPoolConfig,
-        ClusterConfig clusterConfig, IMasterClock clock,
+        PoolConfig pc, BitcoinPoolConfigExtra extraPoolConfig,
+        ClusterConfig cc, IMasterClock clock,
         IDestination poolAddressDestination, Network network,
         bool isPoS, double shareMultiplier, IHashAlgorithm coinbaseHasher,
         IHashAlgorithm headerHasher, IHashAlgorithm blockHasher)
     {
         Contract.RequiresNonNull(blockTemplate, nameof(blockTemplate));
-        Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
-        Contract.RequiresNonNull(clusterConfig, nameof(clusterConfig));
+        Contract.RequiresNonNull(pc, nameof(pc));
+        Contract.RequiresNonNull(cc, nameof(cc));
         Contract.RequiresNonNull(clock, nameof(clock));
         Contract.RequiresNonNull(poolAddressDestination, nameof(poolAddressDestination));
         Contract.RequiresNonNull(coinbaseHasher, nameof(coinbaseHasher));
@@ -502,8 +543,7 @@ public class BitcoinJob
         Contract.RequiresNonNull(blockHasher, nameof(blockHasher));
         Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(jobId), $"{nameof(jobId)} must not be empty");
 
-        this.poolConfig = poolConfig;
-        coin = poolConfig.Template.As<BitcoinTemplate>();
+        coin = pc.Template.As<BitcoinTemplate>();
         networkParams = coin.GetNetwork(network.ChainName);
         txVersion = coin.CoinbaseTxVersion;
         this.network = network;
@@ -512,12 +552,11 @@ public class BitcoinJob
         BlockTemplate = blockTemplate;
         JobId = jobId;
 
-        var coinbaseString = !string.IsNullOrEmpty(clusterConfig.PaymentProcessing?.CoinbaseString) ?
-            clusterConfig.PaymentProcessing?.CoinbaseString.Trim() : "Miningcore";
+        var coinbaseString = !string.IsNullOrEmpty(cc.PaymentProcessing?.CoinbaseString) ?
+            cc.PaymentProcessing?.CoinbaseString.Trim() : "Miningcore";
 
         scriptSigFinalBytes = new Script(Op.GetPushOp(Encoding.UTF8.GetBytes(coinbaseString))).ToBytes();
 
-        //Difficulty = new Target(new Org.BouncyCastle.Math.BigInteger(BlockTemplate.Target, 16)).Difficulty;
         Difficulty = new Target(System.Numerics.BigInteger.Parse(BlockTemplate.Target, NumberStyles.HexNumber)).Difficulty;
 
         extraNoncePlaceHolderLength = BitcoinConstants.ExtranoncePlaceHolderLength;
@@ -531,16 +570,27 @@ public class BitcoinJob
         {
             masterNodeParameters = BlockTemplate.Extra.SafeExtensionDataAs<MasterNodeBlockTemplateExtra>();
 
+            if(coin.Symbol == SymbolRaptoreum)
+            {
+                if(masterNodeParameters.Extra?.ContainsKey("smartnode") == true)
+                {
+                    masterNodeParameters.Masternode = JToken.FromObject(masterNodeParameters.Extra["smartnode"]);
+                }
+            }
+
             if(!string.IsNullOrEmpty(masterNodeParameters.CoinbasePayload))
             {
                 txVersion = 3;
-                var txType = 5;
-                txVersion += ((uint) (txType << 16));
+                const uint txType = 5;
+                txVersion += txType << 16;
             }
         }
 
         if(coin.HasPayee)
             payeeParameters = BlockTemplate.Extra.SafeExtensionDataAs<PayeeBlockTemplateExtra>();
+
+        if (coin.HasFounderFee)
+            founderParameters = BlockTemplate.Extra.SafeExtensionDataAs<FounderBlockTemplateExtra>();
 
         this.coinbaseHasher = coinbaseHasher;
         this.headerHasher = headerHasher;

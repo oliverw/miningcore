@@ -1,3 +1,5 @@
+using JetBrains.Annotations;
+
 namespace Miningcore.Persistence.Model.Projections;
 
 public class WorkerPerformanceStats
@@ -12,6 +14,7 @@ public class WorkerPerformanceStatsContainer
     public Dictionary<string, WorkerPerformanceStats> Workers { get; set; }
 }
 
+[UsedImplicitly]
 public class MinerStats
 {
     public double PendingShares { get; set; }

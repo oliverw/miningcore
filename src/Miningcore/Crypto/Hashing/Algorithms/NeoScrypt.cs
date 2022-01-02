@@ -3,6 +3,7 @@ using Miningcore.Native;
 
 namespace Miningcore.Crypto.Hashing.Algorithms;
 
+[Identifier("neoscrypt")]
 public unsafe class NeoScrypt : IHashAlgorithm
 {
     public NeoScrypt(uint profile)
@@ -21,7 +22,7 @@ public unsafe class NeoScrypt : IHashAlgorithm
         {
             fixed (byte* output = result)
             {
-                LibMultihash.neoscrypt(input, output, (uint) data.Length, profile);
+                Multihash.neoscrypt(input, output, (uint) data.Length, profile);
             }
         }
     }

@@ -15,7 +15,6 @@ using Miningcore.Messaging;
 using Miningcore.Notifications.Messages;
 using Miningcore.Stratum;
 using Miningcore.Time;
-using Miningcore.Util;
 using Newtonsoft.Json;
 using NLog;
 using Block = Miningcore.Blockchain.Ethereum.DaemonResponses.Block;
@@ -23,6 +22,8 @@ using Contract = Miningcore.Contracts.Contract;
 using EC = Miningcore.Blockchain.Ethereum.EthCommands;
 using static Miningcore.Util.ActionUtils;
 using System.Reactive;
+using Miningcore.Mining;
+using Newtonsoft.Json.Linq;
 
 namespace Miningcore.Blockchain.Ethereum;
 
@@ -32,8 +33,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
         IComponentContext ctx,
         IMasterClock clock,
         IMessageBus messageBus,
-        IExtraNonceProvider extraNonceProvider,
-        JsonSerializerSettings serializerSettings) :
+        IExtraNonceProvider extraNonceProvider) :
         base(ctx, messageBus)
     {
         Contract.RequiresNonNull(ctx, nameof(ctx));
@@ -43,15 +43,10 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
 
         this.clock = clock;
         this.extraNonceProvider = extraNonceProvider;
-
-        serializer = new JsonSerializer
-        {
-            ContractResolver = serializerSettings.ContractResolver
-        };
     }
 
     private DaemonEndpointConfig[] daemonEndpoints;
-    private RpcClient rpcClient;
+    private RpcClient rpc;
     private EthereumNetworkType networkType;
     private GethChainType chainType;
     private EthashFull ethash;
@@ -61,7 +56,6 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
     private const int MaxBlockBacklog = 3;
     protected readonly Dictionary<string, EthereumJob> validJobs = new();
     private EthereumPoolConfigExtra extraPoolConfig;
-    private readonly JsonSerializer serializer;
 
     protected async Task<bool> UpdateJob(CancellationToken ct, string via = null)
     {
@@ -69,7 +63,12 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
 
         try
         {
-            return UpdateJob(await GetBlockTemplateAsync(ct), via);
+            var bt = await GetBlockTemplateAsync(ct);
+
+            if(bt == null)
+                return false;
+
+            return UpdateJob(bt, via);
         }
 
         catch(Exception ex)
@@ -150,7 +149,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
             new RpcRequest(EC.GetBlockByNumber, new[] { (object) "latest", true })
         };
 
-        var responses = await rpcClient.ExecuteBatchAsync(logger, ct, requests);
+        var responses = await rpc.ExecuteBatchAsync(logger, ct, requests);
 
         if(responses.Any(x => x.Error != null))
         {
@@ -162,9 +161,15 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
         var work = responses[0].Response.ToObject<string[]>();
         var block = responses[1].Response.ToObject<Block>();
 
+        if(work == null)
+            return null;
+
         // append blockheight (Recent versions of geth return this as the 4th element in the getWork response, older geth does not)
         if(work.Length < 4)
         {
+            if(block == null)
+                return null;
+
             var currentHeight = block.Height.Value;
             work = work.Concat(new[] { (currentHeight + 1).ToStringHexWithPrefix() }).ToArray();
         }
@@ -188,7 +193,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
 
     private async Task ShowDaemonSyncProgressAsync(CancellationToken ct)
     {
-        var syncStateResponse = await rpcClient.ExecuteAsync<object>(logger, EC.GetSyncState, ct);
+        var syncStateResponse = await rpc.ExecuteAsync<object>(logger, EC.GetSyncState, ct);
 
         if(syncStateResponse.Error == null)
         {
@@ -196,28 +201,40 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
             if(syncStateResponse.Response is false)
                 return;
 
-            if(syncStateResponse.Response is SyncState syncState)
+            if(syncStateResponse.Response is JObject obj)
             {
+                var syncState = obj.ToObject<SyncState>();
+
                 // get peer count
-                var getPeerCountResponse = await rpcClient.ExecuteAsync<string>(logger, EC.GetPeerCount, ct);
+                var getPeerCountResponse = await rpc.ExecuteAsync<string>(logger, EC.GetPeerCount, ct);
                 var peerCount = getPeerCountResponse.Response.IntegralFromHex<uint>();
 
-                if(syncState.WarpChunksAmount != 0)
+                if(syncState?.WarpChunksAmount.HasValue == true)
                 {
-                    var warpChunkAmount = syncState.WarpChunksAmount;
-                    var warpChunkProcessed = syncState.WarpChunksProcessed;
+                    var warpChunkAmount = syncState.WarpChunksAmount.Value;
+                    var warpChunkProcessed = syncState.WarpChunksProcessed.Value;
                     var percent = (double) warpChunkProcessed / warpChunkAmount * 100;
 
-                    logger.Info(() => $"Daemons have downloaded {percent:0.00}% of warp-chunks from {peerCount} peers");
+                    logger.Info(() => $"Daemon has downloaded {percent:0.00}% of warp-chunks from {peerCount} peers");
                 }
 
-                else if(syncState.HighestBlock != 0)
+                else if(syncState?.HighestBlock.HasValue == true && syncState.CurrentBlock.HasValue)
                 {
-                    var lowestHeight = syncState.CurrentBlock;
-                    var totalBlocks = syncState.HighestBlock;
-                    var percent = (double) lowestHeight / totalBlocks * 100;
+                    var lowestHeight = syncState.CurrentBlock.Value;
+                    var totalBlocks = syncState.HighestBlock.Value;
+                    var blocksPercent = (double) lowestHeight / totalBlocks * 100;
 
-                    logger.Info(() => $"Daemons have downloaded {percent:0.00}% of blockchain from {peerCount} peers");
+                    if(syncState.KnownStates.HasValue)
+                    {
+                        var knownStates = syncState.KnownStates.Value;
+                        var pulledStates = syncState.PulledStates.Value;
+                        var statesPercent = (double) pulledStates / knownStates * 100;
+
+                        logger.Info(() => $"Daemon has downloaded {blocksPercent:0.00}% of blocks and {statesPercent:0.00}% of states from {peerCount} peers");
+                    }
+
+                    else
+                        logger.Info(() => $"Daemon has downloaded {blocksPercent:0.00}% of blocks from {peerCount} peers");
                 }
             }
         }
@@ -235,7 +252,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
                 new RpcRequest(EC.GetBlockByNumber, new[] { (object) "latest", true })
             };
 
-            var responses = await rpcClient.ExecuteBatchAsync(logger, ct, requests);
+            var responses = await rpc.ExecuteBatchAsync(logger, ct, requests);
 
             if(responses.Any(x => x.Error != null))
             {
@@ -248,19 +265,19 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
 
             // extract results
             var peerCount = responses[0].Response.ToObject<string>().IntegralFromHex<int>();
-            var latestBlockInfo = responses[1].Response.ToObject<Block>();
+            var blockInfo = responses[1].Response.ToObject<Block>();
 
-            var latestBlockHeight = latestBlockInfo.Height.Value;
-            var latestBlockTimestamp = latestBlockInfo.Timestamp;
-            var latestBlockDifficulty = latestBlockInfo.Difficulty.IntegralFromHex<ulong>();
+            var latestBlockHeight = blockInfo!.Height.Value;
+            var latestBlockTimestamp = blockInfo.Timestamp;
+            var latestBlockDifficulty = blockInfo.Difficulty.IntegralFromHex<ulong>();
 
             var sampleSize = (ulong) 300;
             var sampleBlockNumber = latestBlockHeight - sampleSize;
-            var sampleBlockResults = await rpcClient.ExecuteAsync<Block>(logger, EC.GetBlockByNumber, ct, new[] { (object) sampleBlockNumber.ToStringHexWithPrefix(), true });
+            var sampleBlockResults = await rpc.ExecuteAsync<Block>(logger, EC.GetBlockByNumber, ct, new[] { (object) sampleBlockNumber.ToStringHexWithPrefix(), true });
             var sampleBlockTimestamp = sampleBlockResults.Response.Timestamp;
 
             var blockTime = (double) (latestBlockTimestamp - sampleBlockTimestamp) / sampleSize;
-            var networkHashrate = (double) (latestBlockDifficulty / blockTime);
+            var networkHashrate = latestBlockDifficulty / blockTime;
 
             BlockchainStats.NetworkHashrate = blockTime > 0 ? networkHashrate : 0;
             BlockchainStats.ConnectedPeers = peerCount;
@@ -275,7 +292,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
     private async Task<bool> SubmitBlockAsync(Share share, string fullNonceHex, string headerHash, string mixHash)
     {
         // submit work
-        var response = await rpcClient.ExecuteAsync<object>(logger, EC.SubmitWork, CancellationToken.None, new[]
+        var response = await rpc.ExecuteAsync<object>(logger, EC.SubmitWork, CancellationToken.None, new[]
         {
             fullNonceHex,
             headerHash,
@@ -295,27 +312,23 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
         return true;
     }
 
-    private object[] GetJobParamsForStratum(bool isNew)
+    public object[] GetJobParamsForStratum()
     {
         var job = currentJob;
 
-        if(job != null)
-        {
-            return new object[]
-            {
-                job.Id,
-                job.BlockTemplate.Seed.StripHexPrefix(),
-                job.BlockTemplate.Header.StripHexPrefix(),
-                isNew
-            };
-        }
+        return job?.GetJobParamsForStratum() ?? Array.Empty<object>();
+    }
 
-        return new object[0];
+    public object[] GetWorkParamsForStratum(EthereumWorkerContext context)
+    {
+        var job = currentJob;
+
+        return job?.GetWorkParamsForStratum(context) ?? Array.Empty<object>();
     }
 
     #region API-Surface
 
-    public IObservable<object> Jobs { get; private set; }
+    public IObservable<Unit> Jobs { get; private set; }
 
     public override void Configure(PoolConfig pc, ClusterConfig cc)
     {
@@ -361,26 +374,62 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
         context.ExtraNonce1 = extraNonceProvider.Next();
     }
 
-    public async ValueTask<Share> SubmitShareAsync(StratumConnection worker, string[] request, CancellationToken ct)
+    public async ValueTask<Share> SubmitShareV1Async(StratumConnection worker, string[] request, CancellationToken ct)
     {
         Contract.RequiresNonNull(worker, nameof(worker));
         Contract.RequiresNonNull(request, nameof(request));
 
         logger.LogInvoke(new object[] { worker.ConnectionId });
-        var context = worker.ContextAs<EthereumWorkerContext>();
 
-        // var miner = request[0];
-        var jobId = request[1];
-        var nonce = request[2];
+        var context = worker.ContextAs<EthereumWorkerContext>();
+        var nonce = request[0];
+        var hash = request[1];
+
         EthereumJob job;
 
         // stale?
         lock(jobLock)
         {
+            // locate job by header
+            job = validJobs.Values.FirstOrDefault(x => x.BlockTemplate.Header == hash);
+
+            if(job == null)
+                throw new StratumException(StratumError.MinusOne, "stale share");
+        }
+
+        return await SubmitShareAsync(worker, context, job, nonce.StripHexPrefix(), ct);
+    }
+
+    public async ValueTask<Share> SubmitShareV2Async(StratumConnection worker, string[] request, CancellationToken ct)
+    {
+        Contract.RequiresNonNull(worker, nameof(worker));
+        Contract.RequiresNonNull(request, nameof(request));
+
+        logger.LogInvoke(new object[] { worker.ConnectionId });
+
+        var context = worker.ContextAs<EthereumWorkerContext>();
+        var jobId = request[1];
+        var nonce = request[2];
+
+        EthereumJob job;
+
+        // stale?
+        lock(jobLock)
+        {
+            // look up job by id
             if(!validJobs.TryGetValue(jobId, out job))
                 throw new StratumException(StratumError.MinusOne, "stale share");
         }
 
+        // assemble full-nonce
+        var fullNonceHex = context.ExtraNonce1 + nonce;
+
+        return await SubmitShareAsync(worker, context, job, fullNonceHex, ct);
+    }
+
+    private async ValueTask<Share> SubmitShareAsync(StratumConnection worker,
+        EthereumWorkerContext context, EthereumJob job, string nonce, CancellationToken ct)
+    {
         // validate & process
         var (share, fullNonceHex, headerHash, mixHash) = await job.ProcessShareAsync(worker, nonce, ethash, ct);
 
@@ -418,19 +467,19 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
     {
         var jsonSerializerSettings = ctx.Resolve<JsonSerializerSettings>();
 
-        rpcClient = new RpcClient(daemonEndpoints.First(), jsonSerializerSettings, messageBus, poolConfig.Id);
+        rpc = new RpcClient(daemonEndpoints.First(), jsonSerializerSettings, messageBus, poolConfig.Id);
     }
 
     protected override async Task<bool> AreDaemonsHealthyAsync(CancellationToken ct)
     {
-        var response = await rpcClient.ExecuteAsync<Block>(logger, EC.GetBlockByNumber, ct, new[] { (object) "latest", true });
+        var response = await rpc.ExecuteAsync<Block>(logger, EC.GetBlockByNumber, ct, new[] { (object) "latest", true });
 
         return response.Error == null;
     }
 
     protected override async Task<bool> AreDaemonsConnectedAsync(CancellationToken ct)
     {
-        var response = await rpcClient.ExecuteAsync<string>(logger, EC.GetPeerCount, ct);
+        var response = await rpc.ExecuteAsync<string>(logger, EC.GetPeerCount, ct);
 
         return response.Error == null && response.Response.IntegralFromHex<uint>() > 0;
     }
@@ -441,9 +490,9 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
 
         while(true)
         {
-            var responses = await rpcClient.ExecuteAsync<object>(logger, EC.GetSyncState, ct);
+            var syncStateResponse = await rpc.ExecuteAsync<object>(logger, EC.GetSyncState, ct);
 
-            var isSynched = responses.Response is false;
+            var isSynched = syncStateResponse.Response is false;
 
             if(isSynched)
             {
@@ -453,7 +502,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
 
             if(!syncPendingNotificationShown)
             {
-                logger.Info(() => "Daemons still syncing with network. Manager will be started once synced");
+                logger.Info(() => "Daemon is still syncing with network. Manager will be started once synced.");
                 syncPendingNotificationShown = true;
             }
 
@@ -473,7 +522,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
             new RpcRequest(EC.GetCoinbase),
         };
 
-        var responses = await rpcClient.ExecuteBatchAsync(logger, ct, requests);
+        var responses = await rpc.ExecuteBatchAsync(logger, ct, requests);
 
         if(responses.Any(x => x.Error != null))
         {
@@ -481,13 +530,13 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
                 .ToArray();
 
             if(errors.Any())
-                logger.ThrowLogPoolStartupException($"Init RPC failed: {string.Join(", ", errors.Select(y => y.Error.Message))}");
+                throw new PoolStartupException($"Init RPC failed: {string.Join(", ", errors.Select(y => y.Error.Message))}");
         }
 
         // extract results
         var netVersion = responses[0].Response.ToObject<string>();
-        var accounts = responses[1].Response.ToObject<string[]>();
-        var coinbase = responses[2].Response.ToObject<string>();
+        // var accounts = responses[1].Response.ToObject<string[]>();
+        // var coinbase = responses[2].Response.ToObject<string>();
         var gethChain = extraPoolConfig?.ChainTypeOverride ?? "Ethereum";
 
         EthereumUtils.DetectNetworkAndChain(netVersion, gethChain, out networkType, out chainType);
@@ -528,28 +577,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
             }
         }
 
-        ConfigureRewards();
-
         await SetupJobUpdates(ct);
-    }
-
-    private void ConfigureRewards()
-    {
-        // Donation to MiningCore development
-        if(networkType == EthereumNetworkType.Mainnet &&
-           chainType == GethChainType.Ethereum &&
-           DevDonation.Addresses.TryGetValue(poolConfig.Template.As<CoinTemplate>().Symbol, out var address))
-        {
-            poolConfig.RewardRecipients = poolConfig.RewardRecipients.Concat(new[]
-            {
-                new RewardRecipient
-                {
-                    Address = address,
-                    Percentage = DevDonation.Percent,
-                    Type = "dev"
-                }
-            }).ToArray();
-        }
     }
 
     protected virtual async Task SetupJobUpdates(CancellationToken ct)
@@ -561,30 +589,22 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
 
         var triggers = new List<IObservable<(string Via, string Data)>>
         {
-            blockSubmission.Select(x => (JobRefreshBy.BlockFound, (string) null))
+            blockSubmission.Select(_ => (JobRefreshBy.BlockFound, (string) null))
         };
 
-        var enableStreaming = extraPoolConfig?.EnableDaemonWebsocketStreaming == true;
-
-        var streamingEndpoint = daemonEndpoints
+        var endpointExtra = daemonEndpoints
             .Where(x => x.Extra.SafeExtensionDataAs<EthereumDaemonEndpointConfigExtra>() != null)
             .Select(x=> Tuple.Create(x, x.Extra.SafeExtensionDataAs<EthereumDaemonEndpointConfigExtra>()))
             .FirstOrDefault();
 
-        if(enableStreaming && streamingEndpoint.Item2?.PortWs.HasValue != true)
+        if(endpointExtra?.Item2?.PortWs.HasValue == true)
         {
-            logger.Warn(() => $"'{nameof(EthereumPoolConfigExtra.EnableDaemonWebsocketStreaming).ToLowerCamelCase()}' enabled but not a single daemon found with a configured websocket port ('{nameof(EthereumDaemonEndpointConfigExtra.PortWs).ToLowerCamelCase()}'). Falling back to polling.");
-            enableStreaming = false;
-        }
-
-        if(enableStreaming)
-        {
-            var (endpointConfig, extra) = streamingEndpoint;
+            var (endpointConfig, extra) = endpointExtra;
 
             var wsEndpointConfig = new DaemonEndpointConfig
             {
                 Host = endpointConfig.Host,
-                Port = extra.PortWs.Value,
+                Port = extra.PortWs!.Value,
                 HttpPath = extra.HttpPathWs,
                 Ssl = extra.SslWs
             };
@@ -593,10 +613,10 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
 
             var wsSubscription = "newHeads";
             var isRetry = false;
-            retry:
 
+        retry:
             // stream work updates
-            var getWorkObs = rpcClient.WebsocketSubscribe(logger, ct, wsEndpointConfig, EC.Subscribe, new[] { wsSubscription })
+            var getWorkObs = rpc.WebsocketSubscribe(logger, ct, wsEndpointConfig, EC.Subscribe, new[] { wsSubscription })
                 .Publish()
                 .RefCount();
 
@@ -617,35 +637,39 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
                     goto retry;
                 }
 
-                logger.ThrowLogPoolStartupException($"Unable to subscribe to geth websocket '{wsSubscription}': {subcriptionResponse.Error.Message} [{subcriptionResponse.Error.Code}]");
+                throw new PoolStartupException($"Unable to subscribe to geth websocket '{wsSubscription}': {subcriptionResponse.Error.Message} [{subcriptionResponse.Error.Code}]");
             }
 
-            var blockNotify = getWorkObs.Where(x => x != null)
-                .Do(x => Console.WriteLine("** WS"))
+            var websocketNotify = getWorkObs.Where(x => x != null)
                 .Publish()
                 .RefCount();
 
-            pollTimerRestart = Observable.Merge(
-                    blockSubmission,
-                    blockNotify.Select(_ => Unit.Default))
+            pollTimerRestart = blockSubmission.Merge(websocketNotify.Select(_ => Unit.Default))
                 .Publish()
                 .RefCount();
 
-            // Websocket
-            triggers.Add(blockNotify
-                .Select(_ => (JobRefreshBy.WebSocket, (string) null)));
+            triggers.Add(websocketNotify.Select(_ => (JobRefreshBy.WebSocket, (string) null)));
+
+            triggers.Add(Observable.Timer(TimeSpan.FromMilliseconds(pollingInterval))
+                .TakeUntil(pollTimerRestart)
+                .Select(_ => (JobRefreshBy.Poll, (string) null))
+                .Repeat());
         }
 
-        triggers.Add(Observable.Timer(TimeSpan.FromMilliseconds(pollingInterval))
-            .TakeUntil(pollTimerRestart)
-            .Select(_ => (JobRefreshBy.Poll, (string) null))
-            .Repeat());
+        else
+        {
+            // ordinary polling (avoid this at all cost)
+            triggers.Add(Observable.Timer(TimeSpan.FromMilliseconds(pollingInterval))
+                .TakeUntil(pollTimerRestart)
+                .Select(_ => (JobRefreshBy.Poll, (string) null))
+                .Repeat());
+        }
 
-        Jobs = Observable.Merge(triggers)
+        Jobs = triggers.Merge()
             .Select(x => Observable.FromAsync(() => UpdateJob(ct, x.Via)))
             .Concat()
             .Where(isNew => isNew)
-            .Select(_ => GetJobParamsForStratum(true))
+            .Select(_ => Unit.Default)
             .Publish()
             .RefCount();
     }

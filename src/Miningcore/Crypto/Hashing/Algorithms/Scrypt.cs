@@ -3,6 +3,7 @@ using Miningcore.Native;
 
 namespace Miningcore.Crypto.Hashing.Algorithms;
 
+[Identifier("scrypt")]
 public unsafe class Scrypt : IHashAlgorithm
 {
     public Scrypt(uint n, uint r)
@@ -22,7 +23,7 @@ public unsafe class Scrypt : IHashAlgorithm
         {
             fixed (byte* output = result)
             {
-                LibMultihash.scrypt(input, output, n, r, (uint) data.Length);
+                Multihash.scrypt(input, output, n, r, (uint) data.Length);
             }
         }
     }
