@@ -406,7 +406,7 @@ public class EthereumPool : PoolBase
             switch(context.ProtocolVersion)
             {
                 case 1:
-                    await SendWork(context, connection, null);
+                    await SendWork(context, connection, 0);
                     break;
 
                 case 2:
@@ -478,7 +478,7 @@ public class EthereumPool : PoolBase
                     break;
 
                 case EthereumStratumMethods.SubmitHashrate:
-                    // just ignore this
+                    await connection.RespondAsync(true, request.Id);
                     break;
 
                 default:

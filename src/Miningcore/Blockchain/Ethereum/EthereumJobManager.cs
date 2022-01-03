@@ -383,21 +383,9 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
 
         var context = worker.ContextAs<EthereumWorkerContext>();
         var nonce = request[0];
-        var hash = request[1];
+        //var hash = request[1];
 
-        EthereumJob job;
-
-        // stale?
-        lock(jobLock)
-        {
-            // locate job by header
-            job = validJobs.Values.FirstOrDefault(x => x.BlockTemplate.Header == hash);
-
-            if(job == null)
-                throw new StratumException(StratumError.MinusOne, "stale share");
-        }
-
-        return await SubmitShareAsync(worker, context, job, nonce.StripHexPrefix(), ct);
+        return await SubmitShareAsync(worker, context, currentJob, nonce.StripHexPrefix(), ct);
     }
 
     public async ValueTask<Share> SubmitShareV2Async(StratumConnection worker, string[] request, CancellationToken ct)
