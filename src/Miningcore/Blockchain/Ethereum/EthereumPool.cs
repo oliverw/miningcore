@@ -192,8 +192,8 @@ public class EthereumPool : PoolBase
             {
                 string workerName;
 
-                if(request.Extra?.TryGetValue("worker", out var _workerName) == true && _workerName is string)
-                    workerName = (string) _workerName;
+                if(request.Extra?.TryGetValue("worker", out var tmp) == true && tmp is string workerNameValue)
+                    workerName = workerNameValue;
                 else
                     workerName = context.Worker;
 
