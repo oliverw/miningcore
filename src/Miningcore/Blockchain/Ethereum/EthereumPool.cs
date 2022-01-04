@@ -183,9 +183,22 @@ public class EthereumPool : PoolBase
             // recognize activity
             context.LastActivity = clock.Now;
 
-            var share = v1 ?
-                await manager.SubmitShareV1Async(connection, submitRequest, ct) :
-                await manager.SubmitShareV2Async(connection, submitRequest, ct);
+            // submit
+            Share share;
+
+            if(!v1)
+                share = await manager.SubmitShareV2Async(connection, submitRequest, ct);
+            else
+            {
+                string workerName;
+
+                if(request.Extra?.TryGetValue("worker", out var _workerName) == true && _workerName is string)
+                    workerName = (string) _workerName;
+                else
+                    workerName = context.Worker;
+
+                share = await manager.SubmitShareV1Async(connection, submitRequest, workerName, ct);
+            }
 
             await connection.RespondAsync(true, request.Id);
 

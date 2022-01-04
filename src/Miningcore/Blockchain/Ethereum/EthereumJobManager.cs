@@ -355,7 +355,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
         context.ExtraNonce1 = extraNonceProvider.Next();
     }
 
-    public async ValueTask<Share> SubmitShareV1Async(StratumConnection worker, string[] request, CancellationToken ct)
+    public async ValueTask<Share> SubmitShareV1Async(StratumConnection worker, string[] request, string workerName, CancellationToken ct)
     {
         Contract.RequiresNonNull(worker, nameof(worker));
         Contract.RequiresNonNull(request, nameof(request));
@@ -365,7 +365,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
         var context = worker.ContextAs<EthereumWorkerContext>();
         var nonce = request[0];
 
-        return await SubmitShareAsync(worker, context, currentJob, nonce.StripHexPrefix(), ct);
+        return await SubmitShareAsync(worker, context, workerName, currentJob, nonce.StripHexPrefix(), ct);
     }
 
     public async ValueTask<Share> SubmitShareV2Async(StratumConnection worker, string[] request, CancellationToken ct)
@@ -386,14 +386,14 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
         // assemble full-nonce
         var fullNonceHex = context.ExtraNonce1 + nonce;
 
-        return await SubmitShareAsync(worker, context, currentJob, fullNonceHex, ct);
+        return await SubmitShareAsync(worker, context, context.Worker, currentJob, fullNonceHex, ct);
     }
 
     private async ValueTask<Share> SubmitShareAsync(StratumConnection worker,
-        EthereumWorkerContext context, EthereumJob job, string nonce, CancellationToken ct)
+        EthereumWorkerContext context, string workerName, EthereumJob job, string nonce, CancellationToken ct)
     {
         // validate & process
-        var (share, fullNonceHex, headerHash, mixHash) = await job.ProcessShareAsync(worker, nonce, ethash, ct);
+        var (share, fullNonceHex, headerHash, mixHash) = await job.ProcessShareAsync(worker, workerName, nonce, ethash, ct);
 
         // enrich share with common data
         share.PoolId = poolConfig.Id;

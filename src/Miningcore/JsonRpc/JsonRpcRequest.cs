@@ -41,6 +41,9 @@ public class JsonRpcRequest<T>
     [JsonProperty("id")]
     public object Id { get; set; }
 
+    [JsonExtensionData]
+    public IDictionary<string, object> Extra { get; set; }
+
     public TParam ParamsAs<TParam>() where TParam : class
     {
         if(Params is JToken)
