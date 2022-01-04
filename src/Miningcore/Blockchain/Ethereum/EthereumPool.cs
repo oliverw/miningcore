@@ -38,7 +38,7 @@ public class EthereumPool : PoolBase
     private EthereumJobManager manager;
     private EthereumCoinTemplate coin;
 
-    #region // Protcol V2 handlers - https://github.com/nicehash/Specifications/blob/master/EthereumStratum_NiceHash_v1.0.0.txt
+    #region // Protocol V2 handlers - https://github.com/nicehash/Specifications/blob/master/EthereumStratum_NiceHash_v1.0.0.txt
 
     private async Task OnSubscribeAsync(StratumConnection connection, Timestamped<JsonRpcRequest> tsRequest)
     {
@@ -232,9 +232,9 @@ public class EthereumPool : PoolBase
         await connection.NotifyAsync(EthereumStratumMethods.MiningNotify, parameters);
     }
 
-    #endregion // Protcol V2 handlers
+    #endregion // Protocol V2 handlers
 
-    #region // Protcol V1 handlers - https://github.com/sammy007/open-ethereum-pool/blob/master/docs/STRATUM.md
+    #region // Protocol V1 handlers - https://github.com/sammy007/open-ethereum-pool/blob/master/docs/STRATUM.md
 
     private async Task OnSubmitLoginAsync(StratumConnection connection, Timestamped<JsonRpcRequest> tsRequest)
     {
@@ -332,7 +332,7 @@ public class EthereumPool : PoolBase
         await connection.RespondAsync(parameters, requestId);
     }
 
-    #endregion // Protcol V1 handlers
+    #endregion // Protocol V1 handlers
 
     #region Overrides
 
