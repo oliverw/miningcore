@@ -338,8 +338,6 @@ public class StratumConnection
 
     private async Task SendMessage(object msg, CancellationToken ct)
     {
-        logger.Debug(() => $"[{ConnectionId}] Sending: {JsonConvert.SerializeObject(msg)}");
-
         var buffer = ArrayPool<byte>.Shared.Rent(MaxOutboundRequestLength);
 
         try
@@ -349,6 +347,8 @@ public class StratumConnection
                 ctsTimeout.CancelAfter(sendTimeout);
 
                 var cb = SerializeMessage(msg, buffer);
+
+                logger.Debug(() => $"[{ConnectionId}] Sending: {StratumConstants.Encoding.GetString(buffer.AsSpan(0, cb))}");
 
                 await networkStream.WriteAsync(buffer, 0, cb, ctsTimeout.Token);
                 await networkStream.FlushAsync(ctsTimeout.Token);
