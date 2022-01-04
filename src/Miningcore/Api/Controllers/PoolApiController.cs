@@ -87,10 +87,11 @@ public class PoolApiController : ApiControllerBase
     public ActionResult GetHelp()
     {
         var tmp = adcp.ActionDescriptors.Items
+            .Where(x => x.AttributeRouteInfo != null)
             .Select(x =>
             {
                 // Get and pad http method
-                var method = x?.ActionConstraints?.OfType<HttpMethodActionConstraint>().FirstOrDefault()?.HttpMethods.First();
+                var method = x.ActionConstraints?.OfType<HttpMethodActionConstraint>().FirstOrDefault()?.HttpMethods.First();
                 method = $"{method,-5}";
 
                 return $"{method} -> {x.AttributeRouteInfo.Template}";
@@ -100,6 +101,12 @@ public class PoolApiController : ApiControllerBase
         var result = string.Join("\n", tmp).Replace("{", "<").Replace("}", ">") + "\n";
 
         return Content(result);
+    }
+
+    [HttpGet("/api/health-check")]
+    public ActionResult GetHealthCheck()
+    {
+        return Content("👍");
     }
 
     [HttpGet("{poolId}")]
