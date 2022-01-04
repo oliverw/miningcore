@@ -81,7 +81,7 @@ public abstract class StratumServer
     protected IBanManager banManager;
     protected ILogger logger;
 
-    public Task RunAsync(CancellationToken ct, params StratumEndpoint[] endpoints)
+    protected Task RunAsync(CancellationToken ct, params StratumEndpoint[] endpoints)
     {
         Contract.RequiresNonNull(endpoints, nameof(endpoints));
 
@@ -154,7 +154,7 @@ public abstract class StratumServer
         }, ex=> logger.Error(ex)), ct);
     }
 
-    protected virtual void RegisterConnection(StratumConnection connection)
+    protected void RegisterConnection(StratumConnection connection)
     {
         var result = connections.TryAdd(connection.ConnectionId, connection);
         Debug.Assert(result);
@@ -162,7 +162,7 @@ public abstract class StratumServer
         PublishTelemetry(TelemetryCategory.Connections, TimeSpan.Zero, true, connections.Count);
     }
 
-    protected virtual void UnregisterConnection(StratumConnection connection)
+    protected void UnregisterConnection(StratumConnection connection)
     {
         var result = connections.TryRemove(connection.ConnectionId, out _);
         Debug.Assert(result);
@@ -187,7 +187,7 @@ public abstract class StratumServer
         await OnRequestAsync(connection, new Timestamped<JsonRpcRequest>(request, clock.Now), ct);
     }
 
-    protected virtual void OnConnectionError(StratumConnection connection, Exception ex)
+    protected void OnConnectionError(StratumConnection connection, Exception ex)
     {
         if(ex is AggregateException)
             ex = ex.InnerException;
@@ -259,14 +259,14 @@ public abstract class StratumServer
         UnregisterConnection(connection);
     }
 
-    protected virtual void OnConnectionComplete(StratumConnection connection)
+    protected void OnConnectionComplete(StratumConnection connection)
     {
         logger.Debug(() => $"[{connection.ConnectionId}] Received EOF");
 
         UnregisterConnection(connection);
     }
 
-    protected virtual void CloseConnection(StratumConnection connection)
+    protected void CloseConnection(StratumConnection connection)
     {
         Contract.RequiresNonNull(connection, nameof(connection));
 

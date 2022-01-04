@@ -38,7 +38,7 @@ public class EthereumPool : PoolBase
     private EthereumJobManager manager;
     private EthereumCoinTemplate coin;
 
-    #region // Protcol V2 handlers
+    #region // Protcol V2 handlers - https://github.com/nicehash/Specifications/blob/master/EthereumStratum_NiceHash_v1.0.0.txt
 
     private async Task OnSubscribeAsync(StratumConnection connection, Timestamped<JsonRpcRequest> tsRequest)
     {
@@ -170,7 +170,7 @@ public class EthereumPool : PoolBase
             // validate worker
             if(!context.IsAuthorized)
                 throw new StratumException(StratumError.UnauthorizedWorker, "unauthorized worker");
-            else if(!context.IsSubscribed)
+            if(!context.IsSubscribed)
                 throw new StratumException(StratumError.NotSubscribed, "not subscribed");
 
             // check request
@@ -234,7 +234,7 @@ public class EthereumPool : PoolBase
 
     #endregion // Protcol V2 handlers
 
-    #region // Protcol V1 handlers
+    #region // Protcol V1 handlers - https://github.com/sammy007/open-ethereum-pool/blob/master/docs/STRATUM.md
 
     private async Task OnSubmitLoginAsync(StratumConnection connection, Timestamped<JsonRpcRequest> tsRequest)
     {
@@ -510,14 +510,12 @@ public class EthereumPool : PoolBase
         // apply immediately and notify client
         var context = connection.ContextAs<EthereumWorkerContext>();
 
-        if(context.HasPendingDifficulty)
+        if(context.ApplyPendingDifficulty())
         {
-            context.ApplyPendingDifficulty();
-
             switch(context.ProtocolVersion)
             {
                 case 1:
-                    await SendWork(context, connection, null);
+                    await SendWork(context, connection, 0);
                     break;
 
                 case 2:

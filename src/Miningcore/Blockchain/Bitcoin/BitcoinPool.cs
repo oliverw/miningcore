@@ -467,11 +467,9 @@ public class BitcoinPool : PoolBase
 
         context.EnqueueNewDifficulty(newDiff);
 
-        // apply immediately and notify client
-        if(context.HasPendingDifficulty)
+        // apply immediately and notify
+        if(context.ApplyPendingDifficulty())
         {
-            context.ApplyPendingDifficulty();
-
             await connection.NotifyAsync(BitcoinStratumMethods.SetDifficulty, new object[] { context.Difficulty });
             await connection.NotifyAsync(BitcoinStratumMethods.MiningNotify, currentJobParams);
         }

@@ -98,7 +98,7 @@ public abstract class PoolBase : StratumServer,
     {
         var context = CreateWorkerContext();
         var poolEndpoint = poolConfig.Ports[ipEndPoint.Port];
-        context.Init(poolConfig, poolEndpoint.Difficulty, poolConfig.EnableInternalStratum == true ? poolEndpoint.VarDiff : null, clock);
+        context.Init(poolEndpoint.Difficulty, poolConfig.EnableInternalStratum == true ? poolEndpoint.VarDiff : null, clock);
         connection.SetContext(context);
 
         // varDiff setup
