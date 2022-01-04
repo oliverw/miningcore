@@ -189,16 +189,7 @@ public class EthereumPool : PoolBase
             if(!v1)
                 share = await manager.SubmitShareV2Async(connection, submitRequest, ct);
             else
-            {
-                string workerName;
-
-                if(request.Extra?.TryGetValue("worker", out var tmp) == true && tmp is string workerNameValue)
-                    workerName = workerNameValue;
-                else
-                    workerName = context.Worker;
-
-                share = await manager.SubmitShareV1Async(connection, submitRequest, workerName, ct);
-            }
+                share = await manager.SubmitShareV1Async(connection, submitRequest, GetWorkerNameFromV1Request(request, context), ct);
 
             await connection.RespondAsync(true, request.Id);
 
@@ -398,6 +389,14 @@ public class EthereumPool : PoolBase
     protected override WorkerContextBase CreateWorkerContext()
     {
         return new EthereumWorkerContext();
+    }
+
+    private static string GetWorkerNameFromV1Request(JsonRpcRequest request, EthereumWorkerContext context)
+    {
+        if(request.Extra?.TryGetValue(EthereumConstants.RpcRequestWorkerPropertyName, out var tmp) == true && tmp is string workerNameValue)
+            return workerNameValue;
+
+        return context.Worker;
     }
 
     protected virtual Task OnNewJobAsync()
