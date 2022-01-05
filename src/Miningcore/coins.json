@@ -1278,7 +1278,15 @@
                     "zsoemTfqjicem2QVU8cgBHquKb1o9JR5p4Z",
                     "zt339oiGL6tTgc9Q71f5g1sFTZf6QiXrRUr"
                 ],
-                "treasuryRewardAddressChangeInterval": 50000
+                "treasuryRewardAddressChangeInterval": 50000,
+                "vOuts": true,
+                "vPercentFoundersReward": 40,
+                "vPercentTreasuryReward": 20,
+                "vTreasuryRewardAddress": "zszpcLB6C5B8QvfDbF2dYWXsrpac5DL9WRk",
+                "percentSecureNodesReward": 10.0,
+                "vSecureNodesRewardAddress": "zsxWnyDbU8pk2Vp98Uvkx5Nh33RFzqnCpWN",
+                "percentSuperNodesReward": 10.0,
+                "vSuperNodesRewardAddress": "zsnL6pKdzvZ1BPVzALUoqw2KsY966XFs5CE"
             },
             "test": {
                 "diff1": "0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
@@ -1351,7 +1359,15 @@
                     "zrRBQ5heytPMN5nY3ssPf3cG4jocXeD8fm1",
                     "zrRBQ5heytPMN5nY3ssPf3cG4jocXeD8fm1"
                 ],
-                "treasuryRewardAddressChangeInterval": 10000
+                "treasuryRewardAddressChangeInterval": 10000,
+                "vOuts": true,
+                "vPercentFoundersReward": 40,
+                "vPercentTreasuryReward": 20,
+                "vTreasuryRewardAddress": "zrFzxutppvxEdjyu4QNjogBMjtC1py9Hp1S",
+                "percentSecureNodesReward": 10.0,
+                "vSecureNodesRewardAddress": "zrS7QUB2eDbbKvyP43VJys3t7RpojW8GdxH",
+                "percentSuperNodesReward": 10.0,
+                "vSuperNodesRewardAddress": "zrFr5HVm7woVq3oFzkMEdJdbfBchfPAPDsP"
             },
             "regtest": {
                 "diff1": "0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
@@ -1369,14 +1385,22 @@
                 "percentTreasuryReward": 12,
                 "treasuryRewardStartBlockHeight": 139200,
                 "treasuryRewardAddresses": [ "zrKmSdqZKZjnARd5e8FfRg4v1m74X7twxGa" ],
-                "treasuryRewardAddressChangeInterval": 100
+                "treasuryRewardAddressChangeInterval": 100,
+                "vOuts": true,
+                "vPercentFoundersReward": 40,
+                "vPercentTreasuryReward": 20,
+                "vTreasuryRewardAddress": "zrKmSdqZKZjnARd5e8FfRg4v1m74X7twxGa",
+                "percentSecureNodesReward": 10.0,
+                "vSecureNodesRewardAddress": "zrKmSdqZKZjnARd5e8FfRg4v1m74X7twxGa",
+                "percentSuperNodesReward": 10.0,
+                "vSuperNodesRewardAddress": "zrKmSdqZKZjnARd5e8FfRg4v1m74X7twxGa"
             }
         },
         "usesZCashAddressFormat": true,
         "useBitcoinPayoutHandler": false,
         "explorerBlockLink": "http://explorer.zensystem.io/block/$hash$",
-        "explorerTxLink": "http://explorer.zensystem.io/transactions/{0}",
-        "explorerAccountLink": "http://explorer.zensystem.io/accounts/{0}"
+        "explorerTxLink": "http://explorer.zensystem.io/tx/{0}",
+        "explorerAccountLink": "http://explorer.zensystem.io/address/{0}"
     },
     "bitcoin-gold": {
         "name": "Bitcoin Gold",
