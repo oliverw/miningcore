@@ -222,6 +222,32 @@ public partial class EquihashCoinTemplate : CoinTemplate
         public bool PayFoundersReward { get; set; }
         public bool PayFundingStream { get; set; }
 
+        // zencash fonder reward
+        public bool vOuts { get; set; }
+
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public decimal vPercentFoundersReward { get; set; }
+
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public string vTreasuryRewardAddress { get; set; }
+
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public decimal vPercentTreasuryReward { get; set; }
+
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public string vSecureNodesRewardAddress { get; set; }
+
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public decimal percentSecureNodesReward { get; set; }
+
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public string vSuperNodesRewardAddress { get; set; }
+
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public decimal percentSuperNodesReward { get; set; }
+
+        // zencash founder reward
+
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
         public decimal PercentFoundersReward { get; set; }
 

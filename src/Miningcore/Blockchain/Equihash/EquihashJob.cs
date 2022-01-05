@@ -89,6 +89,20 @@ public class EquihashJob
                 tx.Outputs.Add(amount, destination);
             }
         }
+        else if(networkParams.vOuts)
+        {
+            rewardToPool = new Money(Math.Round(blockReward * (1m - (networkParams.vPercentFoundersReward) / 100m)) + rewardFees, MoneyUnit.Satoshi);
+            tx.Outputs.Add(rewardToPool, poolAddressDestination);
+            var destination = FoundersAddressToScriptDestination(networkParams.vTreasuryRewardAddress);
+            var amount = new Money(Math.Round(blockReward * (networkParams.vPercentTreasuryReward / 100m)), MoneyUnit.Satoshi);
+            tx.Outputs.Add(amount, destination);
+            destination = FoundersAddressToScriptDestination(networkParams.vSecureNodesRewardAddress);
+            amount = new Money(Math.Round(blockReward * (networkParams.percentSecureNodesReward / 100m)), MoneyUnit.Satoshi);
+            tx.Outputs.Add(amount, destination);
+            destination = FoundersAddressToScriptDestination(networkParams.vSuperNodesRewardAddress);
+            amount = new Money(Math.Round(blockReward * (networkParams.percentSuperNodesReward / 100m)), MoneyUnit.Satoshi);
+            tx.Outputs.Add(amount, destination);
+        }
         else if(networkParams.PayFoundersReward &&
                 (networkParams.LastFoundersRewardBlockHeight >= BlockTemplate.Height ||
                     networkParams.TreasuryRewardStartBlockHeight > 0))
@@ -369,6 +383,10 @@ public class EquihashJob
             decimal fundingstreamTotal = 0;
             fundingstreamTotal = blockTemplate.Subsidy.FundingStreams.Sum(x => x.Value);
             blockReward = (blockTemplate.Subsidy.Miner + fundingstreamTotal) * BitcoinConstants.SatoshisPerBitcoin;
+        }
+        else if(networkParams?.vOuts == true)
+        {
+            blockReward = (decimal) ((blockTemplate.Subsidy.Miner + blockTemplate.Subsidy.Community + blockTemplate.Subsidy.Securenodes + blockTemplate.Subsidy.Supernodes) * BitcoinConstants.SatoshisPerBitcoin);
         }
         else if(networkParams?.PayFoundersReward == true)
         {
