@@ -756,6 +756,9 @@ public class Program : BackgroundService
 
         // Configure RandomX
         RandomX.messageBus = messageBus;
+
+        // Configure RandomARQ
+        RandomARQ.messageBus = messageBus;
     }
 
     private static async Task ConfigurePostgresCompatibilityOptions(IServiceProvider services)

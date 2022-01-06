@@ -124,6 +124,7 @@
         <Exec Command="(cd $(ProjectDir)../Native/libcryptonote &amp;&amp; make clean &amp;&amp; make) &amp;&amp; mv $(ProjectDir)../Native/libcryptonote/libcryptonote.so $(OutDir)" />
         <Exec Command="(cd $(ProjectDir)../Native/libcryptonight &amp;&amp; make clean &amp;&amp; make) &amp;&amp; mv $(ProjectDir)../Native/libcryptonight/libcryptonight.so $(OutDir)" />
         <Exec Command="(cd /tmp &amp;&amp; rm -rf RandomX &amp;&amp; git clone https://github.com/tevador/RandomX &amp;&amp; cd RandomX &amp;&amp; git checkout tags/v1.1.10 &amp;&amp; mkdir build &amp;&amp; cd build &amp;&amp; cmake -DARCH=native .. &amp;&amp; make &amp;&amp; cp librandomx.a $(ProjectDir)../Native/librandomx) &amp;&amp; (cd $(ProjectDir)../Native/librandomx &amp;&amp; make clean &amp;&amp; make) &amp;&amp; mv $(ProjectDir)../Native/librandomx/librandomx.so $(OutDir)" />
+        <Exec Command="(cd /tmp &amp;&amp; rm -rf RandomX &amp;&amp; git clone https://github.com/arqma/RandomARQ &amp;&amp; cd RandomX &amp;&amp; git checkout 14850620439045b319fa6398f5a164715c4a66ce &amp;&amp; mkdir build &amp;&amp; cd build &amp;&amp; cmake -DARCH=native .. &amp;&amp; make &amp;&amp; cp librandomarq.a $(ProjectDir)../Native/librandomarq) &amp;&amp; (cd $(ProjectDir)../Native/librandomarq &amp;&amp; make clean &amp;&amp; make) &amp;&amp; mv $(ProjectDir)../Native/librandomarq/librandomarq.so $(OutDir)" />
     </Target>
 
     <!-- Include library binaries in publish on Windows -->
