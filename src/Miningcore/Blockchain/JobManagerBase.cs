@@ -37,7 +37,7 @@ public abstract class JobManagerBase<TJob>
 
     protected abstract void ConfigureDaemons();
 
-    protected virtual async Task StartDaemonAsync(CancellationToken ct)
+    protected async Task StartDaemonAsync(CancellationToken ct)
     {
         while(!await AreDaemonsHealthyAsync(ct))
         {
@@ -50,7 +50,7 @@ public abstract class JobManagerBase<TJob>
 
         while(!await AreDaemonsConnectedAsync(ct))
         {
-            logger.Info(() => "Waiting for daemons to connect to peers ...");
+            logger.Info(() => "Waiting for daemon to connect to peers ...");
 
             await Task.Delay(TimeSpan.FromSeconds(10), ct);
         }
@@ -75,7 +75,7 @@ public abstract class JobManagerBase<TJob>
             .Select(x => x.Payload);
     }
 
-    protected virtual void OnBlockFound()
+    protected void OnBlockFound()
     {
         blockFoundSubject.OnNext(Unit.Default);
     }

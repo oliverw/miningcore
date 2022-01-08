@@ -222,6 +222,32 @@ public partial class EquihashCoinTemplate : CoinTemplate
         public bool PayFoundersReward { get; set; }
         public bool PayFundingStream { get; set; }
 
+        // zencash fonder reward
+        public bool vOuts { get; set; }
+
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public decimal vPercentFoundersReward { get; set; }
+
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public string vTreasuryRewardAddress { get; set; }
+
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public decimal vPercentTreasuryReward { get; set; }
+
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public string vSecureNodesRewardAddress { get; set; }
+
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public decimal percentSecureNodesReward { get; set; }
+
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public string vSuperNodesRewardAddress { get; set; }
+
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public decimal percentSuperNodesReward { get; set; }
+
+        // zencash founder reward
+
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
         public decimal PercentFoundersReward { get; set; }
 
@@ -291,6 +317,78 @@ public enum CryptonightHashType
 {
     [EnumMember(Value = "randomx")]
     RandomX,
+
+    [EnumMember(Value = "randomarq")]
+    RandomARQ,
+
+    [EnumMember(Value = "cn0")]
+    Crytonight0,
+
+    [EnumMember(Value = "cn1")]
+    Crytonight1,
+
+    [EnumMember(Value = "cn2")]
+    Crytonight2,
+
+    [EnumMember(Value = "cn-half")]
+    CrytonightHalf,
+
+    [EnumMember(Value = "cn-double")]
+    CrytonightDouble,
+
+    [EnumMember(Value = "cn-r")]
+    CrytonightR,
+
+    [EnumMember(Value = "cn-rto")]
+    CrytonightRTO,
+
+    [EnumMember(Value = "cn-rwz")]
+    CrytonightRWZ,
+
+    [EnumMember(Value = "cn-zls")]
+    CrytonightZLS,
+
+    [EnumMember(Value = "cn-ccx")]
+    CrytonightCCX,
+
+    [EnumMember(Value = "cn-gpu")]
+    CrytonightGPU,
+
+    [EnumMember(Value = "cn-fast")]
+    CrytonightFast,
+
+    [EnumMember(Value = "cn-xao")]
+    CrytonightXAO,
+
+    [EnumMember(Value = "gr")]
+    Ghostrider,
+
+    [EnumMember(Value = "cn_lite0")]
+    CrytonightLite0,
+
+    [EnumMember(Value = "cn_lite1")]
+    CrytonightLite1,
+
+    [EnumMember(Value = "cn_heavy")]
+    CrytonightHeavy,
+
+    [EnumMember(Value = "cn_heavy_xhv")]
+    CrytonightHeavyXHV,
+
+    [EnumMember(Value = "cn_heavy_tube")]
+    CrytonightHeavyTube,
+
+    [EnumMember(Value = "cn_pico")]
+    CrytonightPico,
+
+    [EnumMember(Value = "argon_chukwa")]
+    ArgonCHUKWA,
+
+    [EnumMember(Value = "argon_chukwa_v2")]
+    ArgonCHUKWAV2,
+
+    [EnumMember(Value = "argon_wrkz")]
+    ArgonWRKZ,
 }
 
 public partial class CryptonoteCoinTemplate : CoinTemplate

@@ -10,6 +10,7 @@ using Miningcore.Crypto.Hashing.Equihash;
 using Miningcore.Extensions;
 using Miningcore.JsonRpc;
 using Miningcore.Messaging;
+using Miningcore.Rpc;
 using Miningcore.Stratum;
 using Miningcore.Time;
 using NBitcoin;

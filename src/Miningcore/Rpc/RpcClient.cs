@@ -4,10 +4,10 @@ using System.Net.Http.Headers;
 using System.Net.WebSockets;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
-using System.Reactive.Threading.Tasks;
 using System.Text;
 using Miningcore.Configuration;
 using Miningcore.Extensions;
+using Miningcore.JsonRpc;
 using Miningcore.Messaging;
 using Miningcore.Notifications.Messages;
 using Miningcore.Util;
@@ -17,7 +17,7 @@ using NLog;
 using ZeroMQ;
 using Contract = Miningcore.Contracts.Contract;
 
-namespace Miningcore.JsonRpc;
+namespace Miningcore.Rpc;
 
 /// <summary>
 /// JsonRpc interface to blockchain node

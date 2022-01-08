@@ -145,9 +145,9 @@ public struct BigRational : IComparable, IComparable<BigRational>, IDeserializat
     {
         if(obj == null)
             return 1;
-        if(obj is not BigRational)
+        if(obj is not BigRational rational)
             throw new ArgumentException("Argument must be of type BigRational", "obj");
-        return Compare(this, (BigRational) obj);
+        return Compare(this, rational);
     }
 
     // IComparable<BigRational>

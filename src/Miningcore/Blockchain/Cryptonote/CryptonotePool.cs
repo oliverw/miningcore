@@ -417,10 +417,8 @@ public class CryptonotePool : PoolBase
         // apply immediately and notify client
         var context = connection.ContextAs<CryptonoteWorkerContext>();
 
-        if(context.HasPendingDifficulty)
+        if(context.ApplyPendingDifficulty())
         {
-            context.ApplyPendingDifficulty();
-
             // re-send job
             var job = CreateWorkerJob(connection);
             await connection.NotifyAsync(CryptonoteStratumMethods.JobNotify, job);

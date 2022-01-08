@@ -38,7 +38,7 @@ public class EthereumPool : PoolBase
     private EthereumJobManager manager;
     private EthereumCoinTemplate coin;
 
-    #region // Protcol V2 handlers
+    #region // Protocol V2 handlers - https://github.com/nicehash/Specifications/blob/master/EthereumStratum_NiceHash_v1.0.0.txt
 
     private async Task OnSubscribeAsync(StratumConnection connection, Timestamped<JsonRpcRequest> tsRequest)
     {
@@ -55,6 +55,8 @@ public class EthereumPool : PoolBase
 
         manager.PrepareWorker(connection);
 
+        context.UserAgent = requestParams.FirstOrDefault()?.Trim();
+
         var data = new object[]
         {
             new object[]
@@ -67,11 +69,20 @@ public class EthereumPool : PoolBase
         }
         .ToArray();
 
-        await connection.RespondAsync(data, request.Id);
+        // Nicehash's stupid validator insists on "error" property present
+        // in successful responses which is a violation of the JSON-RPC spec
+        var response = new JsonRpcResponse<object[]>(data, request.Id);
+
+        if(context.IsNicehash)
+        {
+            response.Extra = new Dictionary<string, object>();
+            response.Extra["error"] = null;
+        }
+
+        await connection.RespondAsync(response);
 
         // setup worker context
         context.IsSubscribed = true;
-        context.UserAgent = requestParams.FirstOrDefault()?.Trim();
     }
 
     private async Task OnAuthorizeAsync(StratumConnection connection, Timestamped<JsonRpcRequest> tsRequest)
@@ -170,7 +181,7 @@ public class EthereumPool : PoolBase
             // validate worker
             if(!context.IsAuthorized)
                 throw new StratumException(StratumError.UnauthorizedWorker, "unauthorized worker");
-            else if(!context.IsSubscribed)
+            if(!context.IsSubscribed)
                 throw new StratumException(StratumError.NotSubscribed, "not subscribed");
 
             // check request
@@ -183,9 +194,13 @@ public class EthereumPool : PoolBase
             // recognize activity
             context.LastActivity = clock.Now;
 
-            var share = v1 ?
-                await manager.SubmitShareV1Async(connection, submitRequest, ct) :
-                await manager.SubmitShareV2Async(connection, submitRequest, ct);
+            // submit
+            Share share;
+
+            if(!v1)
+                share = await manager.SubmitShareV2Async(connection, submitRequest, ct);
+            else
+                share = await manager.SubmitShareV1Async(connection, submitRequest, GetWorkerNameFromV1Request(request, context), ct);
 
             await connection.RespondAsync(true, request.Id);
 
@@ -232,9 +247,9 @@ public class EthereumPool : PoolBase
         await connection.NotifyAsync(EthereumStratumMethods.MiningNotify, parameters);
     }
 
-    #endregion // Protcol V2 handlers
+    #endregion // Protocol V2 handlers
 
-    #region // Protcol V1 handlers
+    #region // Protocol V1 handlers - https://github.com/sammy007/open-ethereum-pool/blob/master/docs/STRATUM.md
 
     private async Task OnSubmitLoginAsync(StratumConnection connection, Timestamped<JsonRpcRequest> tsRequest)
     {
@@ -332,7 +347,7 @@ public class EthereumPool : PoolBase
         await connection.RespondAsync(parameters, requestId);
     }
 
-    #endregion // Protcol V1 handlers
+    #endregion // Protocol V1 handlers
 
     #region Overrides
 
@@ -387,6 +402,14 @@ public class EthereumPool : PoolBase
         return new EthereumWorkerContext();
     }
 
+    private static string GetWorkerNameFromV1Request(JsonRpcRequest request, EthereumWorkerContext context)
+    {
+        if(request.Extra?.TryGetValue(EthereumConstants.RpcRequestWorkerPropertyName, out var tmp) == true && tmp is string workerNameValue)
+            return workerNameValue;
+
+        return context.Worker;
+    }
+
     protected virtual Task OnNewJobAsync()
     {
         var currentJobParams = manager.GetJobParamsForStratum();
@@ -406,7 +429,7 @@ public class EthereumPool : PoolBase
             switch(context.ProtocolVersion)
             {
                 case 1:
-                    await SendWork(context, connection, null);
+                    await SendWork(context, connection, 0);
                     break;
 
                 case 2:
@@ -478,7 +501,7 @@ public class EthereumPool : PoolBase
                     break;
 
                 case EthereumStratumMethods.SubmitHashrate:
-                    // just ignore this
+                    await connection.RespondAsync(true, request.Id);
                     break;
 
                 default:
@@ -510,14 +533,12 @@ public class EthereumPool : PoolBase
         // apply immediately and notify client
         var context = connection.ContextAs<EthereumWorkerContext>();
 
-        if(context.HasPendingDifficulty)
+        if(context.ApplyPendingDifficulty())
         {
-            context.ApplyPendingDifficulty();
-
             switch(context.ProtocolVersion)
             {
                 case 1:
-                    await SendWork(context, connection, null);
+                    await SendWork(context, connection, 0);
                     break;
 
                 case 2:

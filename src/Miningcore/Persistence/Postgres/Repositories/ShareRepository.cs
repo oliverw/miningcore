@@ -124,6 +124,23 @@ public class ShareRepository : IShareRepository
             .ToArray();
     }
 
+    public async Task<KeyValuePair<string, double>[]> GetAccumulatedUserAgentShareDifficultyBetweenCreatedAsync(
+        IDbConnection con, string poolId, DateTime start, DateTime end, bool byVersion = false)
+    {
+        logger.LogInvoke(new object[] { poolId });
+
+        const string query = "SELECT SUM(difficulty) AS value, REGEXP_REPLACE(useragent, '/.+', '') AS key FROM shares " +
+                "WHERE poolid = @poolId AND created > @start AND created < @end " +
+                "GROUP BY key ORDER BY value DESC";
+
+        const string queryByVersion = "SELECT SUM(difficulty) AS value, useragent AS key FROM shares " +
+            "WHERE poolid = @poolId AND created > @start AND created < @end " +
+            "GROUP BY key ORDER BY value DESC";
+
+        return (await con.QueryAsync<KeyValuePair<string, double>>(!byVersion ? query : queryByVersion, new { poolId, start, end }))
+            .ToArray();
+    }
+
     public async Task<string[]> GetRecentyUsedIpAddresses(IDbConnection con, IDbTransaction tx, string poolId, string miner)
     {
         logger.LogInvoke(new object[] { poolId });

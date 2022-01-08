@@ -50,16 +50,19 @@ public class JsonRpcResponse<T>
     [JsonProperty(PropertyName = "result", NullValueHandling = NullValueHandling.Ignore)]
     public object Result { get; set; }
 
-    [JsonProperty(PropertyName = "error")]
+    [JsonProperty(PropertyName = "error", NullValueHandling = NullValueHandling.Ignore)]
     public JsonRpcError Error { get; set; }
 
     [JsonProperty(PropertyName = "id", NullValueHandling = NullValueHandling.Ignore)]
     public object Id { get; set; }
 
+    [JsonExtensionData]
+    public IDictionary<string, object> Extra { get; set; }
+
     public TParam ResultAs<TParam>() where TParam : class
     {
-        if(Result is JToken)
-            return ((JToken) Result)?.ToObject<TParam>();
+        if(Result is JToken token)
+            return token.ToObject<TParam>();
 
         return (TParam) Result;
     }

@@ -48,12 +48,7 @@ public class WorkerContextBase
 
     public bool IsNicehash { get; private set; }
 
-    /// <summary>
-    /// True if there's a difficulty update queued for this worker
-    /// </summary>
-    public bool HasPendingDifficulty => pendingDifficulty.HasValue;
-
-    public void Init(PoolConfig poolConfig, double difficulty, VarDiffConfig varDiffConfig, IMasterClock clock)
+    public void Init(double difficulty, VarDiffConfig varDiffConfig, IMasterClock clock)
     {
         Difficulty = difficulty;
         LastActivity = clock.Now;

@@ -16,6 +16,7 @@ using Miningcore.Messaging;
 using Miningcore.Mining;
 using Miningcore.Native;
 using Miningcore.Notifications.Messages;
+using Miningcore.Rpc;
 using Miningcore.Stratum;
 using Miningcore.Time;
 using Miningcore.Util;

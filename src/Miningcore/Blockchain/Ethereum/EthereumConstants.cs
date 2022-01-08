@@ -37,6 +37,8 @@ public class EthereumConstants
     public const decimal ConstantinopleReward = 2.0m;
 
     public const int MinConfimations = 16;
+
+    public const string RpcRequestWorkerPropertyName = "worker";
 }
 
 // Callisto Monetary Policy

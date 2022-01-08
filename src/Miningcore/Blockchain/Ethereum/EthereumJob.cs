@@ -50,7 +50,7 @@ public class EthereumJob
     }
 
     public async ValueTask<(Share Share, string FullNonceHex, string HeaderHash, string MixHash)> ProcessShareAsync(
-        StratumConnection worker, string fullNonceHex, EthashFull ethash, CancellationToken ct)
+        StratumConnection worker, string workerName, string fullNonceHex, EthashFull ethash, CancellationToken ct)
     {
         // duplicate nonce?
         lock(workerNonces)
@@ -103,7 +103,7 @@ public class EthereumJob
             BlockHeight = (long) BlockTemplate.Height,
             IpAddress = worker.RemoteEndpoint?.Address?.ToString(),
             Miner = context.Miner,
-            Worker = context.Worker,
+            Worker = workerName,
             UserAgent = context.UserAgent,
             IsBlockCandidate = isBlockCandidate,
             Difficulty = stratumDifficulty * EthereumConstants.Pow2x32

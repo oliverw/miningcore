@@ -7407,13 +7407,13 @@ public partial class ErgoClient
                 return converted == null ? string.Empty : converted;
             }
         }
-        else if (value is bool)
+        else if (value is bool b)
         {
-            return Convert.ToString((bool)value, cultureInfo).ToLowerInvariant();
+            return Convert.ToString(b, cultureInfo).ToLowerInvariant();
         }
-        else if (value is byte[])
+        else if (value is byte[] bytes)
         {
-            return Convert.ToBase64String((byte[]) value);
+            return Convert.ToBase64String(bytes);
         }
         else if (value.GetType().IsArray)
         {

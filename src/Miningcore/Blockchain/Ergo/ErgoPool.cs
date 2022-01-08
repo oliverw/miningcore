@@ -382,10 +382,8 @@ public class ErgoPool : PoolBase
 
         context.EnqueueNewDifficulty(newDiff);
 
-        if(context.HasPendingDifficulty)
+        if(context.ApplyPendingDifficulty())
         {
-            context.ApplyPendingDifficulty();
-
             await SendJob(connection, context, currentJobParams);
         }
     }
