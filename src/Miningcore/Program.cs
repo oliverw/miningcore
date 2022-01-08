@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Net;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using AspNetCoreRateLimit;
@@ -55,6 +56,8 @@ using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 // ReSharper disable AssignNullToNotNullAttribute
 // ReSharper disable PossibleNullReferenceException
+
+[assembly: InternalsVisibleToAttribute("Miningcore.Tests")]
 
 namespace Miningcore;
 
@@ -756,6 +759,9 @@ public class Program : BackgroundService
 
         // Configure RandomX
         RandomX.messageBus = messageBus;
+
+        // Configure RandomARQ
+        RandomARQ.messageBus = messageBus;
     }
 
     private static async Task ConfigurePostgresCompatibilityOptions(IServiceProvider services)

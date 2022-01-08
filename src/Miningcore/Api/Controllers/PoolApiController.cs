@@ -353,6 +353,10 @@ public class PoolApiController : ApiControllerBase
         {
             stats = mapper.Map<Responses.MinerStats>(statsResult);
 
+            // pre-multiply pending shares to cause less confusion with users
+            if(pool.Template.Family == CoinFamily.Bitcoin)
+                stats.PendingShares *= pool.Template.As<BitcoinTemplate>().ShareMultiplier;
+
             // optional fields
             if(statsResult.LastPayment != null)
             {

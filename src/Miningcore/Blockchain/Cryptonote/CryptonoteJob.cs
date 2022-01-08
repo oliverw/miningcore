@@ -5,6 +5,7 @@ using Miningcore.Native;
 using Miningcore.Stratum;
 using Miningcore.Util;
 using Org.BouncyCastle.Math;
+using static Miningcore.Native.Cryptonight.Algorithm;
 using Contract = Miningcore.Contracts.Contract;
 
 namespace Miningcore.Blockchain.Cryptonote;
@@ -23,19 +24,41 @@ public class CryptonoteJob
         BlockTemplate = blockTemplate;
         PrepareBlobTemplate(instanceId);
         PrevHash = prevHash;
+        RandomXRealm = randomXRealm;
 
-        switch(coin.Hash)
-        {
-            case CryptonightHashType.RandomX:
-                hashFunc = (seedHex, data, result, height) =>
-                {
-                    RandomX.CalculateHash(randomXRealm, seedHex, data, result);
-                };
-                break;
-        }
+        hashFunc = hashFuncs[coin.Hash];
     }
 
-    public delegate void HashFunc(string seedHex, ReadOnlySpan<byte> data, Span<byte> result, ulong height);
+    protected delegate void HashFunc(string realm, string seedHex, ReadOnlySpan<byte> data, Span<byte> result, ulong height);
+
+    protected static readonly Dictionary<CryptonightHashType, HashFunc> hashFuncs = new()
+    {
+        { CryptonightHashType.RandomX, (realm, seedHex, data, result, _) => RandomX.CalculateHash(realm, seedHex, data, result) },
+        { CryptonightHashType.RandomARQ, (realm, seedHex, data, result, _) => RandomARQ.CalculateHash(realm, seedHex, data, result) },
+        { CryptonightHashType.Crytonight0, (_, _, data, result, height) => Cryptonight.CryptonightHash(data, result, CN_0, height) },
+        { CryptonightHashType.Crytonight1, (_, _, data, result, height) => Cryptonight.CryptonightHash(data, result, CN_1, height) },
+        { CryptonightHashType.Crytonight2, (_, _, data, result, height) => Cryptonight.CryptonightHash(data, result, CN_2, height) },
+        { CryptonightHashType.CrytonightHalf, (_, _, data, result, height) => Cryptonight.CryptonightHash(data, result, CN_HALF, height) },
+        { CryptonightHashType.CrytonightDouble, (_, _, data, result, height) => Cryptonight.CryptonightHash(data, result, CN_DOUBLE, height) },
+        { CryptonightHashType.CrytonightR, (_, _, data, result, height) => Cryptonight.CryptonightHash(data, result, CN_R, height) },
+        { CryptonightHashType.CrytonightRTO, (_, _, data, result, height) => Cryptonight.CryptonightHash(data, result, CN_RTO, height) },
+        { CryptonightHashType.CrytonightRWZ, (_, _, data, result, height) => Cryptonight.CryptonightHash(data, result, CN_RWZ, height) },
+        { CryptonightHashType.CrytonightZLS, (_, _, data, result, height) => Cryptonight.CryptonightHash(data, result, CN_ZLS, height) },
+        { CryptonightHashType.CrytonightCCX, (_, _, data, result, height) => Cryptonight.CryptonightHash(data, result, CN_CCX, height) },
+        { CryptonightHashType.CrytonightGPU, (_, _, data, result, height) => Cryptonight.CryptonightHash(data, result, CN_GPU, height) },
+        { CryptonightHashType.CrytonightFast, (_, _, data, result, height) => Cryptonight.CryptonightHash(data, result, CN_FAST, height) },
+        { CryptonightHashType.CrytonightXAO, (_, _, data, result, height) => Cryptonight.CryptonightHash(data, result, CN_XAO, height) },
+        { CryptonightHashType.Ghostrider, (_, _, data, result, height) => Cryptonight.CryptonightHash(data, result, GHOSTRIDER_RTM, height) },
+        { CryptonightHashType.CrytonightLite0, (_, _, data, result, height) => Cryptonight.CryptonightHash(data, result, CN_LITE_0, height) },
+        { CryptonightHashType.CrytonightLite1, (_, _, data, result, height) => Cryptonight.CryptonightHash(data, result, CN_LITE_1, height) },
+        { CryptonightHashType.CrytonightHeavy, (_, _, data, result, height) => Cryptonight.CryptonightHash(data, result, CN_HEAVY_0, height) },
+        { CryptonightHashType.CrytonightHeavyXHV, (_, _, data, result, height) => Cryptonight.CryptonightHash(data, result, CN_HEAVY_XHV, height) },
+        { CryptonightHashType.CrytonightHeavyTube, (_, _, data, result, height) => Cryptonight.CryptonightHash(data, result, CN_HEAVY_TUBE, height) },
+        { CryptonightHashType.CrytonightPico, (_, _, data, result, height) => Cryptonight.CryptonightHash(data, result, CN_PICO_0, height) },
+        { CryptonightHashType.ArgonCHUKWA, (_, _, data, result, height) => Cryptonight.CryptonightHash(data, result, AR2_CHUKWA, height) },
+        { CryptonightHashType.ArgonCHUKWAV2, (_, _, data, result, height) => Cryptonight.CryptonightHash(data, result, AR2_CHUKWA_V2, height) },
+        { CryptonightHashType.ArgonWRKZ, (_, _, data, result, height) => Cryptonight.CryptonightHash(data, result, AR2_WRKZ, height) },
+    };
 
     private byte[] blobTemplate;
     private int extraNonce;
@@ -93,6 +116,7 @@ public class CryptonoteJob
 
     public string PrevHash { get; }
     public GetBlockTemplateResponse BlockTemplate { get; }
+    public string RandomXRealm { get; set; }
 
     public void PrepareWorkerJob(CryptonoteWorkerJob workerJob, out string blob, out string target)
     {
@@ -138,7 +162,7 @@ public class CryptonoteJob
 
         // hash it
         Span<byte> headerHash = stackalloc byte[32];
-        hashFunc(BlockTemplate.SeedHash, blobConverted, headerHash, BlockTemplate.Height);
+        hashFunc(RandomXRealm, BlockTemplate.SeedHash, blobConverted, headerHash, BlockTemplate.Height);
 
         var headerHashString = headerHash.ToHexString();
         if(headerHashString != workerHash)
