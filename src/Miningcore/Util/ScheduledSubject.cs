@@ -56,7 +56,7 @@ public class ScheduledSubject<T> : ISubject<T>
 
     public void Dispose()
     {
-        if(_subject is IDisposable)
-            ((IDisposable) _subject).Dispose();
+        if(_subject is IDisposable disposable)
+            disposable.Dispose();
     }
 }

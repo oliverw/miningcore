@@ -23,6 +23,7 @@ using EC = Miningcore.Blockchain.Ethereum.EthCommands;
 using static Miningcore.Util.ActionUtils;
 using System.Reactive;
 using Miningcore.Mining;
+using Miningcore.Rpc;
 using Newtonsoft.Json.Linq;
 
 namespace Miningcore.Blockchain.Ethereum;

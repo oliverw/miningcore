@@ -14,6 +14,7 @@ using Miningcore.Payments;
 using Miningcore.Persistence;
 using Miningcore.Persistence.Model;
 using Miningcore.Persistence.Repositories;
+using Miningcore.Rpc;
 using Miningcore.Time;
 using Miningcore.Util;
 using Newtonsoft.Json;
