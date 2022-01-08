@@ -61,8 +61,8 @@ public class JsonRpcResponse<T>
 
     public TParam ResultAs<TParam>() where TParam : class
     {
-        if(Result is JToken)
-            return ((JToken) Result)?.ToObject<TParam>();
+        if(Result is JToken token)
+            return token.ToObject<TParam>();
 
         return (TParam) Result;
     }
