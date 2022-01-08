@@ -182,7 +182,7 @@ public class StratumConnection
         return RespondAsync(new JsonRpcResponse<T>(payload, id));
     }
 
-    public ValueTask RespondErrorAsync(StratumError code, string message, object id, object result = null, object data = null)
+    public ValueTask RespondErrorAsync(StratumError code, string message, object id, object result = null)
     {
         return RespondAsync(new JsonRpcResponse(new JsonRpcError((int) code, message, null), id, result));
     }

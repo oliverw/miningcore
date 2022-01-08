@@ -55,6 +55,8 @@ public class EthereumPool : PoolBase
 
         manager.PrepareWorker(connection);
 
+        context.UserAgent = requestParams.FirstOrDefault()?.Trim();
+
         var data = new object[]
         {
             new object[]
@@ -67,11 +69,20 @@ public class EthereumPool : PoolBase
         }
         .ToArray();
 
-        await connection.RespondAsync(data, request.Id);
+        // Nicehash's stupid validator insists on "error" property present
+        // in successful responses which is a violation of the JSON-RPC spec
+        var response = new JsonRpcResponse<object[]>(data, request.Id);
+
+        if(context.IsNicehash)
+        {
+            response.Extra = new Dictionary<string, object>();
+            response.Extra["error"] = null;
+        }
+
+        await connection.RespondAsync(response);
 
         // setup worker context
         context.IsSubscribed = true;
-        context.UserAgent = requestParams.FirstOrDefault()?.Trim();
     }
 
     private async Task OnAuthorizeAsync(StratumConnection connection, Timestamped<JsonRpcRequest> tsRequest)

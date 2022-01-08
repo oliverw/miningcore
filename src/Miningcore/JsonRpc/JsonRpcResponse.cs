@@ -56,6 +56,9 @@ public class JsonRpcResponse<T>
     [JsonProperty(PropertyName = "id", NullValueHandling = NullValueHandling.Ignore)]
     public object Id { get; set; }
 
+    [JsonExtensionData]
+    public IDictionary<string, object> Extra { get; set; }
+
     public TParam ResultAs<TParam>() where TParam : class
     {
         if(Result is JToken)
