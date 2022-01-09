@@ -80,7 +80,7 @@ Please refer to this Wiki Page: https://github.com/oliverw/miningcore/wiki/Confi
 
 ```console
 $ git clone https://github.com/oliverw/miningcore
-$ cd miningcore/src/Miningcore
+$ cd miningcore
 ```
 
 Depending on your OS Version run either of these scripts:
