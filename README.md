@@ -103,7 +103,7 @@ Download and install the [.NET 6 SDK](https://dotnet.microsoft.com/download/dotn
 
 ```dosbatch
 > git clone https://github.com/oliverw/miningcore
-> cd miningcore/src/Miningcore
+> cd miningcore
 > build-windows.bat
 ```
 
