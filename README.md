@@ -76,9 +76,7 @@ Once you have done this for all of your existing pools you should now restore yo
 
 Please refer to this Wiki Page: https://github.com/oliverw/miningcore/wiki/Configuration
 
-### Building on Debian/Ubuntu
-
-Clone the repositorz.
+## Building on Debian/Ubuntu
 
 ```console
 $ git clone https://github.com/oliverw/miningcore
@@ -99,7 +97,7 @@ or
 $ ./build-ubuntu-21.04
 ```
 
-### Building on Windows
+## Building on Windows
 
 Download and install the [.NET 6 SDK](https://dotnet.microsoft.com/download/dotnet/6.0)
 
@@ -109,41 +107,40 @@ Download and install the [.NET 6 SDK](https://dotnet.microsoft.com/download/dotn
 > build-windows.bat
 ```
 
-### Building on Windows - Visual Studio
+### Building in Visual Studio
 
 - Install [Visual Studio 2022](https://www.visualstudio.com/vs/). Visual Studio Community Edition is fine.
 - Open `Miningcore.sln` in Visual Studio
 
-
-### After successful build
+## Running Miningcore
 
 Create a configuration file `config.json` as described [here](https://github.com/oliverw/miningcore/wiki/Configuration)
 
 ```console
-$ cd ../../build
+$ cd build
 $ Miningcore -c config.json
 ```
 
-### Supported Currencies
+## Supported Currencies
 
 Refer to [this file](https://github.com/oliverw/miningcore/blob/master/src/Miningcore/coins.json) for a complete list.
 
-### Caveats
+## Caveats
 
-#### Monero
+### Monero
 
 - Monero's Wallet Daemon (monero-wallet-rpc) relies on HTTP digest authentication for authentication which is currently not supported by Miningcore. Therefore monero-wallet-rpc must be run with the `--disable-rpc-login` option. It is advisable to mitigate the resulting security risk by putting monero-wallet-rpc behind a reverse proxy like nginx with basic-authentication.
 - Miningcore utilizes RandomX's light-mode by default which consumes only **256 MB of memory per RandomX-VM**. A modern (2021) era CPU will be able to handle ~ 50 shares per second in this mode.
 - If you are running into throughput problems on your pool you can either increase the number of RandomX virtual machines in light-mode by adding `"randomXVmCount": x` to your pool configuration where x is at maximum equal to the machine's number of processor cores. Alternatively you can activate fast-mode by adding `"randomXFlagsAdd": "RANDOMX_FLAG_FULL_MEM"` to the pool configuration. Fast mode increases performance by 10x but requires roughly **3 GB of RAM per RandomX-VM**.
 
-#### ZCash
+### ZCash
 
 - Pools needs to be configured with both a t-addr and z-addr (new configuration property "z-address" of the pool configuration element)
 - First configured zcashd daemon needs to control both the t-addr and the z-addr (have the private key)
 - To increase the share processing throughput it is advisable to increase the maximum number of concurrent equihash solvers through the new configuration property "equihashMaxThreads" of the cluster configuration element. Increasing this value by one increases the peak memory consumption of the pool cluster by 1 GB.
 - Miners may use both t-addresses and z-addresses when connecting to the pool
 
-#### Vertcoin
+### Vertcoin
 
 - Be sure to copy the file `verthash.dat` from your vertcoin blockchain folder to your Miningcore server
 - In your Miningcore config file add this property to your vertcoin pool configuration: `"vertHashDataFile": "/path/to/verthash.dat",`
