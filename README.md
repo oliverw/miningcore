@@ -25,57 +25,6 @@ Commercial support directly by the maintainer is available through [miningcore.p
 
 For general questions visit the [Discussions Area](https://github.com/oliverw/miningcore/discussions).
 
-## Database setup
-
-Miningcore currently requires PostgreSQL 10 or higher.
-
-Create the database:
-
-```console
-$ createuser miningcore
-$ createdb miningcore
-$ psql (enter the password for postgres)
-```
-
-Inside `psql` execute:
-
-```sql
-alter user miningcore with encrypted password 'some-secure-password';
-grant all privileges on database miningcore to miningcore;
-```
-
-Import the database schema:
-
-```console
-$ wget https://raw.githubusercontent.com/oliverw/miningcore/master/src/Miningcore/Persistence/Postgres/Scripts/createdb.sql
-$ psql -d miningcore -U miningcore -f createdb.sql
-```
-
-### Advanced setup
-
-If you are planning to run a Multipool-Cluster, the simple setup might not perform well enough under high load. In this case you are strongly advised to use PostgreSQL 11 or higher. After performing the steps outlined in the basic setup above, perform these additional steps:
-
-**WARNING**: The following step will delete all recorded shares. Do **NOT** do this on a production pool unless you backup your `shares` table using `pg_backup` first!
-
-```console
-$ wget https://raw.githubusercontent.com/oliverw/miningcore/master/src/Miningcore/Persistence/Postgres/Scripts/createdb_postgresql_11_appendix.sql
-$ psql -d miningcore -U miningcore -f createdb_postgresql_11_appendix.sql
-```
-
-After executing the command, your `shares` table is now a [list-partitioned table](https://www.postgresql.org/docs/11/ddl-partitioning.html) which dramatically improves query performance, since almost all database operations Miningcore performs are scoped to a certain pool.
-
-The following step needs to performed **once for every new pool** you add to your cluster. Be sure to **replace all occurences** of `mypool1` in the statement below with the id of your pool from your Miningcore configuration file:
-
-```sql
-CREATE TABLE shares_mypool1 PARTITION OF shares FOR VALUES IN ('mypool1');
-```
-
-Once you have done this for all of your existing pools you should now restore your shares from backup.
-
-## Configuration
-
-Please refer to this Wiki Page: https://github.com/oliverw/miningcore/wiki/Configuration
-
 ## Building on Debian/Ubuntu
 
 ```console
@@ -114,7 +63,58 @@ Download and install the [.NET 6 SDK](https://dotnet.microsoft.com/download/dotn
 
 ## Running Miningcore
 
+### Database setup
+
+Miningcore currently requires PostgreSQL 10 or higher.
+
+Create the database:
+
+```console
+$ createuser miningcore
+$ createdb miningcore
+$ psql (enter the password for postgres)
+```
+
+Inside `psql` execute:
+
+```sql
+alter user miningcore with encrypted password 'some-secure-password';
+grant all privileges on database miningcore to miningcore;
+```
+
+Import the database schema:
+
+```console
+$ wget https://raw.githubusercontent.com/oliverw/miningcore/master/src/Miningcore/Persistence/Postgres/Scripts/createdb.sql
+$ psql -d miningcore -U miningcore -f createdb.sql
+```
+
+#### Advanced setup
+
+If you are planning to run a Multipool-Cluster, the simple setup might not perform well enough under high load. In this case you are strongly advised to use PostgreSQL 11 or higher. After performing the steps outlined in the basic setup above, perform these additional steps:
+
+**WARNING**: The following step will delete all recorded shares. Do **NOT** do this on a production pool unless you backup your `shares` table using `pg_backup` first!
+
+```console
+$ wget https://raw.githubusercontent.com/oliverw/miningcore/master/src/Miningcore/Persistence/Postgres/Scripts/createdb_postgresql_11_appendix.sql
+$ psql -d miningcore -U miningcore -f createdb_postgresql_11_appendix.sql
+```
+
+After executing the command, your `shares` table is now a [list-partitioned table](https://www.postgresql.org/docs/11/ddl-partitioning.html) which dramatically improves query performance, since almost all database operations Miningcore performs are scoped to a certain pool.
+
+The following step needs to performed **once for every new pool** you add to your cluster. Be sure to **replace all occurences** of `mypool1` in the statement below with the id of your pool from your Miningcore configuration file:
+
+```sql
+CREATE TABLE shares_mypool1 PARTITION OF shares FOR VALUES IN ('mypool1');
+```
+
+Once you have done this for all of your existing pools you should now restore your shares from backup.
+
+### Configuration
+
 Create a configuration file `config.json` as described [here](https://github.com/oliverw/miningcore/wiki/Configuration)
+
+### Start the Pool
 
 ```console
 $ cd build
