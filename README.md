@@ -35,15 +35,15 @@ $ cd miningcore
 Depending on your OS Version run either of these scripts:
 
 ```console
-$ ./build-debian-11.sh
+./build-debian-11.sh
 ```
 or
 ```console
-$ ./build-ubuntu-20.04
+./build-ubuntu-20.04
 ```
 or
 ```console
-$ ./build-ubuntu-21.04
+./build-ubuntu-21.04
 ```
 
 ## Building on Windows
