@@ -70,9 +70,9 @@ Miningcore currently requires PostgreSQL 10 or higher.
 Create the database:
 
 ```console
-$ createuser miningcore
-$ createdb miningcore
-$ psql (enter the password for postgres)
+createuser miningcore
+createdb miningcore
+psql (enter the password for postgres)
 ```
 
 Inside `psql` execute:
@@ -85,8 +85,8 @@ grant all privileges on database miningcore to miningcore;
 Import the database schema:
 
 ```console
-$ wget https://raw.githubusercontent.com/oliverw/miningcore/master/src/Miningcore/Persistence/Postgres/Scripts/createdb.sql
-$ psql -d miningcore -U miningcore -f createdb.sql
+wget https://raw.githubusercontent.com/oliverw/miningcore/master/src/Miningcore/Persistence/Postgres/Scripts/createdb.sql
+psql -d miningcore -U miningcore -f createdb.sql
 ```
 
 #### Advanced setup
@@ -96,8 +96,8 @@ If you are planning to run a Multipool-Cluster, the simple setup might not perfo
 **WARNING**: The following step will delete all recorded shares. Do **NOT** do this on a production pool unless you backup your `shares` table using `pg_backup` first!
 
 ```console
-$ wget https://raw.githubusercontent.com/oliverw/miningcore/master/src/Miningcore/Persistence/Postgres/Scripts/createdb_postgresql_11_appendix.sql
-$ psql -d miningcore -U miningcore -f createdb_postgresql_11_appendix.sql
+wget https://raw.githubusercontent.com/oliverw/miningcore/master/src/Miningcore/Persistence/Postgres/Scripts/createdb_postgresql_11_appendix.sql
+psql -d miningcore -U miningcore -f createdb_postgresql_11_appendix.sql
 ```
 
 After executing the command, your `shares` table is now a [list-partitioned table](https://www.postgresql.org/docs/11/ddl-partitioning.html) which dramatically improves query performance, since almost all database operations Miningcore performs are scoped to a certain pool.
@@ -117,8 +117,8 @@ Create a configuration file `config.json` as described [here](https://github.com
 ### Start the Pool
 
 ```console
-$ cd build
-$ Miningcore -c config.json
+cd build
+Miningcore -c config.json
 ```
 
 ## Supported Currencies
