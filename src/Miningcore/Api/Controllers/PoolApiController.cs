@@ -557,7 +557,7 @@ public class PoolApiController : ApiControllerBase
         if(string.IsNullOrEmpty(address))
             throw new ApiException("Invalid or missing miner address", HttpStatusCode.NotFound);
 
-        var result = await cf.Run(con=> minerRepo.GetSettings(con, null, pool.Id, address));
+        var result = await cf.Run(con=> minerRepo.GetSettingsAsync(con, null, pool.Id, address));
 
         if(result == null)
             throw new ApiException("No settings found", HttpStatusCode.NotFound);
@@ -581,7 +581,7 @@ public class PoolApiController : ApiControllerBase
             throw new ApiException("Invalid IP address", HttpStatusCode.BadRequest);
 
         // fetch recent IPs
-        var ips = await cf.Run(con=> shareRepo.GetRecentyUsedIpAddresses(con, null, poolId, address));
+        var ips = await cf.Run(con=> shareRepo.GetRecentyUsedIpAddressesAsync(con, null, poolId, address));
 
         // any known ips?
         if(ips == null || ips.Length == 0)
@@ -604,11 +604,11 @@ public class PoolApiController : ApiControllerBase
         // finally update the settings
         return await cf.RunTx(async (con, tx) =>
         {
-            await minerRepo.UpdateSettings(con, tx, mapped);
+            await minerRepo.UpdateSettingsAsync(con, tx, mapped);
 
             logger.Info(()=> $"Updated settings for pool {pool.Id}, miner {address}");
 
-            var result = await minerRepo.GetSettings(con, tx, mapped.PoolId, mapped.Address);
+            var result = await minerRepo.GetSettingsAsync(con, tx, mapped.PoolId, mapped.Address);
             return mapper.Map<Responses.MinerSettings>(result);
         });
     }

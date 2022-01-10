@@ -141,7 +141,7 @@ public class ShareRepository : IShareRepository
             .ToArray();
     }
 
-    public async Task<string[]> GetRecentyUsedIpAddresses(IDbConnection con, IDbTransaction tx, string poolId, string miner)
+    public async Task<string[]> GetRecentyUsedIpAddressesAsync(IDbConnection con, IDbTransaction tx, string poolId, string miner)
     {
         logger.LogInvoke(new object[] { poolId });
 
