@@ -78,8 +78,8 @@ psql (enter the password for postgres)
 Inside `psql` execute:
 
 ```sql
-alter user miningcore with encrypted password 'some-secure-password';
-grant all privileges on database miningcore to miningcore;
+ALTER USER miningcore WITH ENCRYPTED PASSWORD 'some-secure-password';
+GRANT ALL privileges ON database miningcore TO miningcore;
 ```
 
 Import the database schema:
