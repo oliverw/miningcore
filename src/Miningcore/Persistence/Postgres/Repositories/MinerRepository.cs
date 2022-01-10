@@ -24,7 +24,7 @@ public class MinerRepository : IMinerRepository
     {
         logger.LogInvoke();
 
-        const string query = "SELECT * FROM miner_settings WHERE poolid = @poolId AND address = @address";
+        const string query = @"SELECT * FROM miner_settings WHERE poolid = @poolId AND address = @address";
 
         var entity = await con.QuerySingleOrDefaultAsync<Entities.MinerSettings>(query, new {poolId, address});
 
@@ -33,11 +33,11 @@ public class MinerRepository : IMinerRepository
 
     public Task UpdateSettings(IDbConnection con, IDbTransaction tx, MinerSettings settings)
     {
-        const string query = "INSERT INTO miner_settings(poolid, address, paymentthreshold, created, updated) " +
-            "VALUES(@poolid, @address, @paymentthreshold, now(), now()) " +
-            "ON CONFLICT ON CONSTRAINT miner_settings_pkey DO UPDATE " +
-            "SET paymentthreshold = @paymentthreshold, updated = now() " +
-            "WHERE miner_settings.poolid = @poolid AND miner_settings.address = @address";
+        const string query = @"INSERT INTO miner_settings(poolid, address, paymentthreshold, created, updated)
+            VALUES(@poolid, @address, @paymentthreshold, now(), now())
+            ON CONFLICT ON CONSTRAINT miner_settings_pkey DO UPDATE
+            SET paymentthreshold = @paymentthreshold, updated = now()
+            WHERE miner_settings.poolid = @poolid AND miner_settings.address = @address";
 
         return con.ExecuteAsync(query, settings, tx);
     }

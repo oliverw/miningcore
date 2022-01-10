@@ -32,10 +32,10 @@ public class StatsRepository : IStatsRepository
 
         var mapped = mapper.Map<Entities.PoolStats>(stats);
 
-        const string query = "INSERT INTO poolstats(poolid, connectedminers, poolhashrate, networkhashrate, " +
-            "networkdifficulty, lastnetworkblocktime, blockheight, connectedpeers, sharespersecond, created) " +
-            "VALUES(@poolid, @connectedminers, @poolhashrate, @networkhashrate, @networkdifficulty, " +
-            "@lastnetworkblocktime, @blockheight, @connectedpeers, @sharespersecond, @created)";
+        const string query = @"INSERT INTO poolstats(poolid, connectedminers, poolhashrate, networkhashrate,
+            networkdifficulty, lastnetworkblocktime, blockheight, connectedpeers, sharespersecond, created)
+            VALUES(@poolid, @connectedminers, @poolhashrate, @networkhashrate, @networkdifficulty,
+            @lastnetworkblocktime, @blockheight, @connectedpeers, @sharespersecond, @created)";
 
         await con.ExecuteAsync(query, mapped, tx);
     }
@@ -49,8 +49,8 @@ public class StatsRepository : IStatsRepository
         if(string.IsNullOrEmpty(mapped.Worker))
             mapped.Worker = string.Empty;
 
-        const string query = "INSERT INTO minerstats(poolid, miner, worker, hashrate, sharespersecond, created) " +
-            "VALUES(@poolid, @miner, @worker, @hashrate, @sharespersecond, @created)";
+        const string query = @"INSERT INTO minerstats(poolid, miner, worker, hashrate, sharespersecond, created)
+            VALUES(@poolid, @miner, @worker, @hashrate, @sharespersecond, @created)";
 
         await con.ExecuteAsync(query, mapped, tx);
     }
@@ -88,13 +88,13 @@ public class StatsRepository : IStatsRepository
             _ => null
         };
 
-        var query = $"SELECT date_trunc('{trunc}', created) AS created, " +
-            "AVG(poolhashrate) AS poolhashrate, AVG(networkhashrate) AS networkhashrate, AVG(networkdifficulty) AS networkdifficulty, " +
-            "CAST(AVG(connectedminers) AS BIGINT) AS connectedminers " +
-            "FROM poolstats " +
-            "WHERE poolid = @poolId AND created >= @start AND created <= @end " +
-            $"GROUP BY date_trunc('{trunc}', created) " +
-            "ORDER BY created;";
+        var query = @$"SELECT date_trunc('{trunc}', created) AS created,
+            AVG(poolhashrate) AS poolhashrate, AVG(networkhashrate) AS networkhashrate, AVG(networkdifficulty) AS networkdifficulty,
+            CAST(AVG(connectedminers) AS BIGINT) AS connectedminers
+            FROM poolstats
+            WHERE poolid = @poolId AND created >= @start AND created <= @end
+            GROUP BY date_trunc('{trunc}', created)
+            ORDER BY created;";
 
         return (await con.QueryAsync<Entities.PoolStats>(query, new { poolId, start, end }))
             .Select(mapper.Map<PoolStats>)
@@ -105,23 +105,23 @@ public class StatsRepository : IStatsRepository
     {
         logger.LogInvoke(new object[] { poolId, miner });
 
-        var query = "SELECT (SELECT SUM(difficulty) FROM shares WHERE poolid = @poolId AND miner = @miner) AS pendingshares, " +
-            "(SELECT amount FROM balances WHERE poolid = @poolId AND address = @miner) AS pendingbalance, " +
-            "(SELECT SUM(amount) FROM payments WHERE poolid = @poolId and address = @miner) as totalpaid," +
-            "(SELECT SUM(amount) FROM payments WHERE poolid = @poolId and address = @miner and created >= date_trunc('day', now())) as todaypaid";
+        var query = @"SELECT (SELECT SUM(difficulty) FROM shares WHERE poolid = @poolId AND miner = @miner) AS pendingshares,
+            (SELECT amount FROM balances WHERE poolid = @poolId AND address = @miner) AS pendingbalance,
+            (SELECT SUM(amount) FROM payments WHERE poolid = @poolId and address = @miner) as totalpaid,
+            (SELECT SUM(amount) FROM payments WHERE poolid = @poolId and address = @miner and created >= date_trunc('day', now())) as todaypaid";
 
         var result = await con.QuerySingleOrDefaultAsync<MinerStats>(query, new { poolId, miner }, tx);
 
         if(result != null)
         {
-            query = "SELECT * FROM payments WHERE poolid = @poolId AND address = @miner" +
-                " ORDER BY created DESC LIMIT 1";
+            query = @"SELECT * FROM payments WHERE poolid = @poolId AND address = @miner
+                ORDER BY created DESC LIMIT 1";
 
             result.LastPayment = await con.QuerySingleOrDefaultAsync<Payment>(query, new { poolId, miner }, tx);
 
             // query timestamp of last stats update
-            query = "SELECT created FROM minerstats WHERE poolid = @poolId AND miner = @miner" +
-                " ORDER BY created DESC LIMIT 1";
+            query = @"SELECT created FROM minerstats WHERE poolid = @poolId AND miner = @miner
+                ORDER BY created DESC LIMIT 1";
 
             var lastUpdate = await con.QuerySingleOrDefaultAsync<DateTime?>(query, new { poolId, miner }, tx);
 
@@ -132,7 +132,7 @@ public class StatsRepository : IStatsRepository
             if(lastUpdate.HasValue)
             {
                 // load rows rows by timestamp
-                query = "SELECT * FROM minerstats WHERE poolid = @poolId AND miner = @miner AND created = @created";
+                query = @"SELECT * FROM minerstats WHERE poolid = @poolId AND miner = @miner AND created = @created";
 
                 var stats = (await con.QueryAsync<Entities.MinerWorkerPerformanceStats>(query, new { poolId, miner, created = lastUpdate }))
                     .Select(mapper.Map<MinerWorkerPerformanceStats>)
@@ -173,21 +173,21 @@ public class StatsRepository : IStatsRepository
         logger.LogInvoke();
 
         const string query =
-            "SELECT s.miner, s.worker, s.hashrate FROM " +
-            "(" +
-            "    WITH cte AS" +
-            "    (" +
-            "        SELECT" +
-            "            ROW_NUMBER() OVER (partition BY miner, worker ORDER BY created DESC) as rk," +
-            "            miner, worker, hashrate" +
-            "        FROM minerstats" +
-            "        WHERE poolid = @poolId" +
-            "    )" +
-            "    SELECT miner, worker, hashrate" +
-            "    FROM cte" +
-            "    WHERE rk = 1" +
-            ") s " +
-            "WHERE s.hashrate > 0;";
+            @"SELECT s.miner, s.worker, s.hashrate FROM
+            (
+                WITH cte AS
+                (
+                    SELECT
+                        ROW_NUMBER() OVER (partition BY miner, worker ORDER BY created DESC) as rk,
+                        miner, worker, hashrate
+                    FROM minerstats
+                    WHERE poolid = @poolId
+                )
+                SELECT miner, worker, hashrate
+                FROM cte
+                WHERE rk = 1
+            ) s
+            WHERE s.hashrate > 0;";
 
         return (await con.QueryAsync<MinerWorkerHashrate>(query, new { poolId }))
             .ToArray();
@@ -197,13 +197,13 @@ public class StatsRepository : IStatsRepository
     {
         logger.LogInvoke(new object[] { poolId });
 
-        const string query = "SELECT date_trunc('hour', created) AS created, " +
-            "(extract(minute FROM created)::int / 3) AS partition, " +
-            "worker, AVG(hashrate) AS hashrate, AVG(sharespersecond) AS sharespersecond " +
-            "FROM minerstats " +
-            "WHERE poolid = @poolId AND miner = @miner AND created >= @start AND created <= @end " +
-            "GROUP BY 1, 2, worker " +
-            "ORDER BY 1, 2, worker";
+        const string query = @"SELECT date_trunc('hour', created) AS created,
+            (extract(minute FROM created)::int / 3) AS partition,
+            worker, AVG(hashrate) AS hashrate, AVG(sharespersecond) AS sharespersecond
+            FROM minerstats
+            WHERE poolid = @poolId AND miner = @miner AND created >= @start AND created <= @end
+            GROUP BY 1, 2, worker
+            ORDER BY 1, 2, worker";
 
         var entities = (await con.QueryAsync<Entities.MinerWorkerPerformanceStats>(query, new { poolId, miner, start, end }))
             .ToArray();
@@ -239,11 +239,11 @@ public class StatsRepository : IStatsRepository
     {
         logger.LogInvoke(new object[] { poolId });
 
-        const string query = "SELECT worker, date_trunc('minute', created) AS created, AVG(hashrate) AS hashrate, " +
-            "AVG(sharespersecond) AS sharespersecond FROM minerstats " +
-            "WHERE poolid = @poolId AND miner = @miner AND created >= @start AND created <= @end " +
-            "GROUP BY date_trunc('minute', created), worker " +
-            "ORDER BY created, worker;";
+        const string query = @"SELECT worker, date_trunc('minute', created) AS created, AVG(hashrate) AS hashrate,
+            AVG(sharespersecond) AS sharespersecond FROM minerstats
+            WHERE poolid = @poolId AND miner = @miner AND created >= @start AND created <= @end
+            GROUP BY date_trunc('minute', created), worker
+            ORDER BY created, worker;";
 
         var entities = (await con.QueryAsync<Entities.MinerWorkerPerformanceStats>(query, new { poolId, miner, start, end }))
             .ToArray();
@@ -274,11 +274,11 @@ public class StatsRepository : IStatsRepository
     {
         logger.LogInvoke(new object[] { poolId });
 
-        const string query = "SELECT worker, date_trunc('hour', created) AS created, AVG(hashrate) AS hashrate, " +
-            "AVG(sharespersecond) AS sharespersecond FROM minerstats " +
-            "WHERE poolid = @poolId AND miner = @miner AND created >= @start AND created <= @end " +
-            "GROUP BY date_trunc('hour', created), worker " +
-            "ORDER BY created, worker;";
+        const string query = @"SELECT worker, date_trunc('hour', created) AS created, AVG(hashrate) AS hashrate,
+            AVG(sharespersecond) AS sharespersecond FROM minerstats
+            WHERE poolid = @poolId AND miner = @miner AND created >= @start AND created <= @end
+            GROUP BY date_trunc('hour', created), worker
+            ORDER BY created, worker;";
 
         var entities = (await con.QueryAsync<Entities.MinerWorkerPerformanceStats>(query, new { poolId, miner, start, end }))
             .ToArray();
@@ -309,11 +309,11 @@ public class StatsRepository : IStatsRepository
     {
         logger.LogInvoke(new object[] { poolId });
 
-        const string query = "SELECT worker, date_trunc('day', created) AS created, AVG(hashrate) AS hashrate, " +
-            "AVG(sharespersecond) AS sharespersecond FROM minerstats " +
-            "WHERE poolid = @poolId AND miner = @miner AND created >= @start AND created <= @end " +
-            "GROUP BY date_trunc('day', created), worker " +
-            "ORDER BY created, worker;";
+        const string query = @"SELECT worker, date_trunc('day', created) AS created, AVG(hashrate) AS hashrate,
+            AVG(sharespersecond) AS sharespersecond FROM minerstats
+            WHERE poolid = @poolId AND miner = @miner AND created >= @start AND created <= @end
+            GROUP BY date_trunc('day', created), worker
+            ORDER BY created, worker;";
 
         var entitiesByDate = (await con.QueryAsync<Entities.MinerWorkerPerformanceStats>(query, new { poolId, miner, start, end }))
             .ToArray()
@@ -337,22 +337,23 @@ public class StatsRepository : IStatsRepository
     {
         logger.LogInvoke(new object[] { poolId, from, page, pageSize });
 
-        const string query = "WITH tmp AS " +
-            "( " +
-            "	SELECT  " +
-            "		ms.miner,  " +
-            "		ms.hashrate,  " +
-            "		ms.sharespersecond,  " +
-            "		ROW_NUMBER() OVER(PARTITION BY ms.miner ORDER BY ms.hashrate DESC) AS rk  " +
-            "	FROM (SELECT miner, SUM(hashrate) AS hashrate, SUM(sharespersecond) AS sharespersecond " +
-            "       FROM minerstats " +
-            "       WHERE poolid = @poolid AND created >= @from GROUP BY miner, created) ms " +
-            ") " +
-            "SELECT t.miner, t.hashrate, t.sharespersecond " +
-            "FROM tmp t " +
-            "WHERE t.rk = 1 " +
-            "ORDER by t.hashrate DESC " +
-            "OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
+        const string query =
+            @"WITH tmp AS
+            (
+            	SELECT
+            		ms.miner,
+            		ms.hashrate,
+            		ms.sharespersecond,
+            		ROW_NUMBER() OVER(PARTITION BY ms.miner ORDER BY ms.hashrate DESC) AS rk
+            	FROM (SELECT miner, SUM(hashrate) AS hashrate, SUM(sharespersecond) AS sharespersecond
+                   FROM minerstats
+                   WHERE poolid = @poolid AND created >= @from GROUP BY miner, created) ms
+            )
+            SELECT t.miner, t.hashrate, t.sharespersecond
+            FROM tmp t
+            WHERE t.rk = 1
+            ORDER by t.hashrate DESC
+            OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
 
         return (await con.QueryAsync<Entities.MinerWorkerPerformanceStats>(query, new { poolId, from, offset = page * pageSize, pageSize }))
             .Select(mapper.Map<MinerWorkerPerformanceStats>)
@@ -363,7 +364,7 @@ public class StatsRepository : IStatsRepository
     {
         logger.LogInvoke();
 
-        const string query = "DELETE FROM poolstats WHERE created < @date";
+        const string query = @"DELETE FROM poolstats WHERE created < @date";
 
         return con.ExecuteAsync(query, new { date });
     }
@@ -372,7 +373,7 @@ public class StatsRepository : IStatsRepository
     {
         logger.LogInvoke();
 
-        const string query = "DELETE FROM minerstats WHERE created < @date";
+        const string query = @"DELETE FROM minerstats WHERE created < @date";
 
         return con.ExecuteAsync(query, new { date });
     }

@@ -29,8 +29,8 @@ public class PaymentRepository : IPaymentRepository
 
         var mapped = mapper.Map<Entities.Payment>(payment);
 
-        const string query = "INSERT INTO payments(poolid, coin, address, amount, transactionconfirmationdata, created) " +
-            "VALUES(@poolid, @coin, @address, @amount, @transactionconfirmationdata, @created)";
+        const string query = @"INSERT INTO payments(poolid, coin, address, amount, transactionconfirmationdata, created)
+            VALUES(@poolid, @coin, @address, @amount, @transactionconfirmationdata, @created)";
 
         await con.ExecuteAsync(query, mapped, tx);
     }
@@ -44,9 +44,9 @@ public class PaymentRepository : IPaymentRepository
 
         var pgCon = (NpgsqlConnection) con;
 
-        const string query = "COPY payments (poolid, coin, address, amount, transactionconfirmationdata, created) FROM STDIN (FORMAT BINARY)";
+        const string query = @"COPY payments (poolid, coin, address, amount, transactionconfirmationdata, created) FROM STDIN (FORMAT BINARY)";
 
-        await using(var writer = pgCon.BeginBinaryImport(query))
+        await using(var writer = await pgCon.BeginBinaryImportAsync(query))
         {
             foreach(var payment in payments)
             {
@@ -68,7 +68,7 @@ public class PaymentRepository : IPaymentRepository
     {
         logger.LogInvoke(new object[] { poolId });
 
-        var query = "SELECT * FROM payments WHERE poolid = @poolid ";
+        var query = @"SELECT * FROM payments WHERE poolid = @poolid ";
 
         if(!string.IsNullOrEmpty(address))
             query += " AND address = @address ";
@@ -84,9 +84,9 @@ public class PaymentRepository : IPaymentRepository
     {
         logger.LogInvoke(new object[] { poolId });
 
-        const string query = "SELECT * FROM balance_changes WHERE poolid = @poolid " +
-            "AND address = @address " +
-            "ORDER BY created DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
+        const string query = @"SELECT * FROM balance_changes WHERE poolid = @poolid
+            AND address = @address
+            ORDER BY created DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
 
         return (await con.QueryAsync<Entities.BalanceChange>(query, new { poolId, address, offset = page * pageSize, pageSize }))
             .Select(mapper.Map<BalanceChange>)
@@ -97,10 +97,10 @@ public class PaymentRepository : IPaymentRepository
     {
         logger.LogInvoke(new object[] { poolId });
 
-        const string query = "SELECT SUM(amount) AS amount, date_trunc('day', created) AS date FROM payments WHERE poolid = @poolid " +
-            "AND address = @address " +
-            "GROUP BY date " +
-            "ORDER BY date DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
+        const string query = @"SELECT SUM(amount) AS amount, date_trunc('day', created) AS date FROM payments WHERE poolid = @poolid
+            AND address = @address
+            GROUP BY date
+            ORDER BY date DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
 
         return (await con.QueryAsync<AmountByDate>(query, new { poolId, address, offset = page * pageSize, pageSize }))
             .ToArray();
@@ -110,7 +110,7 @@ public class PaymentRepository : IPaymentRepository
     {
         logger.LogInvoke(new object[] { poolId });
 
-        string query = "SELECT COUNT(*) FROM payments WHERE poolid = @poolId";
+        string query = @"SELECT COUNT(*) FROM payments WHERE poolid = @poolId";
 
         if(!string.IsNullOrEmpty(address))
             query += " AND address = @address ";
@@ -123,10 +123,11 @@ public class PaymentRepository : IPaymentRepository
     {
         logger.LogInvoke(new object[] { poolId });
 
-        const string query = "SELECT COUNT(*) FROM (SELECT SUM(amount) AS amount, date_trunc('day', created) AS date FROM payments WHERE poolid = @poolid " +
-            "AND address = @address " +
-            "GROUP BY date " +
-            "ORDER BY date DESC) s";
+        const string query =
+            @"SELECT COUNT(*) FROM (SELECT SUM(amount) AS amount, date_trunc('day', created) AS date FROM payments WHERE poolid = @poolid
+            AND address = @address
+            GROUP BY date
+            ORDER BY date DESC) s";
 
         return con.ExecuteScalarAsync<uint>(query, new { poolId, address });
     }
@@ -135,7 +136,7 @@ public class PaymentRepository : IPaymentRepository
     {
         logger.LogInvoke(new object[] { poolId });
 
-        string query = "SELECT COUNT(*) FROM balance_changes WHERE poolid = @poolId";
+        var query = @"SELECT COUNT(*) FROM balance_changes WHERE poolid = @poolId";
 
         if(!string.IsNullOrEmpty(address))
             query += " AND address = @address ";

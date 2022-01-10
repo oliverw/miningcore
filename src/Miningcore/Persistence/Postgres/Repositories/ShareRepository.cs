@@ -30,8 +30,8 @@ public class ShareRepository : IShareRepository
 
         var pgCon = (NpgsqlConnection) con;
 
-        const string query = "COPY shares (poolid, blockheight, difficulty, " +
-            "networkdifficulty, miner, worker, useragent, ipaddress, source, created) FROM STDIN (FORMAT BINARY)";
+        const string query = @"COPY shares (poolid, blockheight, difficulty,
+            networkdifficulty, miner, worker, useragent, ipaddress, source, created) FROM STDIN (FORMAT BINARY)";
 
         await using(var writer = await pgCon.BeginBinaryImportAsync(query))
         {
@@ -59,8 +59,8 @@ public class ShareRepository : IShareRepository
     {
         logger.LogInvoke(new object[] { poolId });
 
-        var query = $"SELECT * FROM shares WHERE poolid = @poolId AND created {(inclusive ? " <= " : " < ")} @before " +
-            "ORDER BY created DESC FETCH NEXT (@pageSize) ROWS ONLY";
+        var query = @$"SELECT * FROM shares WHERE poolid = @poolId AND created {(inclusive ? " <= " : " < ")} @before
+            ORDER BY created DESC FETCH NEXT (@pageSize) ROWS ONLY";
 
         return (await con.QueryAsync<Entities.Share>(query, new { poolId, before, pageSize }))
             .Select(mapper.Map<Share>)
@@ -116,9 +116,9 @@ public class ShareRepository : IShareRepository
     {
         logger.LogInvoke(new object[] { poolId });
 
-        const string query = "SELECT SUM(difficulty), COUNT(difficulty), MIN(created) AS firstshare, MAX(created) AS lastshare, miner, worker FROM shares " +
-            "WHERE poolid = @poolId AND created >= @start AND created <= @end " +
-            "GROUP BY miner, worker";
+        const string query = @"SELECT SUM(difficulty), COUNT(difficulty), MIN(created) AS firstshare, MAX(created) AS lastshare, miner, worker FROM shares
+            WHERE poolid = @poolId AND created >= @start AND created <= @end
+            GROUP BY miner, worker";
 
         return (await con.QueryAsync<MinerWorkerHashes>(query, new { poolId, start, end }))
             .ToArray();
@@ -129,13 +129,13 @@ public class ShareRepository : IShareRepository
     {
         logger.LogInvoke(new object[] { poolId });
 
-        const string query = "SELECT SUM(difficulty) AS value, REGEXP_REPLACE(useragent, '/.+', '') AS key FROM shares " +
-                "WHERE poolid = @poolId AND created > @start AND created < @end " +
-                "GROUP BY key ORDER BY value DESC";
+        const string query = @"SELECT SUM(difficulty) AS value, REGEXP_REPLACE(useragent, '/.+', '') AS key FROM shares
+                WHERE poolid = @poolId AND created > @start AND created < @end
+                GROUP BY key ORDER BY value DESC";
 
-        const string queryByVersion = "SELECT SUM(difficulty) AS value, useragent AS key FROM shares " +
-            "WHERE poolid = @poolId AND created > @start AND created < @end " +
-            "GROUP BY key ORDER BY value DESC";
+        const string queryByVersion = @"SELECT SUM(difficulty) AS value, useragent AS key FROM shares
+            WHERE poolid = @poolId AND created > @start AND created < @end
+            GROUP BY key ORDER BY value DESC";
 
         return (await con.QueryAsync<KeyValuePair<string, double>>(!byVersion ? query : queryByVersion, new { poolId, start, end }))
             .ToArray();
@@ -145,8 +145,8 @@ public class ShareRepository : IShareRepository
     {
         logger.LogInvoke(new object[] { poolId });
 
-        const string query = "SELECT DISTINCT s.ipaddress FROM (SELECT * FROM shares " +
-            "WHERE poolid = @poolId and miner = @miner ORDER BY CREATED DESC LIMIT 100) s";
+        const string query = @"SELECT DISTINCT s.ipaddress FROM (SELECT * FROM shares
+            WHERE poolid = @poolId and miner = @miner ORDER BY CREATED DESC LIMIT 100) s";
 
         return (await con.QueryAsync<string>(query, new { poolId, miner }, tx))
             .ToArray();
