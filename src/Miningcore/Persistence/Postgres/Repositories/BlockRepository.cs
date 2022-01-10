@@ -27,8 +27,10 @@ public class BlockRepository : IBlockRepository
         var mapped = mapper.Map<Entities.Block>(block);
 
         const string query =
-            "INSERT INTO blocks(poolid, blockheight, networkdifficulty, status, type, transactionconfirmationdata, miner, reward, effort, confirmationprogress, source, hash, created) " +
-            "VALUES(@poolid, @blockheight, @networkdifficulty, @status, @type, @transactionconfirmationdata, @miner, @reward, @effort, @confirmationprogress, @source, @hash, @created)";
+            @"INSERT INTO blocks(poolid, blockheight, networkdifficulty, status, type, transactionconfirmationdata,
+                miner, reward, effort, confirmationprogress, source, hash, created)
+            VALUES(@poolid, @blockheight, @networkdifficulty, @status, @type, @transactionconfirmationdata,
+                @miner, @reward, @effort, @confirmationprogress, @source, @hash, @created)";
 
         await con.ExecuteAsync(query, mapped, tx);
     }
@@ -47,7 +49,9 @@ public class BlockRepository : IBlockRepository
 
         var mapped = mapper.Map<Entities.Block>(block);
 
-        const string query = "UPDATE blocks SET blockheight = @blockheight, status = @status, type = @type, reward = @reward, effort = @effort, confirmationprogress = @confirmationprogress, hash = @hash WHERE id = @id";
+        const string query = @"UPDATE blocks SET blockheight = @blockheight, status = @status, type = @type,
+            reward = @reward, effort = @effort, confirmationprogress = @confirmationprogress, hash = @hash WHERE id = @id";
+
         await con.ExecuteAsync(query, mapped, tx);
     }
 
@@ -55,8 +59,8 @@ public class BlockRepository : IBlockRepository
     {
         logger.LogInvoke(new object[] { poolId });
 
-        const string query = "SELECT * FROM blocks WHERE poolid = @poolid AND status = ANY(@status) " +
-            "ORDER BY created DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
+        const string query = @"SELECT * FROM blocks WHERE poolid = @poolid AND status = ANY(@status)
+            ORDER BY created DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
 
         return (await con.QueryAsync<Entities.Block>(query, new
             {
@@ -71,8 +75,8 @@ public class BlockRepository : IBlockRepository
 
     public async Task<Block[]> PageBlocksAsync(IDbConnection con, BlockStatus[] status, int page, int pageSize)
     {
-        const string query = "SELECT * FROM blocks WHERE status = ANY(@status) " +
-            "ORDER BY created DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
+        const string query = @"SELECT * FROM blocks WHERE status = ANY(@status)
+            ORDER BY created DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
 
         return (await con.QueryAsync<Entities.Block>(query, new
             {
@@ -88,7 +92,7 @@ public class BlockRepository : IBlockRepository
     {
         logger.LogInvoke(new object[] { poolId });
 
-        const string query = "SELECT * FROM blocks WHERE poolid = @poolid AND status = @status";
+        const string query = @"SELECT * FROM blocks WHERE poolid = @poolid AND status = @status";
 
         return (await con.QueryAsync<Entities.Block>(query, new { status = BlockStatus.Pending.ToString().ToLower(), poolid = poolId }))
             .Select(mapper.Map<Block>)
@@ -99,8 +103,8 @@ public class BlockRepository : IBlockRepository
     {
         logger.LogInvoke(new object[] { poolId });
 
-        const string query = "SELECT * FROM blocks WHERE poolid = @poolid AND status = ANY(@status) AND created < @before " +
-            "ORDER BY created DESC FETCH NEXT (1) ROWS ONLY";
+        const string query = @"SELECT * FROM blocks WHERE poolid = @poolid AND status = ANY(@status) AND created < @before
+            ORDER BY created DESC FETCH NEXT (1) ROWS ONLY";
 
         return (await con.QueryAsync<Entities.Block>(query, new
             {
@@ -116,7 +120,7 @@ public class BlockRepository : IBlockRepository
     {
         logger.LogInvoke(new object[] { poolId });
 
-        const string query = "SELECT COUNT(*) FROM blocks WHERE poolid = @poolId";
+        const string query = @"SELECT COUNT(*) FROM blocks WHERE poolid = @poolId";
 
         return con.ExecuteScalarAsync<uint>(query, new { poolId });
     }
@@ -125,7 +129,7 @@ public class BlockRepository : IBlockRepository
     {
         logger.LogInvoke(new object[] { poolId });
 
-        const string query = "SELECT created FROM blocks WHERE poolid = @poolId ORDER BY created DESC LIMIT 1";
+        const string query = @"SELECT created FROM blocks WHERE poolid = @poolId ORDER BY created DESC LIMIT 1";
 
         return con.ExecuteScalarAsync<DateTime?>(query, new { poolId });
     }
