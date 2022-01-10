@@ -24,7 +24,6 @@ using static Miningcore.Util.ActionUtils;
 namespace Miningcore.Blockchain.Cryptonote;
 
 [CoinFamily(CoinFamily.Cryptonote)]
-[UsedImplicitly]
 public class CryptonotePool : PoolBase
 {
     public CryptonotePool(IComponentContext ctx,

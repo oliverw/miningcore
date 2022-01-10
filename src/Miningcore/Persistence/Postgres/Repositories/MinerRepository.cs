@@ -9,7 +9,6 @@ using NLog;
 
 namespace Miningcore.Persistence.Postgres.Repositories;
 
-[UsedImplicitly]
 public class MinerRepository : IMinerRepository
 {
     public MinerRepository(IMapper mapper)

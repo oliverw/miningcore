@@ -2,7 +2,6 @@ using JetBrains.Annotations;
 
 namespace Miningcore.Blockchain.Ethereum.Configuration;
 
-[UsedImplicitly]
 public class EthereumDaemonEndpointConfigExtra
 {
     /// <summary>

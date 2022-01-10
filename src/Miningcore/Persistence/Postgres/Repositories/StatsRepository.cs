@@ -12,7 +12,6 @@ using MinerStats = Miningcore.Persistence.Model.Projections.MinerStats;
 
 namespace Miningcore.Persistence.Postgres.Repositories;
 
-[UsedImplicitly]
 public class StatsRepository : IStatsRepository
 {
     public StatsRepository(IMapper mapper, IMasterClock clock)

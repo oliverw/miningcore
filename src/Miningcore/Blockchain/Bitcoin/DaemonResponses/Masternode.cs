@@ -11,7 +11,6 @@ public class Masternode
     public long Amount { get; set; }
 }
 
-[UsedImplicitly]
 public class SuperBlock
 {
     public string Payee { get; set; }

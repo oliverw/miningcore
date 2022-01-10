@@ -12,7 +12,6 @@ using NpgsqlTypes;
 
 namespace Miningcore.Persistence.Postgres.Repositories;
 
-[UsedImplicitly]
 public class PaymentRepository : IPaymentRepository
 {
     public PaymentRepository(IMapper mapper)
