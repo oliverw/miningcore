@@ -8,7 +8,7 @@ using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
 // ReSharper disable UnusedAutoPropertyAccessor.Global
 // ReSharper disable PropertyCanBeMadeInitOnly.Global
-
+// ReSharper disable ClassNeverInstantiated.Global
 // ReSharper disable InconsistentNaming
 
 namespace Miningcore.Configuration;
@@ -546,6 +546,36 @@ public class DatabaseConfig : AuthenticatedNetworkEndpointConfig
     public string Database { get; set; }
 }
 
+public class PostgresConfig : DatabaseConfig
+{
+    /// <summary>
+    /// Enable Transport layer security (TLS)
+    /// </summary>
+    public bool Tls { get; set; }
+
+    /// <summary>
+    /// Location of a client certificate to be sent to the server (.PFX or .PEM)
+    /// </summary>
+    public string TlsCert { get; set; }
+
+    /// <summary>
+    /// Location of a client certificate private key to be sent to the server
+    /// </summary>
+    public string TlsKey { get; set; }
+
+    /// <summary>
+    /// Client certificate password
+    /// </summary>
+    public string TlsPassword { get; set; }
+
+    /// <summary>
+    /// Trust (self-signed) server certificate
+    /// </summary>
+    public bool TlsNoValidate { get; set; }
+
+    public int? CommandTimeout { get; set; }
+}
+
 public class TcpProxyProtocolConfig
 {
     /// <summary>
@@ -685,7 +715,7 @@ public partial class ClusterPaymentProcessingConfig
 
 public partial class PersistenceConfig
 {
-    public DatabaseConfig Postgres { get; set; }
+    public PostgresConfig Postgres { get; set; }
 }
 
 public class RewardRecipient

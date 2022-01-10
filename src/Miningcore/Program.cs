@@ -803,7 +803,7 @@ public class Program : BackgroundService
             ConfigureDummyPersistence(builder);
     }
 
-    private static void ConfigurePostgres(DatabaseConfig pgConfig, ContainerBuilder builder)
+    private static void ConfigurePostgres(PostgresConfig pgConfig, ContainerBuilder builder)
     {
         // validate config
         if(string.IsNullOrEmpty(pgConfig.Host))
@@ -819,10 +819,30 @@ public class Program : BackgroundService
             throw new PoolStartupException("Postgres configuration: invalid or missing 'user'");
 
         // build connection string
-        var connectionString = $"Server={pgConfig.Host};Port={pgConfig.Port};Database={pgConfig.Database};User Id={pgConfig.User};Password={pgConfig.Password};CommandTimeout=900;";
+        var connectionString = new StringBuilder($"Server={pgConfig.Host};Port={pgConfig.Port};Database={pgConfig.Database};User Id={pgConfig.User};Password={pgConfig.Password};");
+
+        if(pgConfig.Tls)
+        {
+            connectionString.Append("SSL Mode=Require;");
+
+            if(!string.IsNullOrEmpty(pgConfig.TlsCert.Trim()))
+                connectionString.Append($"SSL Certificate={pgConfig.TlsCert.Trim()};");
+
+            if(!string.IsNullOrEmpty(pgConfig.TlsKey.Trim()))
+                connectionString.Append($"SSL Key={pgConfig.TlsKey.Trim()};");
+
+            if(!string.IsNullOrEmpty(pgConfig.TlsPassword))
+                connectionString.Append($"SSL Password={pgConfig.TlsPassword};");
+
+            if(pgConfig.TlsNoValidate)
+                connectionString.Append("Trust Server Certificate=true;");
+        }
+
+        if(pgConfig.CommandTimeout.HasValue)
+            connectionString.Append($"CommandTimeout={pgConfig.CommandTimeout.Value};");
 
         // register connection factory
-        builder.RegisterInstance(new PgConnectionFactory(connectionString))
+        builder.RegisterInstance(new PgConnectionFactory(connectionString.ToString()))
             .AsImplementedInterfaces();
 
         // register repositories
