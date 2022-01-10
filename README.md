@@ -67,26 +67,25 @@ build-windows.bat
 
 Miningcore currently requires PostgreSQL 10 or higher.
 
-Create the database:
+Run Postgres's `psql` tool:
 
 ```console
-createuser miningcore
-createdb miningcore
-psql (enter the password for postgres)
+sudo -u postgres psql
 ```
 
-Inside `psql` execute:
+In `psql` execute:
 
 ```sql
-ALTER USER miningcore WITH ENCRYPTED PASSWORD 'some-secure-password';
-GRANT ALL privileges ON database miningcore TO miningcore;
+CREATE ROLE miningcore WITH LOGIN ENCRYPTED PASSWORD 'your-secure-password';
+CREATE DATABASE miningcore OWNER miningcore;
 ```
+
+Quit `psql` with \q
 
 Import the database schema:
 
 ```console
-wget https://raw.githubusercontent.com/oliverw/miningcore/master/src/Miningcore/Persistence/Postgres/Scripts/createdb.sql
-psql -d miningcore -U miningcore -f createdb.sql
+sudo -u postgres psql -d miningcore -f miningcore/src/Miningcore/Persistence/Postgres/Scripts/createdb.sql
 ```
 
 #### Advanced setup
@@ -96,8 +95,7 @@ If you are planning to run a Multipool-Cluster, the simple setup might not perfo
 **WARNING**: The following step will delete all recorded shares. Do **NOT** do this on a production pool unless you backup your `shares` table using `pg_backup` first!
 
 ```console
-wget https://raw.githubusercontent.com/oliverw/miningcore/master/src/Miningcore/Persistence/Postgres/Scripts/createdb_postgresql_11_appendix.sql
-psql -d miningcore -U miningcore -f createdb_postgresql_11_appendix.sql
+sudo -u postgres psql -d miningcore -f miningcore/src/Miningcore/Persistence/Postgres/Scripts/createdb_postgresql_11_appendix.sql
 ```
 
 After executing the command, your `shares` table is now a [list-partitioned table](https://www.postgresql.org/docs/11/ddl-partitioning.html) which dramatically improves query performance, since almost all database operations Miningcore performs are scoped to a certain pool.
