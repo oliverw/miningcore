@@ -51,9 +51,9 @@ or
 Download and install the [.NET 6 SDK](https://dotnet.microsoft.com/download/dotnet/6.0)
 
 ```dosbatch
-> git clone https://github.com/oliverw/miningcore
-> cd miningcore
-> build-windows.bat
+git clone https://github.com/oliverw/miningcore
+cd miningcore
+build-windows.bat
 ```
 
 ### Building in Visual Studio
