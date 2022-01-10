@@ -28,8 +28,8 @@ For general questions visit the [Discussions Area](https://github.com/oliverw/mi
 ## Building on Debian/Ubuntu
 
 ```console
-$ git clone https://github.com/oliverw/miningcore
-$ cd miningcore
+git clone https://github.com/oliverw/miningcore
+cd miningcore
 ```
 
 Depending on your OS Version run either of these scripts:
