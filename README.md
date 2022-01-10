@@ -28,22 +28,22 @@ For general questions visit the [Discussions Area](https://github.com/oliverw/mi
 ## Building on Debian/Ubuntu
 
 ```console
-$ git clone https://github.com/oliverw/miningcore
-$ cd miningcore
+git clone https://github.com/oliverw/miningcore
+cd miningcore
 ```
 
 Depending on your OS Version run either of these scripts:
 
 ```console
-$ ./build-debian-11.sh
+./build-debian-11.sh
 ```
 or
 ```console
-$ ./build-ubuntu-20.04
+./build-ubuntu-20.04
 ```
 or
 ```console
-$ ./build-ubuntu-21.04
+./build-ubuntu-21.04
 ```
 
 ## Building on Windows
@@ -51,9 +51,9 @@ $ ./build-ubuntu-21.04
 Download and install the [.NET 6 SDK](https://dotnet.microsoft.com/download/dotnet/6.0)
 
 ```dosbatch
-> git clone https://github.com/oliverw/miningcore
-> cd miningcore
-> build-windows.bat
+git clone https://github.com/oliverw/miningcore
+cd miningcore
+build-windows.bat
 ```
 
 ### Building in Visual Studio
@@ -70,23 +70,23 @@ Miningcore currently requires PostgreSQL 10 or higher.
 Create the database:
 
 ```console
-$ createuser miningcore
-$ createdb miningcore
-$ psql (enter the password for postgres)
+createuser miningcore
+createdb miningcore
+psql (enter the password for postgres)
 ```
 
 Inside `psql` execute:
 
 ```sql
-alter user miningcore with encrypted password 'some-secure-password';
-grant all privileges on database miningcore to miningcore;
+ALTER USER miningcore WITH ENCRYPTED PASSWORD 'some-secure-password';
+GRANT ALL privileges ON database miningcore TO miningcore;
 ```
 
 Import the database schema:
 
 ```console
-$ wget https://raw.githubusercontent.com/oliverw/miningcore/master/src/Miningcore/Persistence/Postgres/Scripts/createdb.sql
-$ psql -d miningcore -U miningcore -f createdb.sql
+wget https://raw.githubusercontent.com/oliverw/miningcore/master/src/Miningcore/Persistence/Postgres/Scripts/createdb.sql
+psql -d miningcore -U miningcore -f createdb.sql
 ```
 
 #### Advanced setup
@@ -96,8 +96,8 @@ If you are planning to run a Multipool-Cluster, the simple setup might not perfo
 **WARNING**: The following step will delete all recorded shares. Do **NOT** do this on a production pool unless you backup your `shares` table using `pg_backup` first!
 
 ```console
-$ wget https://raw.githubusercontent.com/oliverw/miningcore/master/src/Miningcore/Persistence/Postgres/Scripts/createdb_postgresql_11_appendix.sql
-$ psql -d miningcore -U miningcore -f createdb_postgresql_11_appendix.sql
+wget https://raw.githubusercontent.com/oliverw/miningcore/master/src/Miningcore/Persistence/Postgres/Scripts/createdb_postgresql_11_appendix.sql
+psql -d miningcore -U miningcore -f createdb_postgresql_11_appendix.sql
 ```
 
 After executing the command, your `shares` table is now a [list-partitioned table](https://www.postgresql.org/docs/11/ddl-partitioning.html) which dramatically improves query performance, since almost all database operations Miningcore performs are scoped to a certain pool.
@@ -117,8 +117,8 @@ Create a configuration file `config.json` as described [here](https://github.com
 ### Start the Pool
 
 ```console
-$ cd build
-$ Miningcore -c config.json
+cd build
+Miningcore -c config.json
 ```
 
 ## Supported Currencies
