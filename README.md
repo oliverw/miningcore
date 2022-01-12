@@ -151,8 +151,68 @@ Miningcore -c config.json
 ```
 
 ## Supported Currencies
+| Coin             |Algorithm     |
+| -----------------|--------------|
+| Axe              |x11           |
+| Auroracoin       |Skein         |
+| Auroracoin       |Qubit         |
+| Auroracoin       |Sha256        |
+| Auroracoin       |Scrypt        |
+| Auroracoin       |Groestl       |
+| Bitcoin          |Sha256        |
+| Bithereum        |Equihash      |
+| Bitcoin Gold     |Equihash      |
+| Bitcoin Cash     |Sha256        |
+| Bitcoin Cash ABC |Sha256        |
+| Bitcoin Diamond  |x13bcd        |
+| Callisto         |Ethash        |
+| CannabisCoin     |x11           |
+| Dash             |x11           |
+| Dogecoin         |Scrypt        |
+| Digibyte         |Sha256        |
+| Digibyte         |Scrypt        |
+| Digibyte         |Skein         |  
+| Digibyte         |Qubit         |
+| Digibyte         |Groestl-Myriad|
+| Deutsche eMark   |Sha256        |
+| Ergo             |Autolykos2    |
+| Ethereum         |Ethash        |
+| eCash            |Sha256        |
+| FLO              |Scrypt        |
+| FoxDcoin         |x16rv2        |
+| GeekCash         |Geek          |
+| GroestLcoin      |Groestl       |
+| Globaltoken      |Sha256        |
+| Help The Homeless|x16r          |
+| Litecoin         |Scrypt        |
+| Litecoin Cash    |Sha256        |
+| Monero           |Randomx       |
+| MoonCoin         |Scrypt        |
+| Monacoin         |Lyra2REv2     |
+| Minexcoin        |Equihash      |
+| Namecoin         |Sha256        |
+| Notecoin         |Scrypt        |
+| Optical Bitcoin  |Heavyhash     |
+| PAKcoin          |Scrypt        |
+| Paccoin          |x11           |
+| Pigeoncoin       |x16s          |
+| Raptoreum        |Ghostrider    |
+| Ravencoin Lite   |x16r          |
+| TILTCoin         |Scrypt        |
+| Veles            |Sha256        |
+| Veles            |x11           |
+| Veles            |Scrypt        |
+| Verge            |Lyra2REv2     |
+| Verge            |Scrypt        |
+| Verge            |x17           |
+| Verge            |Blake2s       |
+| Verge            |Groestl-Myriad|
+| Viacoin          |Scrypt        |
+| Vertcoin         |Verthash      |
+| ZCash            |Equihash      |
+| ZClassic         |Equihash      |
+| Zencash          |Equihash      |
 
-Refer to [this file](https://github.com/oliverw/miningcore/blob/master/src/Miningcore/coins.json) for a complete list.
 
 ## Caveats
 
