@@ -825,10 +825,10 @@ public class Program : BackgroundService
         {
             connectionString.Append("SSL Mode=Require;");
 
-            if(!string.IsNullOrEmpty(pgConfig.TlsCert.Trim()))
+            if(!string.IsNullOrEmpty(pgConfig.TlsCert?.Trim()))
                 connectionString.Append($"SSL Certificate={pgConfig.TlsCert.Trim()};");
 
-            if(!string.IsNullOrEmpty(pgConfig.TlsKey.Trim()))
+            if(!string.IsNullOrEmpty(pgConfig.TlsKey?.Trim()))
                 connectionString.Append($"SSL Key={pgConfig.TlsKey.Trim()};");
 
             if(!string.IsNullOrEmpty(pgConfig.TlsPassword))
