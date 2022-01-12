@@ -147,7 +147,7 @@ Create a configuration file `config.json` as described [here](https://github.com
 
 ```console
 cd build
-dotnet Miningcore.dll -c Config.json
+dotnet Miningcore.dll -c config.json
 ```
 
 ## Supported Currencies
