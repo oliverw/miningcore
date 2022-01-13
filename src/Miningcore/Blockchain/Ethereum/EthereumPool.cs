@@ -20,6 +20,7 @@ using static Miningcore.Util.ActionUtils;
 namespace Miningcore.Blockchain.Ethereum;
 
 [CoinFamily(CoinFamily.Ethereum)]
+[UsedImplicitly]
 public class EthereumPool : PoolBase
 {
     public EthereumPool(IComponentContext ctx,
@@ -34,6 +35,7 @@ public class EthereumPool : PoolBase
     {
     }
 
+    private object currentJobParams;
     private EthereumJobManager manager;
     private EthereumCoinTemplate coin;
 
@@ -145,7 +147,7 @@ public class EthereumPool : PoolBase
             await connection.NotifyAsync(EthereumStratumMethods.SetDifficulty, new object[] { context.Difficulty });
             await connection.NotifyAsync(EthereumStratumMethods.MiningNotify, manager.GetJobParamsForStratum());
 
-            logger.Info(() => $"[{connection.ConnectionId}] Authorized worker {workerValue}");
+            logger.Info(() => $"[{connection.ConnectionId}] Authorized worker v2 {workerValue}");
         }
 
         else
@@ -197,9 +199,13 @@ public class EthereumPool : PoolBase
             Share share;
 
             if(!v1)
+            {
                 share = await manager.SubmitShareV2Async(connection, submitRequest, ct);
+            }
             else
+            {
                 share = await manager.SubmitShareV1Async(connection, submitRequest, GetWorkerNameFromV1Request(request, context), ct);
+            }
 
             await connection.RespondAsync(true, request.Id);
 
@@ -210,6 +216,9 @@ public class EthereumPool : PoolBase
             PublishTelemetry(TelemetryCategory.Share, clock.Now - tsRequest.Timestamp.UtcDateTime, true);
 
             logger.Info(() => $"[{connection.ConnectionId}] Share accepted: D={Math.Round(share.Difficulty / EthereumConstants.Pow2x32, 3)}");
+
+            await connection.NotifyAsync(EthereumStratumMethods.SetDifficulty, new object[] { context.Difficulty });
+            await connection.NotifyAsync(EthereumStratumMethods.MiningNotify, currentJobParams);
 
             // update pool stats
             if(share.IsBlockCandidate)
@@ -238,7 +247,9 @@ public class EthereumPool : PoolBase
 
     private async Task SendJob(EthereumWorkerContext context, StratumConnection connection, object parameters)
     {
+        currentJobParams = parameters;
         // varDiff: if the client has a pending difficulty change, apply it now
+
         if(context.ApplyPendingDifficulty())
             await connection.NotifyAsync(EthereumStratumMethods.SetDifficulty, new object[] { context.Difficulty });
 
@@ -314,7 +325,7 @@ public class EthereumPool : PoolBase
                 logger.Info(() => $"[{connection.ConnectionId}] Setting static difficulty of {staticDiff.Value}");
             }
 
-            logger.Info(() => $"[{connection.ConnectionId}] Authorized worker {workerValue}");
+            logger.Info(() => $"[{connection.ConnectionId}] Authorized worker v1 {workerValue}");
 
             // setup worker context
             context.IsSubscribed = true;
@@ -371,7 +382,7 @@ public class EthereumPool : PoolBase
             disposables.Add(manager.Jobs
                 .Select(_ => Observable.FromAsync(() =>
                     Guard(OnNewJobAsync,
-                        ex=> logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}"))))
+                        ex => logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}"))))
                 .Concat()
                 .Subscribe(_ => { }, ex =>
                 {
@@ -415,7 +426,7 @@ public class EthereumPool : PoolBase
 
         logger.Info(() => "Broadcasting job");
 
-        return Guard(()=> Task.WhenAll(ForEachConnection(async connection =>
+        return Guard(() => Task.WhenAll(ForEachConnection(async connection =>
         {
             if(!connection.IsAlive)
                 return;
@@ -435,7 +446,7 @@ public class EthereumPool : PoolBase
                     await SendJob(context, connection, currentJobParams);
                     break;
             }
-        })), ex=> logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}"));
+        })), ex => logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}"));
     }
 
     protected void EnsureProtocolVersion(EthereumWorkerContext context, int version)

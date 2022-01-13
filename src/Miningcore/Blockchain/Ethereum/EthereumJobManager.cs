@@ -366,7 +366,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
         var context = worker.ContextAs<EthereumWorkerContext>();
         var nonce = request[0];
 
-        return await SubmitShareAsync(worker, context, workerName, currentJob, nonce.StripHexPrefix(), ct);
+        return await SubmitShareAsync(worker, context, workerName, currentJob, nonce.StripHexPrefix(), false, ct);
     }
 
     public async ValueTask<Share> SubmitShareV2Async(StratumConnection worker, string[] request, CancellationToken ct)
@@ -385,16 +385,16 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
             throw new StratumException(StratumError.MinusOne, "stale share");
 
         // assemble full-nonce
-        var fullNonceHex = context.ExtraNonce1 + nonce;
+        //var fullNonceHex = context.ExtraNonce1 + nonce;
 
-        return await SubmitShareAsync(worker, context, context.Worker, currentJob, fullNonceHex, ct);
+        return await SubmitShareAsync(worker, context, context.Worker, currentJob, nonce, true, ct);
     }
 
     private async ValueTask<Share> SubmitShareAsync(StratumConnection worker,
-        EthereumWorkerContext context, string workerName, EthereumJob job, string nonce, CancellationToken ct)
+        EthereumWorkerContext context, string workerName, EthereumJob job, string nonce, Boolean protocol, CancellationToken ct)
     {
         // validate & process
-        var (share, fullNonceHex, headerHash, mixHash) = await job.ProcessShareAsync(worker, workerName, nonce, ethash, ct);
+        var (share, fullNonceHex, headerHash, mixHash) = await job.ProcessShareAsync(worker, workerName, nonce, ethash, protocol, ct);
 
         // enrich share with common data
         share.PoolId = poolConfig.Id;
@@ -513,8 +513,8 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
         // Periodically update network stats
         Observable.Interval(TimeSpan.FromMinutes(10))
             .Select(via => Observable.FromAsync(() =>
-                Guard(()=> UpdateNetworkStatsAsync(ct),
-                    ex=> logger.Error(ex))))
+                Guard(() => UpdateNetworkStatsAsync(ct),
+                    ex => logger.Error(ex))))
             .Concat()
             .Subscribe();
 
@@ -557,7 +557,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
 
         var endpointExtra = daemonEndpoints
             .Where(x => x.Extra.SafeExtensionDataAs<EthereumDaemonEndpointConfigExtra>() != null)
-            .Select(x=> Tuple.Create(x, x.Extra.SafeExtensionDataAs<EthereumDaemonEndpointConfigExtra>()))
+            .Select(x => Tuple.Create(x, x.Extra.SafeExtensionDataAs<EthereumDaemonEndpointConfigExtra>()))
             .FirstOrDefault();
 
         if(endpointExtra?.Item2?.PortWs.HasValue == true)
