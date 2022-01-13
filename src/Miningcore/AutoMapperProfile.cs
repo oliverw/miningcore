@@ -14,6 +14,7 @@ public class AutoMapperProfile : Profile
 
     public AutoMapperProfile()
     {
+        // Fix for Automapper 11 which chokes on recursive objects such as JToken
         CreateMap<JToken, JToken>().ConvertUsing(x=> x);
 
         //////////////////////
