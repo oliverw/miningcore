@@ -50,15 +50,16 @@ public class EthereumJob
     }
 
     public async ValueTask<(Share Share, string FullNonceHex, string HeaderHash, string MixHash)> ProcessShareAsync(
-        StratumConnection worker, string fullNonceHex, EthashFull ethash, CancellationToken ct)
+        StratumConnection worker, string nonce, EthashFull ethash, Boolean protocol, CancellationToken ct)
     {
         // duplicate nonce?
         lock(workerNonces)
         {
-            RegisterNonce(worker, fullNonceHex);
+            RegisterNonce(worker, nonce);
         }
 
         var context = worker.ContextAs<EthereumWorkerContext>();
+        var fullNonceHex = protocol ? context.ExtraNonce1 + nonce : nonce;
 
         if(!ulong.TryParse(fullNonceHex, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var fullNonce))
             throw new StratumException(StratumError.MinusOne, "bad nonce " + fullNonceHex);

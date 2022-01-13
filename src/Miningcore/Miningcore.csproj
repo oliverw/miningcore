@@ -49,7 +49,7 @@
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Newtonsoft.Json.Schema" Version="3.0.14" />
+        <PackageReference Include="Newtonsoft.Json.Schema" Version="2.0.34" />
         <PackageReference Include="Npgsql" Version="6.0.2" />
         <PackageReference Include="NSwag.AspNetCore" Version="13.15.5" />
         <PackageReference Include="NSwag.CodeGeneration.CSharp" Version="13.15.5" />
@@ -70,7 +70,7 @@
         <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="6.0.0" />
         <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="6.0.0" />
         <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="6.0.0" />
-        <PackageReference Include="NBitcoin" Version="6.0.18" />
+        <PackageReference Include="NBitcoin" Version="5.0.83" />
         <PackageReference Include="NBitcoin.Zcash" Version="3.0.0" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
         <PackageReference Include="NLog" Version="4.7.13" />

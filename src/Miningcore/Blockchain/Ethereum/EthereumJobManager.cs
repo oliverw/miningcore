@@ -397,7 +397,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
                 throw new StratumException(StratumError.MinusOne, "stale share");
         }
 
-        return await SubmitShareAsync(worker, context, job, nonce.StripHexPrefix(), ct);
+        return await SubmitShareAsync(worker, context, job, nonce.StripHexPrefix(), false, ct);
     }
 
     public async ValueTask<Share> SubmitShareV2Async(StratumConnection worker, string[] request, CancellationToken ct)
@@ -421,17 +421,14 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
                 throw new StratumException(StratumError.MinusOne, "stale share");
         }
 
-        // assemble full-nonce
-        var fullNonceHex = context.ExtraNonce1 + nonce;
-
-        return await SubmitShareAsync(worker, context, job, fullNonceHex, ct);
+        return await SubmitShareAsync(worker, context, job, nonce, true, ct);
     }
 
     private async ValueTask<Share> SubmitShareAsync(StratumConnection worker,
-        EthereumWorkerContext context, EthereumJob job, string nonce, CancellationToken ct)
+        EthereumWorkerContext context, EthereumJob job, string nonce, Boolean protocol, CancellationToken ct)
     {
         // validate & process
-        var (share, fullNonceHex, headerHash, mixHash) = await job.ProcessShareAsync(worker, nonce, ethash, ct);
+        var (share, fullNonceHex, headerHash, mixHash) = await job.ProcessShareAsync(worker, nonce, ethash, protocol, ct);
 
         // enrich share with common data
         share.PoolId = poolConfig.Id;
