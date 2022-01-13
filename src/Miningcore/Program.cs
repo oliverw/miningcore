@@ -825,6 +825,9 @@ public class Program : BackgroundService
         {
             connectionString.Append("SSL Mode=Require;");
 
+            if(pgConfig.TlsNoValidate)
+                connectionString.Append("Trust Server Certificate=true;");
+
             if(!string.IsNullOrEmpty(pgConfig.TlsCert?.Trim()))
                 connectionString.Append($"SSL Certificate={pgConfig.TlsCert.Trim()};");
 
@@ -833,9 +836,6 @@ public class Program : BackgroundService
 
             if(!string.IsNullOrEmpty(pgConfig.TlsPassword))
                 connectionString.Append($"SSL Password={pgConfig.TlsPassword};");
-
-            if(pgConfig.TlsNoValidate)
-                connectionString.Append("Trust Server Certificate=true;");
         }
 
         if(pgConfig.CommandTimeout.HasValue)
@@ -848,7 +848,7 @@ public class Program : BackgroundService
         // register repositories
         builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
             .Where(t =>
-            t?.Namespace?.StartsWith(typeof(ShareRepository).Namespace) == true)
+                t?.Namespace?.StartsWith(typeof(ShareRepository).Namespace) == true)
             .AsImplementedInterfaces()
             .SingleInstance();
     }
