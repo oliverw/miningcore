@@ -132,8 +132,7 @@ public class PoolApiController : ApiControllerBase
 
         var from = clock.Now.AddDays(-1);
 
-        response.Pool.TopMiners = (await cf.Run(con => statsRepo.PagePoolMinersByHashrateAsync(
-                con, pool.Id, from, 0, 15)))
+        response.Pool.TopMiners = (await cf.Run(con => statsRepo.PagePoolMinersByHashrateAsync(con, pool.Id, from, 0, 15)))
             .Select(mapper.Map<MinerPerformanceStats>)
             .ToArray();
 

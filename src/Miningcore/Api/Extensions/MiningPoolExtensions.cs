@@ -1,7 +1,9 @@
 using AutoMapper;
 using Miningcore.Api.Responses;
 using Miningcore.Blockchain;
+using Miningcore.Blockchain.Ergo.Configuration;
 using Miningcore.Configuration;
+using Miningcore.Extensions;
 using Miningcore.Mining;
 
 namespace Miningcore.Api.Extensions;
@@ -28,7 +30,7 @@ public static class MiningPoolExtensions
         {
             var extra = poolInfo.PaymentProcessing.Extra;
 
-            //extra.StripValue(nameof(EthereumPoolPaymentProcessingConfigExtra.CoinbasePassword));
+            extra.StripValue(nameof(ErgoPaymentProcessingConfigExtra.WalletPassword));
         }
 
         return poolInfo;
