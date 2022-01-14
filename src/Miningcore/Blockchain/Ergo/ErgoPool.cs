@@ -25,7 +25,6 @@ using static Miningcore.Util.ActionUtils;
 namespace Miningcore.Blockchain.Ergo;
 
 [CoinFamily(CoinFamily.Ergo)]
-[UsedImplicitly]
 public class ErgoPool : PoolBase
 {
     public ErgoPool(IComponentContext ctx,

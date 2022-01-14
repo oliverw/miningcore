@@ -57,20 +57,20 @@
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="NBitcoin.Altcoins" Version="3.0.8" />
+        <PackageReference Include="NBitcoin.Altcoins" Version="2.0.34" />
         <PackageReference Include="NLog.Extensions.Hosting" Version="1.7.4" />
-        <PackageReference Include="AutoMapper" Version="10.1.1" />
+        <PackageReference Include="AutoMapper" Version="11.0.0" />
         <PackageReference Include="Dapper" Version="2.0.123" />
         <PackageReference Include="FluentValidation" Version="10.3.6" />
         <PackageReference Include="FluentValidation.AspNetCore" Version="10.3.6" />
         <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="10.3.6" />
         <PackageReference Include="JetBrains.Annotations" Version="2021.3.0" />
         <PackageReference Include="MailKit" Version="3.0.0" />
-        <PackageReference Include="McMaster.Extensions.CommandLineUtils" Version="3.1.0" />
+        <PackageReference Include="McMaster.Extensions.CommandLineUtils" Version="4.0.0" />
         <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="6.0.0" />
         <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="6.0.0" />
         <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="6.0.0" />
-        <PackageReference Include="NBitcoin" Version="6.0.18" />
+        <PackageReference Include="NBitcoin" Version="5.0.83" />
         <PackageReference Include="NBitcoin.Zcash" Version="3.0.0" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
         <PackageReference Include="NLog" Version="4.7.13" />

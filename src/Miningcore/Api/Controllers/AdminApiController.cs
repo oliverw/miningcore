@@ -66,7 +66,7 @@ public class AdminApiController : ApiControllerBase
         if(string.IsNullOrEmpty(address))
             throw new ApiException("Invalid or missing miner address", HttpStatusCode.NotFound);
 
-        var result = await cf.Run(con=> minerRepo.GetSettings(con, null, pool.Id, address));
+        var result = await cf.Run(con=> minerRepo.GetSettingsAsync(con, null, pool.Id, address));
 
         if(result == null)
             throw new ApiException("No settings found", HttpStatusCode.NotFound);
@@ -98,9 +98,9 @@ public class AdminApiController : ApiControllerBase
 
         var result = await cf.RunTx(async (con, tx) =>
         {
-            await minerRepo.UpdateSettings(con, tx, mapped);
+            await minerRepo.UpdateSettingsAsync(con, tx, mapped);
 
-            return await minerRepo.GetSettings(con, tx, mapped.PoolId, mapped.Address);
+            return await minerRepo.GetSettingsAsync(con, tx, mapped.PoolId, mapped.Address);
         });
 
         logger.Info(()=> $"Updated settings for pool {pool.Id}, miner {address}");

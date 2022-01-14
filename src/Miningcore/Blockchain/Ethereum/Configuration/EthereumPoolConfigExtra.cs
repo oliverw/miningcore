@@ -3,7 +3,6 @@ using Miningcore.Configuration;
 
 namespace Miningcore.Blockchain.Ethereum.Configuration;
 
-[UsedImplicitly]
 public class EthereumPoolConfigExtra
 {
     /// <summary>

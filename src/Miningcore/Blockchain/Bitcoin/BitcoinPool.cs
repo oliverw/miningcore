@@ -24,7 +24,6 @@ using static Miningcore.Util.ActionUtils;
 namespace Miningcore.Blockchain.Bitcoin;
 
 [CoinFamily(CoinFamily.Bitcoin)]
-[UsedImplicitly]
 public class BitcoinPool : PoolBase
 {
     public BitcoinPool(IComponentContext ctx,

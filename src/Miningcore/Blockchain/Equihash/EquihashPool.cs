@@ -25,7 +25,6 @@ using static Miningcore.Util.ActionUtils;
 namespace Miningcore.Blockchain.Equihash;
 
 [CoinFamily(CoinFamily.Equihash)]
-[UsedImplicitly]
 public class EquihashPool : PoolBase
 {
     public EquihashPool(IComponentContext ctx,

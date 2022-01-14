@@ -9,7 +9,6 @@ using NLog;
 
 namespace Miningcore.Persistence.Postgres.Repositories;
 
-[UsedImplicitly]
 public class BalanceRepository : IBalanceRepository
 {
     public BalanceRepository(IMapper mapper)

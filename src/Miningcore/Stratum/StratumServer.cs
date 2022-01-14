@@ -108,9 +108,15 @@ public abstract class StratumServer
         {
             try
             {
-                var socket = await server.AcceptAsync();
+                var socket = await server.AcceptAsync(ct);
 
                 AcceptConnection(socket, port, cert, ct);
+            }
+
+            catch(OperationCanceledException)
+            {
+                // ignored
+                break;
             }
 
             catch(ObjectDisposedException)
