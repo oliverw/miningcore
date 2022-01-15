@@ -34,7 +34,6 @@ public class EthereumPool : PoolBase
     {
     }
 
-    private object currentJobParams;
     private EthereumJobManager manager;
     private EthereumCoinTemplate coin;
 
@@ -212,8 +211,11 @@ public class EthereumPool : PoolBase
 
             logger.Info(() => $"[{connection.ConnectionId}] Share accepted: D={Math.Round(share.Difficulty / EthereumConstants.Pow2x32, 3)}");
 
-            await connection.NotifyAsync(EthereumStratumMethods.SetDifficulty, new object[] { context.Difficulty });
-            await connection.NotifyAsync(EthereumStratumMethods.MiningNotify, currentJobParams);
+            if(!v1)
+            {
+                await connection.NotifyAsync(EthereumStratumMethods.SetDifficulty, new object[] { context.Difficulty });
+                await connection.NotifyAsync(EthereumStratumMethods.MiningNotify, manager.GetJobParamsForStratum());
+            }
 
             // update pool stats
             if(share.IsBlockCandidate)
@@ -242,8 +244,6 @@ public class EthereumPool : PoolBase
 
     private async Task SendJob(EthereumWorkerContext context, StratumConnection connection, object parameters)
     {
-        currentJobParams = parameters;
-
         // varDiff: if the client has a pending difficulty change, apply it now
         if(context.ApplyPendingDifficulty())
             await connection.NotifyAsync(EthereumStratumMethods.SetDifficulty, new object[] { context.Difficulty });
