@@ -1,7 +1,6 @@
 using System.Data;
 using AutoMapper;
 using Dapper;
-using JetBrains.Annotations;
 using Miningcore.Extensions;
 using Miningcore.Persistence.Model;
 using Miningcore.Persistence.Model.Projections;
@@ -54,7 +53,7 @@ public class StatsRepository : IStatsRepository
         await con.ExecuteAsync(query, mapped, tx);
     }
 
-    public async Task<PoolStats> GetLastPoolStatsAsync(IDbConnection con, string poolId)
+    public async Task<PoolStats> GetLastPoolStatsAsync(IDbConnection con, CancellationToken ct, string poolId)
     {
         logger.LogInvoke();
 
@@ -67,7 +66,7 @@ public class StatsRepository : IStatsRepository
         return mapper.Map<PoolStats>(entity);
     }
 
-    public Task<decimal> GetTotalPoolPaymentsAsync(IDbConnection con, string poolId)
+    public Task<decimal> GetTotalPoolPaymentsAsync(IDbConnection con, CancellationToken ct, string poolId)
     {
         logger.LogInvoke();
 
@@ -76,7 +75,8 @@ public class StatsRepository : IStatsRepository
         return con.ExecuteScalarAsync<decimal>(query, new { poolId });
     }
 
-    public async Task<PoolStats[]> GetPoolPerformanceBetweenAsync(IDbConnection con, string poolId, SampleInterval interval, DateTime start, DateTime end)
+    public async Task<PoolStats[]> GetPoolPerformanceBetweenAsync(IDbConnection con, CancellationToken ct, string poolId,
+        SampleInterval interval, DateTime start, DateTime end)
     {
         logger.LogInvoke(new object[] { poolId });
 
@@ -100,7 +100,8 @@ public class StatsRepository : IStatsRepository
             .ToArray();
     }
 
-    public async Task<MinerStats> GetMinerStatsAsync(IDbConnection con, IDbTransaction tx, string poolId, string miner)
+    public async Task<MinerStats> GetMinerStatsAsync(IDbConnection con, IDbTransaction tx, CancellationToken ct,
+        string poolId, string miner)
     {
         logger.LogInvoke(new object[] { poolId, miner });
 
@@ -167,7 +168,7 @@ public class StatsRepository : IStatsRepository
         return result;
     }
 
-    public async Task<MinerWorkerHashrate[]> GetPoolMinerWorkerHashratesAsync(IDbConnection con, string poolId)
+    public async Task<MinerWorkerHashrate[]> GetPoolMinerWorkerHashratesAsync(IDbConnection con, CancellationToken ct, string poolId)
     {
         logger.LogInvoke();
 
@@ -192,7 +193,8 @@ public class StatsRepository : IStatsRepository
             .ToArray();
     }
 
-    public async Task<WorkerPerformanceStatsContainer[]> GetMinerPerformanceBetweenThreeMinutelyAsync(IDbConnection con, string poolId, string miner, DateTime start, DateTime end)
+    public async Task<WorkerPerformanceStatsContainer[]> GetMinerPerformanceBetweenThreeMinutelyAsync(IDbConnection con, CancellationToken ct,
+        string poolId, string miner, DateTime start, DateTime end)
     {
         logger.LogInvoke(new object[] { poolId });
 
@@ -234,7 +236,8 @@ public class StatsRepository : IStatsRepository
         return tmp;
     }
 
-    public async Task<WorkerPerformanceStatsContainer[]> GetMinerPerformanceBetweenMinutelyAsync(IDbConnection con, string poolId, string miner, DateTime start, DateTime end)
+    public async Task<WorkerPerformanceStatsContainer[]> GetMinerPerformanceBetweenMinutelyAsync(IDbConnection con, CancellationToken ct,
+        string poolId, string miner, DateTime start, DateTime end)
     {
         logger.LogInvoke(new object[] { poolId });
 
@@ -269,7 +272,8 @@ public class StatsRepository : IStatsRepository
         return tmp;
     }
 
-    public async Task<WorkerPerformanceStatsContainer[]> GetMinerPerformanceBetweenHourlyAsync(IDbConnection con, string poolId, string miner, DateTime start, DateTime end)
+    public async Task<WorkerPerformanceStatsContainer[]> GetMinerPerformanceBetweenHourlyAsync(IDbConnection con, CancellationToken ct,
+        string poolId, string miner, DateTime start, DateTime end)
     {
         logger.LogInvoke(new object[] { poolId });
 
@@ -304,7 +308,8 @@ public class StatsRepository : IStatsRepository
         return tmp;
     }
 
-    public async Task<WorkerPerformanceStatsContainer[]> GetMinerPerformanceBetweenDailyAsync(IDbConnection con, string poolId, string miner, DateTime start, DateTime end)
+    public async Task<WorkerPerformanceStatsContainer[]> GetMinerPerformanceBetweenDailyAsync(IDbConnection con, CancellationToken ct,
+        string poolId, string miner, DateTime start, DateTime end)
     {
         logger.LogInvoke(new object[] { poolId });
 
@@ -332,7 +337,8 @@ public class StatsRepository : IStatsRepository
         return tmp;
     }
 
-    public async Task<MinerWorkerPerformanceStats[]> PagePoolMinersByHashrateAsync(IDbConnection con, string poolId, DateTime from, int page, int pageSize)
+    public async Task<MinerWorkerPerformanceStats[]> PagePoolMinersByHashrateAsync(IDbConnection con, CancellationToken ct,
+        string poolId, DateTime from, int page, int pageSize)
     {
         logger.LogInvoke(new object[] { poolId, from, page, pageSize });
 

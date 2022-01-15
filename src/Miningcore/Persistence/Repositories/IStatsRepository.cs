@@ -9,16 +9,16 @@ public interface IStatsRepository
 {
     Task InsertPoolStatsAsync(IDbConnection con, IDbTransaction tx, PoolStats stats);
     Task InsertMinerWorkerPerformanceStatsAsync(IDbConnection con, IDbTransaction tx, MinerWorkerPerformanceStats stats);
-    Task<PoolStats> GetLastPoolStatsAsync(IDbConnection con, string poolId);
-    Task<decimal> GetTotalPoolPaymentsAsync(IDbConnection con, string poolId);
-    Task<PoolStats[]> GetPoolPerformanceBetweenAsync(IDbConnection con, string poolId, SampleInterval interval, DateTime start, DateTime end);
-    Task<MinerStats> GetMinerStatsAsync(IDbConnection con, IDbTransaction tx, string poolId, string miner);
-    Task<MinerWorkerHashrate[]> GetPoolMinerWorkerHashratesAsync(IDbConnection con, string poolId);
-    Task<MinerWorkerPerformanceStats[]> PagePoolMinersByHashrateAsync(IDbConnection con, string poolId, DateTime from, int page, int pageSize);
-    Task<WorkerPerformanceStatsContainer[]> GetMinerPerformanceBetweenMinutelyAsync(IDbConnection con, string poolId, string miner, DateTime start, DateTime end);
-    Task<WorkerPerformanceStatsContainer[]> GetMinerPerformanceBetweenThreeMinutelyAsync(IDbConnection con, string poolId, string miner, DateTime start, DateTime end);
-    Task<WorkerPerformanceStatsContainer[]> GetMinerPerformanceBetweenHourlyAsync(IDbConnection con, string poolId, string miner, DateTime start, DateTime end);
-    Task<WorkerPerformanceStatsContainer[]> GetMinerPerformanceBetweenDailyAsync(IDbConnection con, string poolId, string miner, DateTime start, DateTime end);
+    Task<PoolStats> GetLastPoolStatsAsync(IDbConnection con, CancellationToken ct, string poolId);
+    Task<decimal> GetTotalPoolPaymentsAsync(IDbConnection con, CancellationToken ct, string poolId);
+    Task<PoolStats[]> GetPoolPerformanceBetweenAsync(IDbConnection con, CancellationToken ct, string poolId, SampleInterval interval, DateTime start, DateTime end);
+    Task<MinerStats> GetMinerStatsAsync(IDbConnection con, IDbTransaction tx, CancellationToken ct, string poolId, string miner);
+    Task<MinerWorkerHashrate[]> GetPoolMinerWorkerHashratesAsync(IDbConnection con, CancellationToken ct, string poolId);
+    Task<MinerWorkerPerformanceStats[]> PagePoolMinersByHashrateAsync(IDbConnection con, CancellationToken ct, string poolId, DateTime from, int page, int pageSize);
+    Task<WorkerPerformanceStatsContainer[]> GetMinerPerformanceBetweenMinutelyAsync(IDbConnection con, CancellationToken ct, string poolId, string miner, DateTime start, DateTime end);
+    Task<WorkerPerformanceStatsContainer[]> GetMinerPerformanceBetweenThreeMinutelyAsync(IDbConnection con, CancellationToken ct, string poolId, string miner, DateTime start, DateTime end);
+    Task<WorkerPerformanceStatsContainer[]> GetMinerPerformanceBetweenHourlyAsync(IDbConnection con, CancellationToken ct, string poolId, string miner, DateTime start, DateTime end);
+    Task<WorkerPerformanceStatsContainer[]> GetMinerPerformanceBetweenDailyAsync(IDbConnection con, CancellationToken ct, string poolId, string miner, DateTime start, DateTime end);
     Task<int> DeletePoolStatsBeforeAsync(IDbConnection con, DateTime date);
     Task<int> DeleteMinerStatsBeforeAsync(IDbConnection con, DateTime date);
 }

@@ -110,7 +110,7 @@ public class StatsRecorder : BackgroundService
 
             // fetch stats for window
             var result = await readFaultPolicy.ExecuteAsync(() =>
-                cf.Run(con => shareRepo.GetHashAccumulationBetweenCreatedAsync(con, poolId, timeFrom, now)));
+                cf.Run(con => shareRepo.GetHashAccumulationBetweenCreatedAsync(con, ct, poolId, timeFrom, now)));
 
             var byMiner = result.GroupBy(x => x.Miner).ToArray();
 
@@ -169,7 +169,7 @@ public class StatsRecorder : BackgroundService
 
             // retrieve most recent miner/worker non-zero hashrate sample
             var previousMinerWorkerHashrates = await cf.Run(con =>
-                statsRepo.GetPoolMinerWorkerHashratesAsync(con, poolId));
+                statsRepo.GetPoolMinerWorkerHashratesAsync(con, ct, poolId));
 
             const char keySeparator = '.';
 

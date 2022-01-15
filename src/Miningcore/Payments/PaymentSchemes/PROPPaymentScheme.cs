@@ -77,14 +77,14 @@ public class PROPPaymentScheme : IPayoutScheme
         // delete discarded shares
         if(shareCutOffDate.HasValue)
         {
-            var cutOffCount = await shareRepo.CountSharesBeforeCreatedAsync(con, tx, poolConfig.Id, shareCutOffDate.Value);
+            var cutOffCount = await shareRepo.CountSharesBeforeCreatedAsync(con, tx, ct, poolConfig.Id, shareCutOffDate.Value);
 
             if(cutOffCount > 0)
             {
-                await LogDiscardedSharesAsync(poolConfig, block, shareCutOffDate.Value);
+                await LogDiscardedSharesAsync(ct, poolConfig, block, shareCutOffDate.Value);
 
                 logger.Info(() => $"Deleting {cutOffCount} discarded shares before {shareCutOffDate.Value:O}");
-                await shareRepo.DeleteSharesBeforeCreatedAsync(con, tx, poolConfig.Id, shareCutOffDate.Value);
+                await shareRepo.DeleteSharesBeforeCreatedAsync(con, tx, ct, poolConfig.Id, shareCutOffDate.Value);
             }
         }
 
@@ -96,7 +96,7 @@ public class PROPPaymentScheme : IPayoutScheme
             logger.Info(() => $"{FormatUtil.FormatQuantity((double) totalShareCount)} ({Math.Round(totalShareCount, 2)}) shares contributed to a total payout of {payoutHandler.FormatAmount(totalRewards)} ({totalRewards / blockReward * 100:0.00}% of block reward) to {rewards.Keys.Count} addresses");
     }
 
-    private async Task LogDiscardedSharesAsync(PoolConfig poolConfig, Block block, DateTime value)
+    private async Task LogDiscardedSharesAsync(CancellationToken ct, PoolConfig poolConfig, Block block, DateTime value)
     {
         var before = value;
         var pageSize = 100000;
@@ -108,7 +108,7 @@ public class PROPPaymentScheme : IPayoutScheme
             logger.Info(() => $"Fetching page {currentPage} of discarded shares for pool {poolConfig.Id}, block {block.BlockHeight}");
 
             var page = await shareReadFaultPolicy.ExecuteAsync(() =>
-                cf.Run(con => shareRepo.ReadSharesBeforeCreatedAsync(con, poolConfig.Id, before, false, pageSize)));
+                cf.Run(con => shareRepo.ReadSharesBeforeCreatedAsync(con, ct, poolConfig.Id, before, false, pageSize)));
 
             currentPage++;
 
@@ -163,7 +163,7 @@ public class PROPPaymentScheme : IPayoutScheme
             logger.Info(() => $"Fetching page {currentPage} of shares for pool {poolConfig.Id}, block {block.BlockHeight}");
 
             var page = await shareReadFaultPolicy.ExecuteAsync(() =>
-                cf.Run(con => shareRepo.ReadSharesBeforeCreatedAsync(con, poolConfig.Id, before, inclusive, pageSize)));
+                cf.Run(con => shareRepo.ReadSharesBeforeCreatedAsync(con, ct, poolConfig.Id, before, inclusive, pageSize)));
 
             inclusive = false;
             currentPage++;

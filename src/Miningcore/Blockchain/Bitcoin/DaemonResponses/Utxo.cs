@@ -1,5 +1,3 @@
-using JetBrains.Annotations;
-
 namespace Miningcore.Blockchain.Bitcoin.DaemonResponses;
 
 public class Utxo

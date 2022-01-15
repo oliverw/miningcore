@@ -1,7 +1,6 @@
 using System.Data;
 using AutoMapper;
 using Dapper;
-using JetBrains.Annotations;
 using Miningcore.Extensions;
 using Miningcore.Persistence.Model;
 using Miningcore.Persistence.Model.Projections;

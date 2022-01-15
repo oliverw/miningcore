@@ -1,4 +1,3 @@
-using JetBrains.Annotations;
 using Miningcore.Configuration;
 
 namespace Miningcore.Blockchain.Ethereum.Configuration;

@@ -1,5 +1,4 @@
 using Miningcore.Configuration;
-using Miningcore.Mining;
 using NLog;
 
 namespace Miningcore.Util;

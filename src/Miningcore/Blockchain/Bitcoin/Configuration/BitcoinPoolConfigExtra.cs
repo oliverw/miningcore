@@ -1,4 +1,3 @@
-using JetBrains.Annotations;
 using Miningcore.Configuration;
 using Newtonsoft.Json.Linq;
 

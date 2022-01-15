@@ -1,5 +1,3 @@
-using JetBrains.Annotations;
-
 namespace Miningcore.Persistence.Model.Projections;
 
 public class WorkerPerformanceStats

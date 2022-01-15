@@ -21,7 +21,7 @@ public class ShareRepository : IShareRepository
     private readonly IMapper mapper;
     private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
-    public async Task BatchInsertAsync(IDbConnection con, IDbTransaction tx, IEnumerable<Share> shares)
+    public async Task BatchInsertAsync(IDbConnection con, IDbTransaction tx, CancellationToken ct, IEnumerable<Share> shares)
     {
         logger.LogInvoke();
 
@@ -33,29 +33,30 @@ public class ShareRepository : IShareRepository
         const string query = @"COPY shares (poolid, blockheight, difficulty,
             networkdifficulty, miner, worker, useragent, ipaddress, source, created) FROM STDIN (FORMAT BINARY)";
 
-        await using(var writer = await pgCon.BeginBinaryImportAsync(query))
+        await using(var writer = await pgCon.BeginBinaryImportAsync(query, ct))
         {
             foreach(var share in shares)
             {
-                await writer.StartRowAsync();
+                await writer.StartRowAsync(ct);
 
-                await writer.WriteAsync(share.PoolId);
-                await writer.WriteAsync((long) share.BlockHeight, NpgsqlDbType.Bigint);
-                await writer.WriteAsync(share.Difficulty, NpgsqlDbType.Double);
-                await writer.WriteAsync(share.NetworkDifficulty, NpgsqlDbType.Double);
-                await writer.WriteAsync(share.Miner);
-                await writer.WriteAsync(share.Worker);
-                await writer.WriteAsync(share.UserAgent);
-                await writer.WriteAsync(share.IpAddress);
-                await writer.WriteAsync(share.Source);
-                await writer.WriteAsync(share.Created, NpgsqlDbType.TimestampTz);
+                await writer.WriteAsync(share.PoolId, ct);
+                await writer.WriteAsync((long) share.BlockHeight, NpgsqlDbType.Bigint, ct);
+                await writer.WriteAsync(share.Difficulty, NpgsqlDbType.Double, ct);
+                await writer.WriteAsync(share.NetworkDifficulty, NpgsqlDbType.Double, ct);
+                await writer.WriteAsync(share.Miner, ct);
+                await writer.WriteAsync(share.Worker, ct);
+                await writer.WriteAsync(share.UserAgent, ct);
+                await writer.WriteAsync(share.IpAddress, ct);
+                await writer.WriteAsync(share.Source, ct);
+                await writer.WriteAsync(share.Created, NpgsqlDbType.TimestampTz, ct);
             }
 
-            await writer.CompleteAsync();
+            await writer.CompleteAsync(ct);
         }
     }
 
-    public async Task<Share[]> ReadSharesBeforeCreatedAsync(IDbConnection con, string poolId, DateTime before, bool inclusive, int pageSize)
+    public async Task<Share[]> ReadSharesBeforeCreatedAsync(IDbConnection con, CancellationToken ct,
+        string poolId, DateTime before, bool inclusive, int pageSize)
     {
         logger.LogInvoke(new object[] { poolId });
 
@@ -67,7 +68,8 @@ public class ShareRepository : IShareRepository
             .ToArray();
     }
 
-    public Task<long> CountSharesBeforeCreatedAsync(IDbConnection con, IDbTransaction tx, string poolId, DateTime before)
+    public Task<long> CountSharesBeforeCreatedAsync(IDbConnection con, IDbTransaction tx, CancellationToken ct,
+        string poolId, DateTime before)
     {
         logger.LogInvoke(new object[] { poolId });
 
@@ -76,7 +78,8 @@ public class ShareRepository : IShareRepository
         return con.QuerySingleAsync<long>(query, new { poolId, before }, tx);
     }
 
-    public Task<long> CountSharesByMinerAsync(IDbConnection con, IDbTransaction tx, string poolId, string miner)
+    public Task<long> CountSharesByMinerAsync(IDbConnection con, IDbTransaction tx, CancellationToken ct,
+        string poolId, string miner)
     {
         logger.LogInvoke(new object[] { poolId });
 
@@ -85,7 +88,8 @@ public class ShareRepository : IShareRepository
         return con.QuerySingleAsync<long>(query, new { poolId, miner}, tx);
     }
 
-    public async Task DeleteSharesByMinerAsync(IDbConnection con, IDbTransaction tx, string poolId, string miner)
+    public async Task DeleteSharesByMinerAsync(IDbConnection con, IDbTransaction tx, CancellationToken ct,
+        string poolId, string miner)
     {
         logger.LogInvoke(new object[] { poolId });
 
@@ -94,7 +98,8 @@ public class ShareRepository : IShareRepository
         await con.ExecuteAsync(query, new { poolId, miner}, tx);
     }
 
-    public async Task DeleteSharesBeforeCreatedAsync(IDbConnection con, IDbTransaction tx, string poolId, DateTime before)
+    public async Task DeleteSharesBeforeCreatedAsync(IDbConnection con, IDbTransaction tx, CancellationToken ct,
+        string poolId, DateTime before)
     {
         logger.LogInvoke(new object[] { poolId });
 
@@ -103,7 +108,8 @@ public class ShareRepository : IShareRepository
         await con.ExecuteAsync(query, new { poolId, before }, tx);
     }
 
-    public Task<double?> GetAccumulatedShareDifficultyBetweenCreatedAsync(IDbConnection con, string poolId, DateTime start, DateTime end)
+    public Task<double?> GetAccumulatedShareDifficultyBetweenCreatedAsync(IDbConnection con, CancellationToken ct,
+        string poolId, DateTime start, DateTime end)
     {
         logger.LogInvoke(new object[] { poolId });
 
@@ -112,7 +118,8 @@ public class ShareRepository : IShareRepository
         return con.QuerySingleAsync<double?>(query, new { poolId, start, end });
     }
 
-    public async Task<MinerWorkerHashes[]> GetHashAccumulationBetweenCreatedAsync(IDbConnection con, string poolId, DateTime start, DateTime end)
+    public async Task<MinerWorkerHashes[]> GetHashAccumulationBetweenCreatedAsync(IDbConnection con, CancellationToken ct,
+        string poolId, DateTime start, DateTime end)
     {
         logger.LogInvoke(new object[] { poolId });
 
@@ -125,7 +132,8 @@ public class ShareRepository : IShareRepository
     }
 
     public async Task<KeyValuePair<string, double>[]> GetAccumulatedUserAgentShareDifficultyBetweenCreatedAsync(
-        IDbConnection con, string poolId, DateTime start, DateTime end, bool byVersion = false)
+        IDbConnection con, CancellationToken ct,
+        string poolId, DateTime start, DateTime end, bool byVersion = false)
     {
         logger.LogInvoke(new object[] { poolId });
 
@@ -141,7 +149,8 @@ public class ShareRepository : IShareRepository
             .ToArray();
     }
 
-    public async Task<string[]> GetRecentyUsedIpAddressesAsync(IDbConnection con, IDbTransaction tx, string poolId, string miner)
+    public async Task<string[]> GetRecentyUsedIpAddressesAsync(IDbConnection con, IDbTransaction tx, CancellationToken ct,
+        string poolId, string miner)
     {
         logger.LogInvoke(new object[] { poolId });
 

@@ -12,7 +12,6 @@ using Miningcore.Configuration;
 using Miningcore.Extensions;
 using Miningcore.Messaging;
 using Miningcore.Nicehash;
-using Miningcore.Nicehash.API;
 using Miningcore.Notifications.Messages;
 using Miningcore.Persistence;
 using Miningcore.Persistence.Repositories;
@@ -246,19 +245,19 @@ public abstract class PoolBase : StratumServer,
         }
     }
 
-    protected virtual async Task InitStatsAsync()
+    protected virtual async Task InitStatsAsync(CancellationToken ct)
     {
         if(clusterConfig.ShareRelay == null)
-            await LoadStatsAsync();
+            await LoadStatsAsync(ct);
     }
 
-    private async Task LoadStatsAsync()
+    private async Task LoadStatsAsync(CancellationToken ct)
     {
         try
         {
             logger.Debug(() => "Loading pool stats");
 
-            var stats = await cf.Run(con => statsRepo.GetLastPoolStatsAsync(con, poolConfig.Id));
+            var stats = await cf.Run(con => statsRepo.GetLastPoolStatsAsync(con, ct, poolConfig.Id));
 
             if(stats != null)
             {
@@ -369,7 +368,7 @@ Pool Fee:               {(poolConfig.RewardRecipients?.Any() == true ? poolConfi
         {
             SetupBanning(clusterConfig);
             await SetupJobManager(ct);
-            await InitStatsAsync();
+            await InitStatsAsync(ct);
 
             logger.Info(() => "Pool Online");
             OutputPoolInfo();
