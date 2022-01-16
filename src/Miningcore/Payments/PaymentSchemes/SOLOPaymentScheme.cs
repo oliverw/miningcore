@@ -30,7 +30,8 @@ public class SOLOPaymentScheme : IPayoutScheme
 
     #region IPayoutScheme
 
-    public async Task UpdateBalancesAsync(IDbConnection con, IDbTransaction tx, IMiningPool pool, IPayoutHandler payoutHandler, Block block, decimal blockReward, CancellationToken ct)
+    public async Task UpdateBalancesAsync(IDbConnection con, IDbTransaction tx, IMiningPool pool, IPayoutHandler payoutHandler,
+        Block block, decimal blockReward, CancellationToken ct)
     {
         var poolConfig = pool.Config;
 
@@ -54,13 +55,13 @@ public class SOLOPaymentScheme : IPayoutScheme
         // delete discarded shares
         if(shareCutOffDate.HasValue)
         {
-            var cutOffCount = await shareRepo.CountSharesByMinerAsync(con, tx, ct, poolConfig.Id, block.Miner);
+            var cutOffCount = await shareRepo.CountSharesByMinerAsync(con, tx, poolConfig.Id, block.Miner, ct);
 
             if(cutOffCount > 0)
             {
                 logger.Info(() => $"Deleting {cutOffCount} discarded shares for {block.Miner}");
 
-                await shareRepo.DeleteSharesByMinerAsync(con, tx, ct, poolConfig.Id, block.Miner);
+                await shareRepo.DeleteSharesByMinerAsync(con, tx, poolConfig.Id, block.Miner, ct);
             }
         }
     }

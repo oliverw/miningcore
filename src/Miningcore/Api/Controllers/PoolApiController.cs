@@ -57,7 +57,7 @@ public class PoolApiController : ApiControllerBase
             Pools = await Task.WhenAll(clusterConfig.Pools.Where(x => x.Enabled).Select(async config =>
             {
                 // load stats
-                var stats = await cf.Run(con => statsRepo.GetLastPoolStatsAsync(con, ct, config.Id));
+                var stats = await cf.Run(con => statsRepo.GetLastPoolStatsAsync(con, config.Id, ct));
 
                 // get pool
                 pools.TryGetValue(config.Id, out var pool);
@@ -66,13 +66,13 @@ public class PoolApiController : ApiControllerBase
                 var result = config.ToPoolInfo(mapper, stats, pool);
 
                 // enrich
-                result.TotalPaid = await cf.Run(con => statsRepo.GetTotalPoolPaymentsAsync(con, ct, config.Id));
-                result.TotalBlocks = await cf.Run(con => blocksRepo.GetPoolBlockCountAsync(con, config.Id));
+                result.TotalPaid = await cf.Run(con => statsRepo.GetTotalPoolPaymentsAsync(con, config.Id, ct));
+                result.TotalBlocks = await cf.Run(con => blocksRepo.GetPoolBlockCountAsync(con, config.Id, ct));
                 result.LastPoolBlockTime = await cf.Run(con => blocksRepo.GetLastPoolBlockTimeAsync(con, config.Id));
 
                 var from = clock.Now.AddDays(-1);
 
-                var minersByHashrate = await cf.Run(con => statsRepo.PagePoolMinersByHashrateAsync(con, ct, config.Id, from, 0, 15));
+                var minersByHashrate = await cf.Run(con => statsRepo.PagePoolMinersByHashrateAsync(con, config.Id, from, 0, 15, ct));
 
                 result.TopMiners = minersByHashrate.Select(mapper.Map<MinerPerformanceStats>).ToArray();
 
@@ -115,7 +115,7 @@ public class PoolApiController : ApiControllerBase
         var pool = GetPool(poolId);
 
         // load stats
-        var stats = await cf.Run(con => statsRepo.GetLastPoolStatsAsync(con, ct, pool.Id));
+        var stats = await cf.Run(con => statsRepo.GetLastPoolStatsAsync(con, pool.Id, ct));
 
         // get pool
         pools.TryGetValue(pool.Id, out var poolInstance);
@@ -126,13 +126,13 @@ public class PoolApiController : ApiControllerBase
         };
 
         // enrich
-        response.Pool.TotalPaid = await cf.Run(con => statsRepo.GetTotalPoolPaymentsAsync(con, ct, pool.Id));
-        response.Pool.TotalBlocks = await cf.Run(con => blocksRepo.GetPoolBlockCountAsync(con, pool.Id));
+        response.Pool.TotalPaid = await cf.Run(con => statsRepo.GetTotalPoolPaymentsAsync(con, pool.Id, ct));
+        response.Pool.TotalBlocks = await cf.Run(con => blocksRepo.GetPoolBlockCountAsync(con, pool.Id, ct));
         response.Pool.LastPoolBlockTime = await cf.Run(con => blocksRepo.GetLastPoolBlockTimeAsync(con, pool.Id));
 
         var from = clock.Now.AddDays(-1);
 
-        response.Pool.TopMiners = (await cf.Run(con => statsRepo.PagePoolMinersByHashrateAsync(con, ct, pool.Id, from, 0, 15)))
+        response.Pool.TopMiners = (await cf.Run(con => statsRepo.PagePoolMinersByHashrateAsync(con, pool.Id, from, 0, 15, ct)))
             .Select(mapper.Map<MinerPerformanceStats>)
             .ToArray();
 
@@ -141,11 +141,11 @@ public class PoolApiController : ApiControllerBase
 
     [HttpGet("{poolId}/performance")]
     public async Task<GetPoolStatsResponse> GetPoolPerformanceAsync(string poolId,
-        CancellationToken ct,
         [FromQuery(Name = "r")] SampleRange range = SampleRange.Day,
         [FromQuery(Name = "i")] SampleInterval interval = SampleInterval.Hour)
     {
         var pool = GetPool(poolId);
+        var ct = HttpContext.RequestAborted;
 
         // set range
         var end = clock.Now;
@@ -165,7 +165,7 @@ public class PoolApiController : ApiControllerBase
                 throw new ApiException("invalid interval");
         }
 
-        var stats = await cf.Run(con => statsRepo.GetPoolPerformanceBetweenAsync(con, ct, pool.Id, interval, start, end));
+        var stats = await cf.Run(con => statsRepo.GetPoolPerformanceBetweenAsync(con, pool.Id, interval, start, end, ct));
 
         var response = new GetPoolStatsResponse
         {
@@ -177,16 +177,16 @@ public class PoolApiController : ApiControllerBase
 
     [HttpGet("{poolId}/miners")]
     public async Task<MinerPerformanceStats[]> PagePoolMinersAsync(
-        string poolId, CancellationToken ct,
-        [FromQuery] int page, [FromQuery] int pageSize = 15)
+        string poolId, [FromQuery] int page, [FromQuery] int pageSize = 15)
     {
         var pool = GetPool(poolId);
+        var ct = HttpContext.RequestAborted;
 
         // set range
         var end = clock.Now;
         var start = end.AddDays(-1);
 
-        var miners = (await cf.Run(con => statsRepo.PagePoolMinersByHashrateAsync(con, ct, pool.Id, start, page, pageSize)))
+        var miners = (await cf.Run(con => statsRepo.PagePoolMinersByHashrateAsync(con, pool.Id, start, page, pageSize, ct)))
             .Select(mapper.Map<MinerPerformanceStats>)
             .ToArray();
 
@@ -195,16 +195,16 @@ public class PoolApiController : ApiControllerBase
 
     [HttpGet("{poolId}/blocks")]
     public async Task<Responses.Block[]> PagePoolBlocksAsync(
-        string poolId, CancellationToken ct,
-        [FromQuery] int page, [FromQuery] int pageSize = 15, [FromQuery] BlockStatus[] state = null)
+        string poolId, [FromQuery] int page, [FromQuery] int pageSize = 15, [FromQuery] BlockStatus[] state = null)
     {
         var pool = GetPool(poolId);
+        var ct = HttpContext.RequestAborted;
 
         var blockStates = state is { Length: > 0 } ?
             state :
             new[] { BlockStatus.Confirmed, BlockStatus.Pending, BlockStatus.Orphaned };
 
-        var blocks = (await cf.Run(con => blocksRepo.PageBlocksAsync(con, pool.Id, blockStates, page, pageSize)))
+        var blocks = (await cf.Run(con => blocksRepo.PageBlocksAsync(con, pool.Id, blockStates, page, pageSize, ct)))
             .Select(mapper.Map<Responses.Block>)
             .ToArray();
 
@@ -233,17 +233,18 @@ public class PoolApiController : ApiControllerBase
 
     [HttpGet("/api/v2/pools/{poolId}/blocks")]
     public async Task<PagedResultResponse<Responses.Block[]>> PagePoolBlocksV2Async(
-        string poolId, CancellationToken ct, [FromQuery] int page, [FromQuery] int pageSize = 15, [FromQuery] BlockStatus[] state = null)
+        string poolId, [FromQuery] int page, [FromQuery] int pageSize = 15, [FromQuery] BlockStatus[] state = null)
     {
         var pool = GetPool(poolId);
+        var ct = HttpContext.RequestAborted;
 
         var blockStates = state is { Length: > 0 } ?
             state :
             new[] { BlockStatus.Confirmed, BlockStatus.Pending, BlockStatus.Orphaned };
 
-        uint pageCount = (uint) Math.Floor((await cf.Run(con => blocksRepo.GetPoolBlockCountAsync(con, poolId))) / (double) pageSize);
+        uint pageCount = (uint) Math.Floor((await cf.Run(con => blocksRepo.GetPoolBlockCountAsync(con, poolId, ct))) / (double) pageSize);
 
-        var blocks = (await cf.Run(con => blocksRepo.PageBlocksAsync(con, pool.Id, blockStates, page, pageSize)))
+        var blocks = (await cf.Run(con => blocksRepo.PageBlocksAsync(con, pool.Id, blockStates, page, pageSize, ct)))
             .Select(mapper.Map<Responses.Block>)
             .ToArray();
 
@@ -273,12 +274,13 @@ public class PoolApiController : ApiControllerBase
 
     [HttpGet("{poolId}/payments")]
     public async Task<Responses.Payment[]> PagePoolPaymentsAsync(
-        string poolId, CancellationToken ct, [FromQuery] int page, [FromQuery] int pageSize = 15)
+        string poolId, [FromQuery] int page, [FromQuery] int pageSize = 15)
     {
         var pool = GetPool(poolId);
+        var ct = HttpContext.RequestAborted;
 
         var payments = (await cf.Run(con => paymentsRepo.PagePaymentsAsync(
-                con, pool.Id, null, page, pageSize)))
+                con, pool.Id, null, page, pageSize, ct)))
             .Select(mapper.Map<Responses.Payment>)
             .ToArray();
 
@@ -302,14 +304,15 @@ public class PoolApiController : ApiControllerBase
 
     [HttpGet("/api/v2/pools/{poolId}/payments")]
     public async Task<PagedResultResponse<Responses.Payment[]>> PagePoolPaymentsV2Async(
-        string poolId, CancellationToken ct, [FromQuery] int page, [FromQuery] int pageSize = 15)
+        string poolId, [FromQuery] int page, [FromQuery] int pageSize = 15)
     {
         var pool = GetPool(poolId);
+        var ct = HttpContext.RequestAborted;
 
-        uint pageCount = (uint) Math.Floor((await cf.Run(con => paymentsRepo.GetPaymentsCountAsync(con, poolId))) / (double) pageSize);
+        uint pageCount = (uint) Math.Floor((await cf.Run(con => paymentsRepo.GetPaymentsCountAsync(con, poolId, null, ct))) / (double) pageSize);
 
         var payments = (await cf.Run(con => paymentsRepo.PagePaymentsAsync(
-                con, pool.Id, null, page, pageSize)))
+                con, pool.Id, null, page, pageSize, ct)))
             .Select(mapper.Map<Responses.Payment>)
             .ToArray();
 
@@ -334,9 +337,10 @@ public class PoolApiController : ApiControllerBase
 
     [HttpGet("{poolId}/miners/{address}")]
     public async Task<Responses.MinerStats> GetMinerInfoAsync(
-        string poolId, CancellationToken ct, string address, [FromQuery] SampleRange perfMode = SampleRange.Day)
+        string poolId, string address, [FromQuery] SampleRange perfMode = SampleRange.Day)
     {
         var pool = GetPool(poolId);
+        var ct = HttpContext.RequestAborted;
 
         if(string.IsNullOrEmpty(address))
             throw new ApiException("Invalid or missing miner address", HttpStatusCode.NotFound);
@@ -345,7 +349,7 @@ public class PoolApiController : ApiControllerBase
             address = address.ToLower();
 
         var statsResult = await cf.RunTx((con, tx) =>
-            statsRepo.GetMinerStatsAsync(con, tx, ct, pool.Id, address), true, IsolationLevel.Serializable);
+            statsRepo.GetMinerStatsAsync(con, tx, pool.Id, address, ct), true, IsolationLevel.Serializable);
 
         Responses.MinerStats stats = null;
 
@@ -369,7 +373,7 @@ public class PoolApiController : ApiControllerBase
                     stats.LastPaymentLink = string.Format(baseUrl, statsResult.LastPayment.TransactionConfirmationData);
             }
 
-            stats.PerformanceSamples = await GetMinerPerformanceInternal(ct, perfMode, pool, address);
+            stats.PerformanceSamples = await GetMinerPerformanceInternal(perfMode, pool, address, ct);
         }
 
         return stats;
@@ -377,9 +381,10 @@ public class PoolApiController : ApiControllerBase
 
     [HttpGet("{poolId}/miners/{address}/payments")]
     public async Task<Responses.Payment[]> PageMinerPaymentsAsync(
-        string poolId, CancellationToken ct, string address, [FromQuery] int page, [FromQuery] int pageSize = 15)
+        string poolId, string address, [FromQuery] int page, [FromQuery] int pageSize = 15)
     {
         var pool = GetPool(poolId);
+        var ct = HttpContext.RequestAborted;
 
         if(string.IsNullOrEmpty(address))
             throw new ApiException("Invalid or missing miner address", HttpStatusCode.NotFound);
@@ -388,7 +393,7 @@ public class PoolApiController : ApiControllerBase
             address = address.ToLower();
 
         var payments = (await cf.Run(con => paymentsRepo.PagePaymentsAsync(
-                con, pool.Id, address, page, pageSize)))
+                con, pool.Id, address, page, pageSize, ct)))
             .Select(mapper.Map<Responses.Payment>)
             .ToArray();
 
@@ -412,9 +417,10 @@ public class PoolApiController : ApiControllerBase
 
     [HttpGet("/api/v2/pools/{poolId}/miners/{address}/payments")]
     public async Task<PagedResultResponse<Responses.Payment[]>> PageMinerPaymentsV2Async(
-        string poolId, CancellationToken ct, string address, [FromQuery] int page, [FromQuery] int pageSize = 15)
+        string poolId, string address, [FromQuery] int page, [FromQuery] int pageSize = 15)
     {
         var pool = GetPool(poolId);
+        var ct = HttpContext.RequestAborted;
 
         if(string.IsNullOrEmpty(address))
             throw new ApiException("Invalid or missing miner address", HttpStatusCode.NotFound);
@@ -422,10 +428,10 @@ public class PoolApiController : ApiControllerBase
         if(pool.Template.Family == CoinFamily.Ethereum)
             address = address.ToLower();
 
-        uint pageCount = (uint) Math.Floor((await cf.Run(con => paymentsRepo.GetPaymentsCountAsync(con, poolId, address))) / (double) pageSize);
+        uint pageCount = (uint) Math.Floor((await cf.Run(con => paymentsRepo.GetPaymentsCountAsync(con, poolId, address, ct))) / (double) pageSize);
 
         var payments = (await cf.Run(con => paymentsRepo.PagePaymentsAsync(
-                con, pool.Id, address, page, pageSize)))
+                con, pool.Id, address, page, pageSize, ct)))
             .Select(mapper.Map<Responses.Payment>)
             .ToArray();
 
@@ -450,9 +456,10 @@ public class PoolApiController : ApiControllerBase
 
     [HttpGet("{poolId}/miners/{address}/balancechanges")]
     public async Task<Responses.BalanceChange[]> PageMinerBalanceChangesAsync(
-        string poolId, CancellationToken ct, string address, [FromQuery] int page, [FromQuery] int pageSize = 15)
+        string poolId, string address, [FromQuery] int page, [FromQuery] int pageSize = 15)
     {
         var pool = GetPool(poolId);
+        var ct = HttpContext.RequestAborted;
 
         if(string.IsNullOrEmpty(address))
             throw new ApiException("Invalid or missing miner address", HttpStatusCode.NotFound);
@@ -461,7 +468,7 @@ public class PoolApiController : ApiControllerBase
             address = address.ToLower();
 
         var balanceChanges = (await cf.Run(con => paymentsRepo.PageBalanceChangesAsync(
-                con, pool.Id, address, page, pageSize)))
+                con, pool.Id, address, page, pageSize, ct)))
             .Select(mapper.Map<Responses.BalanceChange>)
             .ToArray();
 
@@ -470,9 +477,10 @@ public class PoolApiController : ApiControllerBase
 
     [HttpGet("/api/v2/pools/{poolId}/miners/{address}/balancechanges")]
     public async Task<PagedResultResponse<Responses.BalanceChange[]>> PageMinerBalanceChangesV2Async(
-        string poolId, CancellationToken ct, string address, [FromQuery] int page, [FromQuery] int pageSize = 15)
+        string poolId, string address, [FromQuery] int page, [FromQuery] int pageSize = 15)
     {
         var pool = GetPool(poolId);
+        var ct = HttpContext.RequestAborted;
 
         if(string.IsNullOrEmpty(address))
             throw new ApiException("Invalid or missing miner address", HttpStatusCode.NotFound);
@@ -483,7 +491,7 @@ public class PoolApiController : ApiControllerBase
         uint pageCount = (uint) Math.Floor((await cf.Run(con => paymentsRepo.GetBalanceChangesCountAsync(con, poolId, address))) / (double) pageSize);
 
         var balanceChanges = (await cf.Run(con => paymentsRepo.PageBalanceChangesAsync(
-                con, pool.Id, address, page, pageSize)))
+                con, pool.Id, address, page, pageSize, ct)))
             .Select(mapper.Map<Responses.BalanceChange>)
             .ToArray();
 
@@ -493,9 +501,10 @@ public class PoolApiController : ApiControllerBase
 
     [HttpGet("{poolId}/miners/{address}/earnings/daily")]
     public async Task<AmountByDate[]> PageMinerEarningsByDayAsync(
-        string poolId, CancellationToken ct, string address, [FromQuery] int page, [FromQuery] int pageSize = 15)
+        string poolId, string address, [FromQuery] int page, [FromQuery] int pageSize = 15)
     {
         var pool = GetPool(poolId);
+        var ct = HttpContext.RequestAborted;
 
         if(string.IsNullOrEmpty(address))
             throw new ApiException("Invalid or missing miner address", HttpStatusCode.NotFound);
@@ -504,7 +513,7 @@ public class PoolApiController : ApiControllerBase
             address = address.ToLower();
 
         var earnings = (await cf.Run(con => paymentsRepo.PageMinerPaymentsByDayAsync(
-                con, pool.Id, address, page, pageSize)))
+                con, pool.Id, address, page, pageSize, ct)))
             .ToArray();
 
         return earnings;
@@ -512,9 +521,10 @@ public class PoolApiController : ApiControllerBase
 
     [HttpGet("/api/v2/pools/{poolId}/miners/{address}/earnings/daily")]
     public async Task<PagedResultResponse<AmountByDate[]>> PageMinerEarningsByDayV2Async(
-        string poolId, CancellationToken ct, string address, [FromQuery] int page, [FromQuery] int pageSize = 15)
+        string poolId, string address, [FromQuery] int page, [FromQuery] int pageSize = 15)
     {
         var pool = GetPool(poolId);
+        var ct = HttpContext.RequestAborted;
 
         if(string.IsNullOrEmpty(address))
             throw new ApiException("Invalid or missing miner address", HttpStatusCode.NotFound);
@@ -525,7 +535,7 @@ public class PoolApiController : ApiControllerBase
         uint pageCount = (uint) Math.Floor((await cf.Run(con => paymentsRepo.GetMinerPaymentsByDayCountAsync(con, poolId, address))) / (double) pageSize);
 
         var earnings = (await cf.Run(con => paymentsRepo.PageMinerPaymentsByDayAsync(
-                con, pool.Id, address, page, pageSize)))
+                con, pool.Id, address, page, pageSize, ct)))
             .ToArray();
 
         var response = new PagedResultResponse<AmountByDate[]>(earnings, pageCount);
@@ -534,9 +544,10 @@ public class PoolApiController : ApiControllerBase
 
     [HttpGet("{poolId}/miners/{address}/performance")]
     public async Task<Responses.WorkerPerformanceStatsContainer[]> GetMinerPerformanceAsync(
-        string poolId, CancellationToken ct, string address, [FromQuery] SampleRange mode = SampleRange.Day)
+        string poolId, string address, [FromQuery] SampleRange mode = SampleRange.Day)
     {
         var pool = GetPool(poolId);
+        var ct = HttpContext.RequestAborted;
 
         if(string.IsNullOrEmpty(address))
             throw new ApiException("Invalid or missing miner address", HttpStatusCode.NotFound);
@@ -544,13 +555,13 @@ public class PoolApiController : ApiControllerBase
         if(pool.Template.Family == CoinFamily.Ethereum)
             address = address.ToLower();
 
-        var result = await GetMinerPerformanceInternal(ct, mode, pool, address);
+        var result = await GetMinerPerformanceInternal(mode, pool, address, ct);
 
         return result;
     }
 
     [HttpGet("{poolId}/miners/{address}/settings")]
-    public async Task<Responses.MinerSettings> GetMinerSettingsAsync(string poolId, CancellationToken ct, string address)
+    public async Task<Responses.MinerSettings> GetMinerSettingsAsync(string poolId, string address)
     {
         var pool = GetPool(poolId);
 
@@ -566,8 +577,8 @@ public class PoolApiController : ApiControllerBase
     }
 
     [HttpPost("{poolId}/miners/{address}/settings")]
-    public async Task<Responses.MinerSettings> SetMinerSettingsAsync(string poolId, CancellationToken ct, string address,
-        [FromBody] Requests.UpdateMinerSettingsRequest request)
+    public async Task<Responses.MinerSettings> SetMinerSettingsAsync(string poolId, string address,
+        [FromBody] Requests.UpdateMinerSettingsRequest request, CancellationToken ct)
     {
         var pool = GetPool(poolId);
 
@@ -581,7 +592,7 @@ public class PoolApiController : ApiControllerBase
             throw new ApiException("Invalid IP address", HttpStatusCode.BadRequest);
 
         // fetch recent IPs
-        var ips = await cf.Run(con=> shareRepo.GetRecentyUsedIpAddressesAsync(con, null, ct, poolId, address));
+        var ips = await cf.Run(con=> shareRepo.GetRecentyUsedIpAddressesAsync(con, null, poolId, address, ct));
 
         // any known ips?
         if(ips == null || ips.Length == 0)
@@ -615,8 +626,8 @@ public class PoolApiController : ApiControllerBase
 
     #endregion // Actions
 
-    private async Task<Responses.WorkerPerformanceStatsContainer[]> GetMinerPerformanceInternal(CancellationToken ct,
-        SampleRange mode, PoolConfig pool, string address)
+    private async Task<Responses.WorkerPerformanceStatsContainer[]> GetMinerPerformanceInternal(
+        SampleRange mode, PoolConfig pool, string address, CancellationToken ct)
     {
         Persistence.Model.Projections.WorkerPerformanceStatsContainer[] stats = null;
         var end = clock.Now;
@@ -629,7 +640,7 @@ public class PoolApiController : ApiControllerBase
 
                 start = end.AddHours(-1);
 
-                stats = await cf.Run(con => statsRepo.GetMinerPerformanceBetweenThreeMinutelyAsync(con, ct, pool.Id, address, start, end));
+                stats = await cf.Run(con => statsRepo.GetMinerPerformanceBetweenThreeMinutelyAsync(con, pool.Id, address, start, end, ct));
                 break;
 
             case SampleRange.Day:
@@ -642,7 +653,7 @@ public class PoolApiController : ApiControllerBase
 
                 start = end.AddDays(-1);
 
-                stats = await cf.Run(con => statsRepo.GetMinerPerformanceBetweenHourlyAsync(con, ct, pool.Id, address, start, end));
+                stats = await cf.Run(con => statsRepo.GetMinerPerformanceBetweenHourlyAsync(con, pool.Id, address, start, end, ct));
                 break;
 
             case SampleRange.Month:
@@ -654,7 +665,7 @@ public class PoolApiController : ApiControllerBase
                 // set range
                 start = end.AddMonths(-1);
 
-                stats = await cf.Run(con => statsRepo.GetMinerPerformanceBetweenDailyAsync(con, ct, pool.Id, address, start, end));
+                stats = await cf.Run(con => statsRepo.GetMinerPerformanceBetweenDailyAsync(con, pool.Id, address, start, end, ct));
                 break;
         }
 

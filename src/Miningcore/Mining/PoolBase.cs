@@ -257,7 +257,7 @@ public abstract class PoolBase : StratumServer,
         {
             logger.Debug(() => "Loading pool stats");
 
-            var stats = await cf.Run(con => statsRepo.GetLastPoolStatsAsync(con, ct, poolConfig.Id));
+            var stats = await cf.Run(con => statsRepo.GetLastPoolStatsAsync(con, poolConfig.Id, ct));
 
             if(stats != null)
             {

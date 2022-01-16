@@ -110,7 +110,7 @@ public class StatsRecorder : BackgroundService
 
             // fetch stats for window
             var result = await readFaultPolicy.ExecuteAsync(() =>
-                cf.Run(con => shareRepo.GetHashAccumulationBetweenCreatedAsync(con, ct, poolId, timeFrom, now)));
+                cf.Run(con => shareRepo.GetHashAccumulationBetweenCreatedAsync(con, poolId, timeFrom, now, ct)));
 
             var byMiner = result.GroupBy(x => x.Miner).ToArray();
 
@@ -164,12 +164,12 @@ public class StatsRecorder : BackgroundService
                 mapper.Map(pool.PoolStats, mapped);
                 mapper.Map(pool.NetworkStats, mapped);
 
-                await statsRepo.InsertPoolStatsAsync(con, tx, mapped);
+                await statsRepo.InsertPoolStatsAsync(con, tx, mapped, ct);
             });
 
             // retrieve most recent miner/worker non-zero hashrate sample
             var previousMinerWorkerHashrates = await cf.Run(con =>
-                statsRepo.GetPoolMinerWorkerHashratesAsync(con, ct, poolId));
+                statsRepo.GetPoolMinerWorkerHashratesAsync(con, poolId, ct));
 
             const char keySeparator = '.';
 
@@ -231,7 +231,7 @@ public class StatsRecorder : BackgroundService
                         stats.SharesPerSecond = Math.Round(item.Count / minerHashTimeFrame, 3);
 
                         // persist
-                        await statsRepo.InsertMinerWorkerPerformanceStatsAsync(con, tx, stats);
+                        await statsRepo.InsertMinerWorkerPerformanceStatsAsync(con, tx, stats, ct);
 
                         // broadcast
                         messageBus.NotifyHashrateUpdated(pool.Config.Id, minerHashrate, stats.Miner, stats.Worker);
@@ -269,7 +269,7 @@ public class StatsRecorder : BackgroundService
                         stats.Worker = worker;
 
                         // persist
-                        await statsRepo.InsertMinerWorkerPerformanceStatsAsync(con, tx, stats);
+                        await statsRepo.InsertMinerWorkerPerformanceStatsAsync(con, tx, stats, ct);
 
                         // broadcast
                         messageBus.NotifyHashrateUpdated(pool.Config.Id, 0, stats.Miner, stats.Worker);
@@ -294,11 +294,11 @@ public class StatsRecorder : BackgroundService
         {
             var cutOff = clock.Now.Add(-cleanupDays);
 
-            var rowCount = await statsRepo.DeletePoolStatsBeforeAsync(con, cutOff);
+            var rowCount = await statsRepo.DeletePoolStatsBeforeAsync(con, cutOff, ct);
             if(rowCount > 0)
                 logger.Info(() => $"Deleted {rowCount} old poolstats records");
 
-            rowCount = await statsRepo.DeleteMinerStatsBeforeAsync(con, cutOff);
+            rowCount = await statsRepo.DeleteMinerStatsBeforeAsync(con, cutOff, ct);
             if(rowCount > 0)
                 logger.Info(() => $"Deleted {rowCount} old minerstats records");
         });

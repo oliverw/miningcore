@@ -55,7 +55,8 @@ public class PPLNSPaymentScheme : IPayoutScheme
 
     #region IPayoutScheme
 
-    public async Task UpdateBalancesAsync(IDbConnection con, IDbTransaction tx, IMiningPool pool, IPayoutHandler payoutHandler, Block block, decimal blockReward, CancellationToken ct)
+    public async Task UpdateBalancesAsync(IDbConnection con, IDbTransaction tx, IMiningPool pool, IPayoutHandler payoutHandler,
+        Block block, decimal blockReward, CancellationToken ct)
     {
         var poolConfig = pool.Config;
         var payoutConfig = poolConfig.PaymentProcessing.PayoutSchemeConfig;
@@ -83,14 +84,14 @@ public class PPLNSPaymentScheme : IPayoutScheme
         // delete discarded shares
         if(shareCutOffDate.HasValue)
         {
-            var cutOffCount = await shareRepo.CountSharesBeforeCreatedAsync(con, tx, ct, poolConfig.Id, shareCutOffDate.Value);
+            var cutOffCount = await shareRepo.CountSharesBeforeCreatedAsync(con, tx, poolConfig.Id, shareCutOffDate.Value, ct);
 
             if(cutOffCount > 0)
             {
                 await LogDiscardedSharesAsync(ct, poolConfig, block, shareCutOffDate.Value);
 
                 logger.Info(() => $"Deleting {cutOffCount} discarded shares before {shareCutOffDate.Value:O}");
-                await shareRepo.DeleteSharesBeforeCreatedAsync(con, tx, ct, poolConfig.Id, shareCutOffDate.Value);
+                await shareRepo.DeleteSharesBeforeCreatedAsync(con, tx, poolConfig.Id, shareCutOffDate.Value, ct);
             }
         }
 
@@ -114,7 +115,7 @@ public class PPLNSPaymentScheme : IPayoutScheme
             logger.Info(() => $"Fetching page {currentPage} of discarded shares for pool {poolConfig.Id}, block {block.BlockHeight}");
 
             var page = await shareReadFaultPolicy.ExecuteAsync(() =>
-                cf.Run(con => shareRepo.ReadSharesBeforeCreatedAsync(con, ct, poolConfig.Id, before, false, pageSize)));
+                cf.Run(con => shareRepo.ReadSharesBeforeCreatedAsync(con, poolConfig.Id, before, false, pageSize, ct)));
 
             currentPage++;
 
@@ -168,7 +169,7 @@ public class PPLNSPaymentScheme : IPayoutScheme
             logger.Info(() => $"Fetching page {currentPage} of shares for pool {poolConfig.Id}, block {block.BlockHeight}");
 
             var page = await shareReadFaultPolicy.ExecuteAsync(() =>
-                cf.Run(con => shareRepo.ReadSharesBeforeCreatedAsync(con, ct, poolConfig.Id, before, inclusive, pageSize))); //, sw, logger));
+                cf.Run(con => shareRepo.ReadSharesBeforeCreatedAsync(con, poolConfig.Id, before, inclusive, pageSize, ct))); //, sw, logger));
 
             inclusive = false;
             currentPage++;

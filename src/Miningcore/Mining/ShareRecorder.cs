@@ -88,7 +88,7 @@ public class ShareRecorder : BackgroundService
         {
             // Insert shares
             var mapped = shares.Select(mapper.Map<Persistence.Model.Share>).ToArray();
-            await shareRepo.BatchInsertAsync(con, tx, CancellationToken.None, mapped);
+            await shareRepo.BatchInsertAsync(con, tx, mapped, CancellationToken.None);
 
             // Insert blocks
             foreach(var share in shares)

@@ -24,7 +24,7 @@ public class StatsRepository : IStatsRepository
     private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
     private static readonly TimeSpan MinerStatsMaxAge = TimeSpan.FromMinutes(20);
 
-    public async Task InsertPoolStatsAsync(IDbConnection con, IDbTransaction tx, PoolStats stats)
+    public async Task InsertPoolStatsAsync(IDbConnection con, IDbTransaction tx, PoolStats stats, CancellationToken ct)
     {
         logger.LogInvoke();
 
@@ -35,10 +35,10 @@ public class StatsRepository : IStatsRepository
             VALUES(@poolid, @connectedminers, @poolhashrate, @networkhashrate, @networkdifficulty,
             @lastnetworkblocktime, @blockheight, @connectedpeers, @sharespersecond, @created)";
 
-        await con.ExecuteAsync(query, mapped, tx);
+        await con.ExecuteAsync(new CommandDefinition(query, mapped, tx, cancellationToken: ct));
     }
 
-    public async Task InsertMinerWorkerPerformanceStatsAsync(IDbConnection con, IDbTransaction tx, MinerWorkerPerformanceStats stats)
+    public async Task InsertMinerWorkerPerformanceStatsAsync(IDbConnection con, IDbTransaction tx, MinerWorkerPerformanceStats stats, CancellationToken ct)
     {
         logger.LogInvoke();
 
@@ -50,33 +50,33 @@ public class StatsRepository : IStatsRepository
         const string query = @"INSERT INTO minerstats(poolid, miner, worker, hashrate, sharespersecond, created)
             VALUES(@poolid, @miner, @worker, @hashrate, @sharespersecond, @created)";
 
-        await con.ExecuteAsync(query, mapped, tx);
+        await con.ExecuteAsync(new CommandDefinition(query, mapped, tx, cancellationToken: ct));
     }
 
-    public async Task<PoolStats> GetLastPoolStatsAsync(IDbConnection con, CancellationToken ct, string poolId)
+    public async Task<PoolStats> GetLastPoolStatsAsync(IDbConnection con, string poolId, CancellationToken ct)
     {
         logger.LogInvoke();
 
         const string query = "SELECT * FROM poolstats WHERE poolid = @poolId ORDER BY created DESC FETCH NEXT 1 ROWS ONLY";
 
-        var entity = await con.QuerySingleOrDefaultAsync<Entities.PoolStats>(query, new { poolId });
+        var entity = await con.QuerySingleOrDefaultAsync<Entities.PoolStats>(new CommandDefinition(query, new { poolId }, cancellationToken: ct));
         if(entity == null)
             return null;
 
         return mapper.Map<PoolStats>(entity);
     }
 
-    public Task<decimal> GetTotalPoolPaymentsAsync(IDbConnection con, CancellationToken ct, string poolId)
+    public Task<decimal> GetTotalPoolPaymentsAsync(IDbConnection con, string poolId, CancellationToken ct)
     {
         logger.LogInvoke();
 
         const string query = "SELECT sum(amount) FROM payments WHERE poolid = @poolId";
 
-        return con.ExecuteScalarAsync<decimal>(query, new { poolId });
+        return con.ExecuteScalarAsync<decimal>(new CommandDefinition(query, new { poolId }, cancellationToken: ct));
     }
 
-    public async Task<PoolStats[]> GetPoolPerformanceBetweenAsync(IDbConnection con, CancellationToken ct, string poolId,
-        SampleInterval interval, DateTime start, DateTime end)
+    public async Task<PoolStats[]> GetPoolPerformanceBetweenAsync(IDbConnection con, string poolId,
+        SampleInterval interval, DateTime start, DateTime end, CancellationToken ct)
     {
         logger.LogInvoke(new object[] { poolId });
 
@@ -95,13 +95,12 @@ public class StatsRepository : IStatsRepository
             GROUP BY date_trunc('{trunc}', created)
             ORDER BY created;";
 
-        return (await con.QueryAsync<Entities.PoolStats>(query, new { poolId, start, end }))
+        return (await con.QueryAsync<Entities.PoolStats>(new CommandDefinition(query, new { poolId, start, end }, cancellationToken: ct)))
             .Select(mapper.Map<PoolStats>)
             .ToArray();
     }
 
-    public async Task<MinerStats> GetMinerStatsAsync(IDbConnection con, IDbTransaction tx, CancellationToken ct,
-        string poolId, string miner)
+    public async Task<MinerStats> GetMinerStatsAsync(IDbConnection con, IDbTransaction tx, string poolId, string miner, CancellationToken ct)
     {
         logger.LogInvoke(new object[] { poolId, miner });
 
@@ -110,20 +109,20 @@ public class StatsRepository : IStatsRepository
             (SELECT SUM(amount) FROM payments WHERE poolid = @poolId and address = @miner) as totalpaid,
             (SELECT SUM(amount) FROM payments WHERE poolid = @poolId and address = @miner and created >= date_trunc('day', now())) as todaypaid";
 
-        var result = await con.QuerySingleOrDefaultAsync<MinerStats>(query, new { poolId, miner }, tx);
+        var result = await con.QuerySingleOrDefaultAsync<MinerStats>(new CommandDefinition(query, new { poolId, miner }, tx, cancellationToken: ct));
 
         if(result != null)
         {
             query = @"SELECT * FROM payments WHERE poolid = @poolId AND address = @miner
                 ORDER BY created DESC LIMIT 1";
 
-            result.LastPayment = await con.QuerySingleOrDefaultAsync<Payment>(query, new { poolId, miner }, tx);
+            result.LastPayment = await con.QuerySingleOrDefaultAsync<Payment>(new CommandDefinition(query, new { poolId, miner }, tx, cancellationToken: ct));
 
             // query timestamp of last stats update
             query = @"SELECT created FROM minerstats WHERE poolid = @poolId AND miner = @miner
                 ORDER BY created DESC LIMIT 1";
 
-            var lastUpdate = await con.QuerySingleOrDefaultAsync<DateTime?>(query, new { poolId, miner }, tx);
+            var lastUpdate = await con.QuerySingleOrDefaultAsync<DateTime?>(new CommandDefinition(query, new { poolId, miner }, tx, cancellationToken: ct));
 
             // ignore stale minerstats
             if(lastUpdate.HasValue && (clock.Now - DateTime.SpecifyKind(lastUpdate.Value, DateTimeKind.Utc) > MinerStatsMaxAge))
@@ -134,7 +133,8 @@ public class StatsRepository : IStatsRepository
                 // load rows rows by timestamp
                 query = @"SELECT * FROM minerstats WHERE poolid = @poolId AND miner = @miner AND created = @created";
 
-                var stats = (await con.QueryAsync<Entities.MinerWorkerPerformanceStats>(query, new { poolId, miner, created = lastUpdate }))
+                var stats = (await con.QueryAsync<Entities.MinerWorkerPerformanceStats>(new CommandDefinition(query,
+                        new { poolId, miner, created = lastUpdate }, cancellationToken: ct)))
                     .Select(mapper.Map<MinerWorkerPerformanceStats>)
                     .ToArray();
 
@@ -168,7 +168,7 @@ public class StatsRepository : IStatsRepository
         return result;
     }
 
-    public async Task<MinerWorkerHashrate[]> GetPoolMinerWorkerHashratesAsync(IDbConnection con, CancellationToken ct, string poolId)
+    public async Task<MinerWorkerHashrate[]> GetPoolMinerWorkerHashratesAsync(IDbConnection con, string poolId, CancellationToken ct)
     {
         logger.LogInvoke();
 
@@ -189,12 +189,12 @@ public class StatsRepository : IStatsRepository
             ) s
             WHERE s.hashrate > 0;";
 
-        return (await con.QueryAsync<MinerWorkerHashrate>(query, new { poolId }))
+        return (await con.QueryAsync<MinerWorkerHashrate>(new CommandDefinition(query, new { poolId }, cancellationToken: ct)))
             .ToArray();
     }
 
-    public async Task<WorkerPerformanceStatsContainer[]> GetMinerPerformanceBetweenThreeMinutelyAsync(IDbConnection con, CancellationToken ct,
-        string poolId, string miner, DateTime start, DateTime end)
+    public async Task<WorkerPerformanceStatsContainer[]> GetMinerPerformanceBetweenThreeMinutelyAsync(IDbConnection con, string poolId, string miner,
+        DateTime start, DateTime end, CancellationToken ct)
     {
         logger.LogInvoke(new object[] { poolId });
 
@@ -206,7 +206,8 @@ public class StatsRepository : IStatsRepository
             GROUP BY 1, 2, worker
             ORDER BY 1, 2, worker";
 
-        var entities = (await con.QueryAsync<Entities.MinerWorkerPerformanceStats>(query, new { poolId, miner, start, end }))
+        var entities = (await con.QueryAsync<Entities.MinerWorkerPerformanceStats>(new CommandDefinition(query,
+                new { poolId, miner, start, end }, cancellationToken: ct)))
             .ToArray();
 
         foreach(var entity in entities)
@@ -223,21 +224,21 @@ public class StatsRepository : IStatsRepository
             .GroupBy(x => x.Created);
 
         var tmp = entitiesByDate.Select(x => new WorkerPerformanceStatsContainer
+        {
+            Created = x.Key,
+            Workers = x.ToDictionary(y => y.Worker, y => new WorkerPerformanceStats
             {
-                Created = x.Key,
-                Workers = x.ToDictionary(y => y.Worker, y => new WorkerPerformanceStats
-                {
-                    Hashrate = y.Hashrate,
-                    SharesPerSecond = y.SharesPerSecond
-                })
+                Hashrate = y.Hashrate,
+                SharesPerSecond = y.SharesPerSecond
             })
-            .ToArray();
+        })
+        .ToArray();
 
         return tmp;
     }
 
-    public async Task<WorkerPerformanceStatsContainer[]> GetMinerPerformanceBetweenMinutelyAsync(IDbConnection con, CancellationToken ct,
-        string poolId, string miner, DateTime start, DateTime end)
+    public async Task<WorkerPerformanceStatsContainer[]> GetMinerPerformanceBetweenMinutelyAsync(IDbConnection con, string poolId, string miner,
+        DateTime start, DateTime end, CancellationToken ct)
     {
         logger.LogInvoke(new object[] { poolId });
 
@@ -247,7 +248,8 @@ public class StatsRepository : IStatsRepository
             GROUP BY date_trunc('minute', created), worker
             ORDER BY created, worker;";
 
-        var entities = (await con.QueryAsync<Entities.MinerWorkerPerformanceStats>(query, new { poolId, miner, start, end }))
+        var entities = (await con.QueryAsync<Entities.MinerWorkerPerformanceStats>(new CommandDefinition(query,
+                new { poolId, miner, start, end }, cancellationToken: ct)))
             .ToArray();
 
         // ensure worker is not null
@@ -259,21 +261,21 @@ public class StatsRepository : IStatsRepository
             .GroupBy(x => x.Created);
 
         var tmp = entitiesByDate.Select(x => new WorkerPerformanceStatsContainer
+        {
+            Created = x.Key,
+            Workers = x.ToDictionary(y => y.Worker ?? string.Empty, y => new WorkerPerformanceStats
             {
-                Created = x.Key,
-                Workers = x.ToDictionary(y => y.Worker ?? string.Empty, y => new WorkerPerformanceStats
-                {
-                    Hashrate = y.Hashrate,
-                    SharesPerSecond = y.SharesPerSecond
-                })
+                Hashrate = y.Hashrate,
+                SharesPerSecond = y.SharesPerSecond
             })
-            .ToArray();
+        })
+        .ToArray();
 
         return tmp;
     }
 
-    public async Task<WorkerPerformanceStatsContainer[]> GetMinerPerformanceBetweenHourlyAsync(IDbConnection con, CancellationToken ct,
-        string poolId, string miner, DateTime start, DateTime end)
+    public async Task<WorkerPerformanceStatsContainer[]> GetMinerPerformanceBetweenHourlyAsync(IDbConnection con, string poolId, string miner,
+        DateTime start, DateTime end, CancellationToken ct)
     {
         logger.LogInvoke(new object[] { poolId });
 
@@ -283,7 +285,8 @@ public class StatsRepository : IStatsRepository
             GROUP BY date_trunc('hour', created), worker
             ORDER BY created, worker;";
 
-        var entities = (await con.QueryAsync<Entities.MinerWorkerPerformanceStats>(query, new { poolId, miner, start, end }))
+        var entities = (await con.QueryAsync<Entities.MinerWorkerPerformanceStats>(new CommandDefinition(query,
+                new { poolId, miner, start, end }, cancellationToken: ct)))
             .ToArray();
 
         // ensure worker is not null
@@ -295,21 +298,21 @@ public class StatsRepository : IStatsRepository
             .GroupBy(x => x.Created);
 
         var tmp = entitiesByDate.Select(x => new WorkerPerformanceStatsContainer
+        {
+            Created = x.Key,
+            Workers = x.ToDictionary(y => y.Worker ?? string.Empty, y => new WorkerPerformanceStats
             {
-                Created = x.Key,
-                Workers = x.ToDictionary(y => y.Worker ?? string.Empty, y => new WorkerPerformanceStats
-                {
-                    Hashrate = y.Hashrate,
-                    SharesPerSecond = y.SharesPerSecond
-                })
+                Hashrate = y.Hashrate,
+                SharesPerSecond = y.SharesPerSecond
             })
-            .ToArray();
+        })
+        .ToArray();
 
         return tmp;
     }
 
-    public async Task<WorkerPerformanceStatsContainer[]> GetMinerPerformanceBetweenDailyAsync(IDbConnection con, CancellationToken ct,
-        string poolId, string miner, DateTime start, DateTime end)
+    public async Task<WorkerPerformanceStatsContainer[]> GetMinerPerformanceBetweenDailyAsync(IDbConnection con,  string poolId, string miner,
+        DateTime start, DateTime end, CancellationToken ct)
     {
         logger.LogInvoke(new object[] { poolId });
 
@@ -319,26 +322,27 @@ public class StatsRepository : IStatsRepository
             GROUP BY date_trunc('day', created), worker
             ORDER BY created, worker;";
 
-        var entitiesByDate = (await con.QueryAsync<Entities.MinerWorkerPerformanceStats>(query, new { poolId, miner, start, end }))
+        var entitiesByDate = (await con.QueryAsync<Entities.MinerWorkerPerformanceStats>(new CommandDefinition(query,
+                new { poolId, miner, start, end }, cancellationToken: ct)))
             .ToArray()
             .GroupBy(x => x.Created);
 
         var tmp = entitiesByDate.Select(x => new WorkerPerformanceStatsContainer
+        {
+            Created = x.Key,
+            Workers = x.ToDictionary(y => y.Worker, y => new WorkerPerformanceStats
             {
-                Created = x.Key,
-                Workers = x.ToDictionary(y => y.Worker, y => new WorkerPerformanceStats
-                {
-                    Hashrate = y.Hashrate,
-                    SharesPerSecond = y.SharesPerSecond
-                })
+                Hashrate = y.Hashrate,
+                SharesPerSecond = y.SharesPerSecond
             })
-            .ToArray();
+        })
+        .ToArray();
 
         return tmp;
     }
 
-    public async Task<MinerWorkerPerformanceStats[]> PagePoolMinersByHashrateAsync(IDbConnection con, CancellationToken ct,
-        string poolId, DateTime from, int page, int pageSize)
+    public async Task<MinerWorkerPerformanceStats[]> PagePoolMinersByHashrateAsync(IDbConnection con, string poolId,
+        DateTime from, int page, int pageSize, CancellationToken ct)
     {
         logger.LogInvoke(new object[] { poolId, from, page, pageSize });
 
@@ -360,26 +364,27 @@ public class StatsRepository : IStatsRepository
             ORDER by t.hashrate DESC
             OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
 
-        return (await con.QueryAsync<Entities.MinerWorkerPerformanceStats>(query, new { poolId, from, offset = page * pageSize, pageSize }))
+        return (await con.QueryAsync<Entities.MinerWorkerPerformanceStats>(new CommandDefinition(query,
+                new { poolId, from, offset = page * pageSize, pageSize }, cancellationToken: ct)))
             .Select(mapper.Map<MinerWorkerPerformanceStats>)
             .ToArray();
     }
 
-    public Task<int> DeletePoolStatsBeforeAsync(IDbConnection con, DateTime date)
+    public Task<int> DeletePoolStatsBeforeAsync(IDbConnection con, DateTime date, CancellationToken ct)
     {
         logger.LogInvoke();
 
         const string query = @"DELETE FROM poolstats WHERE created < @date";
 
-        return con.ExecuteAsync(query, new { date });
+        return con.ExecuteAsync(new CommandDefinition(query, new { date }, cancellationToken: ct));
     }
 
-    public Task<int> DeleteMinerStatsBeforeAsync(IDbConnection con, DateTime date)
+    public Task<int> DeleteMinerStatsBeforeAsync(IDbConnection con, DateTime date, CancellationToken ct)
     {
         logger.LogInvoke();
 
         const string query = @"DELETE FROM minerstats WHERE created < @date";
 
-        return con.ExecuteAsync(query, new { date });
+        return con.ExecuteAsync(new CommandDefinition(query, new { date }, cancellationToken: ct));
     }
 }

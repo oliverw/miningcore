@@ -62,7 +62,7 @@ public class PaymentRepository : IPaymentRepository
         }
     }
 
-    public async Task<Payment[]> PagePaymentsAsync(IDbConnection con, string poolId, string address, int page, int pageSize)
+    public async Task<Payment[]> PagePaymentsAsync(IDbConnection con, string poolId, string address, int page, int pageSize, CancellationToken ct)
     {
         logger.LogInvoke(new object[] { poolId });
 
@@ -73,12 +73,12 @@ public class PaymentRepository : IPaymentRepository
 
         query += "ORDER BY created DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
 
-        return (await con.QueryAsync<Entities.Payment>(query, new { poolId, address, offset = page * pageSize, pageSize }))
+        return (await con.QueryAsync<Entities.Payment>(new CommandDefinition(query, new { poolId, address, offset = page * pageSize, pageSize }, cancellationToken: ct)))
             .Select(mapper.Map<Payment>)
             .ToArray();
     }
 
-    public async Task<BalanceChange[]> PageBalanceChangesAsync(IDbConnection con, string poolId, string address, int page, int pageSize)
+    public async Task<BalanceChange[]> PageBalanceChangesAsync(IDbConnection con, string poolId, string address, int page, int pageSize, CancellationToken ct)
     {
         logger.LogInvoke(new object[] { poolId });
 
@@ -86,12 +86,13 @@ public class PaymentRepository : IPaymentRepository
             AND address = @address
             ORDER BY created DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
 
-        return (await con.QueryAsync<Entities.BalanceChange>(query, new { poolId, address, offset = page * pageSize, pageSize }))
+        return (await con.QueryAsync<Entities.BalanceChange>(new CommandDefinition(query,
+                new { poolId, address, offset = page * pageSize, pageSize }, cancellationToken: ct)))
             .Select(mapper.Map<BalanceChange>)
             .ToArray();
     }
 
-    public async Task<AmountByDate[]> PageMinerPaymentsByDayAsync(IDbConnection con, string poolId, string address, int page, int pageSize)
+    public async Task<AmountByDate[]> PageMinerPaymentsByDayAsync(IDbConnection con, string poolId, string address, int page, int pageSize, CancellationToken ct)
     {
         logger.LogInvoke(new object[] { poolId });
 
@@ -100,11 +101,11 @@ public class PaymentRepository : IPaymentRepository
             GROUP BY date
             ORDER BY date DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
 
-        return (await con.QueryAsync<AmountByDate>(query, new { poolId, address, offset = page * pageSize, pageSize }))
+        return (await con.QueryAsync<AmountByDate>(new CommandDefinition(query, new { poolId, address, offset = page * pageSize, pageSize }, cancellationToken: ct)))
             .ToArray();
     }
 
-    public Task<uint> GetPaymentsCountAsync(IDbConnection con, string poolId, string address = null)
+    public Task<uint> GetPaymentsCountAsync(IDbConnection con, string poolId, string address, CancellationToken ct)
     {
         logger.LogInvoke(new object[] { poolId });
 
@@ -114,7 +115,7 @@ public class PaymentRepository : IPaymentRepository
             query += " AND address = @address ";
 
 
-        return con.ExecuteScalarAsync<uint>(query, new { poolId, address });
+        return con.ExecuteScalarAsync<uint>(new CommandDefinition(query, new { poolId, address }, cancellationToken: ct));
     }
 
     public Task<uint> GetMinerPaymentsByDayCountAsync(IDbConnection con, string poolId, string address)

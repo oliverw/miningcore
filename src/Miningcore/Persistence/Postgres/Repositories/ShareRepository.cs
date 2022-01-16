@@ -21,7 +21,7 @@ public class ShareRepository : IShareRepository
     private readonly IMapper mapper;
     private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
-    public async Task BatchInsertAsync(IDbConnection con, IDbTransaction tx, CancellationToken ct, IEnumerable<Share> shares)
+    public async Task BatchInsertAsync(IDbConnection con, IDbTransaction tx, IEnumerable<Share> shares, CancellationToken ct)
     {
         logger.LogInvoke();
 
@@ -55,71 +55,65 @@ public class ShareRepository : IShareRepository
         }
     }
 
-    public async Task<Share[]> ReadSharesBeforeCreatedAsync(IDbConnection con, CancellationToken ct,
-        string poolId, DateTime before, bool inclusive, int pageSize)
+    public async Task<Share[]> ReadSharesBeforeCreatedAsync(IDbConnection con, string poolId, DateTime before,
+        bool inclusive, int pageSize, CancellationToken ct)
     {
         logger.LogInvoke(new object[] { poolId });
 
         var query = @$"SELECT * FROM shares WHERE poolid = @poolId AND created {(inclusive ? " <= " : " < ")} @before
             ORDER BY created DESC FETCH NEXT (@pageSize) ROWS ONLY";
 
-        return (await con.QueryAsync<Entities.Share>(query, new { poolId, before, pageSize }))
+        return (await con.QueryAsync<Entities.Share>(new CommandDefinition(query, new { poolId, before, pageSize }, cancellationToken: ct)))
             .Select(mapper.Map<Share>)
             .ToArray();
     }
 
-    public Task<long> CountSharesBeforeCreatedAsync(IDbConnection con, IDbTransaction tx, CancellationToken ct,
-        string poolId, DateTime before)
+    public Task<long> CountSharesBeforeCreatedAsync(IDbConnection con, IDbTransaction tx, string poolId, DateTime before, CancellationToken ct)
     {
         logger.LogInvoke(new object[] { poolId });
 
         const string query = "SELECT count(*) FROM shares WHERE poolid = @poolId AND created < @before";
 
-        return con.QuerySingleAsync<long>(query, new { poolId, before }, tx);
+        return con.QuerySingleAsync<long>(new CommandDefinition(query, new { poolId, before }, tx, cancellationToken: ct));
     }
 
-    public Task<long> CountSharesByMinerAsync(IDbConnection con, IDbTransaction tx, CancellationToken ct,
-        string poolId, string miner)
+    public Task<long> CountSharesByMinerAsync(IDbConnection con, IDbTransaction tx, string poolId, string miner, CancellationToken ct)
     {
         logger.LogInvoke(new object[] { poolId });
 
         const string query = "SELECT count(*) FROM shares WHERE poolid = @poolId AND miner = @miner";
 
-        return con.QuerySingleAsync<long>(query, new { poolId, miner}, tx);
+        return con.QuerySingleAsync<long>(new CommandDefinition(query, new { poolId, miner}, tx, cancellationToken: ct));
     }
 
-    public async Task DeleteSharesByMinerAsync(IDbConnection con, IDbTransaction tx, CancellationToken ct,
-        string poolId, string miner)
+    public async Task DeleteSharesByMinerAsync(IDbConnection con, IDbTransaction tx, string poolId, string miner, CancellationToken ct)
     {
         logger.LogInvoke(new object[] { poolId });
 
         const string query = "DELETE FROM shares WHERE poolid = @poolId AND miner = @miner";
 
-        await con.ExecuteAsync(query, new { poolId, miner}, tx);
+        await con.ExecuteAsync(new CommandDefinition(query, new { poolId, miner}, tx, cancellationToken: ct));
     }
 
-    public async Task DeleteSharesBeforeCreatedAsync(IDbConnection con, IDbTransaction tx, CancellationToken ct,
-        string poolId, DateTime before)
+    public async Task DeleteSharesBeforeCreatedAsync(IDbConnection con, IDbTransaction tx, string poolId, DateTime before, CancellationToken ct)
     {
         logger.LogInvoke(new object[] { poolId });
 
         const string query = "DELETE FROM shares WHERE poolid = @poolId AND created < @before";
 
-        await con.ExecuteAsync(query, new { poolId, before }, tx);
+        await con.ExecuteAsync(new CommandDefinition(query, new { poolId, before }, tx, cancellationToken: ct));
     }
 
-    public Task<double?> GetAccumulatedShareDifficultyBetweenCreatedAsync(IDbConnection con, CancellationToken ct,
-        string poolId, DateTime start, DateTime end)
+    public Task<double?> GetAccumulatedShareDifficultyBetweenCreatedAsync(IDbConnection con, string poolId, DateTime start, DateTime end, CancellationToken ct)
     {
         logger.LogInvoke(new object[] { poolId });
 
         const string query = "SELECT SUM(difficulty) FROM shares WHERE poolid = @poolId AND created > @start AND created < @end";
 
-        return con.QuerySingleAsync<double?>(query, new { poolId, start, end });
+        return con.QuerySingleAsync<double?>(new CommandDefinition(query, new { poolId, start, end }, cancellationToken: ct));
     }
 
-    public async Task<MinerWorkerHashes[]> GetHashAccumulationBetweenCreatedAsync(IDbConnection con, CancellationToken ct,
-        string poolId, DateTime start, DateTime end)
+    public async Task<MinerWorkerHashes[]> GetHashAccumulationBetweenCreatedAsync(IDbConnection con, string poolId, DateTime start, DateTime end, CancellationToken ct)
     {
         logger.LogInvoke(new object[] { poolId });
 
@@ -127,13 +121,12 @@ public class ShareRepository : IShareRepository
             WHERE poolid = @poolId AND created >= @start AND created <= @end
             GROUP BY miner, worker";
 
-        return (await con.QueryAsync<MinerWorkerHashes>(query, new { poolId, start, end }))
+        return (await con.QueryAsync<MinerWorkerHashes>(new CommandDefinition(query, new { poolId, start, end }, cancellationToken: ct)))
             .ToArray();
     }
 
     public async Task<KeyValuePair<string, double>[]> GetAccumulatedUserAgentShareDifficultyBetweenCreatedAsync(
-        IDbConnection con, CancellationToken ct,
-        string poolId, DateTime start, DateTime end, bool byVersion = false)
+        IDbConnection con, string poolId, DateTime start, DateTime end, bool byVersion, CancellationToken ct)
     {
         logger.LogInvoke(new object[] { poolId });
 
@@ -145,19 +138,18 @@ public class ShareRepository : IShareRepository
             WHERE poolid = @poolId AND created > @start AND created < @end
             GROUP BY key ORDER BY value DESC";
 
-        return (await con.QueryAsync<KeyValuePair<string, double>>(!byVersion ? query : queryByVersion, new { poolId, start, end }))
+        return (await con.QueryAsync<KeyValuePair<string, double>>(new CommandDefinition(!byVersion ? query : queryByVersion, new { poolId, start, end }, cancellationToken: ct)))
             .ToArray();
     }
 
-    public async Task<string[]> GetRecentyUsedIpAddressesAsync(IDbConnection con, IDbTransaction tx, CancellationToken ct,
-        string poolId, string miner)
+    public async Task<string[]> GetRecentyUsedIpAddressesAsync(IDbConnection con, IDbTransaction tx, string poolId, string miner, CancellationToken ct)
     {
         logger.LogInvoke(new object[] { poolId });
 
         const string query = @"SELECT DISTINCT s.ipaddress FROM (SELECT * FROM shares
             WHERE poolid = @poolId and miner = @miner ORDER BY CREATED DESC LIMIT 100) s";
 
-        return (await con.QueryAsync<string>(query, new { poolId, miner }, tx))
+        return (await con.QueryAsync<string>(new CommandDefinition(query, new { poolId, miner }, tx, cancellationToken: ct)))
             .ToArray();
     }
 }
