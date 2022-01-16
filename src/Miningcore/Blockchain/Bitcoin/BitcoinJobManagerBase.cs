@@ -221,8 +221,6 @@ public abstract class BitcoinJobManagerBase<TJob> : JobManagerBase<TJob>
 
     private async Task UpdateNetworkStatsAsync(CancellationToken ct)
     {
-        logger.LogInvoke();
-
         try
         {
             var results = await rpc.ExecuteBatchAsync(logger, ct,
@@ -339,8 +337,6 @@ public abstract class BitcoinJobManagerBase<TJob> : JobManagerBase<TJob>
 
     private async Task UpdateNetworkStatsLegacyAsync(CancellationToken ct)
     {
-        logger.LogInvoke();
-
         try
         {
             var results = await rpc.ExecuteBatchAsync(logger, ct,

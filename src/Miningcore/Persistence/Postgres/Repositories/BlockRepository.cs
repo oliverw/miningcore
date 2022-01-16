@@ -20,8 +20,6 @@ public class BlockRepository : IBlockRepository
 
     public async Task InsertAsync(IDbConnection con, IDbTransaction tx, Block block)
     {
-        logger.LogInvoke();
-
         var mapped = mapper.Map<Entities.Block>(block);
 
         const string query =
@@ -35,16 +33,12 @@ public class BlockRepository : IBlockRepository
 
     public async Task DeleteBlockAsync(IDbConnection con, IDbTransaction tx, Block block)
     {
-        logger.LogInvoke();
-
         const string query = "DELETE FROM blocks WHERE id = @id";
         await con.ExecuteAsync(query, block, tx);
     }
 
     public async Task UpdateBlockAsync(IDbConnection con, IDbTransaction tx, Block block)
     {
-        logger.LogInvoke();
-
         var mapped = mapper.Map<Entities.Block>(block);
 
         const string query = @"UPDATE blocks SET blockheight = @blockheight, status = @status, type = @type,
@@ -56,8 +50,6 @@ public class BlockRepository : IBlockRepository
     public async Task<Block[]> PageBlocksAsync(IDbConnection con, string poolId, BlockStatus[] status,
         int page, int pageSize, CancellationToken ct)
     {
-        logger.LogInvoke(()=> new object[] { poolId });
-
         const string query = @"SELECT * FROM blocks WHERE poolid = @poolid AND status = ANY(@status)
             ORDER BY created DESC OFFSET @offset FETCH NEXT @pageSize ROWS ONLY";
 
@@ -89,8 +81,6 @@ public class BlockRepository : IBlockRepository
 
     public async Task<Block[]> GetPendingBlocksForPoolAsync(IDbConnection con, string poolId)
     {
-        logger.LogInvoke(()=> new object[] { poolId });
-
         const string query = @"SELECT * FROM blocks WHERE poolid = @poolid AND status = @status";
 
         return (await con.QueryAsync<Entities.Block>(query, new { status = BlockStatus.Pending.ToString().ToLower(), poolid = poolId }))
@@ -100,8 +90,6 @@ public class BlockRepository : IBlockRepository
 
     public async Task<Block> GetBlockBeforeAsync(IDbConnection con, string poolId, BlockStatus[] status, DateTime before)
     {
-        logger.LogInvoke(()=> new object[] { poolId });
-
         const string query = @"SELECT * FROM blocks WHERE poolid = @poolid AND status = ANY(@status) AND created < @before
             ORDER BY created DESC FETCH NEXT 1 ROWS ONLY";
 
@@ -117,8 +105,6 @@ public class BlockRepository : IBlockRepository
 
     public Task<uint> GetPoolBlockCountAsync(IDbConnection con, string poolId, CancellationToken ct)
     {
-        logger.LogInvoke(()=> new object[] { poolId });
-
         const string query = @"SELECT COUNT(*) FROM blocks WHERE poolid = @poolId";
 
         return con.ExecuteScalarAsync<uint>(new CommandDefinition(query, new { poolId }, cancellationToken: ct));
@@ -126,8 +112,6 @@ public class BlockRepository : IBlockRepository
 
     public Task<DateTime?> GetLastPoolBlockTimeAsync(IDbConnection con, string poolId)
     {
-        logger.LogInvoke(()=> new object[] { poolId });
-
         const string query = @"SELECT created FROM blocks WHERE poolid = @poolId ORDER BY created DESC LIMIT 1";
 
         return con.ExecuteScalarAsync<DateTime?>(query, new { poolId });

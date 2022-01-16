@@ -23,8 +23,6 @@ public class PaymentRepository : IPaymentRepository
 
     public async Task InsertAsync(IDbConnection con, IDbTransaction tx, Payment payment)
     {
-        logger.LogInvoke();
-
         var mapped = mapper.Map<Entities.Payment>(payment);
 
         const string query = @"INSERT INTO payments(poolid, coin, address, amount, transactionconfirmationdata, created)
@@ -35,8 +33,6 @@ public class PaymentRepository : IPaymentRepository
 
     public async Task BatchInsertAsync(IDbConnection con, IDbTransaction tx, IEnumerable<Payment> payments)
     {
-        logger.LogInvoke();
-
         // NOTE: Even though the tx parameter is completely ignored here,
         // the COPY command still honors a current ambient transaction
 
@@ -64,8 +60,6 @@ public class PaymentRepository : IPaymentRepository
 
     public async Task<Payment[]> PagePaymentsAsync(IDbConnection con, string poolId, string address, int page, int pageSize, CancellationToken ct)
     {
-        logger.LogInvoke(()=> new object[] { poolId });
-
         var query = @"SELECT * FROM payments WHERE poolid = @poolid ";
 
         if(!string.IsNullOrEmpty(address))
@@ -80,9 +74,7 @@ public class PaymentRepository : IPaymentRepository
 
     public async Task<BalanceChange[]> PageBalanceChangesAsync(IDbConnection con, string poolId, string address, int page, int pageSize, CancellationToken ct)
     {
-        logger.LogInvoke(()=> new object[] { poolId });
-
-        const string query = @"SELECT * FROM balance_changes WHERE poolid = @poolid
+       const string query = @"SELECT * FROM balance_changes WHERE poolid = @poolid
             AND address = @address
             ORDER BY created DESC OFFSET @offset FETCH NEXT @pageSize ROWS ONLY";
 
@@ -94,9 +86,7 @@ public class PaymentRepository : IPaymentRepository
 
     public async Task<AmountByDate[]> PageMinerPaymentsByDayAsync(IDbConnection con, string poolId, string address, int page, int pageSize, CancellationToken ct)
     {
-        logger.LogInvoke(()=> new object[] { poolId });
-
-        const string query = @"SELECT SUM(amount) AS amount, date_trunc('day', created) AS date FROM payments WHERE poolid = @poolid
+       const string query = @"SELECT SUM(amount) AS amount, date_trunc('day', created) AS date FROM payments WHERE poolid = @poolid
             AND address = @address
             GROUP BY date
             ORDER BY date DESC OFFSET @offset FETCH NEXT @pageSize ROWS ONLY";
@@ -107,8 +97,6 @@ public class PaymentRepository : IPaymentRepository
 
     public Task<uint> GetPaymentsCountAsync(IDbConnection con, string poolId, string address, CancellationToken ct)
     {
-        logger.LogInvoke(()=> new object[] { poolId });
-
         string query = @"SELECT COUNT(*) FROM payments WHERE poolid = @poolId";
 
         if(!string.IsNullOrEmpty(address))
@@ -120,8 +108,6 @@ public class PaymentRepository : IPaymentRepository
 
     public Task<uint> GetMinerPaymentsByDayCountAsync(IDbConnection con, string poolId, string address)
     {
-        logger.LogInvoke(()=> new object[] { poolId });
-
         const string query =
             @"SELECT COUNT(*) FROM (SELECT SUM(amount) AS amount, date_trunc('day', created) AS date FROM payments WHERE poolid = @poolid
             AND address = @address
@@ -133,8 +119,6 @@ public class PaymentRepository : IPaymentRepository
 
     public Task<uint> GetBalanceChangesCountAsync(IDbConnection con, string poolId, string address = null)
     {
-        logger.LogInvoke(()=> new object[] { poolId });
-
         var query = @"SELECT COUNT(*) FROM balance_changes WHERE poolid = @poolId";
 
         if(!string.IsNullOrEmpty(address))

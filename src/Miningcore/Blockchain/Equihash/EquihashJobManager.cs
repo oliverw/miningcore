@@ -45,8 +45,6 @@ public class EquihashJobManager : BitcoinJobManagerBase<EquihashJob>
 
     private async Task<RpcResponse<EquihashBlockTemplate>> GetBlockTemplateAsync(CancellationToken ct)
     {
-        logger.LogInvoke();
-
         var subsidyResponse = await rpc.ExecuteAsync<ZCashBlockSubsidy>(logger, BitcoinCommands.GetBlockSubsidy, ct);
 
         var result = await rpc.ExecuteAsync<EquihashBlockTemplate>(logger,
@@ -62,8 +60,6 @@ public class EquihashJobManager : BitcoinJobManagerBase<EquihashJob>
 
     private RpcResponse<EquihashBlockTemplate> GetBlockTemplateFromJson(string json)
     {
-        logger.LogInvoke();
-
         var result = JsonConvert.DeserializeObject<JsonRpcResponse>(json);
 
         return new RpcResponse<EquihashBlockTemplate>(result.ResultAs<EquihashBlockTemplate>());
@@ -96,8 +92,6 @@ public class EquihashJobManager : BitcoinJobManagerBase<EquihashJob>
 
     protected override async Task<(bool IsNew, bool Force)> UpdateJob(CancellationToken ct, bool forceUpdate, string via = null, string json = null)
     {
-        logger.LogInvoke();
-
         try
         {
             if(forceUpdate)
@@ -232,8 +226,6 @@ public class EquihashJobManager : BitcoinJobManagerBase<EquihashJob>
     {
         Contract.RequiresNonNull(worker, nameof(worker));
         Contract.RequiresNonNull(submission, nameof(submission));
-
-        logger.LogInvoke(()=> new object[] { worker.ConnectionId });
 
         if(submission is not object[] submitParams)
             throw new StratumException(StratumError.Other, "invalid params");

@@ -62,8 +62,6 @@ public class RpcClient
     {
         Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(method), $"{nameof(method)} must not be empty");
 
-        logger.LogInvoke(()=> new object[] { method });
-
         try
         {
             var response = await RequestAsync(logger, ct, config, method, payload);
@@ -97,8 +95,6 @@ public class RpcClient
     {
         Contract.RequiresNonNull(batch, nameof(batch));
 
-        logger.LogInvoke(string.Join(", ", batch.Select(x=> x.Method)));
-
         try
         {
             var response = await BatchRequestAsync(logger, ct, config, batch);
@@ -120,8 +116,6 @@ public class RpcClient
     {
         Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(method), $"{nameof(method)} must not be empty");
 
-        logger.LogInvoke(()=> new object[] { method });
-
         return WebsocketSubscribeEndpoint(logger, ct, endPoint, method, payload, payloadJsonSerializerSettings)
             .Publish()
             .RefCount();
@@ -129,8 +123,6 @@ public class RpcClient
 
     public IObservable<ZMessage> ZmqSubscribe(ILogger logger, CancellationToken ct, Dictionary<DaemonEndpointConfig, (string Socket, string Topic)> portMap)
     {
-        logger.LogInvoke();
-
         return portMap.Keys
             .Select(endPoint => ZmqSubscribeEndpoint(logger, ct, portMap[endPoint].Socket, portMap[endPoint].Topic))
             .Merge()

@@ -60,8 +60,6 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
 
     protected async Task<bool> UpdateJob(CancellationToken ct, string via = null, string json = null)
     {
-        logger.LogInvoke();
-
         try
         {
             var response = string.IsNullOrEmpty(json) ? await GetBlockTemplateAsync(ct) : GetBlockTemplateFromJson(json);
@@ -144,8 +142,6 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
 
     private async Task<RpcResponse<GetBlockTemplateResponse>> GetBlockTemplateAsync(CancellationToken ct)
     {
-        logger.LogInvoke();
-
         var request = new GetBlockTemplateRequest
         {
             WalletAddress = poolConfig.Address,
@@ -157,8 +153,6 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
 
     private RpcResponse<GetBlockTemplateResponse> GetBlockTemplateFromJson(string json)
     {
-        logger.LogInvoke();
-
         var result = JsonConvert.DeserializeObject<JsonRpcResponse>(json);
 
         return new RpcResponse<GetBlockTemplateResponse>(result.ResultAs<GetBlockTemplateResponse>());
@@ -182,8 +176,6 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
 
     private async Task UpdateNetworkStatsAsync(CancellationToken ct)
     {
-        logger.LogInvoke();
-
         try
         {
             var response = await rpc.ExecuteAsync(logger, CryptonoteCommands.GetInfo, ct);
@@ -336,7 +328,6 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
         Contract.RequiresNonNull(worker, nameof(worker));
         Contract.RequiresNonNull(request, nameof(request));
 
-        logger.LogInvoke(()=> new object[] { worker.ConnectionId });
         var context = worker.ContextAs<CryptonoteWorkerContext>();
 
         var job = currentJob;

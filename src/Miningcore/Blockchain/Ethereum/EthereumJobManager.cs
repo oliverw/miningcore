@@ -58,8 +58,6 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
 
     protected async Task<bool> UpdateJob(CancellationToken ct, string via = null)
     {
-        logger.LogInvoke();
-
         try
         {
             var bt = await GetBlockTemplateAsync(ct);
@@ -80,8 +78,6 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
 
     protected bool UpdateJob(EthereumBlockTemplate blockTemplate, string via = null)
     {
-        logger.LogInvoke();
-
         try
         {
             // may happen if daemon is currently not connected to peers
@@ -123,8 +119,6 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
 
     private async Task<EthereumBlockTemplate> GetBlockTemplateAsync(CancellationToken ct)
     {
-        logger.LogInvoke();
-
         var requests = new[]
         {
             new RpcRequest(EC.GetWork),
@@ -224,8 +218,6 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
 
     private async Task UpdateNetworkStatsAsync(CancellationToken ct)
     {
-        logger.LogInvoke();
-
         try
         {
             var requests = new[]
@@ -361,8 +353,6 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
         Contract.RequiresNonNull(worker, nameof(worker));
         Contract.RequiresNonNull(request, nameof(request));
 
-        logger.LogInvoke(()=> new object[] { worker.ConnectionId });
-
         var context = worker.ContextAs<EthereumWorkerContext>();
         var nonce = request[0];
 
@@ -373,8 +363,6 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
     {
         Contract.RequiresNonNull(worker, nameof(worker));
         Contract.RequiresNonNull(request, nameof(request));
-
-        logger.LogInvoke(()=> new object[] { worker.ConnectionId });
 
         var context = worker.ContextAs<EthereumWorkerContext>();
         var jobId = request[1];

@@ -20,8 +20,6 @@ public class BalanceRepository : IBalanceRepository
 
     public async Task<int> AddAmountAsync(IDbConnection con, IDbTransaction tx, string poolId, string address, decimal amount, string usage, params string[] tags)
     {
-        logger.LogInvoke();
-
         var now = DateTime.UtcNow;
 
         // record balance change
@@ -79,8 +77,6 @@ public class BalanceRepository : IBalanceRepository
 
     public async Task<decimal> GetBalanceAsync(IDbConnection con, IDbTransaction tx, string poolId, string address)
     {
-        logger.LogInvoke();
-
         const string query = @"SELECT amount FROM balances WHERE poolid = @poolId AND address = @address";
 
         return await con.QuerySingleOrDefaultAsync<decimal>(query, new { poolId, address }, tx);
@@ -88,8 +84,6 @@ public class BalanceRepository : IBalanceRepository
 
     public async Task<decimal> GetBalanceAsync(IDbConnection con, string poolId, string address)
     {
-        logger.LogInvoke();
-
         const string query = @"SELECT amount FROM balances WHERE poolid = @poolId AND address = @address";
 
         return await con.QuerySingleOrDefaultAsync<decimal>(query, new { poolId, address });
@@ -97,8 +91,6 @@ public class BalanceRepository : IBalanceRepository
 
     public async Task<Balance[]> GetPoolBalancesOverThresholdAsync(IDbConnection con, string poolId, decimal minimum)
     {
-        logger.LogInvoke();
-
         const string query = @"SELECT b.*
             FROM balances b
             LEFT JOIN miner_settings ms ON ms.poolid = b.poolid AND ms.address = b.address
@@ -111,8 +103,6 @@ public class BalanceRepository : IBalanceRepository
 
     public Task<int> GetBalanceChangeCountByTagAsync(IDbConnection con, IDbTransaction tx, string poolId, string tag)
     {
-        logger.LogInvoke(()=> new object[] { poolId });
-
         const string query = @"SELECT COUNT(*) FROM balance_changes WHERE poolid = @poolid AND @tag <@ tags";
 
         return con.ExecuteScalarAsync<int>(query, new { poolId, tag = new[] { tag } }, tx);
@@ -120,8 +110,6 @@ public class BalanceRepository : IBalanceRepository
 
     public async Task<BalanceChange[]> GetBalanceChangesByTagAsync(IDbConnection con, IDbTransaction tx, string poolId, string tag)
     {
-        logger.LogInvoke(()=> new object[] { poolId });
-
         const string query = @"SELECT * FROM balance_changes WHERE poolid = @poolid
             AND @tag <@ tags
             ORDER BY created DESC";

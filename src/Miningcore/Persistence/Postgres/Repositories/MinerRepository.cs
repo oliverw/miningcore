@@ -20,8 +20,6 @@ public class MinerRepository : IMinerRepository
 
     public async Task<MinerSettings> GetSettingsAsync(IDbConnection con, IDbTransaction tx, string poolId, string address)
     {
-        logger.LogInvoke();
-
         const string query = @"SELECT * FROM miner_settings WHERE poolid = @poolId AND address = @address";
 
         var entity = await con.QuerySingleOrDefaultAsync<Entities.MinerSettings>(query, new {poolId, address}, tx);

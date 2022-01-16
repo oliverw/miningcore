@@ -55,8 +55,6 @@ public class Cache : IDisposable
     {
         Contract.RequiresNonNull(hash, nameof(hash));
 
-        logger.LogInvoke();
-
         mixDigest = null;
         result = null;
 

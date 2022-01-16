@@ -93,8 +93,6 @@ public class ErgoJobManager : JobManagerBase<ErgoJob>
 
     private async Task<(bool IsNew, bool Force)> UpdateJob(bool forceUpdate, string via = null, string json = null)
     {
-        logger.LogInvoke();
-
         try
         {
             var blockTemplate = string.IsNullOrEmpty(json) ?
@@ -176,8 +174,6 @@ public class ErgoJobManager : JobManagerBase<ErgoJob>
 
     private async Task<WorkMessage> GetBlockTemplateAsync()
     {
-        logger.LogInvoke();
-
         var work = await rpc.MiningRequestBlockCandidateAsync(CancellationToken.None);
 
         return work;
@@ -185,8 +181,6 @@ public class ErgoJobManager : JobManagerBase<ErgoJob>
 
     private WorkMessage GetBlockTemplateFromJson(string json)
     {
-        logger.LogInvoke();
-
         return JsonConvert.DeserializeObject<WorkMessage>(json);
     }
 
@@ -264,8 +258,6 @@ public class ErgoJobManager : JobManagerBase<ErgoJob>
     {
         Contract.RequiresNonNull(worker, nameof(worker));
         Contract.RequiresNonNull(submission, nameof(submission));
-
-        logger.LogInvoke(()=> new object[] { worker.ConnectionId });
 
         if(submission is not object[] submitParams)
             throw new StratumException(StratumError.Other, "invalid params");
