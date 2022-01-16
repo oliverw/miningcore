@@ -5,7 +5,6 @@ using Miningcore.Extensions;
 using Miningcore.Persistence.Model;
 using Miningcore.Persistence.Model.Projections;
 using Miningcore.Persistence.Repositories;
-using NLog;
 using Npgsql;
 using NpgsqlTypes;
 
@@ -19,7 +18,6 @@ public class ShareRepository : IShareRepository
     }
 
     private readonly IMapper mapper;
-    private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
     public async Task BatchInsertAsync(IDbConnection con, IDbTransaction tx, IEnumerable<Share> shares, CancellationToken ct)
     {

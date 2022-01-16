@@ -6,7 +6,6 @@ using Miningcore.Persistence.Model;
 using Miningcore.Persistence.Model.Projections;
 using Miningcore.Persistence.Repositories;
 using Miningcore.Time;
-using NLog;
 using MinerStats = Miningcore.Persistence.Model.Projections.MinerStats;
 
 namespace Miningcore.Persistence.Postgres.Repositories;
@@ -21,7 +20,6 @@ public class StatsRepository : IStatsRepository
 
     private readonly IMapper mapper;
     private readonly IMasterClock clock;
-    private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
     private static readonly TimeSpan MinerStatsMaxAge = TimeSpan.FromMinutes(20);
 
     public async Task InsertPoolStatsAsync(IDbConnection con, IDbTransaction tx, PoolStats stats, CancellationToken ct)
@@ -54,10 +52,8 @@ public class StatsRepository : IStatsRepository
         const string query = "SELECT * FROM poolstats WHERE poolid = @poolId ORDER BY created DESC FETCH NEXT 1 ROWS ONLY";
 
         var entity = await con.QuerySingleOrDefaultAsync<Entities.PoolStats>(new CommandDefinition(query, new { poolId }, cancellationToken: ct));
-        if(entity == null)
-            return null;
 
-        return mapper.Map<PoolStats>(entity);
+        return entity == null ? null : mapper.Map<PoolStats>(entity);
     }
 
     public Task<decimal> GetTotalPoolPaymentsAsync(IDbConnection con, string poolId, CancellationToken ct)
@@ -70,7 +66,7 @@ public class StatsRepository : IStatsRepository
     public async Task<PoolStats[]> GetPoolPerformanceBetweenAsync(IDbConnection con, string poolId,
         SampleInterval interval, DateTime start, DateTime end, CancellationToken ct)
     {
-        string trunc = interval switch
+        var trunc = interval switch
         {
             SampleInterval.Hour => "hour",
             SampleInterval.Day => "day",

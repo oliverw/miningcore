@@ -4,7 +4,6 @@ using Dapper;
 using Miningcore.Extensions;
 using Miningcore.Persistence.Model;
 using Miningcore.Persistence.Repositories;
-using NLog;
 
 namespace Miningcore.Persistence.Postgres.Repositories;
 
@@ -16,7 +15,6 @@ public class MinerRepository : IMinerRepository
     }
 
     private readonly IMapper mapper;
-    private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
     public async Task<MinerSettings> GetSettingsAsync(IDbConnection con, IDbTransaction tx, string poolId, string address)
     {

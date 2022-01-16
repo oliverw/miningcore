@@ -1,11 +1,11 @@
 using System.Data;
+using System.Text;
 using AutoMapper;
 using Dapper;
 using Miningcore.Extensions;
 using Miningcore.Persistence.Model;
 using Miningcore.Persistence.Model.Projections;
 using Miningcore.Persistence.Repositories;
-using NLog;
 using Npgsql;
 using NpgsqlTypes;
 
@@ -19,7 +19,6 @@ public class PaymentRepository : IPaymentRepository
     }
 
     private readonly IMapper mapper;
-    private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
     public async Task InsertAsync(IDbConnection con, IDbTransaction tx, Payment payment)
     {
@@ -60,14 +59,15 @@ public class PaymentRepository : IPaymentRepository
 
     public async Task<Payment[]> PagePaymentsAsync(IDbConnection con, string poolId, string address, int page, int pageSize, CancellationToken ct)
     {
-        var query = @"SELECT * FROM payments WHERE poolid = @poolid ";
+        var query = new StringBuilder("SELECT * FROM payments WHERE poolid = @poolid ");
 
         if(!string.IsNullOrEmpty(address))
-            query += " AND address = @address ";
+            query.Append(" AND address = @address ");
 
-        query += "ORDER BY created DESC OFFSET @offset FETCH NEXT @pageSize ROWS ONLY";
+        query.Append("ORDER BY created DESC OFFSET @offset FETCH NEXT @pageSize ROWS ONLY");
 
-        return (await con.QueryAsync<Entities.Payment>(new CommandDefinition(query, new { poolId, address, offset = page * pageSize, pageSize }, cancellationToken: ct)))
+        return (await con.QueryAsync<Entities.Payment>(new CommandDefinition(query.ToString(),
+                new { poolId, address, offset = page * pageSize, pageSize }, cancellationToken: ct)))
             .Select(mapper.Map<Payment>)
             .ToArray();
     }
@@ -97,13 +97,12 @@ public class PaymentRepository : IPaymentRepository
 
     public Task<uint> GetPaymentsCountAsync(IDbConnection con, string poolId, string address, CancellationToken ct)
     {
-        string query = @"SELECT COUNT(*) FROM payments WHERE poolid = @poolId";
+        var query = new StringBuilder("SELECT COUNT(*) FROM payments WHERE poolid = @poolId");
 
         if(!string.IsNullOrEmpty(address))
-            query += " AND address = @address ";
+            query.Append(" AND address = @address ");
 
-
-        return con.ExecuteScalarAsync<uint>(new CommandDefinition(query, new { poolId, address }, cancellationToken: ct));
+        return con.ExecuteScalarAsync<uint>(new CommandDefinition(query.ToString(), new { poolId, address }, cancellationToken: ct));
     }
 
     public Task<uint> GetMinerPaymentsByDayCountAsync(IDbConnection con, string poolId, string address)
@@ -119,12 +118,11 @@ public class PaymentRepository : IPaymentRepository
 
     public Task<uint> GetBalanceChangesCountAsync(IDbConnection con, string poolId, string address = null)
     {
-        var query = @"SELECT COUNT(*) FROM balance_changes WHERE poolid = @poolId";
+        var query = new StringBuilder("SELECT COUNT(*) FROM balance_changes WHERE poolid = @poolId");
 
         if(!string.IsNullOrEmpty(address))
-            query += " AND address = @address ";
+            query.Append(" AND address = @address ");
 
-
-        return con.ExecuteScalarAsync<uint>(query, new { poolId, address });
+        return con.ExecuteScalarAsync<uint>(query.ToString(), new { poolId, address });
     }
 }
