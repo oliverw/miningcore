@@ -2,7 +2,6 @@ using System.Data;
 using System.Text;
 using AutoMapper;
 using Dapper;
-using Miningcore.Extensions;
 using Miningcore.Persistence.Model;
 using Miningcore.Persistence.Model.Projections;
 using Miningcore.Persistence.Repositories;

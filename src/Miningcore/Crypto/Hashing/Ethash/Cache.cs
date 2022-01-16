@@ -1,6 +1,5 @@
 using Miningcore.Blockchain.Ethereum;
 using Miningcore.Contracts;
-using Miningcore.Extensions;
 using Miningcore.Native;
 using NLog;
 
