@@ -61,7 +61,7 @@ public class ShareRepository : IShareRepository
         logger.LogInvoke(()=> new object[] { poolId });
 
         var query = @$"SELECT * FROM shares WHERE poolid = @poolId AND created {(inclusive ? " <= " : " < ")} @before
-            ORDER BY created DESC FETCH NEXT (@pageSize) ROWS ONLY";
+            ORDER BY created DESC FETCH NEXT @pageSize ROWS ONLY";
 
         return (await con.QueryAsync<Entities.Share>(new CommandDefinition(query, new { poolId, before, pageSize }, cancellationToken: ct)))
             .Select(mapper.Map<Share>)

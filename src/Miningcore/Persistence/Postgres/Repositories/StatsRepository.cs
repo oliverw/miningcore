@@ -362,7 +362,7 @@ public class StatsRepository : IStatsRepository
             FROM tmp t
             WHERE t.rk = 1
             ORDER by t.hashrate DESC
-            OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
+            OFFSET @offset FETCH NEXT @pageSize ROWS ONLY";
 
         return (await con.QueryAsync<Entities.MinerWorkerPerformanceStats>(new CommandDefinition(query,
                 new { poolId, from, offset = page * pageSize, pageSize }, cancellationToken: ct)))

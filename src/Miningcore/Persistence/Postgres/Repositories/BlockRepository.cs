@@ -59,7 +59,7 @@ public class BlockRepository : IBlockRepository
         logger.LogInvoke(()=> new object[] { poolId });
 
         const string query = @"SELECT * FROM blocks WHERE poolid = @poolid AND status = ANY(@status)
-            ORDER BY created DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
+            ORDER BY created DESC OFFSET @offset FETCH NEXT @pageSize ROWS ONLY";
 
         return (await con.QueryAsync<Entities.Block>(new CommandDefinition(query, new
             {
@@ -75,7 +75,7 @@ public class BlockRepository : IBlockRepository
     public async Task<Block[]> PageBlocksAsync(IDbConnection con, BlockStatus[] status, int page, int pageSize, CancellationToken ct)
     {
         const string query = @"SELECT * FROM blocks WHERE status = ANY(@status)
-            ORDER BY created DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
+            ORDER BY created DESC OFFSET @offset FETCH NEXT @pageSize ROWS ONLY";
 
         return (await con.QueryAsync<Entities.Block>(new CommandDefinition(query, new
             {
@@ -103,7 +103,7 @@ public class BlockRepository : IBlockRepository
         logger.LogInvoke(()=> new object[] { poolId });
 
         const string query = @"SELECT * FROM blocks WHERE poolid = @poolid AND status = ANY(@status) AND created < @before
-            ORDER BY created DESC FETCH NEXT (1) ROWS ONLY";
+            ORDER BY created DESC FETCH NEXT 1 ROWS ONLY";
 
         return (await con.QueryAsync<Entities.Block>(query, new
             {

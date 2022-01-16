@@ -71,7 +71,7 @@ public class PaymentRepository : IPaymentRepository
         if(!string.IsNullOrEmpty(address))
             query += " AND address = @address ";
 
-        query += "ORDER BY created DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
+        query += "ORDER BY created DESC OFFSET @offset FETCH NEXT @pageSize ROWS ONLY";
 
         return (await con.QueryAsync<Entities.Payment>(new CommandDefinition(query, new { poolId, address, offset = page * pageSize, pageSize }, cancellationToken: ct)))
             .Select(mapper.Map<Payment>)
@@ -84,7 +84,7 @@ public class PaymentRepository : IPaymentRepository
 
         const string query = @"SELECT * FROM balance_changes WHERE poolid = @poolid
             AND address = @address
-            ORDER BY created DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
+            ORDER BY created DESC OFFSET @offset FETCH NEXT @pageSize ROWS ONLY";
 
         return (await con.QueryAsync<Entities.BalanceChange>(new CommandDefinition(query,
                 new { poolId, address, offset = page * pageSize, pageSize }, cancellationToken: ct)))
@@ -99,7 +99,7 @@ public class PaymentRepository : IPaymentRepository
         const string query = @"SELECT SUM(amount) AS amount, date_trunc('day', created) AS date FROM payments WHERE poolid = @poolid
             AND address = @address
             GROUP BY date
-            ORDER BY date DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
+            ORDER BY date DESC OFFSET @offset FETCH NEXT @pageSize ROWS ONLY";
 
         return (await con.QueryAsync<AmountByDate>(new CommandDefinition(query, new { poolId, address, offset = page * pageSize, pageSize }, cancellationToken: ct)))
             .ToArray();
