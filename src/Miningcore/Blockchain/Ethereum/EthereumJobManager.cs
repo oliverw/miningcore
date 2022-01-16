@@ -361,7 +361,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
         Contract.RequiresNonNull(worker, nameof(worker));
         Contract.RequiresNonNull(request, nameof(request));
 
-        logger.LogInvoke(new object[] { worker.ConnectionId });
+        logger.LogInvoke(()=> new object[] { worker.ConnectionId });
 
         var context = worker.ContextAs<EthereumWorkerContext>();
         var nonce = request[0];
@@ -374,7 +374,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
         Contract.RequiresNonNull(worker, nameof(worker));
         Contract.RequiresNonNull(request, nameof(request));
 
-        logger.LogInvoke(new object[] { worker.ConnectionId });
+        logger.LogInvoke(()=> new object[] { worker.ConnectionId });
 
         var context = worker.ContextAs<EthereumWorkerContext>();
         var jobId = request[1];

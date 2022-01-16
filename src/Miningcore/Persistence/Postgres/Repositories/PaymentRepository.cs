@@ -64,7 +64,7 @@ public class PaymentRepository : IPaymentRepository
 
     public async Task<Payment[]> PagePaymentsAsync(IDbConnection con, string poolId, string address, int page, int pageSize, CancellationToken ct)
     {
-        logger.LogInvoke(new object[] { poolId });
+        logger.LogInvoke(()=> new object[] { poolId });
 
         var query = @"SELECT * FROM payments WHERE poolid = @poolid ";
 
@@ -80,7 +80,7 @@ public class PaymentRepository : IPaymentRepository
 
     public async Task<BalanceChange[]> PageBalanceChangesAsync(IDbConnection con, string poolId, string address, int page, int pageSize, CancellationToken ct)
     {
-        logger.LogInvoke(new object[] { poolId });
+        logger.LogInvoke(()=> new object[] { poolId });
 
         const string query = @"SELECT * FROM balance_changes WHERE poolid = @poolid
             AND address = @address
@@ -94,7 +94,7 @@ public class PaymentRepository : IPaymentRepository
 
     public async Task<AmountByDate[]> PageMinerPaymentsByDayAsync(IDbConnection con, string poolId, string address, int page, int pageSize, CancellationToken ct)
     {
-        logger.LogInvoke(new object[] { poolId });
+        logger.LogInvoke(()=> new object[] { poolId });
 
         const string query = @"SELECT SUM(amount) AS amount, date_trunc('day', created) AS date FROM payments WHERE poolid = @poolid
             AND address = @address
@@ -107,7 +107,7 @@ public class PaymentRepository : IPaymentRepository
 
     public Task<uint> GetPaymentsCountAsync(IDbConnection con, string poolId, string address, CancellationToken ct)
     {
-        logger.LogInvoke(new object[] { poolId });
+        logger.LogInvoke(()=> new object[] { poolId });
 
         string query = @"SELECT COUNT(*) FROM payments WHERE poolid = @poolId";
 
@@ -120,7 +120,7 @@ public class PaymentRepository : IPaymentRepository
 
     public Task<uint> GetMinerPaymentsByDayCountAsync(IDbConnection con, string poolId, string address)
     {
-        logger.LogInvoke(new object[] { poolId });
+        logger.LogInvoke(()=> new object[] { poolId });
 
         const string query =
             @"SELECT COUNT(*) FROM (SELECT SUM(amount) AS amount, date_trunc('day', created) AS date FROM payments WHERE poolid = @poolid
@@ -133,7 +133,7 @@ public class PaymentRepository : IPaymentRepository
 
     public Task<uint> GetBalanceChangesCountAsync(IDbConnection con, string poolId, string address = null)
     {
-        logger.LogInvoke(new object[] { poolId });
+        logger.LogInvoke(()=> new object[] { poolId });
 
         var query = @"SELECT COUNT(*) FROM balance_changes WHERE poolid = @poolId";
 

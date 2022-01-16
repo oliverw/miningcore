@@ -78,7 +78,7 @@ public class StatsRepository : IStatsRepository
     public async Task<PoolStats[]> GetPoolPerformanceBetweenAsync(IDbConnection con, string poolId,
         SampleInterval interval, DateTime start, DateTime end, CancellationToken ct)
     {
-        logger.LogInvoke(new object[] { poolId });
+        logger.LogInvoke(()=> new object[] { poolId });
 
         string trunc = interval switch
         {
@@ -102,7 +102,7 @@ public class StatsRepository : IStatsRepository
 
     public async Task<MinerStats> GetMinerStatsAsync(IDbConnection con, IDbTransaction tx, string poolId, string miner, CancellationToken ct)
     {
-        logger.LogInvoke(new object[] { poolId, miner });
+        logger.LogInvoke(()=> new object[] { poolId, miner });
 
         var query = @"SELECT (SELECT SUM(difficulty) FROM shares WHERE poolid = @poolId AND miner = @miner) AS pendingshares,
             (SELECT amount FROM balances WHERE poolid = @poolId AND address = @miner) AS pendingbalance,
@@ -196,7 +196,7 @@ public class StatsRepository : IStatsRepository
     public async Task<WorkerPerformanceStatsContainer[]> GetMinerPerformanceBetweenThreeMinutelyAsync(IDbConnection con, string poolId, string miner,
         DateTime start, DateTime end, CancellationToken ct)
     {
-        logger.LogInvoke(new object[] { poolId });
+        logger.LogInvoke(()=> new object[] { poolId });
 
         const string query = @"SELECT date_trunc('hour', created) AS created,
             (extract(minute FROM created)::int / 3) AS partition,
@@ -240,7 +240,7 @@ public class StatsRepository : IStatsRepository
     public async Task<WorkerPerformanceStatsContainer[]> GetMinerPerformanceBetweenMinutelyAsync(IDbConnection con, string poolId, string miner,
         DateTime start, DateTime end, CancellationToken ct)
     {
-        logger.LogInvoke(new object[] { poolId });
+        logger.LogInvoke(()=> new object[] { poolId });
 
         const string query = @"SELECT worker, date_trunc('minute', created) AS created, AVG(hashrate) AS hashrate,
             AVG(sharespersecond) AS sharespersecond FROM minerstats
@@ -277,7 +277,7 @@ public class StatsRepository : IStatsRepository
     public async Task<WorkerPerformanceStatsContainer[]> GetMinerPerformanceBetweenHourlyAsync(IDbConnection con, string poolId, string miner,
         DateTime start, DateTime end, CancellationToken ct)
     {
-        logger.LogInvoke(new object[] { poolId });
+        logger.LogInvoke(()=> new object[] { poolId });
 
         const string query = @"SELECT worker, date_trunc('hour', created) AS created, AVG(hashrate) AS hashrate,
             AVG(sharespersecond) AS sharespersecond FROM minerstats
@@ -314,7 +314,7 @@ public class StatsRepository : IStatsRepository
     public async Task<WorkerPerformanceStatsContainer[]> GetMinerPerformanceBetweenDailyAsync(IDbConnection con,  string poolId, string miner,
         DateTime start, DateTime end, CancellationToken ct)
     {
-        logger.LogInvoke(new object[] { poolId });
+        logger.LogInvoke(()=> new object[] { poolId });
 
         const string query = @"SELECT worker, date_trunc('day', created) AS created, AVG(hashrate) AS hashrate,
             AVG(sharespersecond) AS sharespersecond FROM minerstats
@@ -344,7 +344,7 @@ public class StatsRepository : IStatsRepository
     public async Task<MinerWorkerPerformanceStats[]> PagePoolMinersByHashrateAsync(IDbConnection con, string poolId,
         DateTime from, int page, int pageSize, CancellationToken ct)
     {
-        logger.LogInvoke(new object[] { poolId, from, page, pageSize });
+        logger.LogInvoke(()=> new object[] { poolId, from, page, pageSize });
 
         const string query =
             @"WITH tmp AS

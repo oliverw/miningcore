@@ -233,7 +233,7 @@ public class EquihashJobManager : BitcoinJobManagerBase<EquihashJob>
         Contract.RequiresNonNull(worker, nameof(worker));
         Contract.RequiresNonNull(submission, nameof(submission));
 
-        logger.LogInvoke(new object[] { worker.ConnectionId });
+        logger.LogInvoke(()=> new object[] { worker.ConnectionId });
 
         if(submission is not object[] submitParams)
             throw new StratumException(StratumError.Other, "invalid params");

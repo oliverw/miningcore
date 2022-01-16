@@ -336,7 +336,7 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
         Contract.RequiresNonNull(worker, nameof(worker));
         Contract.RequiresNonNull(request, nameof(request));
 
-        logger.LogInvoke(new object[] { worker.ConnectionId });
+        logger.LogInvoke(()=> new object[] { worker.ConnectionId });
         var context = worker.ContextAs<CryptonoteWorkerContext>();
 
         var job = currentJob;

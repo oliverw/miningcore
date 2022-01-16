@@ -62,7 +62,7 @@ public class RpcClient
     {
         Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(method), $"{nameof(method)} must not be empty");
 
-        logger.LogInvoke(new object[] { method });
+        logger.LogInvoke(()=> new object[] { method });
 
         try
         {
@@ -120,7 +120,7 @@ public class RpcClient
     {
         Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(method), $"{nameof(method)} must not be empty");
 
-        logger.LogInvoke(new object[] { method });
+        logger.LogInvoke(()=> new object[] { method });
 
         return WebsocketSubscribeEndpoint(logger, ct, endPoint, method, payload, payloadJsonSerializerSettings)
             .Publish()

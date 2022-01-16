@@ -265,7 +265,7 @@ public class ErgoJobManager : JobManagerBase<ErgoJob>
         Contract.RequiresNonNull(worker, nameof(worker));
         Contract.RequiresNonNull(submission, nameof(submission));
 
-        logger.LogInvoke(new[] { worker.ConnectionId });
+        logger.LogInvoke(()=> new object[] { worker.ConnectionId });
 
         if(submission is not object[] submitParams)
             throw new StratumException(StratumError.Other, "invalid params");
