@@ -205,12 +205,16 @@ public abstract class StratumServer
         {
             case SocketException sockEx:
                 if(!ignoredSocketErrors.Contains(sockEx.ErrorCode))
-                    logger.Error(() => $"[{connection.ConnectionId}] Connection error state: {ex}");
+                    logger.Error(() => $"[{connection.ConnectionId}] Connection error: {ex}");
+                break;
+
+            case InvalidDataException idEx:
+                logger.Error(() => $"[{connection.ConnectionId}] Connection error: {idEx}");
                 break;
 
             case JsonException jsonEx:
                 // junk received (invalid json)
-                logger.Error(() => $"[{connection.ConnectionId}] Connection json error state: {jsonEx.Message}");
+                logger.Error(() => $"[{connection.ConnectionId}] Connection json error: {jsonEx.Message}");
 
                 if(clusterConfig.Banning?.BanOnJunkReceive.HasValue == false || clusterConfig.Banning?.BanOnJunkReceive == true)
                 {
@@ -221,7 +225,7 @@ public abstract class StratumServer
 
             case AuthenticationException authEx:
                 // junk received (SSL handshake)
-                logger.Error(() => $"[{connection.ConnectionId}] Connection json error state: {authEx.Message}");
+                logger.Error(() => $"[{connection.ConnectionId}] Connection json error: {authEx.Message}");
 
                 if(clusterConfig.Banning?.BanOnJunkReceive.HasValue == false || clusterConfig.Banning?.BanOnJunkReceive == true)
                 {
@@ -232,7 +236,7 @@ public abstract class StratumServer
 
             case IOException ioEx:
                 // junk received (SSL handshake)
-                logger.Error(() => $"[{connection.ConnectionId}] Connection json error state: {ioEx.Message}");
+                logger.Error(() => $"[{connection.ConnectionId}] Connection json error: {ioEx.Message}");
 
                 if(ioEx.Source == "System.Net.Security")
                 {
@@ -250,7 +254,7 @@ public abstract class StratumServer
 
             case ArgumentException argEx:
                 if(argEx.TargetSite != streamWriterCtor || argEx.ParamName != "stream")
-                    logger.Error(() => $"[{connection.ConnectionId}] Connection error state: {ex}");
+                    logger.Error(() => $"[{connection.ConnectionId}] Connection error: {ex}");
                 break;
 
             case InvalidOperationException:
@@ -258,7 +262,7 @@ public abstract class StratumServer
                 break;
 
             default:
-                logger.Error(() => $"[{connection.ConnectionId}] Connection error state: {ex}");
+                logger.Error(() => $"[{connection.ConnectionId}] Connection error: {ex}");
                 break;
         }
 
