@@ -419,12 +419,12 @@ public class StratumConnection
 
                 // Update client
                 RemoteEndpoint = new IPEndPoint(IPAddress.Parse(remoteAddress), int.Parse(remotePort));
-                logger.Info(() => $"[{ConnectionId}] Real-IP via Proxy-Protocol: {RemoteEndpoint.Address}");
+                logger.Info(() => $"Real-IP via Proxy-Protocol: {RemoteEndpoint.Address}");
             }
 
             else
             {
-                throw new InvalidDataException($"[{ConnectionId}] Received spoofed Proxy-Protocol header from {peerAddress}");
+                throw new InvalidDataException($"Received spoofed Proxy-Protocol header from {peerAddress}");
             }
 
             return true;
@@ -432,7 +432,7 @@ public class StratumConnection
 
         if(proxyProtocol.Mandatory)
         {
-            throw new InvalidDataException($"[{ConnectionId}] Missing mandatory Proxy-Protocol header from {peerAddress}. Closing connection.");
+            throw new InvalidDataException($"Missing mandatory Proxy-Protocol header from {peerAddress}. Closing connection.");
         }
 
         return false;
