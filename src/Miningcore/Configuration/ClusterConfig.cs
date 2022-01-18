@@ -805,6 +805,11 @@ public partial class ApiConfig
     /// If this list null or empty, the default is 127.0.0.1
     /// </summary>
     public string[] MetricsIpWhitelist { get; set; }
+
+    /// <summary>
+    /// Enable serialization of null values in API responses
+    /// </summary>
+    public bool LegacyNullValueHandling { get; set; }
 }
 
 public class ZmqPubSubEndpointConfig

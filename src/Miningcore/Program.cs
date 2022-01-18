@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.Json.Serialization;
 using AspNetCoreRateLimit;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
@@ -174,6 +175,9 @@ public class Program : BackgroundService
                         .AddJsonOptions(options =>
                         {
                             options.JsonSerializerOptions.WriteIndented = true;
+
+                            if(!clusterConfig.Api.LegacyNullValueHandling)
+                                options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
                         });
 
                         // NSwag

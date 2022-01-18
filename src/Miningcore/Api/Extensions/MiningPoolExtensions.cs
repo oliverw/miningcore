@@ -33,6 +33,16 @@ public static class MiningPoolExtensions
             extra.StripValue(nameof(ErgoPaymentProcessingConfigExtra.WalletPassword));
         }
 
+        if(poolInfo.Ports != null)
+        {
+            foreach(var port in poolInfo.Ports.Keys)
+            {
+                var portInfo = poolInfo.Ports[port];
+
+                portInfo.TlsPfxFile = null;
+                portInfo.TlsPfxPassword = null;
+            }
+        }
         return poolInfo;
     }
 }
