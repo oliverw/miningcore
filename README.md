@@ -61,6 +61,37 @@ build-windows.bat
 - Install [Visual Studio 2022](https://www.visualstudio.com/vs/). Visual Studio Community Edition is fine.
 - Open `Miningcore.sln` in Visual Studio
 
+## Building using Docker Engine
+In case you don't want to install any dependencies then you can build the app using the official Microsoft .NET SDK Docker image.
+
+```console
+git clone https://github.com/oliverw/miningcore
+cd miningcore
+```
+Then build using Docker:
+
+```console
+docker run --rm -v $(pwd):/app -w /app mcr.microsoft.com/dotnet/sdk:6.0 /bin/bash -c 'apt update && apt install libssl-dev pkg-config libboost-all-dev libsodium-dev build-essential cmake -y --no-install-recommends && cd src/Miningcore && dotnet publish -c Release --framework net6.0 -o /app/build/'
+```
+It will use a Linux container, you will build a Linux executable that will not run on Windows or macOS. You can use a runtime argument (-r) to specify the type of assets that you want to publish (if they don't match the SDK container). The following examples assume you want assets that match your host operating system, and use runtime arguments to ensure that.
+
+For macOS:
+
+```console
+docker run --rm -v $(pwd):/app -w /app mcr.microsoft.com/dotnet/sdk:6.0 /bin/bash -c 'apt update && apt install libssl-dev pkg-config libboost-all-dev libsodium-dev build-essential cmake -y --no-install-recommends && cd src/Miningcore && dotnet publish -c Release --framework net6.0 -o /app/build/ -r osx-x64 --self-contained false'
+```
+
+For Windows using Linux container:
+
+```console
+docker run --rm -v $(pwd):/app -w /app mcr.microsoft.com/dotnet/sdk:6.0 /bin/bash -c 'apt update && apt install libssl-dev pkg-config libboost-all-dev libsodium-dev build-essential cmake -y --no-install-recommends && cd src/Miningcore && dotnet publish -c Release --framework net6.0 -o /app/build/ -r win-x64 --self-contained false'
+```
+
+To delete used images and containers you can run after all:
+```console
+docker system prune -af
+```
+
 ## Running Miningcore
 
 ### Database setup
@@ -110,7 +141,7 @@ Once you have done this for all of your existing pools you should now restore yo
 
 ### Configuration
 
-Create a configuration file `config.json` as described [here](https://github.com/oliverw/miningcore/wiki/Configuration)
+Create a configuration file `config.json` as described [here](https://github.com/oliverw/miningcore/wiki/Configuration).
 
 ### Start the Pool
 

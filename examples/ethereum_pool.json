@@ -10,7 +10,7 @@
         "perPoolLogFile": false
     },
     "banning": {
-        "manager": "integrated",
+        "manager": "Integrated",
         "banOnJunkReceive": false,
         "banOnInvalidShares": false
     },
