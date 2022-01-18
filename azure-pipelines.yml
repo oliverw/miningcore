@@ -1,0 +1,40 @@
+# ASP.NET Core
+# Build and test ASP.NET Core projects targeting .NET Core.
+# Add steps that run tests, create a NuGet package, deploy, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/dotnet-core
+
+trigger:
+  batch: true
+  branches:
+    include:
+    - develop
+pr: none
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  buildConfiguration: 'Release'
+
+steps:
+- task: UseDotNet@2
+  displayName: Use dotnet 5.x
+  inputs:
+    packageType: 'sdk'
+    version: '5.x'
+- task: Bash@3
+  displayName: Run build
+  inputs:
+    filePath: './scripts/build_test_pipeline.sh'
+    arguments: '$(System.DefaultWorkingDirectory) $(Build.ArtifactStagingDirectory) $(buildConfiguration)'
+    workingDirectory: '$(System.DefaultWorkingDirectory)'
+- task: DotNetCoreCLI@2
+  displayName: Run tests
+  inputs:
+    command: 'test'
+    arguments: '--no-build --filter "FullyQualifiedName~PayoutTests" ./Miningcore.Integration.Tests.dll'
+    testRunTitle: 'NCrypto_Pool'
+    workingDirectory: '$(Build.ArtifactStagingDirectory)'
+- upload: $(Build.ArtifactStagingDirectory)
+  displayName: 'Publish package'
+  artifact: drop
