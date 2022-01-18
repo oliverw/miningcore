@@ -1,0 +1,92 @@
+#!/bin/bash
+
+source /etc/poolservice.profile
+
+status()
+{
+    pid=`pgrep -f Mining`
+    if [[ "$pid" != "" ]];then
+        echo "PoolService is running"
+    else
+        echo "PoolService is not running"
+    fi
+}
+
+stop()
+{
+    poolservice_stopped=0
+    pid=`pgrep -f Mining`
+    if [[ "$pid" != "" ]];then
+        echo "Stopping PoolService"
+        kill $pid
+        for ((i=0; i<10; i++)); do
+            if  [ -d /proc/${pid} ]; then
+                sleep 1
+            else
+                poolservice_stopped=1
+                break
+            fi
+        done
+        if [ ${poolservice_stopped} -eq 0 ]; then
+            # Still not stopped, force kill it.
+            # But do a 'kill -3' first, which will output the list of threads still running
+            kill -3 ${pid}
+
+            # Allow time for thread list output
+            sleep 3
+
+            # Force kill
+            kill -9 ${pid}
+        fi
+    else
+        echo "PoolService is not running"
+    fi
+
+}
+
+start()
+{
+    pid=`pgrep -f Mining`
+    if [[ "$pid" != "" ]];then
+        echo "PoolService is still running. Stop and start the service."
+        return
+    else
+        cd $HOME/miningcore/build
+        dotnet Miningcore.dll -ac / > dotnetcore.log &
+        pid=`pgrep -f Mining`
+        if [[ "$pid" != "" ]];then
+            echo "PoolService is running"
+        else
+            echo "PoolService is not running"
+        fi
+    fi
+}
+
+restart()
+{
+    stop
+    start
+}
+
+#===============================================================================
+# main
+#===============================================================================
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop;
+        ;;
+    status)
+        status
+        ;;
+    restart)
+        restart
+        ;;
+    *)
+        echo "Usage: poolservice {start|stop|restart|status}"
+        exit 1
+esac
+
+exit $?

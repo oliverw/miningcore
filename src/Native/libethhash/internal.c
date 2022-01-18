@@ -191,6 +191,7 @@ static bool ethash_hash(
 	// pack hash and nonce together into first 40 bytes of s_mix
 	assert(sizeof(node) * 8 == 512);
 	node s_mix[MIX_NODES + 1];
+        assert(sizeof(s_mix[0].bytes) >= sizeof(header_hash));
 	memcpy(s_mix[0].bytes, &header_hash, 32);
 	fix_endian64(s_mix[0].double_words[4], nonce);
 
