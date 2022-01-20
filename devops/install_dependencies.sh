@@ -10,9 +10,9 @@ then
    sudo apt-get update; \
    sudo apt-get install -y apt-transport-https && \
    sudo apt-get update && \
-   sudo apt-get install -y dotnet-sdk-5.0
+   sudo apt-get install -y dotnet-sdk-6.0
 
-    echo "installed dotnet 5"
+    echo "installed dotnet 6"
 else
     echo "psql already installed."
 fi
