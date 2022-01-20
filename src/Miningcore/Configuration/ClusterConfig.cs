@@ -552,7 +552,7 @@ public class DatabaseConfig : AuthenticatedNetworkEndpointConfig
     /// </summary>
     public DatabasePoolConfig Pooling { get; set; }
 
-    // <summary>
+    /// <summary>
     /// Use SSL
     /// </summary>
     public bool Ssl { get; set; }
