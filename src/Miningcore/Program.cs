@@ -15,6 +15,7 @@ using McMaster.Extensions.CommandLineUtils;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -33,6 +34,7 @@ using Miningcore.Native;
 using Miningcore.Notifications;
 using Miningcore.Payments;
 using Miningcore.Persistence;
+using Miningcore.Persistence.Cosmos.Repositories;
 using Miningcore.Persistence.Dummy;
 using Miningcore.Persistence.Postgres;
 using Miningcore.Persistence.Postgres.Repositories;
@@ -801,6 +803,67 @@ public class Program : BackgroundService
             ConfigurePostgres(clusterConfig.Persistence.Postgres, builder);
         else
             ConfigureDummyPersistence(builder);
+
+        if(clusterConfig.Persistence?.Cosmos != null)
+        {
+            ConfigureCosmos(clusterConfig.Persistence.Cosmos, builder);
+        }
+    }
+
+    private static void ConfigureCosmos(CosmosConfig cosmosConfig, ContainerBuilder builder)
+    {
+        // validate config
+        if(string.IsNullOrEmpty(cosmosConfig.EndpointUrl))
+            throw new PoolStartupException("Cosmos configuration: invalid or missing 'endpoint url'");
+
+        if(string.IsNullOrEmpty(cosmosConfig.AuthorizationKey))
+            throw new PoolStartupException("Cosmos configuration: invalid or missing 'authorizationKey'");
+
+        if(string.IsNullOrEmpty(cosmosConfig.DatabaseId))
+            throw new PoolStartupException("Comos configuration: invalid or missing 'databaseId'");
+
+        logger.Info(() => $"Connecting to Cosmos Server {cosmosConfig.EndpointUrl}");
+
+        try 
+        {
+            var cosmosClientOptions = new CosmosClientOptions();
+
+            if (Enum.TryParse(cosmosConfig.ConsistencyLevel, out ConsistencyLevel consistencyLevel))
+                cosmosClientOptions.ConsistencyLevel = consistencyLevel;
+
+            if (Enum.TryParse(cosmosConfig.ConnectionMode, out ConnectionMode connectionMode))
+                cosmosClientOptions.ConnectionMode = connectionMode;
+
+            if (Double.TryParse(cosmosConfig.RequestTimeout, out Double requestTimeout))
+                cosmosClientOptions.RequestTimeout = TimeSpan.FromSeconds(requestTimeout);
+
+            if (int.TryParse(cosmosConfig.MaxRetryAttempt, out int maxRetryAttempt))
+                cosmosClientOptions.MaxRetryAttemptsOnRateLimitedRequests = maxRetryAttempt;
+
+            if (Double.TryParse(cosmosConfig.MaxRetryWaitTime, out Double maxRetryWaitTime))
+                cosmosClientOptions.MaxRetryWaitTimeOnRateLimitedRequests = TimeSpan.FromSeconds(maxRetryWaitTime);
+            
+            if (int.TryParse(cosmosConfig.MaxPoolSize, out int maxPoolSize))
+                cosmosClientOptions.MaxRequestsPerTcpConnection = maxPoolSize;
+
+            if (cosmosConfig.PreferredLocations != null && cosmosConfig.PreferredLocations.Count > 0)
+                cosmosClientOptions.ApplicationPreferredRegions = cosmosConfig.PreferredLocations;
+
+            var cosmos = new CosmosClient(cosmosConfig.EndpointUrl, cosmosConfig.AuthorizationKey, cosmosClientOptions);
+
+            // register CosmosClient
+            builder.RegisterInstance(cosmos).AsSelf().SingleInstance();
+
+            // register repositories
+            builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
+                .Where(t => t.Namespace.StartsWith(typeof(BalanceChangeRepository).Namespace))
+                .AsImplementedInterfaces()
+                .SingleInstance();
+        }
+        catch (Exception e)
+        {
+            throw new PoolStartupException($"Failed to connect to the cosmos database {e}");
+        }
     }
 
     private static void ConfigurePostgres(DatabaseConfig pgConfig, ContainerBuilder builder)
@@ -819,7 +882,13 @@ public class Program : BackgroundService
             throw new PoolStartupException("Postgres configuration: invalid or missing 'user'");
 
         // build connection string
-        var connectionString = $"Server={pgConfig.Host};Port={pgConfig.Port};Database={pgConfig.Database};User Id={pgConfig.User};Password={pgConfig.Password};CommandTimeout=900;";
+        var connectionString = $"Server={pgConfig.Host};Port={pgConfig.Port};Database={pgConfig.Database};User Id={pgConfig.User};Password={pgConfig.Password};Timeout=60;CommandTimeout=60;Keepalive=60;";
+
+        if(pgConfig.Pooling != null)
+            connectionString += $"Pooling=true;Minimum Pool Size={pgConfig.Pooling.MinPoolSize};Maximum Pool Size={(pgConfig.Pooling.MaxPoolSize > 0 ? pgConfig.Pooling.MaxPoolSize : 100)};";
+
+        if(pgConfig.Ssl)
+            connectionString += "SSL Mode=Require;Trust Server Certificate=True;Server Compatibility Mode=Redshift;";
 
         // register connection factory
         builder.RegisterInstance(new PgConnectionFactory(connectionString))

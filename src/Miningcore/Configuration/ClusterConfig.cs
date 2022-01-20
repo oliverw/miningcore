@@ -546,6 +546,43 @@ public class DaemonEndpointConfig : AuthenticatedNetworkEndpointConfig
 public class DatabaseConfig : AuthenticatedNetworkEndpointConfig
 {
     public string Database { get; set; }
+
+    /// <summary>
+    /// Since opening/closing physical connections is an expensive process, this considerably speeds up your application
+    /// </summary>
+    public DatabasePoolConfig Pooling { get; set; }
+
+    // <summary>
+    /// Use SSL
+    /// </summary>
+    public bool Ssl { get; set; }
+}
+
+public class DatabasePoolConfig
+{
+    /// <summary>
+    /// The maximum connection pool size.
+    /// </summary>
+    public int MaxPoolSize { get; set; }
+    /// <summary>
+    /// The minimum  connection pool size.
+    /// </summary>
+    public int MinPoolSize { get; set; }
+}
+
+[UsedImplicitly]
+public class CosmosConfig
+{
+    public string EndpointUrl { get; set; }
+    public string AuthorizationKey { get; set; }
+    public string DatabaseId { get; set; }
+    public string MaxRetryAttempt { get; set; }
+    public string MaxRetryWaitTime { get; set; }
+    public string RequestTimeout { get; set; }
+    public string ConnectionMode { get; set; }
+    public string ConsistencyLevel { get; set; }
+    public string MaxPoolSize { get; set; }
+    public List<string> PreferredLocations { get; set; }
 }
 
 [UsedImplicitly]
@@ -696,6 +733,7 @@ public partial class ClusterPaymentProcessingConfig
 public partial class PersistenceConfig
 {
     public DatabaseConfig Postgres { get; set; }
+    public CosmosConfig Cosmos { get; set; }
 }
 
 public class RewardRecipient

@@ -12,4 +12,9 @@ public class Balance
 
     public DateTime Created { get; set; }
     public DateTime Updated { get; set; }
+
+    /// <summary>
+    /// Last paid date used to decide on gas price
+    /// </summary>
+    public DateTime? PaidDate { get; set; }
 }
