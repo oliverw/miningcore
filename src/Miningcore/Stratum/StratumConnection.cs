@@ -340,11 +340,12 @@ public class StratumConnection
         await using var stream = rmsm.GetStream(nameof(StratumConnection)) as RecyclableMemoryStream;
 
         // serialize to RecyclableMemoryStream
-        await using (var writer = new StreamWriter(stream, StratumConstants.Encoding, -1, true))
+        await using (var writer = new StreamWriter(stream!, StratumConstants.Encoding, -1, true))
         {
             serializer.Serialize(writer, msg);
         }
 
+        // ReSharper disable once AccessToDisposedClosure
         logger.Debug(() => $"[{ConnectionId}] Sending: {StratumConstants.Encoding.GetString(stream.GetReadOnlySequence())}");
 
         stream.WriteByte((byte) '\n'); // terminator
