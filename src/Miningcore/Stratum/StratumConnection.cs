@@ -337,26 +337,25 @@ public class StratumConnection
 
     private async Task SendMessage(object msg, CancellationToken ct)
     {
-        using(var ctsTimeout = CancellationTokenSource.CreateLinkedTokenSource(ct))
+        await using var stream = rmsm.GetStream(nameof(StratumConnection)) as RecyclableMemoryStream;
+
+        // serialize to RecyclableMemoryStream
+        await using (var writer = new StreamWriter(stream, StratumConstants.Encoding, -1, true))
         {
-            ctsTimeout.CancelAfter(sendTimeout);
-
-            await using(var stream = rmsm.GetStream(nameof(StratumConnection)) as RecyclableMemoryStream)
-            {
-                await using (var writer = new StreamWriter(stream, StratumConstants.Encoding, -1, true))
-                {
-                    serializer.Serialize(writer, msg);
-                }
-
-                logger.Debug(() => $"[{ConnectionId}] Sending: {StratumConstants.Encoding.GetString(stream.GetReadOnlySequence())}");
-
-                stream.WriteByte((byte) '\n'); // terminator
-                stream.Seek(0, SeekOrigin.Begin); // rewind for copy
-
-                await stream.CopyToAsync(networkStream, ctsTimeout.Token);
-                await networkStream.FlushAsync(ctsTimeout.Token);
-            }
+            serializer.Serialize(writer, msg);
         }
+
+        logger.Debug(() => $"[{ConnectionId}] Sending: {StratumConstants.Encoding.GetString(stream.GetReadOnlySequence())}");
+
+        stream.WriteByte((byte) '\n'); // terminator
+        stream.Seek(0, SeekOrigin.Begin); // rewind for copy
+
+        // copy to network
+        using var ctsTimeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        ctsTimeout.CancelAfter(sendTimeout);
+
+        await stream.CopyToAsync(networkStream, ctsTimeout.Token);
+        await networkStream.FlushAsync(ctsTimeout.Token);
     }
 
     private async Task ProcessRequestAsync(
