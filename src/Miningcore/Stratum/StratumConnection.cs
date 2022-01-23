@@ -9,7 +9,9 @@ using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using System.Threading.Tasks.Dataflow;
+using Microsoft.IO;
 using Miningcore.Configuration;
 using Miningcore.Extensions;
 using Miningcore.JsonRpc;
@@ -25,9 +27,10 @@ namespace Miningcore.Stratum;
 
 public class StratumConnection
 {
-    public StratumConnection(ILogger logger, IMasterClock clock, string connectionId)
+    public StratumConnection(ILogger logger, RecyclableMemoryStreamManager rmsm, IMasterClock clock, string connectionId)
     {
         this.logger = logger;
+        this.rmsm = rmsm;
 
         receivePipe = new Pipe(PipeOptions.Default);
 
@@ -42,10 +45,10 @@ public class StratumConnection
     }
 
     private readonly ILogger logger;
+    private readonly RecyclableMemoryStreamManager rmsm;
     private readonly IMasterClock clock;
 
     private const int MaxInboundRequestLength = 0x8000;
-    private const int MaxOutboundRequestLength = 0x8000;
 
     private Stream networkStream;
     private readonly Pipe receivePipe;
@@ -334,41 +337,26 @@ public class StratumConnection
 
     private async Task SendMessage(object msg, CancellationToken ct)
     {
-        var buffer = ArrayPool<byte>.Shared.Rent(MaxOutboundRequestLength);
-
-        try
+        using(var ctsTimeout = CancellationTokenSource.CreateLinkedTokenSource(ct))
         {
-            using(var ctsTimeout = CancellationTokenSource.CreateLinkedTokenSource(ct))
+            ctsTimeout.CancelAfter(sendTimeout);
+
+            await using(var stream = rmsm.GetStream(nameof(StratumConnection)) as RecyclableMemoryStream)
             {
-                ctsTimeout.CancelAfter(sendTimeout);
+                await using (var writer = new StreamWriter(stream, StratumConstants.Encoding, -1, true))
+                {
+                    serializer.Serialize(writer, msg);
+                }
 
-                var cb = SerializeMessage(msg, buffer);
+                logger.Debug(() => $"[{ConnectionId}] Sending: {StratumConstants.Encoding.GetString(stream.GetReadOnlySequence())}");
 
-                logger.Debug(() => $"[{ConnectionId}] Sending: {StratumConstants.Encoding.GetString(buffer.AsSpan(0, cb))}");
+                stream.WriteByte((byte) '\n'); // terminator
+                stream.Seek(0, SeekOrigin.Begin); // rewind for copy
 
-                await networkStream.WriteAsync(buffer, 0, cb, ctsTimeout.Token);
+                await stream.CopyToAsync(networkStream, ctsTimeout.Token);
                 await networkStream.FlushAsync(ctsTimeout.Token);
             }
         }
-
-        finally
-        {
-            ArrayPool<byte>.Shared.Return(buffer);
-        }
-    }
-
-    private static int SerializeMessage(object msg, byte[] buffer)
-    {
-        var stream = new MemoryStream(buffer, true);
-
-        using (var writer = new StreamWriter(stream, StratumConstants.Encoding, MaxOutboundRequestLength, true))
-        {
-            serializer.Serialize(writer, msg);
-        }
-
-        stream.WriteByte((byte) '\n'); // terminator
-
-        return (int) stream.Position;
     }
 
     private async Task ProcessRequestAsync(

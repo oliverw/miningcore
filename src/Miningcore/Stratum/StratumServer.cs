@@ -9,6 +9,7 @@ using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Autofac;
+using Microsoft.IO;
 using Miningcore.Banning;
 using Miningcore.Configuration;
 using Miningcore.Extensions;
@@ -29,14 +30,17 @@ public abstract class StratumServer
     protected StratumServer(
         IComponentContext ctx,
         IMessageBus messageBus,
+        RecyclableMemoryStreamManager rmsm,
         IMasterClock clock)
     {
         Contract.RequiresNonNull(ctx, nameof(ctx));
         Contract.RequiresNonNull(messageBus, nameof(messageBus));
+        Contract.RequiresNonNull(rmsm, nameof(rmsm));
         Contract.RequiresNonNull(clock, nameof(clock));
 
         this.ctx = ctx;
         this.messageBus = messageBus;
+        this.rmsm = rmsm;
         this.clock = clock;
     }
 
@@ -75,6 +79,7 @@ public abstract class StratumServer
 
     protected readonly IComponentContext ctx;
     protected readonly IMessageBus messageBus;
+    private readonly RecyclableMemoryStreamManager rmsm;
     protected readonly IMasterClock clock;
     protected ClusterConfig clusterConfig;
     protected PoolConfig poolConfig;
@@ -149,7 +154,7 @@ public abstract class StratumServer
                 return;
 
             // init connection
-            var connection = new StratumConnection(logger, clock, CorrelationIdGenerator.GetNextId());
+            var connection = new StratumConnection(logger, rmsm, clock, CorrelationIdGenerator.GetNextId());
 
             logger.Info(() => $"[{connection.ConnectionId}] Accepting connection from {remoteEndpoint.Address}:{remoteEndpoint.Port} ...");
 

@@ -49,6 +49,7 @@
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
+        <PackageReference Include="Microsoft.IO.RecyclableMemoryStream" Version="2.2.0" />
         <PackageReference Include="Newtonsoft.Json.Schema" Version="3.0.14" />
         <PackageReference Include="Npgsql" Version="6.0.2" />
         <PackageReference Include="NSwag.AspNetCore" Version="13.15.5" />

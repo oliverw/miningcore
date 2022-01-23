@@ -282,7 +282,7 @@ public class RpcClient
                                 // stream response
                                 while(!cts.IsCancellationRequested && client.State == WebSocketState.Open)
                                 {
-                                    var stream = new MemoryStream();
+                                    await using var stream = new MemoryStream();
 
                                     do
                                     {

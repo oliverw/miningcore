@@ -6,6 +6,7 @@ using System.Reactive.Linq;
 using System.Text.RegularExpressions;
 using Autofac;
 using AutoMapper;
+using Microsoft.IO;
 using Miningcore.Banning;
 using Miningcore.Blockchain;
 using Miningcore.Configuration;
@@ -36,7 +37,8 @@ public abstract class PoolBase : StratumServer,
         IMapper mapper,
         IMasterClock clock,
         IMessageBus messageBus,
-        NicehashService nicehashService) : base(ctx, messageBus, clock)
+        RecyclableMemoryStreamManager rmsm,
+        NicehashService nicehashService) : base(ctx, messageBus, rmsm, clock)
     {
         Contract.RequiresNonNull(ctx, nameof(ctx));
         Contract.RequiresNonNull(serializerSettings, nameof(serializerSettings));
