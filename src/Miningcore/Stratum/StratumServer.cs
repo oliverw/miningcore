@@ -320,7 +320,7 @@ public abstract class StratumServer
         return false;
     }
 
-    protected IEnumerable<Task> ForEachConnection(Func<StratumConnection, Task> func)
+    protected IEnumerable<Task> TaskForEach(Func<StratumConnection, Task> func)
     {
         var tmp = connections.Values.ToArray();
 

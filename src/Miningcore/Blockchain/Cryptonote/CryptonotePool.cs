@@ -286,7 +286,7 @@ public class CryptonotePool : PoolBase
     {
         logger.Info(() => "Broadcasting job");
 
-        return Guard(()=> Task.WhenAll(ForEachConnection(async connection =>
+        return Guard(Task.WhenAll(TaskForEach(async connection =>
         {
             if(!connection.IsAlive)
                 return;

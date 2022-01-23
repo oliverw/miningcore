@@ -33,7 +33,6 @@ public class StratumConnection
 
         sendQueue = new BufferBlock<object>(new DataflowBlockOptions
         {
-            BoundedCapacity = SendQueueCapacity,
             EnsureOrdered = true,
         });
 
@@ -60,8 +59,8 @@ public class StratumConnection
         ContractResolver = new CamelCasePropertyNamesContractResolver()
     };
 
-    private const int SendQueueCapacity = 32;
-    private static readonly TimeSpan sendTimeout = TimeSpan.FromMilliseconds(10000);
+    private const int SendQueueCapacity = 16;
+    private static readonly TimeSpan sendTimeout = TimeSpan.FromMilliseconds(5000);
 
     #region API-Surface
 
@@ -177,27 +176,27 @@ public class StratumConnection
         return (T) context;
     }
 
-    public ValueTask RespondAsync<T>(T payload, object id)
+    public Task RespondAsync<T>(T payload, object id)
     {
         return RespondAsync(new JsonRpcResponse<T>(payload, id));
     }
 
-    public ValueTask RespondErrorAsync(StratumError code, string message, object id, object result = null)
+    public Task RespondErrorAsync(StratumError code, string message, object id, object result = null)
     {
         return RespondAsync(new JsonRpcResponse(new JsonRpcError((int) code, message, null), id, result));
     }
 
-    public ValueTask RespondAsync<T>(JsonRpcResponse<T> response)
+    public Task RespondAsync<T>(JsonRpcResponse<T> response)
     {
         return SendAsync(response);
     }
 
-    public ValueTask NotifyAsync<T>(string method, T payload)
+    public Task NotifyAsync<T>(string method, T payload)
     {
         return NotifyAsync(new JsonRpcRequest<T>(method, payload, null));
     }
 
-    public ValueTask NotifyAsync<T>(JsonRpcRequest<T> request)
+    public Task NotifyAsync<T>(JsonRpcRequest<T> request)
     {
         return SendAsync(request);
     }
@@ -209,20 +208,14 @@ public class StratumConnection
 
     #endregion // API-Surface
 
-    private async ValueTask SendAsync<T>(T payload)
+    private Task SendAsync<T>(T payload)
     {
         Contract.RequiresNonNull(payload, nameof(payload));
 
-        using(var ctsTimeout = new CancellationTokenSource())
-        {
-            ctsTimeout.CancelAfter(sendTimeout);
+        if(sendQueue.Count >= SendQueueCapacity)
+            throw new IOException($"Send-queue overflow at {sendQueue.Count} of {SendQueueCapacity} items");
 
-            if(!await sendQueue.SendAsync(payload, ctsTimeout.Token))
-            {
-                // this will force a disconnect down the line
-                throw new IOException($"Send queue stalled at {sendQueue.Count} of {SendQueueCapacity} items");
-            }
-        }
+        return sendQueue.SendAsync(payload);
     }
 
     private async Task FillReceivePipeAsync(CancellationToken ct)
@@ -330,6 +323,9 @@ public class StratumConnection
     {
         while(!ct.IsCancellationRequested)
         {
+            if(sendQueue.Count >= SendQueueCapacity)
+                throw new IOException($"Send-queue overflow at {sendQueue.Count} of {SendQueueCapacity} items");
+
             var msg = await sendQueue.ReceiveAsync(ct);
 
             await SendMessage(msg, ct);
