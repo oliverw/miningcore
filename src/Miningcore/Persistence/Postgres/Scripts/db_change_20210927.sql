@@ -1,0 +1,10 @@
+ALTER TABLE shares
+ADD COLUMN accepted TIMESTAMPTZ NOT NULL;
+
+CREATE INDEX IDX_SHARES_POOL_ACCEPTED ON shares(poolid, accepted); 
+CREATE INDEX IDX_SHARES_POOL_MINER_ACCEPTED ON shares(poolid, miner, accepted);
+
+ALTER TABLE shares
+ADD COLUMN processed TIMESTAMPTZ NULL;
+
+CREATE INDEX IDX_SHARES_POOL_PROCESSED_ACCEPTED ON shares(poolid, processed, accepted);

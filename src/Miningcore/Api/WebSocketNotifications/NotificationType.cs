@@ -5,6 +5,7 @@ public enum WsNotificationType
     Greeting,
     BlockFound,
     NewChainHeight,
+    NetworkBlock,
     Payment,
     BlockUnlocked,
     BlockUnlockProgress,

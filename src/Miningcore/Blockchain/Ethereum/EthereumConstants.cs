@@ -87,4 +87,5 @@ public static class EthCommands
     public const string UnlockAccount = "personal_unlockAccount";
     public const string Subscribe = "eth_subscribe";
     public const string MaxPriorityFeePerGas = "eth_maxPriorityFeePerGas";
+    public const string ChainId = "eth_chainId";
 }

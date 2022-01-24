@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Data;
 using System.Numerics;
 using Autofac;
@@ -17,6 +18,8 @@ using Miningcore.Persistence.Repositories;
 using Miningcore.Rpc;
 using Miningcore.Time;
 using Miningcore.Util;
+using Nethereum.Web3;
+using Nethereum.Web3.Accounts;
 using Newtonsoft.Json;
 using Block = Miningcore.Persistence.Model.Block;
 using Contract = Miningcore.Contracts.Contract;
@@ -47,13 +50,18 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
         this.ctx = ctx;
     }
 
+    private const decimal MaxPayout = 0.1m; // ethereum
+
     private readonly IComponentContext ctx;
     private RpcClient rpcClient;
     private EthereumNetworkType networkType;
     private GethChainType chainType;
+    private BigInteger chainId;
     private const int BlockSearchOffset = 50;
     private EthereumPoolConfigExtra extraPoolConfig;
     private EthereumPoolPaymentProcessingConfigExtra extraConfig;
+    private IWeb3 web3Connection;
+    private static ConcurrentDictionary<string, string> transactionHashes = new();
 
     protected override string LogCategory => "Ethereum Payout Handler";
 
@@ -71,9 +79,25 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
         // configure standard daemon
         var jsonSerializerSettings = ctx.Resolve<JsonSerializerSettings>();
 
-        rpcClient = new RpcClient(pc.Daemons.First(x => string.IsNullOrEmpty(x.Category)), jsonSerializerSettings, messageBus, pc.Id);
+        var daemonEndpointConfig = pc.Daemons.First(x => string.IsNullOrEmpty(x.Category));
+        rpcClient = new RpcClient(daemonEndpointConfig, jsonSerializerSettings, messageBus, pc.Id);
 
         await DetectChainAsync(ct);
+
+        // if pKey is configured - setup web3 connection for self managed wallet payouts
+        InitializeWeb3(daemonEndpointConfig);
+    }
+
+    private void InitializeWeb3(DaemonEndpointConfig daemonConfig)
+    {
+        if(string.IsNullOrEmpty(extraConfig.PrivateKey)) return;
+
+        var txEndpoint = daemonConfig;
+        var protocol = (txEndpoint.Ssl || txEndpoint.Http2) ? "https" : "http";
+        var txEndpointUrl = $"{protocol}://{txEndpoint.Host}:{txEndpoint.Port}";
+
+        var account = chainId != 0 ? new Account(extraConfig.PrivateKey, chainId) : new Account(extraConfig.PrivateKey);
+        web3Connection = new Web3(account, txEndpointUrl);
     }
 
     public async Task<Block[]> ClassifyBlocksAsync(IMiningPool pool, Block[] blocks, CancellationToken ct)
@@ -277,6 +301,40 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
             NotifyPayoutSuccess(poolConfig.Id, balances, txHashes.ToArray(), null);
     }
 
+    public async Task<PayoutReceipt> PayoutAsync(Balance balance)
+    {
+        if(balance.Amount.CompareTo(MaxPayout) > 0)
+        {
+            logger.Error(() => $"[{LogCategory}] Aborting payout of more than maximum in a single transaction amount: {balance.Amount} wallet {balance.Address}");
+            throw new Exception("Aborting payout over maximum amount");
+        }
+
+        PayoutReceipt receipt;
+
+        // If web3Connection was created, payout from self managed wallet
+        if(web3Connection != null)
+        {
+            receipt = await PayoutWebAsync(balance);
+        }
+        else // else payout from daemon managed wallet
+        {
+            if(!string.IsNullOrEmpty(extraConfig.PrivateKey))
+            {
+                logger.Error(() => $"[{LogCategory}] Web3 is configured, but web3Connection is null!");
+                throw new Exception($"Unable to process payouts because web3 is null");
+            }
+
+            receipt = new PayoutReceipt { Id = await PayoutAsync(balance, CancellationToken.None) };
+        }
+
+        if(receipt != null)
+        {
+            logger.Info(() => $"[{LogCategory}] Payout transaction id: {receipt.Id}");
+        }
+
+        return receipt;
+    }
+
     #endregion // IPayoutHandler
 
     private async Task<DaemonResponses.Block[]> FetchBlocks(Dictionary<long, DaemonResponses.Block> blockCache, CancellationToken ct, params long[] blockHeights)
@@ -364,6 +422,7 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
         var commands = new[]
         {
             new RpcRequest(EC.GetNetVersion),
+            new RpcRequest(EC.ChainId),
         };
 
         var results = await rpcClient.ExecuteBatchAsync(logger, ct, commands);
@@ -380,8 +439,9 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
         // convert network
         var netVersion = results[0].Response.ToObject<string>();
         var gethChain = extraPoolConfig?.ChainTypeOverride ?? "Ethereum";
+        var chainIdResult = results[1]?.Response?.ToObject<string>();
 
-        EthereumUtils.DetectNetworkAndChain(netVersion, gethChain, out networkType, out chainType);
+        EthereumUtils.DetectNetworkAndChain(netVersion, gethChain, chainIdResult ?? "0", out networkType, out chainType, out chainId);
     }
 
     private async Task<string> PayoutAsync(Balance balance, CancellationToken ct)
@@ -422,5 +482,109 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
 
         // done
         return txHash;
+    }
+
+    private async Task<PayoutReceipt> PayoutWebAsync(Balance balance)
+    {
+        var txCts = new CancellationTokenSource();
+        var txHash = string.Empty;
+        try
+        {
+            logger.Info($"[{LogCategory}] Web3Tx start. addr={balance.Address},amt={balance.Amount}");
+
+            var txService = web3Connection.Eth;
+            if(txService != null)
+            {
+                BigInteger? nonce = null;
+                // Use existing nonce to avoid duplicate transaction
+                Nethereum.RPC.Eth.DTOs.TransactionReceipt txReceipt;
+                if(transactionHashes.TryGetValue(balance.Address, out var prevTxHash))
+                {
+                    // Check if existing transaction was succeeded
+                    txReceipt = await TelemetryUtil.TrackDependency(() => txService.Transactions.GetTransactionReceipt.SendRequestAsync(prevTxHash),
+                        DependencyType.Web3, "GetTransactionReceipt", $"addr={balance.Address},amt={balance.Amount.ToStr()},txhash={prevTxHash}");
+
+                    if(txReceipt != null)
+                    {
+                        if(txReceipt.HasErrors().GetValueOrDefault())
+                        {
+                            logger.Error($"[{LogCategory}] Web3Tx failed without a receipt. addr={balance.Address},amt={balance.Amount.ToStr()},status={txReceipt.Status}");
+                            return null;
+                        }
+                        logger.Info($"[{LogCategory}] Web3Tx receipt found for existing tx. addr={balance.Address},amt={balance.Amount.ToStr()},txhash={prevTxHash},gasfee={txReceipt.EffectiveGasPrice}");
+
+                        transactionHashes.TryRemove(balance.Address, out _);
+
+                        await PersistPaymentsAsync(new[] { balance }, txReceipt.TransactionHash);
+
+                        return new PayoutReceipt
+                        {
+                            Id = txReceipt.TransactionHash,
+                            Fees = Web3.Convert.FromWei(txReceipt.EffectiveGasPrice),
+                            Fees2 = Web3.Convert.FromWei(txReceipt.GasUsed)
+                        };
+                    }
+                    logger.Info($"[{LogCategory}] Web3Tx fetching nonce. addr={balance.Address},amt={balance.Amount},txhash={prevTxHash}");
+                    // Get nonce for existing transaction
+                    var prevTx = await TelemetryUtil.TrackDependency(() => txService.Transactions.GetTransactionByHash.SendRequestAsync(prevTxHash),
+                        DependencyType.Web3, "GetTransactionByHash", $"addr={balance.Address},amt={balance.Amount.ToStr()},txhash={prevTxHash}");
+                    nonce = prevTx?.Nonce?.Value;
+                    logger.Info($"[{LogCategory}] Web3Tx receipt not found for existing tx. addr={balance.Address},amt={balance.Amount},txhash={prevTxHash},nonce={nonce}");
+                }
+
+                // Queue transaction
+                txHash = await TelemetryUtil.TrackDependency(() => txService.GetEtherTransferService().TransferEtherAsync(balance.Address, balance.Amount, nonce: nonce),
+                    DependencyType.Web3, "TransferEtherAsync", $"addr={balance.Address},amt={balance.Amount.ToStr()},nonce={nonce}");
+
+                if(string.IsNullOrEmpty(txHash) || EthereumConstants.ZeroHashPattern.IsMatch(txHash))
+                {
+                    logger.Error($"[{LogCategory}] Web3Tx failed without a valid transaction hash. addr={balance.Address},amt={balance.Amount.ToStr()}");
+                    return null;
+                }
+                logger.Info($"[{LogCategory}] Web3Tx queued. addr={balance.Address},amt={balance.Amount.ToStr()},txhash={txHash}");
+
+                // Wait for transaction receipt
+                txCts.CancelAfter(TimeSpan.FromMinutes(5)); // Timeout tx after 5min
+                txReceipt = await TelemetryUtil.TrackDependency(() => txService.TransactionManager.TransactionReceiptService.PollForReceiptAsync(txHash, txCts),
+                    DependencyType.Web3, "PollForReceiptAsync", $"addr={balance.Address},amt={balance.Amount.ToStr()},txhash={txHash}");
+                if(txReceipt.HasErrors().GetValueOrDefault())
+                {
+                    logger.Error($"[{LogCategory}] Web3Tx failed without a receipt. addr={balance.Address},amt={balance.Amount.ToStr()},status={txReceipt.Status},txhash={txHash}");
+                    return null;
+                }
+                logger.Info($"[{LogCategory}] Web3Tx receipt received. addr={balance.Address},amt={balance.Amount},txhash={txHash},gasfee={txReceipt.EffectiveGasPrice}");
+                // Release address from pending list if successfully paid out
+                if(transactionHashes.ContainsKey(balance.Address)) transactionHashes.TryRemove(balance.Address, out _);
+
+                await PersistPaymentsAsync(new[] { balance }, txReceipt.TransactionHash);
+
+                return new PayoutReceipt
+                {
+                    Id = txReceipt.TransactionHash,
+                    Fees = Web3.Convert.FromWei(txReceipt.EffectiveGasPrice),
+                    Fees2 = Web3.Convert.FromWei(txReceipt.GasUsed)
+                };
+            }
+
+            logger.Warn($"[{LogCategory}] Web3Tx GetEtherTransferService is null. addr={balance.Address}, amt={balance.Amount}");
+        }
+        catch(OperationCanceledException)
+        {
+            if(!string.IsNullOrEmpty(txHash))
+            {
+                transactionHashes.AddOrUpdate(balance.Address, txHash, (_, _) => txHash);
+            }
+            logger.Warn($"[{LogCategory}] Web3Tx transaction timed out. addr={balance.Address},amt={balance.Amount.ToStr()},txhash={txHash},pendingTxs={transactionHashes.Count}");
+        }
+        catch(Nethereum.JsonRpc.Client.RpcResponseException ex)
+        {
+            logger.Error(ex, $"[{LogCategory}] Web3Tx failed. {ex.Message}");
+        }
+        finally
+        {
+            txCts.Dispose();
+        }
+
+        return null;
     }
 }

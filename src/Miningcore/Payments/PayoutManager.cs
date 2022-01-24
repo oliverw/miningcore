@@ -13,6 +13,7 @@ using Miningcore.Notifications.Messages;
 using Miningcore.Persistence;
 using Miningcore.Persistence.Model;
 using Miningcore.Persistence.Repositories;
+using Miningcore.Util;
 using NLog;
 using Contract = Miningcore.Contracts.Contract;
 
@@ -281,6 +282,40 @@ public class PayoutManager : BackgroundService
         finally
         {
             disposables.Dispose();
+        }
+    }
+
+    public async Task<string> PayoutSingleBalanceAsync(IMiningPool pool, string miner)
+    {
+        var success = true;
+        var timer = System.Diagnostics.Stopwatch.StartNew();
+        decimal amount = 0;
+        try
+        {
+            var family = HandleFamilyOverride(pool.Config.Template.Family, pool.Config);
+
+            // resolve payout handler
+            var handlerImpl = ctx.Resolve<IEnumerable<Meta<Lazy<IPayoutHandler, CoinFamilyAttribute>>>>()
+                .First(x => x.Value.Metadata.SupportedFamilies.Contains(family)).Value;
+
+            var handler = handlerImpl.Value;
+            await handler.ConfigureAsync(clusterConfig, pool.Config, CancellationToken.None);
+
+            var balance = await cf.Run(con => balanceRepo.GetBalanceDataWithPaidDateAsync(con, pool.Config.Id, miner));
+            amount = balance.Amount;
+
+            // payout a single balance
+            return (await handler.PayoutAsync(balance))?.Id;
+        }
+        catch(Exception ex)
+        {
+            logger.Error($"Failed to payout {miner}: {ex}");
+            success = false;
+            throw;
+        }
+        finally
+        {
+            TelemetryUtil.TrackMetric("FORCED_PAYOUT", "success", "duration", (double) amount, success.ToString(), timer.ElapsedMilliseconds.ToString());
         }
     }
 }

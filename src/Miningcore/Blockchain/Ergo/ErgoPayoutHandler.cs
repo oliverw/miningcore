@@ -387,5 +387,10 @@ public class ErgoPayoutHandler : PayoutHandlerBase,
         }
     }
 
+    public Task<PayoutReceipt> PayoutAsync(Balance balance)
+    {
+        throw new NotImplementedException();
+    }
+
     #endregion // IPayoutHandler
 }

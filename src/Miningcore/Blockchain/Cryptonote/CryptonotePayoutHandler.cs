@@ -561,5 +561,10 @@ public class CryptonotePayoutHandler : PayoutHandlerBase,
         await rpcClientWallet.ExecuteAsync<JToken>(logger, CryptonoteWalletCommands.Store, ct);
     }
 
+    public Task<PayoutReceipt> PayoutAsync(Balance balance)
+    {
+        throw new NotImplementedException();
+    }
+
     #endregion // IPayoutHandler
 }

@@ -1,7 +1,12 @@
 using Autofac;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
+using Miningcore.Api.Requests;
+using Miningcore.Api.Responses;
 using Miningcore.Extensions;
 using Miningcore.Mining;
+using Miningcore.Payments;
 using Miningcore.Persistence.Repositories;
 using Miningcore.Util;
 using System.Collections.Concurrent;
@@ -10,6 +15,7 @@ using NLog;
 
 namespace Miningcore.Api.Controllers;
 
+[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 [Route("api/admin")]
 [ApiController]
 public class AdminApiController : ApiControllerBase
@@ -21,12 +27,15 @@ public class AdminApiController : ApiControllerBase
         pools = ctx.Resolve<ConcurrentDictionary<string, IMiningPool>>();
         paymentsRepo = ctx.Resolve<IPaymentRepository>();
         balanceRepo = ctx.Resolve<IBalanceRepository>();
+        payoutManager = ctx.Resolve<PayoutManager>();
+
     }
 
     private readonly IPaymentRepository paymentsRepo;
     private readonly IBalanceRepository balanceRepo;
     private readonly IMinerRepository minerRepo;
     private readonly ConcurrentDictionary<string, IMiningPool> pools;
+    private readonly PayoutManager payoutManager;
 
     private readonly Responses.AdminGcStats gcStats;
 
@@ -106,6 +115,63 @@ public class AdminApiController : ApiControllerBase
         logger.Info(()=> $"Updated settings for pool {pool.Id}, miner {address}");
 
         return mapper.Map<Responses.MinerSettings>(result);
+    }
+
+    [HttpPost("pools/{poolId}/miners/{address}/forcePayout")]
+    public async Task<string> ForcePayout(string poolId, string address)
+    {
+        logger.Info($"Forcing payout for {address}");
+        try
+        {
+            if(string.IsNullOrEmpty(poolId))
+            {
+                throw new ApiException($"Invalid pool id", HttpStatusCode.NotFound);
+            }
+
+            // Get the IMiningPool by Id
+            IMiningPool pool;
+            pools.TryGetValue(poolId, out pool);
+
+            if (pool == null)
+            {
+                throw new ApiException($"Pool {poolId} is not known", HttpStatusCode.NotFound);
+            }
+
+            return await payoutManager.PayoutSingleBalanceAsync(pool, address);
+        }
+        catch(Exception ex)
+        {
+            //rethrow as ApiException to be handled by ApiExceptionHandlingMiddleware
+            throw new ApiException(ex.Message, HttpStatusCode.InternalServerError);
+        }
+    }
+
+    [HttpPost("subtractBalance")]
+    public async Task<SubtractBalanceResponse> SubtractBalance(SubtractBalanceRequest subtractBalanceRequest)
+    {
+        logger.Info($"Subtracting balance for {subtractBalanceRequest.Address}. PoolId: {subtractBalanceRequest.PoolId} Amount: {subtractBalanceRequest.Address}");
+
+        if (subtractBalanceRequest.Amount <= 0)
+        {
+            logger.Error($"Invalid subtractBalance request. Amount is less than or equal to 0 - {subtractBalanceRequest.Amount}");
+            throw new ApiException($"Invalid subtractBalance request. Amount is less than or equal to 0 - {subtractBalanceRequest.Amount}", HttpStatusCode.BadRequest);
+        }
+
+        var oldBalance = await cf.Run(con => balanceRepo.GetBalanceDataAsync(con, subtractBalanceRequest.PoolId, subtractBalanceRequest.Address));
+
+        if (oldBalance.Amount < subtractBalanceRequest.Amount)
+        {
+            logger.Error($"Invalid subtractBalance request. Current balance is less than amount. Current balance: {oldBalance.Amount}. Amount: {subtractBalanceRequest.Amount}");
+            throw new ApiException($"Invalid subtractBalance request. Current balance is less than amount. Current balance: {oldBalance.Amount}. Amount: {subtractBalanceRequest.Amount}", HttpStatusCode.BadRequest);
+        }
+
+        await cf.Run(con => balanceRepo.AddAmountAsync(con, null, subtractBalanceRequest.PoolId, subtractBalanceRequest.Address, -subtractBalanceRequest.Amount, "Subtract balance after forced payout"));
+
+        var newBalance = await cf.Run(con => balanceRepo.GetBalanceDataAsync(con, subtractBalanceRequest.PoolId, subtractBalanceRequest.Address));
+
+        logger.Info($"Successfully subtracted balance for {subtractBalanceRequest.Address}. Old Balance: {oldBalance.Amount}. New Balance: {newBalance.Amount}");
+
+        return new SubtractBalanceResponse { OldBalance = oldBalance, NewBalance = newBalance };
     }
 
     #endregion // Actions

@@ -48,7 +48,7 @@
   max_background_flushes=-1
   max_log_file_size=0
   max_file_opening_threads=16
-  max_open_files=64
+  max_open_files=512
   table_cache_numshardbits=6
   max_write_batch_group_size_bytes=1048576
   bytes_per_sync=1048576
@@ -166,7 +166,7 @@
 [CFOptions "col0"]
   level0_file_num_compaction_trigger=2
   merge_operator=nullptr
-  max_bytes_for_level_base=134217728
+  max_bytes_for_level_base=268435456
   report_bg_io_stats=false
   max_bytes_for_level_multiplier=10.000000
   disable_auto_compactions=false
@@ -195,12 +195,12 @@
   target_file_size_multiplier=1
   table_factory=BlockBasedTable
   prefix_extractor=nullptr
-  arena_block_size=4194304
+  arena_block_size=8388608
   inplace_update_num_locks=10000
   max_successive_merges=0
   memtable_huge_page_size=0
   compaction_style=kCompactionStyleLevel
-  write_buffer_size=33554432
+  write_buffer_size=67108864
   memtable_whole_key_filtering=false
   max_bytes_for_level_multiplier_additional=1:1:1:1:1:1:1
   compression=kSnappyCompression
@@ -246,7 +246,7 @@
 [CFOptions "col1"]
   level0_file_num_compaction_trigger=2
   merge_operator=nullptr
-  max_bytes_for_level_base=134217728
+  max_bytes_for_level_base=16777216
   report_bg_io_stats=false
   max_bytes_for_level_multiplier=10.000000
   disable_auto_compactions=false
@@ -275,12 +275,12 @@
   target_file_size_multiplier=1
   table_factory=BlockBasedTable
   prefix_extractor=nullptr
-  arena_block_size=4194304
+  arena_block_size=524288
   inplace_update_num_locks=10000
   max_successive_merges=0
   memtable_huge_page_size=0
   compaction_style=kCompactionStyleLevel
-  write_buffer_size=33554432
+  write_buffer_size=4194304
   memtable_whole_key_filtering=false
   max_bytes_for_level_multiplier_additional=1:1:1:1:1:1:1
   compression=kSnappyCompression
@@ -326,7 +326,7 @@
 [CFOptions "col2"]
   level0_file_num_compaction_trigger=2
   merge_operator=nullptr
-  max_bytes_for_level_base=134217728
+  max_bytes_for_level_base=16777216
   report_bg_io_stats=false
   max_bytes_for_level_multiplier=10.000000
   disable_auto_compactions=false
@@ -355,12 +355,12 @@
   target_file_size_multiplier=1
   table_factory=BlockBasedTable
   prefix_extractor=nullptr
-  arena_block_size=4194304
+  arena_block_size=524288
   inplace_update_num_locks=10000
   max_successive_merges=0
   memtable_huge_page_size=0
   compaction_style=kCompactionStyleLevel
-  write_buffer_size=33554432
+  write_buffer_size=4194304
   memtable_whole_key_filtering=false
   max_bytes_for_level_multiplier_additional=1:1:1:1:1:1:1
   compression=kSnappyCompression
@@ -406,7 +406,7 @@
 [CFOptions "col3"]
   level0_file_num_compaction_trigger=2
   merge_operator=nullptr
-  max_bytes_for_level_base=134217728
+  max_bytes_for_level_base=16777216
   report_bg_io_stats=false
   max_bytes_for_level_multiplier=10.000000
   disable_auto_compactions=false
@@ -435,12 +435,12 @@
   target_file_size_multiplier=1
   table_factory=BlockBasedTable
   prefix_extractor=nullptr
-  arena_block_size=4194304
+  arena_block_size=524288
   inplace_update_num_locks=10000
   max_successive_merges=0
   memtable_huge_page_size=0
   compaction_style=kCompactionStyleLevel
-  write_buffer_size=33554432
+  write_buffer_size=4194304
   memtable_whole_key_filtering=false
   max_bytes_for_level_multiplier_additional=1:1:1:1:1:1:1
   compression=kSnappyCompression
@@ -486,7 +486,7 @@
 [CFOptions "col4"]
   level0_file_num_compaction_trigger=2
   merge_operator=nullptr
-  max_bytes_for_level_base=134217728
+  max_bytes_for_level_base=16777216
   report_bg_io_stats=false
   max_bytes_for_level_multiplier=10.000000
   disable_auto_compactions=false
@@ -515,12 +515,12 @@
   target_file_size_multiplier=1
   table_factory=BlockBasedTable
   prefix_extractor=nullptr
-  arena_block_size=4194304
+  arena_block_size=524288
   inplace_update_num_locks=10000
   max_successive_merges=0
   memtable_huge_page_size=0
   compaction_style=kCompactionStyleLevel
-  write_buffer_size=33554432
+  write_buffer_size=4194304
   memtable_whole_key_filtering=false
   max_bytes_for_level_multiplier_additional=1:1:1:1:1:1:1
   compression=kSnappyCompression
@@ -566,7 +566,7 @@
 [CFOptions "col5"]
   level0_file_num_compaction_trigger=2
   merge_operator=nullptr
-  max_bytes_for_level_base=134217728
+  max_bytes_for_level_base=16777216
   report_bg_io_stats=false
   max_bytes_for_level_multiplier=10.000000
   disable_auto_compactions=false
@@ -595,12 +595,12 @@
   target_file_size_multiplier=1
   table_factory=BlockBasedTable
   prefix_extractor=nullptr
-  arena_block_size=4194304
+  arena_block_size=524288
   inplace_update_num_locks=10000
   max_successive_merges=0
   memtable_huge_page_size=0
   compaction_style=kCompactionStyleLevel
-  write_buffer_size=33554432
+  write_buffer_size=4194304
   memtable_whole_key_filtering=false
   max_bytes_for_level_multiplier_additional=1:1:1:1:1:1:1
   compression=kSnappyCompression
@@ -646,7 +646,7 @@
 [CFOptions "col6"]
   level0_file_num_compaction_trigger=2
   merge_operator=nullptr
-  max_bytes_for_level_base=134217728
+  max_bytes_for_level_base=16777216
   report_bg_io_stats=false
   max_bytes_for_level_multiplier=10.000000
   disable_auto_compactions=false
@@ -675,12 +675,12 @@
   target_file_size_multiplier=1
   table_factory=BlockBasedTable
   prefix_extractor=nullptr
-  arena_block_size=4194304
+  arena_block_size=524288
   inplace_update_num_locks=10000
   max_successive_merges=0
   memtable_huge_page_size=0
   compaction_style=kCompactionStyleLevel
-  write_buffer_size=33554432
+  write_buffer_size=4194304
   memtable_whole_key_filtering=false
   max_bytes_for_level_multiplier_additional=1:1:1:1:1:1:1
   compression=kSnappyCompression
@@ -726,7 +726,7 @@
 [CFOptions "col7"]
   level0_file_num_compaction_trigger=2
   merge_operator=nullptr
-  max_bytes_for_level_base=134217728
+  max_bytes_for_level_base=16777216
   report_bg_io_stats=false
   max_bytes_for_level_multiplier=10.000000
   disable_auto_compactions=false
@@ -755,12 +755,12 @@
   target_file_size_multiplier=1
   table_factory=BlockBasedTable
   prefix_extractor=nullptr
-  arena_block_size=4194304
+  arena_block_size=524288
   inplace_update_num_locks=10000
   max_successive_merges=0
   memtable_huge_page_size=0
   compaction_style=kCompactionStyleLevel
-  write_buffer_size=33554432
+  write_buffer_size=4194304
   memtable_whole_key_filtering=false
   max_bytes_for_level_multiplier_additional=1:1:1:1:1:1:1
   compression=kSnappyCompression
@@ -806,7 +806,7 @@
 [CFOptions "col8"]
   level0_file_num_compaction_trigger=2
   merge_operator=nullptr
-  max_bytes_for_level_base=134217728
+  max_bytes_for_level_base=16777216
   report_bg_io_stats=false
   max_bytes_for_level_multiplier=10.000000
   disable_auto_compactions=false
@@ -835,12 +835,12 @@
   target_file_size_multiplier=1
   table_factory=BlockBasedTable
   prefix_extractor=nullptr
-  arena_block_size=4194304
+  arena_block_size=524288
   inplace_update_num_locks=10000
   max_successive_merges=0
   memtable_huge_page_size=0
   compaction_style=kCompactionStyleLevel
-  write_buffer_size=33554432
+  write_buffer_size=4194304
   memtable_whole_key_filtering=false
   max_bytes_for_level_multiplier_additional=1:1:1:1:1:1:1
   compression=kSnappyCompression

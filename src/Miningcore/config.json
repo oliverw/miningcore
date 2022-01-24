@@ -1,0 +1,158 @@
+{
+    "logging": {
+        "level": "info",
+        "enableConsoleLog": true,
+        "enableConsoleColors": true,
+        "logFile": "core.log",
+        "apiLogFile": "api.log",
+        "logBaseDirectory": "logs/",
+        "perPoolLogFile": false
+    },
+    "banning": {
+        "manager": "integrated",
+        "banOnJunkReceive": true,
+        "banOnInvalidShares": false
+    },
+    "notifications": {
+        "enabled": false,
+        "email": {
+            "host": "smtp.example.com",
+            "port": 587,
+            "user": "user",
+            "password": "password",
+            "fromAddress": "info@carbonpool.org",
+            "fromName": "pool support"
+        },
+        "admin": {
+            "enabled": false,
+            "emailAddress": "user@example.com",
+            "notifyBlockFound": true
+        }
+    },
+    "persistence": {
+        "postgres": {
+            "host": "db_host",
+            "port": 5432,
+            "user": "db_user",
+            "password": "db_password",
+            "database": "db_name",
+            "Pooling": {
+                "MaxPoolSize": 100
+            }
+        }
+    },
+
+    "paymentProcessing": {
+        "enabled": true,
+        "interval": 300,
+        "balanceCalculationInterval": 600,
+        "onDemandPayout": true,
+        "shareRecoveryFile": "recovered-shares.txt"
+    },
+    "api": {
+        "enabled": true,
+        "listenAddress": "0.0.0.0",
+        "port": 4000,
+        "rateLimiting": {
+            "disabled": true,
+            "rules": [
+                {
+                    "Endpoint": "*",
+                    "Period": "1s",
+                    "Limit": 5
+                }
+            ],
+            "ipWhitelist": []
+        },
+        "oidcValidateAudience": false,
+        "oidcValidAudience": "",
+        "oidcValidIssuer": "https://sts.windows.net/3b217a9b-6c58-428b-b022-5ad741ce2016/",
+        "oidcMetadataAddress": "https://sts.windows.net/3b217a9b-6c58-428b-b022-5ad741ce2016/.well-known/openid-configuration"
+    },
+    "pools": [
+        {
+            "id": "eth1",
+            "enabled": true,
+            "coin": "ethereum",
+            "address": "wallet_address",
+            "rewardRecipients": [
+                {
+                    "type": "op",
+                    "address": "wallet_address",
+                    "percentage": 15
+                }
+            ],
+            "blockRefreshInterval": 5000,
+            "clientConnectionTimeout": 600,
+            "banning": {
+                "enabled": false,
+                "time": 600,
+                "invalidPercent": 50,
+                "checkThreshold": 50
+            },
+            "ports": {
+                "3072": {
+                    "listenAddress": "0.0.0.0",
+                    "difficulty": 0.1,
+                    "varDiff": {
+                        "minDiff": 0.05,
+                        "maxDiff": null,
+                        "targetTime": 180,
+                        "retargetTime": 180,
+                        "variancePercent": 30
+                    }
+                },
+                "3073": {
+                    "listenAddress": "0.0.0.0",
+                    "difficulty": 0.1,
+                    "varDiff": {
+                        "minDiff": 0.05,
+                        "maxDiff": null,
+                        "targetTime": 180,
+                        "retargetTime": 180,
+                        "variancePercent": 30
+                    },
+                    "tls": false,
+                    "tlsPfxFile": "ncrypto-int-nortonlifelock-com-pfx"
+                }
+
+            },
+            "daemons": [
+                {
+                    "host": "127.0.0.1",
+                    "port": 0
+                }
+            ],
+            "etherscan": {
+                "apiUrl": "https://api.etherscan.io/api",
+                "apiKey": "api_key",
+                "daysToLookBack": 1
+            },
+            "paymentProcessing": {
+                "enabled": true,
+                "balanceUpdateEnabled": true,
+                "payoutEnabled": true,
+                "minimumPayment": "0.000044",
+                "minimumPaymentToPaymentId": 5.0,
+                "payoutScheme": "PPS",
+                "maxBlockFrequency": 43200,
+                "payoutSchemeConfig": {
+                    "factor": 2.0,
+                    "fixedReward": "0.0000022"
+                },
+                "coinbasePassword": "wallet_password",
+                "keepUncles": false,
+                "keepTransactionFees": false,
+                "gas": 21000,
+                "enableGasLimit": true,
+                "gasLimit": 50000000000,
+                "gasLimitToleranceHrs": 168,
+                "maxGasLimit": 180000000000,
+                "gasDeductionPercentage": 20,
+                "payoutBatchSize": 5,
+                "minersPayTxFees": true,
+                "maxBlockReward": 0.1
+            }
+        }
+    ]
+}

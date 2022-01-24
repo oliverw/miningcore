@@ -313,5 +313,10 @@ public class BitcoinPayoutHandler : PayoutHandlerBase,
         }
     }
 
+    public Task<PayoutReceipt> PayoutAsync(Balance balance)
+    {
+        throw new NotImplementedException();
+    }
+    
     #endregion // IPayoutHandler
 }

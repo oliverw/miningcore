@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Runtime.Serialization;
+using System.Security.Cryptography.X509Certificates;
 using AspNetCoreRateLimit;
 using JetBrains.Annotations;
 using Newtonsoft.Json;
@@ -627,7 +628,7 @@ public class PoolEndpoint
     public bool TlsAuto { get; set; }
 
     /// <summary>
-    /// PKCS certificate file
+    /// PKCS certificate file path
     /// </summary>
     public string TlsPfxFile { get; set; }
 
@@ -635,6 +636,11 @@ public class PoolEndpoint
     /// Certificate file password
     /// </summary>
     public string TlsPfxPassword { get; set; }
+
+    /// <summary>
+    /// PKCS certificate
+    /// </summary>
+    public X509Certificate2 TlsPfx { get; set; }
 }
 
 [UsedImplicitly]
@@ -831,6 +837,11 @@ public partial class ApiConfig
     /// If this list null or empty, the default is 127.0.0.1
     /// </summary>
     public string[] MetricsIpWhitelist { get; set; }
+
+    public bool OidcValidateAudience { get; set; }
+    public string OidcValidAudience { get; set; }
+    public string OidcValidIssuer { get; set; }
+    public string OidcMetadataAddress { get; set; }
 }
 
 [UsedImplicitly]
@@ -901,6 +912,13 @@ public class NicehashClusterConfig
     public bool EnableAutoDiff { get; set; }
 }
 
+public partial class EtherScan
+{
+    public string ApiUrl { get; set; }
+    public string ApiKey { get; set; }
+    public int DaysToLookBack { get; set; } = 1;
+}
+
 [UsedImplicitly]
 public partial class PoolConfig
 {
@@ -924,6 +942,7 @@ public partial class PoolConfig
     [Required]
     public DaemonEndpointConfig[] Daemons { get; set; }
 
+    public EtherScan EtherScan { get; set; }
     public PoolPaymentProcessingConfig PaymentProcessing { get; set; }
     public PoolShareBasedBanningConfig Banning { get; set; }
     public RewardRecipient[] RewardRecipients { get; set; }

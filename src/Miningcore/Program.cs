@@ -3,22 +3,30 @@ using System.Net;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using System.Text.RegularExpressions;
 using AspNetCoreRateLimit;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Autofac.Features.Metadata;
 using AutoMapper;
+using Azure.Extensions.AspNetCore.Configuration.Secrets;
+using Azure.Identity;
+using Azure.Security.KeyVault.Secrets;
 using Dapper;
 using FluentValidation;
 using McMaster.Extensions.CommandLineUtils;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Azure.Cosmos;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
 using Miningcore.Api;
 using Miningcore.Api.Controllers;
 using Miningcore.Api.Middlewares;
@@ -39,8 +47,10 @@ using Miningcore.Persistence.Dummy;
 using Miningcore.Persistence.Postgres;
 using Miningcore.Persistence.Postgres.Repositories;
 using Miningcore.Util;
+using MoreLinq.Extensions;
 using NBitcoin.Zcash;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Schema;
 using Newtonsoft.Json.Schema.Generation;
 using Newtonsoft.Json.Serialization;
@@ -91,16 +101,36 @@ public class Program : BackgroundService
                 return;
             }
 
-            if(!configFileOption.HasValue())
+            isShareRecoveryMode = shareRecoveryOption.HasValue();
+
+            var envConfig = Environment.GetEnvironmentVariable(EnvironmentConfig);
+            if(configFileOption.HasValue())
+            {
+                clusterConfig = ReadConfig(configFileOption.Value());
+            }
+            else if (appConfigPrefixOption.HasValue())
+            {
+                var vault = Environment.GetEnvironmentVariable(VaultName);
+                if (!string.IsNullOrEmpty(vault))
+                {
+                    clusterConfig = ReadConfigFromKeyVault(vault, appConfigPrefixOption.Value());
+                }
+                else
+                {
+                    clusterConfig = ReadConfigFromAppConfig(Environment.GetEnvironmentVariable(AppConfigConnectionStringEnvVar), appConfigPrefixOption.Value());
+                }
+            }
+            else if (!string.IsNullOrEmpty(envConfig))
+            {
+                clusterConfig = ReadConfigFromJson(envConfig);
+            }
+            else
             {
                 app.ShowHelp();
                 return;
             }
 
             Logo();
-
-            isShareRecoveryMode = shareRecoveryOption.HasValue();
-            clusterConfig = ReadConfig(configFileOption.Value());
 
             ValidateConfig();
 
@@ -178,6 +208,9 @@ public class Program : BackgroundService
                             options.JsonSerializerOptions.WriteIndented = true;
                         });
 
+                        // Prevent null pointer when launching from a test container
+                        services.AddTransient<WebSocketNotificationsRelay>();
+
                         // NSwag
                         #if DEBUG
                         services.AddOpenApiDocument(settings =>
@@ -186,6 +219,24 @@ public class Program : BackgroundService
                         });
                         #endif
 
+                        // Authentication
+                        services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                            .AddJwtBearer(options =>
+                            {
+                                options.Authority = clusterConfig.Api.OidcValidIssuer;
+                                options.Audience = clusterConfig.Api.OidcValidateAudience ? clusterConfig.Api.OidcValidAudience : null;
+                                options.MetadataAddress = clusterConfig.Api.OidcMetadataAddress;
+                                options.RequireHttpsMetadata = true;
+                                options.TokenValidationParameters = new TokenValidationParameters
+                                {
+                                    ValidateIssuer = true,
+                                    ValidateLifetime = true,
+                                    ValidateIssuerSigningKey = true,
+                                    ValidateAudience = clusterConfig.Api.OidcValidateAudience,
+                                };
+                            });
+
+                        // Gzip compression
                         services.AddResponseCompression();
                         services.AddCors();
                         services.AddWebSocketManager();
@@ -207,10 +258,6 @@ public class Program : BackgroundService
 
                         UseIpWhiteList(app, true, new[]
                         {
-                            "/api/admin"
-                        }, clusterConfig.Api?.AdminIpWhitelist);
-                        UseIpWhiteList(app, true, new[]
-                        {
                             "/metrics"
                         }, clusterConfig.Api?.MetricsIpWhitelist);
 
@@ -224,6 +271,8 @@ public class Program : BackgroundService
                         app.MapWebSocketManager("/notifications", app.ApplicationServices.GetService<WebSocketNotificationsRelay>());
                         app.UseMetricServer();
                         app.UseMvc();
+                        app.UseAuthentication();
+                        app.UseAuthorization();
                     });
 
                     logger.Info(() => $"Prometheus Metrics {address}:{port}/metrics");
@@ -309,17 +358,27 @@ public class Program : BackgroundService
             services.AddHostedService<StatsRecorder>();
         }
     }
+    
+    private const string AppConfigConnectionStringEnvVar = "ConnectionString";
+    private const string BaseConfigFile = "config.json";
+    private const string CoinbasePassword = "coinbasePassword";
+    private const string EnvironmentConfig = "cfg";
+    private const string PrivateKey = "privateKey";
+    private const string VaultName = "akv";
+    private static readonly Regex RegexJsonTypeConversionError = new Regex("\"([^\"]+)\"[^\']+\'([^\']+)\'.+\\s(\\d+),.+\\s(\\d+)", RegexOptions.Compiled);
 
     private static IHost host;
     private readonly IComponentContext container;
     private static ILogger logger;
     private static CommandOption versionOption;
     private static CommandOption configFileOption;
+    private static CommandOption appConfigPrefixOption;
     private static CommandOption dumpConfigOption;
     private static CommandOption shareRecoveryOption;
     private static CommandOption generateSchemaOption;
     private static bool isShareRecoveryMode;
     private static ClusterConfig clusterConfig;
+    private static IConfigurationRoot remoteConfig;
     private static readonly ConcurrentDictionary<string, IMiningPool> pools = new();
     private static readonly AdminGcStats gcStats = new();
 
@@ -507,6 +566,7 @@ public class Program : BackgroundService
 
         versionOption = app.Option("-v|--version", "Version Information", CommandOptionType.NoValue);
         configFileOption = app.Option("-c|--config <configfile>", "Configuration File", CommandOptionType.SingleValue);
+        appConfigPrefixOption = app.Option("-ac|--appconfig <prefix>", "Azure App Configuration Prefix", CommandOptionType.SingleValue);
         dumpConfigOption = app.Option("-dc|--dumpconfig", "Dump the configuration (useful for trouble-shooting typos in the config file)",CommandOptionType.NoValue);
         shareRecoveryOption = app.Option("-rs", "Import lost shares using existing recovery file", CommandOptionType.SingleValue);
         generateSchemaOption = app.Option("-gcs|--generate-config-schema <outputfile>", "Generate JSON schema from configuration options", CommandOptionType.SingleValue);
@@ -1011,5 +1071,155 @@ public class Program : BackgroundService
         }
 
         Console.Error.WriteLine("** AppDomain unhandled exception: {0}", e.ExceptionObject);
+    }
+
+    // Remote configuration
+    private static ClusterConfig ReadConfigFromJson(string config)
+    {
+        try
+        {
+            var baseConfig = JsonConvert.DeserializeObject<JObject>(File.ReadAllText(BaseConfigFile));
+            var toBeMerged = JObject.Parse(config);
+            baseConfig.Merge(toBeMerged, new JsonMergeSettings { MergeArrayHandling = MergeArrayHandling.Merge });
+            clusterConfig = baseConfig.ToObject<ClusterConfig>();
+        }
+        catch(JsonSerializationException ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+            throw;
+        }
+        catch(JsonException ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+            throw;
+        }
+        catch(IOException ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+            throw;
+        }
+
+        return clusterConfig;
+    }
+
+    private static ClusterConfig ReadConfigFromAppConfig(string connectionString, string prefix)
+    {
+        Console.WriteLine("Loading config from app config");
+        if(prefix.Trim().Equals("/")) prefix = string.Empty;
+        try
+        {
+            // Read AppConfig
+            var builder = new ConfigurationBuilder();
+            builder.AddAzureAppConfiguration(options => options.Connect(connectionString)
+                .ConfigureKeyVault(kv => kv.SetCredential(new DefaultAzureCredential())));
+            remoteConfig = builder.Build();
+
+            var secretName = prefix + BaseConfigFile;
+            ReadConfigFromJson(remoteConfig[secretName]);
+            // Update dynamic pass and others config here
+            clusterConfig.Persistence.Postgres.User = remoteConfig.TryGetValue(AppConfigConstants.PersistencePostgresUser, clusterConfig.Persistence.Postgres.User);
+            clusterConfig.Persistence.Postgres.Password = remoteConfig.TryGetValue(AppConfigConstants.PersistencePostgresPassword, clusterConfig.Persistence.Postgres.Password);
+            clusterConfig.Persistence.Cosmos.AuthorizationKey = remoteConfig.TryGetValue(AppConfigConstants.PersistenceCosmosAuthorizationKey, clusterConfig.Persistence.Cosmos.AuthorizationKey);
+            foreach(var poolConfig in clusterConfig.Pools)
+            {
+                poolConfig.PaymentProcessing.Extra[CoinbasePassword] = remoteConfig.TryGetValue(string.Format(AppConfigConstants.CoinBasePassword, poolConfig.Id), poolConfig.PaymentProcessing.Extra[CoinbasePassword]?.ToString());
+                poolConfig.PaymentProcessing.Extra[PrivateKey] = remoteConfig.TryGetValue(string.Format(AppConfigConstants.PrivateKey, poolConfig.Id), poolConfig.PaymentProcessing.Extra[PrivateKey]?.ToString());
+                poolConfig.EtherScan.ApiKey = remoteConfig.TryGetValue(string.Format(AppConfigConstants.EtherscanApiKey, poolConfig.Id), poolConfig.EtherScan.ApiKey);
+                poolConfig.Ports.ForEach(p =>
+                {
+                    try
+                    {
+                        if(!p.Value.Tls) return;
+                        var cert = remoteConfig[string.Format(AppConfigConstants.TlsPfxFile, poolConfig.Id, p.Key)];
+                        if(cert == null) return;
+                        p.Value.TlsPfx = new X509Certificate2(Convert.FromBase64String(cert), (string) null, X509KeyStorageFlags.MachineKeySet);
+                        Console.WriteLine("Successfully loaded TLS certificate from app config");
+                    }
+                    catch(Exception ex)
+                    {
+                        Console.WriteLine($"Failed to load TLS certificate from app config, Error={ex.Message}");
+                    }
+                });
+            }
+        }
+        catch(JsonSerializationException ex)
+        {
+            HumanizeJsonParseException(ex);
+            throw;
+        }
+        catch(JsonException ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+            throw;
+        }
+
+        return clusterConfig;
+    }
+
+    private static ClusterConfig ReadConfigFromKeyVault(string vaultName, string prefix)
+    {
+        Console.WriteLine($"Loading config from key vault '{vaultName}'");
+        if(prefix.Trim().Equals("/")) prefix = string.Empty;
+
+        // Read KeyVault
+        var builder = new ConfigurationBuilder();
+        builder.AddAzureKeyVault(new SecretClient(new Uri($"https://{vaultName}.vault.azure.net/"), new DefaultAzureCredential()), new KeyVaultSecretManager());
+        remoteConfig = builder.Build();
+
+        var secretName = (prefix + BaseConfigFile).Replace(".", "-");
+        ReadConfigFromJson(remoteConfig[secretName]);
+        foreach(var poolConfig in clusterConfig.Pools)
+        {
+            poolConfig.Ports.ForEach(p =>
+            {
+                try
+                {
+                    if(!p.Value.Tls) return;
+                    var cert = remoteConfig[p.Value.TlsPfxFile];
+                    if(cert == null) return;
+                    p.Value.TlsPfx = new X509Certificate2(Convert.FromBase64String(cert), (string) null, X509KeyStorageFlags.MachineKeySet);
+                    Console.WriteLine("Successfully loaded TLS certificate from key vault...");
+                }
+                catch(Exception ex)
+                {
+                    Console.WriteLine($"Failed to load TLS certificate from key vault, Error={ex.Message}");
+                }
+            });
+        }
+        ValidateConfig();
+
+        return clusterConfig;
+    }
+
+    private static void HumanizeJsonParseException(JsonSerializationException ex)
+    {
+        var m = RegexJsonTypeConversionError.Match(ex.Message);
+
+        if(m.Success)
+        {
+            var value = m.Groups[1].Value;
+            var type = Type.GetType(m.Groups[2].Value);
+            var line = m.Groups[3].Value;
+            var col = m.Groups[4].Value;
+
+            if(type == typeof(PayoutScheme))
+                Console.WriteLine($"Error: Payout scheme '{value}' is not (yet) supported (line {line}, column {col})");
+        }
+
+        else
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+    }
+
+    private static class AppConfigConstants
+    {
+        public const string PersistencePostgresUser = "persistence.postgres.user";
+        public static readonly string PersistencePostgresPassword = "persistence.postgres.password";
+        public static readonly string CoinBasePassword = "pools.{0}.paymentProcessing.coinbasePassword";
+        public static readonly string PrivateKey = "pools.{0}.paymentProcessing.PrivateKey";
+        public static readonly string TlsPfxFile = "pools.{0}.{1}.tlsPfxFile";
+        public static readonly string EtherscanApiKey = "pools.{0}.etherscan.apiKey";
+        public static readonly string PersistenceCosmosAuthorizationKey = "persistence.cosmos.authorizationKey";
     }
 }

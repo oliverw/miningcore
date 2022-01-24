@@ -13,6 +13,7 @@ public interface IPayoutHandler
     Task CalculateBlockEffortAsync(IMiningPool pool, Block block, double accumulatedBlockShareDiff, CancellationToken ct);
     Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, IMiningPool pool, Block block, CancellationToken ct);
     Task PayoutAsync(IMiningPool pool, Balance[] balances, CancellationToken ct);
+    Task<PayoutReceipt> PayoutAsync(Balance balance);
     double AdjustShareDifficulty(double difficulty);
 
     string FormatAmount(decimal amount);

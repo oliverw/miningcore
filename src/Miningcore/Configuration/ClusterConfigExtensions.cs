@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Numerics;
 using Autofac;
 using JetBrains.Annotations;
+using Microsoft.Extensions.Configuration;
 using Miningcore.Crypto;
 using Miningcore.Crypto.Hashing.Algorithms;
 using NBitcoin;
@@ -195,4 +196,13 @@ public partial class PoolConfig
     /// </summary>
     [JsonIgnore]
     public CoinTemplate Template { get; set; }
+}
+
+public static class ConfigExtensions
+{
+    public static string TryGetValue(this IConfigurationRoot config, string key, string defaultValue)
+    {
+        var cfgValue = config[key];
+        return !string.IsNullOrEmpty(cfgValue) ? cfgValue : defaultValue;
+    }
 }

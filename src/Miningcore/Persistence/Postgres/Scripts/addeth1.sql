@@ -1,0 +1,1 @@
+CREATE TABLE shares_eth1 PARTITION OF shares FOR VALUES IN ('eth1');

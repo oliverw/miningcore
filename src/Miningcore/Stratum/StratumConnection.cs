@@ -111,11 +111,11 @@ public class StratumConnection
 
                     networkStream = sslStream;
 
-                    logger.Info(() => $"[{ConnectionId}] {sslStream.SslProtocol.ToString().ToUpper()}-{sslStream.CipherAlgorithm.ToString().ToUpper()} Connection from {RemoteEndpoint.Address}:{RemoteEndpoint.Port} accepted on port {endpoint.IPEndPoint.Port}");
+                    logger.Debug(() => $"[{ConnectionId}] {sslStream.SslProtocol.ToString().ToUpper()}-{sslStream.CipherAlgorithm.ToString().ToUpper()} Connection from {RemoteEndpoint.Address}:{RemoteEndpoint.Port} accepted on port {endpoint.IPEndPoint.Port}");
                 }
 
                 else
-                    logger.Info(() => $"[{ConnectionId}] Connection from {RemoteEndpoint.Address}:{RemoteEndpoint.Port} accepted on port {endpoint.IPEndPoint.Port}");
+                    logger.Debug(() => $"[{ConnectionId}] Connection from {RemoteEndpoint.Address}:{RemoteEndpoint.Port} accepted on port {endpoint.IPEndPoint.Port}");
 
                 // Async I/O loop(s)
                 var tasks = new[]
@@ -156,7 +156,7 @@ public class StratumConnection
             IsAlive = false;
             terminated.OnNext(Unit.Default);
 
-            logger.Info(() => $"[{ConnectionId}] Connection closed");
+            logger.Debug(() => $"[{ConnectionId}] Connection closed");
         }
     }
 
