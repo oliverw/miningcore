@@ -6,7 +6,6 @@ using Miningcore.Blockchain.Cryptonote.DaemonRequests;
 using Miningcore.Blockchain.Cryptonote.DaemonResponses;
 using Miningcore.Configuration;
 using Miningcore.Extensions;
-using Miningcore.JsonRpc;
 using Miningcore.Messaging;
 using Miningcore.Mining;
 using Miningcore.Native;

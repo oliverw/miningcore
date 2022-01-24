@@ -1,6 +1,5 @@
 using Autofac;
 using Miningcore.Mining;
-using Miningcore.Util;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;

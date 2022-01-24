@@ -4,7 +4,7 @@ using System.Reactive.Threading.Tasks;
 using System.Numerics;
 using Autofac;
 using AutoMapper;
-using JetBrains.Annotations;
+using Microsoft.IO;
 using Miningcore.Blockchain.Bitcoin;
 using Miningcore.Blockchain.Ergo.Configuration;
 using Miningcore.Configuration;
@@ -25,7 +25,6 @@ using static Miningcore.Util.ActionUtils;
 namespace Miningcore.Blockchain.Ergo;
 
 [CoinFamily(CoinFamily.Ergo)]
-[UsedImplicitly]
 public class ErgoPool : PoolBase
 {
     public ErgoPool(IComponentContext ctx,
@@ -35,8 +34,9 @@ public class ErgoPool : PoolBase
         IMapper mapper,
         IMasterClock clock,
         IMessageBus messageBus,
+        RecyclableMemoryStreamManager rmsm,
         NicehashService nicehashService) :
-        base(ctx, serializerSettings, cf, statsRepo, mapper, clock, messageBus, nicehashService)
+        base(ctx, serializerSettings, cf, statsRepo, mapper, clock, messageBus, rmsm, nicehashService)
     {
     }
 
@@ -226,11 +226,8 @@ public class ErgoPool : PoolBase
 
         logger.Info(() => "Broadcasting job");
 
-        return Guard(()=> Task.WhenAll(ForEachConnection(async connection =>
+        return Guard(Task.WhenAll(TaskForEach(async connection =>
         {
-            if(!connection.IsAlive)
-                return;
-
             var context = connection.ContextAs<ErgoWorkerContext>();
 
             if(!context.IsSubscribed || !context.IsAuthorized || CloseIfDead(connection, context))
@@ -318,9 +315,9 @@ public class ErgoPool : PoolBase
         }
     }
 
-    protected override async Task InitStatsAsync()
+    protected override async Task InitStatsAsync(CancellationToken ct)
     {
-        await base.InitStatsAsync();
+        await base.InitStatsAsync(ct);
 
         blockchainStats = manager.BlockchainStats;
     }

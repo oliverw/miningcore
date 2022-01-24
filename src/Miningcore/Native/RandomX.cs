@@ -42,43 +42,43 @@ public static unsafe class RandomX
     private static extern randomx_flags randomx_get_flags();
 
     [DllImport("librandomx", EntryPoint = "randomx_alloc_cache", CallingConvention = CallingConvention.Cdecl)]
-    private static extern IntPtr randomx_alloc_cache(randomx_flags flags);
+    private static extern IntPtr alloc_cache(randomx_flags flags);
 
     [DllImport("librandomx", EntryPoint = "randomx_init_cache", CallingConvention = CallingConvention.Cdecl)]
-    private static extern IntPtr randomx_init_cache(IntPtr cache, IntPtr key, int keysize);
+    private static extern IntPtr init_cache(IntPtr cache, IntPtr key, int keysize);
 
     [DllImport("librandomx", EntryPoint = "randomx_release_cache", CallingConvention = CallingConvention.Cdecl)]
-    private static extern IntPtr randomx_release_cache(IntPtr cache);
+    private static extern IntPtr release_cache(IntPtr cache);
 
     [DllImport("librandomx", EntryPoint = "randomx_alloc_dataset", CallingConvention = CallingConvention.Cdecl)]
-    private static extern IntPtr randomx_alloc_dataset(randomx_flags flags);
+    private static extern IntPtr alloc_dataset(randomx_flags flags);
 
     [DllImport("librandomx", EntryPoint = "randomx_dataset_item_count", CallingConvention = CallingConvention.Cdecl)]
-    private static extern ulong randomx_dataset_item_count();
+    private static extern ulong dataset_item_count();
 
     [DllImport("librandomx", EntryPoint = "randomx_init_dataset", CallingConvention = CallingConvention.Cdecl)]
-    private static extern void randomx_init_dataset(IntPtr dataset, IntPtr cache, ulong startItem, ulong itemCount);
+    private static extern void init_dataset(IntPtr dataset, IntPtr cache, ulong startItem, ulong itemCount);
 
     [DllImport("librandomx", EntryPoint = "randomx_get_dataset_memory", CallingConvention = CallingConvention.Cdecl)]
-    private static extern IntPtr randomx_get_dataset_memory(IntPtr dataset);
+    private static extern IntPtr get_dataset_memory(IntPtr dataset);
 
     [DllImport("librandomx", EntryPoint = "randomx_release_dataset", CallingConvention = CallingConvention.Cdecl)]
-    private static extern void randomx_release_dataset(IntPtr dataset);
+    private static extern void release_dataset(IntPtr dataset);
 
     [DllImport("librandomx", EntryPoint = "randomx_create_vm", CallingConvention = CallingConvention.Cdecl)]
-    private static extern IntPtr randomx_create_vm(randomx_flags flags, IntPtr cache, IntPtr dataset);
+    private static extern IntPtr create_vm(randomx_flags flags, IntPtr cache, IntPtr dataset);
 
     [DllImport("librandomx", EntryPoint = "randomx_vm_set_cache", CallingConvention = CallingConvention.Cdecl)]
-    private static extern void randomx_vm_set_cache(IntPtr machine, IntPtr cache);
+    private static extern void vm_set_cache(IntPtr machine, IntPtr cache);
 
     [DllImport("librandomx", EntryPoint = "randomx_vm_set_dataset", CallingConvention = CallingConvention.Cdecl)]
-    private static extern IntPtr randomx_vm_set_dataset(IntPtr machine, IntPtr dataset);
+    private static extern IntPtr vm_set_dataset(IntPtr machine, IntPtr dataset);
 
     [DllImport("librandomx", EntryPoint = "randomx_destroy_vm", CallingConvention = CallingConvention.Cdecl)]
-    private static extern void randomx_destroy_vm(IntPtr machine);
+    private static extern void destroy_vm(IntPtr machine);
 
     [DllImport("librandomx", EntryPoint = "randomx_calculate_hash", CallingConvention = CallingConvention.Cdecl)]
-    private static extern void randomx_calculate_hash(IntPtr machine, byte* input, int inputSize, byte* output);
+    private static extern void calculate_hash(IntPtr machine, byte* input, int inputSize, byte* output);
 
     public class GenContext
     {
@@ -94,17 +94,17 @@ public static unsafe class RandomX
         {
             if(dataset != IntPtr.Zero)
             {
-                randomx_release_dataset(dataset);
+                release_dataset(dataset);
                 dataset = IntPtr.Zero;
             }
         }
 
-        public IntPtr Init(ReadOnlySpan<byte> key, randomx_flags flags, IntPtr cache)
+        public IntPtr Init(randomx_flags flags, IntPtr cache)
         {
-            dataset = randomx_alloc_dataset(flags);
+            dataset = alloc_dataset(flags);
 
-            var itemCount = randomx_dataset_item_count();
-            randomx_init_dataset(dataset, cache, 0, itemCount);
+            var itemCount = dataset_item_count();
+            init_dataset(dataset, cache, 0, itemCount);
 
             return dataset;
         }
@@ -120,7 +120,7 @@ public static unsafe class RandomX
         {
             if(vm != IntPtr.Zero)
             {
-                randomx_destroy_vm(vm);
+                destroy_vm(vm);
                 vm = IntPtr.Zero;
             }
 
@@ -128,7 +128,7 @@ public static unsafe class RandomX
 
             if(cache != IntPtr.Zero)
             {
-                randomx_release_cache(cache);
+                release_cache(cache);
                 cache = IntPtr.Zero;
             }
         }
@@ -138,26 +138,26 @@ public static unsafe class RandomX
             var ds_ptr = IntPtr.Zero;
 
             // alloc cache
-            cache = randomx_alloc_cache(flags);
+            cache = alloc_cache(flags);
 
             // init cache
             fixed(byte* key_ptr = key)
             {
-                randomx_init_cache(cache, (IntPtr) key_ptr, key.Length);
+                init_cache(cache, (IntPtr) key_ptr, key.Length);
             }
 
             // Enable fast-mode? (requires 2GB+ memory per VM)
             if((flags & randomx_flags.RANDOMX_FLAG_FULL_MEM) != 0)
             {
                 ds = new RxDataSet();
-                ds_ptr = ds.Init(key, flags, cache);
+                ds_ptr = ds.Init(flags, cache);
 
                 // cache is no longer needed in fast-mode
-                randomx_release_cache(cache);
+                release_cache(cache);
                 cache = IntPtr.Zero;
             }
 
-            vm = randomx_create_vm(flags, cache, ds_ptr);
+            vm = create_vm(flags, cache, ds_ptr);
         }
 
         public void CalculateHash(ReadOnlySpan<byte> data, Span<byte> result)
@@ -166,7 +166,7 @@ public static unsafe class RandomX
             {
                 fixed (byte* output = result)
                 {
-                    randomx_calculate_hash(vm, input, data.Length, output);
+                    calculate_hash(vm, input, data.Length, output);
                 }
             }
         }

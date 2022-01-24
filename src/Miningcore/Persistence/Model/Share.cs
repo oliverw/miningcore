@@ -1,15 +1,15 @@
 namespace Miningcore.Persistence.Model;
 
-public class Share
+public record Share
 {
-    public string PoolId { get; set; }
-    public ulong BlockHeight { get; set; }
-    public string Miner { get; set; }
-    public string Worker { get; set; }
-    public string UserAgent { get; set; }
-    public double Difficulty { get; set; }
-    public double NetworkDifficulty { get; set; }
-    public string IpAddress { get; set; }
-    public string Source { get; set; }
-    public DateTime Created { get; set; }
+    public string PoolId { get; init; }
+    public ulong BlockHeight { get; init; }
+    public string Miner { get; init; }
+    public string Worker { get; init; }
+    public string UserAgent { get; init; }
+    public double Difficulty { get; init; }
+    public double NetworkDifficulty { get; init; }
+    public string IpAddress { get; init; }
+    public string Source { get; init; }
+    public DateTime Created { get; init; }
 }

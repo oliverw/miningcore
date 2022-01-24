@@ -9,7 +9,9 @@ using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using System.Threading.Tasks.Dataflow;
+using Microsoft.IO;
 using Miningcore.Configuration;
 using Miningcore.Extensions;
 using Miningcore.JsonRpc;
@@ -25,15 +27,15 @@ namespace Miningcore.Stratum;
 
 public class StratumConnection
 {
-    public StratumConnection(ILogger logger, IMasterClock clock, string connectionId)
+    public StratumConnection(ILogger logger, RecyclableMemoryStreamManager rmsm, IMasterClock clock, string connectionId)
     {
         this.logger = logger;
+        this.rmsm = rmsm;
 
         receivePipe = new Pipe(PipeOptions.Default);
 
         sendQueue = new BufferBlock<object>(new DataflowBlockOptions
         {
-            BoundedCapacity = SendQueueCapacity,
             EnsureOrdered = true,
         });
 
@@ -43,10 +45,10 @@ public class StratumConnection
     }
 
     private readonly ILogger logger;
+    private readonly RecyclableMemoryStreamManager rmsm;
     private readonly IMasterClock clock;
 
     private const int MaxInboundRequestLength = 0x8000;
-    private const int MaxOutboundRequestLength = 0x8000;
 
     private Stream networkStream;
     private readonly Pipe receivePipe;
@@ -60,8 +62,8 @@ public class StratumConnection
         ContractResolver = new CamelCasePropertyNamesContractResolver()
     };
 
-    private const int SendQueueCapacity = 32;
-    private static readonly TimeSpan sendTimeout = TimeSpan.FromMilliseconds(10000);
+    private const int SendQueueCapacity = 16;
+    private static readonly TimeSpan sendTimeout = TimeSpan.FromMilliseconds(5000);
 
     #region API-Surface
 
@@ -177,27 +179,27 @@ public class StratumConnection
         return (T) context;
     }
 
-    public ValueTask RespondAsync<T>(T payload, object id)
+    public Task RespondAsync<T>(T payload, object id)
     {
         return RespondAsync(new JsonRpcResponse<T>(payload, id));
     }
 
-    public ValueTask RespondErrorAsync(StratumError code, string message, object id, object result = null)
+    public Task RespondErrorAsync(StratumError code, string message, object id, object result = null)
     {
         return RespondAsync(new JsonRpcResponse(new JsonRpcError((int) code, message, null), id, result));
     }
 
-    public ValueTask RespondAsync<T>(JsonRpcResponse<T> response)
+    public Task RespondAsync<T>(JsonRpcResponse<T> response)
     {
         return SendAsync(response);
     }
 
-    public ValueTask NotifyAsync<T>(string method, T payload)
+    public Task NotifyAsync<T>(string method, T payload)
     {
         return NotifyAsync(new JsonRpcRequest<T>(method, payload, null));
     }
 
-    public ValueTask NotifyAsync<T>(JsonRpcRequest<T> request)
+    public Task NotifyAsync<T>(JsonRpcRequest<T> request)
     {
         return SendAsync(request);
     }
@@ -209,19 +211,24 @@ public class StratumConnection
 
     #endregion // API-Surface
 
-    private async ValueTask SendAsync<T>(T payload)
+    private Task SendAsync<T>(T payload)
     {
         Contract.RequiresNonNull(payload, nameof(payload));
 
-        using(var ctsTimeout = new CancellationTokenSource())
+        try
         {
-            ctsTimeout.CancelAfter(sendTimeout);
+            if(sendQueue.Count >= SendQueueCapacity)
+                throw new IOException("Sendqueue stalled");
 
-            if(!await sendQueue.SendAsync(payload, ctsTimeout.Token))
-            {
-                // this will force a disconnect down the line
-                throw new IOException($"Send queue stalled at {sendQueue.Count} of {SendQueueCapacity} items");
-            }
+            return sendQueue.SendAsync(payload);
+        }
+
+        catch(Exception ex)
+        {
+            logger.Error(() => $"[{ConnectionId}] {LogUtil.DotTerminate(ex.Message)} Closing connection ...");
+
+            Disconnect();
+            throw;
         }
     }
 
@@ -330,6 +337,9 @@ public class StratumConnection
     {
         while(!ct.IsCancellationRequested)
         {
+            if(sendQueue.Count >= SendQueueCapacity)
+                throw new IOException($"Send-queue overflow at {sendQueue.Count} of {SendQueueCapacity} items");
+
             var msg = await sendQueue.ReceiveAsync(ct);
 
             await SendMessage(msg, ct);
@@ -338,41 +348,26 @@ public class StratumConnection
 
     private async Task SendMessage(object msg, CancellationToken ct)
     {
-        var buffer = ArrayPool<byte>.Shared.Rent(MaxOutboundRequestLength);
+        await using var stream = rmsm.GetStream(nameof(StratumConnection)) as RecyclableMemoryStream;
 
-        try
-        {
-            using(var ctsTimeout = CancellationTokenSource.CreateLinkedTokenSource(ct))
-            {
-                ctsTimeout.CancelAfter(sendTimeout);
-
-                var cb = SerializeMessage(msg, buffer);
-
-                logger.Debug(() => $"[{ConnectionId}] Sending: {StratumConstants.Encoding.GetString(buffer.AsSpan(0, cb))}");
-
-                await networkStream.WriteAsync(buffer, 0, cb, ctsTimeout.Token);
-                await networkStream.FlushAsync(ctsTimeout.Token);
-            }
-        }
-
-        finally
-        {
-            ArrayPool<byte>.Shared.Return(buffer);
-        }
-    }
-
-    private static int SerializeMessage(object msg, byte[] buffer)
-    {
-        var stream = new MemoryStream(buffer, true);
-
-        using (var writer = new StreamWriter(stream, StratumConstants.Encoding, MaxOutboundRequestLength, true))
+        // serialize to RecyclableMemoryStream
+        await using (var writer = new StreamWriter(stream!, StratumConstants.Encoding, -1, true))
         {
             serializer.Serialize(writer, msg);
         }
 
-        stream.WriteByte((byte) '\n'); // terminator
+        // ReSharper disable once AccessToDisposedClosure
+        logger.Debug(() => $"[{ConnectionId}] Sending: {StratumConstants.Encoding.GetString(stream.GetReadOnlySequence())}");
 
-        return (int) stream.Position;
+        stream.WriteByte((byte) '\n'); // terminator
+        stream.Seek(0, SeekOrigin.Begin); // rewind for copy
+
+        // copy to network
+        using var ctsTimeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        ctsTimeout.CancelAfter(sendTimeout);
+
+        await stream.CopyToAsync(networkStream, ctsTimeout.Token);
+        await networkStream.FlushAsync(ctsTimeout.Token);
     }
 
     private async Task ProcessRequestAsync(
@@ -419,12 +414,12 @@ public class StratumConnection
 
                 // Update client
                 RemoteEndpoint = new IPEndPoint(IPAddress.Parse(remoteAddress), int.Parse(remotePort));
-                logger.Info(() => $"[{ConnectionId}] Real-IP via Proxy-Protocol: {RemoteEndpoint.Address}");
+                logger.Info(() => $"Real-IP via Proxy-Protocol: {RemoteEndpoint.Address}");
             }
 
             else
             {
-                throw new InvalidDataException($"[{ConnectionId}] Received spoofed Proxy-Protocol header from {peerAddress}");
+                throw new InvalidDataException($"Received spoofed Proxy-Protocol header from {peerAddress}");
             }
 
             return true;
@@ -432,7 +427,7 @@ public class StratumConnection
 
         if(proxyProtocol.Mandatory)
         {
-            throw new InvalidDataException($"[{ConnectionId}] Missing mandatory Proxy-Protocol header from {peerAddress}. Closing connection.");
+            throw new InvalidDataException($"Missing mandatory Proxy-Protocol header from {peerAddress}. Closing connection.");
         }
 
         return false;

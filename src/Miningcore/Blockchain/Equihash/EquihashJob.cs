@@ -43,8 +43,8 @@ public class EquihashJob
     protected EquihashSolver solver;
 
     // ZCash Sapling & Overwinter support
-    protected bool isOverwinterActive = false;
-    protected bool isSaplingActive = false;
+    protected bool isOverwinterActive;
+    protected bool isSaplingActive;
 
     // temporary reflection hack to force overwinter
     protected static readonly FieldInfo overwinterField = typeof(ZcashTransaction).GetField("fOverwintered", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);

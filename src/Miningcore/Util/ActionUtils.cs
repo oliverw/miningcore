@@ -15,6 +15,19 @@ public static class ActionUtils
         }
     }
 
+    public static async Task Guard(Task task, Action<Exception> errorHandler = null)
+    {
+        try
+        {
+            await task;
+        }
+
+        catch (Exception ex)
+        {
+            errorHandler?.Invoke(ex);
+        }
+    }
+
     public static void Guard(Action func, Action<Exception> errorHandler = null)
     {
         try

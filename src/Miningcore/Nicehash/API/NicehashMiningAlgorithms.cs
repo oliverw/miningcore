@@ -2,28 +2,28 @@ using System.Text.Json.Serialization;
 
 namespace Miningcore.Nicehash.API;
 
-public class NicehashMiningAlgorithm
+public record NicehashMiningAlgorithm
 {
-    public string Algorithm { get; set; }
-    public string Title { get; set; }
-    public bool Enabled { get; set; }
-    public long Order { get; set; }
-    public string DisplayMiningFactor { get; set; }
-    public double MiningFactor { get; set; }
-    public string DisplayMarketFactor { get; set; }
-    public double MarketFactor { get; set; }
-    public double MinimalOrderAmount { get; set; }
-    public double MinSpeedLimit { get; set; }
-    public double MaxSpeedLimit { get; set; }
-    public double PriceDownStep { get; set; }
-    public double MinimalPoolDifficulty { get; set; }
-    public long Port { get; set; }
-    public string Color { get; set; }
-    public bool OrdersEnabled { get; set; }
+    public string Algorithm { get; init; }
+    public string Title { get; init; }
+    public bool Enabled { get; init; }
+    public long Order { get; init; }
+    public string DisplayMiningFactor { get; init; }
+    public double MiningFactor { get; init; }
+    public string DisplayMarketFactor { get; init; }
+    public double MarketFactor { get; init; }
+    public double MinimalOrderAmount { get; init; }
+    public double MinSpeedLimit { get; init; }
+    public double MaxSpeedLimit { get; init; }
+    public double PriceDownStep { get; init; }
+    public double MinimalPoolDifficulty { get; init; }
+    public long Port { get; init; }
+    public string Color { get; init; }
+    public bool OrdersEnabled { get; init; }
 }
 
-public class NicehashMiningAlgorithmsResponse
+public record NicehashMiningAlgorithmsResponse
 {
     [JsonPropertyName("miningAlgorithms")]
-    public NicehashMiningAlgorithm[] Algorithms { get; set; }
+    public NicehashMiningAlgorithm[] Algorithms { get; init; }
 }
