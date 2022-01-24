@@ -53,7 +53,8 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
     private EthashFull ethash;
     private readonly IMasterClock clock;
     private readonly IExtraNonceProvider extraNonceProvider;
-
+    private const int MaxBlockBacklog = 8;
+    protected readonly Dictionary<string, EthereumJob> validJobs = new();
     private EthereumPoolConfigExtra extraPoolConfig;
 
     protected async Task<bool> UpdateJob(CancellationToken ct, string via = null)
@@ -93,7 +94,24 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
             {
                 messageBus.NotifyChainHeight(poolConfig.Id, blockTemplate.Height, poolConfig.Template);
 
-                job = new EthereumJob(NextJobId("x8"), blockTemplate, logger);
+                var jobId = NextJobId("x8");
+
+                // update template
+                job = new EthereumJob(jobId, blockTemplate, logger);
+
+                lock(jobLock)
+                {
+                    // add jobs
+                    validJobs[jobId] = job;
+
+                    // remove old ones
+                    var obsoleteKeys = validJobs.Keys
+                        .Where(key => validJobs[key].BlockTemplate.Height < job.BlockTemplate.Height - MaxBlockBacklog).ToArray();
+
+                    foreach(var key in obsoleteKeys)
+                        validJobs.Remove(key);
+                }
+
                 currentJob = job;
 
                 logger.Info(() => $"New work at height {currentJob.BlockTemplate.Height} and header {currentJob.BlockTemplate.Header} via [{(via ?? "Unknown")}]");
@@ -355,8 +373,20 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
 
         var context = worker.ContextAs<EthereumWorkerContext>();
         var nonce = request[0];
+        var header = request[1];
 
-        return await SubmitShareAsync(worker, context, workerName, currentJob, nonce.StripHexPrefix(), ct);
+        EthereumJob job;
+
+        // stale?
+        lock(jobLock)
+        {
+            job = validJobs.Values.FirstOrDefault(x => x.BlockTemplate.Header.Equals(header));
+
+            if(job == null)
+                throw new StratumException(StratumError.MinusOne, "stale share");
+        }
+
+        return await SubmitShareAsync(worker, context, workerName, job, nonce.StripHexPrefix(), ct);
     }
 
     public async Task<Share> SubmitShareV2Async(StratumConnection worker, string[] request, CancellationToken ct)
@@ -368,14 +398,20 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
         var jobId = request[1];
         var nonce = request[2];
 
+        EthereumJob job;
+
         // stale?
-        if(jobId != currentJob.Id)
-            throw new StratumException(StratumError.MinusOne, "stale share");
+        lock(jobLock)
+        {
+            // look up job by id
+            if(!validJobs.TryGetValue(jobId, out job))
+                throw new StratumException(StratumError.MinusOne, "stale share");
+        }
 
         // assemble full-nonce
         var fullNonceHex = context.ExtraNonce1 + nonce;
 
-        return await SubmitShareAsync(worker, context, context.Worker, currentJob, fullNonceHex, ct);
+        return await SubmitShareAsync(worker, context, context.Worker, job, fullNonceHex, ct);
     }
 
     private async Task<Share> SubmitShareAsync(StratumConnection worker,
