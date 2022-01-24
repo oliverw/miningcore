@@ -53,7 +53,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
     private EthashFull ethash;
     private readonly IMasterClock clock;
     private readonly IExtraNonceProvider extraNonceProvider;
-    private const int MaxBlockBacklog = 8;
+    private const int MaxBlockBacklog = 6;
     protected readonly Dictionary<string, EthereumJob> validJobs = new();
     private EthereumPoolConfigExtra extraPoolConfig;
 
