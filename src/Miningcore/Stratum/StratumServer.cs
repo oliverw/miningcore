@@ -329,7 +329,7 @@ public abstract class StratumServer
     {
         var tmp = connections.Values.ToArray();
 
-        return tmp.Select(func);
+        return tmp.Where(x=> x.IsAlive).Select(func);
     }
 
     protected void PublishTelemetry(TelemetryCategory cat, TimeSpan elapsed, bool? success = null, int? total = null)

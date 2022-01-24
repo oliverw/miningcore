@@ -14,4 +14,12 @@ public static class LogUtil
     {
         return LogManager.GetLogger(poolId);
     }
+
+    public static string DotTerminate(string msg)
+    {
+        if(!msg.EndsWith("."))
+            msg += ".";
+
+        return msg;
+    }
 }

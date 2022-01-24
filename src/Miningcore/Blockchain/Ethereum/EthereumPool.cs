@@ -418,9 +418,6 @@ public class EthereumPool : PoolBase
 
         return Guard(Task.WhenAll(TaskForEach(async connection =>
         {
-            if(!connection.IsAlive)
-                return;
-
             var context = connection.ContextAs<EthereumWorkerContext>();
 
             if(!context.IsSubscribed || !context.IsAuthorized || CloseIfDead(connection, context))

@@ -363,9 +363,6 @@ public class EquihashPool : PoolBase
 
         return Guard(Task.WhenAll(TaskForEach(async connection =>
         {
-            if(!connection.IsAlive)
-                return;
-
             var context = connection.ContextAs<BitcoinWorkerContext>();
 
             if(!context.IsSubscribed || !context.IsAuthorized || CloseIfDead(connection, context))

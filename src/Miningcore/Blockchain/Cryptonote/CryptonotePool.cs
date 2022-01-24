@@ -290,9 +290,6 @@ public class CryptonotePool : PoolBase
 
         return Guard(Task.WhenAll(TaskForEach(async connection =>
         {
-            if(!connection.IsAlive)
-                return;
-
             var context = connection.ContextAs<CryptonoteWorkerContext>();
 
             if(!context.IsSubscribed || !context.IsAuthorized || CloseIfDead(connection, context))
