@@ -148,7 +148,7 @@ public abstract class PoolBase : StratumServer,
 
     protected async Task UpdateVarDiffAsync(StratumConnection connection, bool isIdleUpdate = false)
     {
-        var context = connection.ContextAs<WorkerContextBase>();
+        var context = connection.Context;
 
         if(context.VarDiff != null)
         {
@@ -235,15 +235,14 @@ public abstract class PoolBase : StratumServer,
     {
         await Guard(()=> Parallel.ForEachAsync(connections, ct, async (kvp, _ct) =>
         {
-            var connection = kvp.Value;
-            var context = connection.ContextAs<WorkerContextBase>();
+            var con = kvp.Value;
 
-            // don't bother with any connection which is not fully alive
-            if(!_ct.IsCancellationRequested &&
-               connection.IsAlive && context.IsSubscribed && context.IsAuthorized &&
-               !CloseIfDead(connection, context))
+            // don't bother with any inactive/dead connection
+            if(!_ct.IsCancellationRequested && con.IsAlive &&
+               con.Context.IsSubscribed && con.Context.IsAuthorized &&
+               !CloseIfDead(con, con.Context))
             {
-                await func(connection, _ct);
+                await func(con, _ct);
             }
         }), errorHandler);
     }

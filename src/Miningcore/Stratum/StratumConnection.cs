@@ -168,6 +168,7 @@ public class StratumConnection
     public DateTime? LastReceive { get; set; }
     public bool IsAlive { get; set; }
     public IObservable<Unit> Terminated => terminated.AsObservable();
+    public WorkerContextBase Context => context;
 
     public void SetContext<T>(T value) where T : WorkerContextBase
     {
