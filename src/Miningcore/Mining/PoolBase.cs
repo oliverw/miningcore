@@ -238,8 +238,7 @@ public abstract class PoolBase : StratumServer,
             var con = kvp.Value;
 
             // don't bother with any inactive/dead connection
-            if(!_ct.IsCancellationRequested && con.IsAlive &&
-               con.Context.IsSubscribed && con.Context.IsAuthorized &&
+            if(!_ct.IsCancellationRequested && con.IsAlive && con.Context.IsAuthorized &&
                !CloseIfDead(con, con.Context))
             {
                 await func(con, _ct);
