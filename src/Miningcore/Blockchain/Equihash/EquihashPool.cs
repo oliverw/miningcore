@@ -355,18 +355,15 @@ public class EquihashPool : PoolBase
         }
     }
 
-    protected Task OnNewJobAsync(object jobParams)
+    protected async Task OnNewJobAsync(object jobParams)
     {
         currentJobParams = jobParams;
 
-        logger.Info(() => "Broadcasting job");
+        logger.Info(() => $"Broadcasting job {((object[]) jobParams)[0]}");
 
-        return Guard(Task.WhenAll(TaskForEach(async connection =>
+        await ForEachMinerAsync(async (connection, ct) =>
         {
             var context = connection.ContextAs<BitcoinWorkerContext>();
-
-            if(!context.IsSubscribed || !context.IsAuthorized || CloseIfDead(connection, context))
-                return;
 
             // varDiff: if the client has a pending difficulty change, apply it now
             if(context.ApplyPendingDifficulty())
@@ -374,7 +371,7 @@ public class EquihashPool : PoolBase
 
             // send job
             await connection.NotifyAsync(BitcoinStratumMethods.MiningNotify, currentJobParams);
-        })), ex=> logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}"));
+        }, ex=> logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}"));
     }
 
     public override double HashrateFromShares(double shares, double interval)

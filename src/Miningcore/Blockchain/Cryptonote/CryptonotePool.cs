@@ -284,21 +284,16 @@ public class CryptonotePool : PoolBase
         return Interlocked.Increment(ref currentJobId).ToString(CultureInfo.InvariantCulture);
     }
 
-    private Task OnNewJobAsync()
+    private async Task OnNewJobAsync()
     {
-        logger.Info(() => "Broadcasting job");
+        logger.Info(() => "Broadcasting jobs");
 
-        return Guard(Task.WhenAll(TaskForEach(async connection =>
+        await ForEachMinerAsync(async (connection, ct) =>
         {
-            var context = connection.ContextAs<CryptonoteWorkerContext>();
-
-            if(!context.IsSubscribed || !context.IsAuthorized || CloseIfDead(connection, context))
-                return;
-
             // send job
             var job = CreateWorkerJob(connection);
             await connection.NotifyAsync(CryptonoteStratumMethods.JobNotify, job);
-        })), ex=> logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}"));
+        }, ex=> logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}"));
     }
 
     #region Overrides

@@ -220,21 +220,18 @@ public class ErgoPool : PoolBase
         }
     }
 
-    protected virtual Task OnNewJobAsync(object[] jobParams)
+    protected virtual async Task OnNewJobAsync(object[] jobParams)
     {
         currentJobParams = jobParams;
 
-        logger.Info(() => "Broadcasting job");
+        logger.Info(() => $"Broadcasting job {jobParams[0]}");
 
-        return Guard(Task.WhenAll(TaskForEach(async connection =>
+        await ForEachMinerAsync(async (connection, ct) =>
         {
             var context = connection.ContextAs<ErgoWorkerContext>();
 
-            if(!context.IsSubscribed || !context.IsAuthorized || CloseIfDead(connection, context))
-                return;
-
             await SendJob(connection, context, currentJobParams);
-        })), ex=> logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}"));
+        }, ex=> logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}"));
     }
 
     private async Task SendJob(StratumConnection connection, ErgoWorkerContext context, object[] jobParams)

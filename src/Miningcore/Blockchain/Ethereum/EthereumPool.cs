@@ -410,18 +410,15 @@ public class EthereumPool : PoolBase
         return context.Worker;
     }
 
-    protected virtual Task OnNewJobAsync()
+    protected virtual async Task OnNewJobAsync()
     {
         var currentJobParams = manager.GetJobParamsForStratum();
 
-        logger.Info(() => "Broadcasting job");
+        logger.Info(() => $"Broadcasting job {currentJobParams[0]}");
 
-        return Guard(Task.WhenAll(TaskForEach(async connection =>
+        await ForEachMinerAsync(async (connection, ct) =>
         {
             var context = connection.ContextAs<EthereumWorkerContext>();
-
-            if(!context.IsSubscribed || !context.IsAuthorized || CloseIfDead(connection, context))
-                return;
 
             switch(context.ProtocolVersion)
             {
@@ -433,7 +430,7 @@ public class EthereumPool : PoolBase
                     await SendJob(context, connection, currentJobParams);
                     break;
             }
-        })), ex=> logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}"));
+        }, ex=> logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}"));
     }
 
     protected void EnsureProtocolVersion(EthereumWorkerContext context, int version)

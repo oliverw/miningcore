@@ -11,10 +11,12 @@ using System.Text;
 using Autofac;
 using Microsoft.IO;
 using Miningcore.Banning;
+using Miningcore.Blockchain.Ethereum;
 using Miningcore.Configuration;
 using Miningcore.Extensions;
 using Miningcore.JsonRpc;
 using Miningcore.Messaging;
+using Miningcore.Mining;
 using Miningcore.Notifications.Messages;
 using Miningcore.Time;
 using Miningcore.Util;
@@ -325,7 +327,7 @@ public abstract class StratumServer
         return false;
     }
 
-    protected IEnumerable<Task> TaskForEach(Func<StratumConnection, Task> func)
+    protected IEnumerable<Task> TaskForEachMiner(Func<StratumConnection, Task> func)
     {
         var tmp = connections.Values.ToArray();
 
