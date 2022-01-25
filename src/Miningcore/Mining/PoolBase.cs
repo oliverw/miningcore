@@ -23,7 +23,6 @@ using Miningcore.VarDiff;
 using Newtonsoft.Json;
 using NLog;
 using Contract = Miningcore.Contracts.Contract;
-using static Miningcore.Util.ActionUtils;
 
 // ReSharper disable InconsistentlySynchronizedField
 
@@ -225,27 +224,32 @@ public abstract class PoolBase : StratumServer,
     #endregion // VarDiff
 
     protected Task ForEachMinerAsync(Func<StratumConnection, CancellationToken, Task> func,
-        Action<Exception> errorHandler)
+        Action<StratumConnection, Exception> errorHandler)
     {
         return ForEachMinerAsync(func, errorHandler, CancellationToken.None);
     }
 
     protected async Task ForEachMinerAsync(Func<StratumConnection, CancellationToken, Task> func,
-        Action<Exception> errorHandler, CancellationToken ct)
+        Action<StratumConnection, Exception> errorHandler, CancellationToken ct)
     {
         await Parallel.ForEachAsync(connections, ct, async (kvp, _ct) =>
         {
-            await Guard(async () =>
-            {
-                var con = kvp.Value;
+            var con = kvp.Value;
 
+            try
+            {
                 // don't bother with any inactive/dead connection
                 if(!_ct.IsCancellationRequested && con.IsAlive && con.Context.IsAuthorized &&
                    !CloseIfDead(con, con.Context))
                 {
                     await func(con, _ct);
                 }
-            }, errorHandler);
+            }
+
+            catch(Exception ex)
+            {
+                errorHandler(con, ex);
+            }
         });
     }
 

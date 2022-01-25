@@ -231,7 +231,7 @@ public class ErgoPool : PoolBase
             var context = connection.ContextAs<ErgoWorkerContext>();
 
             await SendJob(connection, context, currentJobParams);
-        }, ex=> logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}"));
+        }, (con, ex)=> logger.Debug(() => $"{nameof(OnNewJobAsync)}: [{con.ConnectionId}] {ex.Message}"));
     }
 
     private async Task SendJob(StratumConnection connection, ErgoWorkerContext context, object[] jobParams)

@@ -293,7 +293,7 @@ public class CryptonotePool : PoolBase
             // send job
             var job = CreateWorkerJob(connection);
             await connection.NotifyAsync(CryptonoteStratumMethods.JobNotify, job);
-        }, ex=> logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}"));
+        }, (con, ex)=> logger.Debug(() => $"{nameof(OnNewJobAsync)}: [{con.ConnectionId}] {ex.Message}"));
     }
 
     #region Overrides
