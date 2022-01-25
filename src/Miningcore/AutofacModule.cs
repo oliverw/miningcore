@@ -54,8 +54,6 @@ public class AutofacModule : Module
 
         builder.RegisterInstance(new RecyclableMemoryStreamManager
         {
-            MaximumFreeSmallPoolBytes = 0x100000,   // 1 MB
-            MaximumFreeLargePoolBytes = 0x1000000,  // 16 MB
             ThrowExceptionOnToArray = true
         });
 
