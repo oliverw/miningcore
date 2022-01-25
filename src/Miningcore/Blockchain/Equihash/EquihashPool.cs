@@ -371,7 +371,7 @@ public class EquihashPool : PoolBase
 
             // send job
             await connection.NotifyAsync(BitcoinStratumMethods.MiningNotify, currentJobParams);
-        }, (con, ex)=> logger.Debug(() => $"{nameof(OnNewJobAsync)}: [{con.ConnectionId}] {ex.Message}"));
+        });
     }
 
     public override double HashrateFromShares(double shares, double interval)

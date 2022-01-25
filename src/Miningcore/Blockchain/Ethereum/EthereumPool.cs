@@ -430,7 +430,7 @@ public class EthereumPool : PoolBase
                     await SendJob(context, connection, currentJobParams);
                     break;
             }
-        }, (con, ex)=> logger.Debug(() => $"{nameof(OnNewJobAsync)}: [{con.ConnectionId}] {ex.Message}"));
+        });
     }
 
     protected void EnsureProtocolVersion(EthereumWorkerContext context, int version)

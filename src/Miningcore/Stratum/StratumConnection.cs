@@ -216,21 +216,10 @@ public class StratumConnection
     {
         Contract.RequiresNonNull(payload, nameof(payload));
 
-        try
-        {
-            if(sendQueue.Count >= SendQueueCapacity)
-                throw new IOException("Sendqueue stalled");
+        if(sendQueue.Count >= SendQueueCapacity)
+            throw new IOException("Sendqueue stalled");
 
-            return sendQueue.SendAsync(payload);
-        }
-
-        catch(Exception ex)
-        {
-            logger.Error(() => $"[{ConnectionId}] {LogUtil.DotTerminate(ex.Message)} Closing connection ...");
-
-            Disconnect();
-            throw;
-        }
+        return sendQueue.SendAsync(payload);
     }
 
     private async Task FillReceivePipeAsync(CancellationToken ct)

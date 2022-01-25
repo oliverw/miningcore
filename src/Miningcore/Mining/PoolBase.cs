@@ -223,14 +223,12 @@ public abstract class PoolBase : StratumServer,
 
     #endregion // VarDiff
 
-    protected Task ForEachMinerAsync(Func<StratumConnection, CancellationToken, Task> func,
-        Action<StratumConnection, Exception> errorHandler)
+    protected Task ForEachMinerAsync(Func<StratumConnection, CancellationToken, Task> func)
     {
-        return ForEachMinerAsync(func, errorHandler, CancellationToken.None);
+        return ForEachMinerAsync(func, CancellationToken.None);
     }
 
-    protected async Task ForEachMinerAsync(Func<StratumConnection, CancellationToken, Task> func,
-        Action<StratumConnection, Exception> errorHandler, CancellationToken ct)
+    protected async Task ForEachMinerAsync(Func<StratumConnection, CancellationToken, Task> func, CancellationToken ct)
     {
         await Parallel.ForEachAsync(connections, ct, async (kvp, _ct) =>
         {
@@ -248,7 +246,10 @@ public abstract class PoolBase : StratumServer,
 
             catch(Exception ex)
             {
-                errorHandler(con, ex);
+                // not looking good, close it
+                logger.Error(() => $"[{con.ConnectionId}] {LogUtil.DotTerminate(ex.Message)} Closing connection ...");
+
+                CloseConnection(con);
             }
         });
     }
