@@ -114,8 +114,11 @@ $RECYCLE.BIN/
 
 logs/
 
-src/Miningcore/config.json
+#src/Miningcore/config.json
 src/Miningcore/config2.json
 /src/Miningcore/coins2.json
 
 !**/lib/**/*
+**/lib/**/*.o
+*.a
+*.code-workspace

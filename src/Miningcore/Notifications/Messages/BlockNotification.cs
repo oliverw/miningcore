@@ -19,6 +19,10 @@ public class BlockFoundNotification : BlockNotification
     public string Source { get; set; }
 }
 
+public class NetworkBlockNotification : BlockNotification
+{
+}
+
 public class NewChainHeightNotification : BlockNotification
 {
 }

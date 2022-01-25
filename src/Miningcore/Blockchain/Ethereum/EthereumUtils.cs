@@ -1,9 +1,12 @@
+using System.Globalization;
+using System.Numerics;
+
 namespace Miningcore.Blockchain.Ethereum;
 
 public static class EthereumUtils
 {
-    public static void DetectNetworkAndChain(string netVersionResponse, string gethChainResponse,
-        out EthereumNetworkType networkType, out GethChainType chainType)
+    public static void DetectNetworkAndChain(string netVersionResponse, string gethChainResponse, string chainIdResponse,
+        out EthereumNetworkType networkType, out GethChainType chainType, out BigInteger chainId)
     {
         // convert network
         if(int.TryParse(netVersionResponse, out var netWorkTypeInt))
@@ -28,5 +31,16 @@ public static class EthereumUtils
 
         if(chainType == GethChainType.Callisto)
             chainType = GethChainType.Callisto;
+
+        // convert chainId
+        if(chainIdResponse.ToLower().StartsWith("0x")) 
+        {
+            chainIdResponse = chainIdResponse.Replace("0x", "0", StringComparison.OrdinalIgnoreCase);
+        }
+
+        if(!BigInteger.TryParse(chainIdResponse, NumberStyles.AllowHexSpecifier, null, out chainId))
+        {
+            chainId = 0;
+        }
     }
 }

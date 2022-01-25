@@ -27,4 +27,9 @@ public static class NumberExtensions
         value = BitConverter.ToUInt32(bytes, 0);
         return value;
     }
+    
+    public static string ToStr(this decimal value)
+    {
+        return $"{value:0.##########}";
+    }
 }

@@ -50,6 +50,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
     private RpcClient rpc;
     private EthereumNetworkType networkType;
     private GethChainType chainType;
+    private BigInteger chainId;
     private EthashFull ethash;
     private readonly IMasterClock clock;
     private readonly IExtraNonceProvider extraNonceProvider;
@@ -483,6 +484,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
             new RpcRequest(EC.GetNetVersion),
             new RpcRequest(EC.GetAccounts),
             new RpcRequest(EC.GetCoinbase),
+            new RpcRequest(EC.ChainId),
         };
 
         var responses = await rpc.ExecuteBatchAsync(logger, ct, requests);
@@ -501,8 +503,9 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
         // var accounts = responses[1].Response.ToObject<string[]>();
         // var coinbase = responses[2].Response.ToObject<string>();
         var gethChain = extraPoolConfig?.ChainTypeOverride ?? "Ethereum";
+        var chainIdResult = responses[3]?.Response?.ToObject<string>();
 
-        EthereumUtils.DetectNetworkAndChain(netVersion, gethChain, out networkType, out chainType);
+        EthereumUtils.DetectNetworkAndChain(netVersion, gethChain, chainIdResult ?? "0", out networkType, out chainType, out chainId);
 
         // update stats
         BlockchainStats.RewardType = "POW";

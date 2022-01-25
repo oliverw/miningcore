@@ -280,6 +280,11 @@ public abstract class StratumServer
         if(!port.PoolEndpoint.Tls)
             return null;
 
+        if(port.PoolEndpoint.TlsPfx != null)
+        {
+            return port.PoolEndpoint.TlsPfx;
+        }
+
         if(!certs.TryGetValue(port.PoolEndpoint.TlsPfxFile, out var cert))
         {
             cert = Guard(()=> new X509Certificate2(port.PoolEndpoint.TlsPfxFile, port.PoolEndpoint.TlsPfxPassword), ex =>

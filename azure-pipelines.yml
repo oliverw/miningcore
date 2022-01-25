@@ -11,7 +11,7 @@ trigger:
 pr: none
 
 pool:
-  vmImage: ubuntu-latest
+  name: mue1-ncrypto-int-ado-vm-ubuntu
 
 variables:
   buildConfiguration: 'Release'
@@ -22,12 +22,26 @@ steps:
   inputs:
     packageType: 'sdk'
     version: '5.x'
+- task: AzureKeyVault@2
+  displayName: Pull secrets
+  inputs:
+    azureSubscription: 'NonProd App SP'
+    KeyVaultName: 'mue1-ncrypto-dev-kv'
+    SecretsFilter: '*'
+    RunAsPreJob: false
 - task: Bash@3
   displayName: Run build
   inputs:
     filePath: './scripts/build_test_pipeline.sh'
     arguments: '$(System.DefaultWorkingDirectory) $(Build.ArtifactStagingDirectory) $(buildConfiguration)'
     workingDirectory: '$(System.DefaultWorkingDirectory)'
+  env:
+    PERSISTENCE_POSTGRES_HOST: $(persistence-postgres-host)
+    PERSISTENCE_POSTGRES_USER: $(persistence-postgres-user)
+    PERSISTENCE_POSTGRES_PASSWORD: $(persistence-postgres-password)
+    PERSISTENCE_COSMOS_ENDPOINTURL: $(persistence-cosmos-endpointUrl)
+    PERSISTENCE_COSMOS_AUTHORIZATIONKEY: $(persistence-cosmos-authorizationKey)
+    PERSISTENCE_COSMOS_DATABASEID: $(persistence-cosmos-databaseId)
 - task: DotNetCoreCLI@2
   displayName: Run tests
   inputs:

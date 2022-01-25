@@ -32,6 +32,7 @@ public class WebSocketNotificationsRelay : WebSocketHandler
         Relay<BlockUnlockedNotification>(WsNotificationType.BlockUnlocked);
         Relay<BlockConfirmationProgressNotification>(WsNotificationType.BlockUnlockProgress);
         Relay<NewChainHeightNotification>(WsNotificationType.NewChainHeight);
+        Relay<NetworkBlockNotification>(WsNotificationType.NetworkBlock);
         Relay<PaymentNotification>(WsNotificationType.Payment);
         Relay<HashrateNotification>(WsNotificationType.HashrateUpdated);
     }
