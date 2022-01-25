@@ -236,16 +236,16 @@ public abstract class PoolBase : StratumServer,
 
             try
             {
-                // don't bother with any inactive/dead connection
-                if(!_ct.IsCancellationRequested && con.IsAlive && con.Context.IsAuthorized && !CloseIfDead(con))
+                if(!_ct.IsCancellationRequested && con.IsAlive && con.Context.IsAuthorized)
                 {
+                    ZombieCheck(con);
+
                     await func(con, _ct);
                 }
             }
 
             catch(Exception ex)
             {
-                // not looking good, close it
                 logger.Error(() => $"[{con.ConnectionId}] {LogUtil.DotTerminate(ex.Message)} Closing connection ...");
 
                 CloseConnection(con);
@@ -253,20 +253,15 @@ public abstract class PoolBase : StratumServer,
         });
     }
 
-    protected bool CloseIfDead(StratumConnection connection)
+    protected void ZombieCheck(StratumConnection connection)
     {
-        var lastActivityAgo = clock.Now - connection.Context.LastActivity;
-
-        if(poolConfig.ClientConnectionTimeout > 0 &&
-           lastActivityAgo.TotalSeconds > poolConfig.ClientConnectionTimeout)
+        if(poolConfig.ClientConnectionTimeout > 0)
         {
-            logger.Info(() => $"[[{connection.ConnectionId}] Booting zombie-worker (idle-timeout exceeded)");
-            CloseConnection(connection);
+            var lastActivityAgo = clock.Now - connection.Context.LastActivity;
 
-            return true;
+            if(lastActivityAgo.TotalSeconds > poolConfig.ClientConnectionTimeout)
+                throw new Exception($"Detected zombie-worker (idle-timeout exceeded)");
         }
-
-        return false;
     }
 
     protected void SetupBanning(ClusterConfig clusterConfig)
