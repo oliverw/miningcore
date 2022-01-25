@@ -237,8 +237,7 @@ public abstract class PoolBase : StratumServer,
             try
             {
                 // don't bother with any inactive/dead connection
-                if(!_ct.IsCancellationRequested && con.IsAlive && con.Context.IsAuthorized &&
-                   !CloseIfDead(con, con.Context))
+                if(!_ct.IsCancellationRequested && con.IsAlive && con.Context.IsAuthorized && !CloseIfDead(con))
                 {
                     await func(con, _ct);
                 }
@@ -254,9 +253,9 @@ public abstract class PoolBase : StratumServer,
         });
     }
 
-    protected bool CloseIfDead(StratumConnection connection, WorkerContextBase context)
+    protected bool CloseIfDead(StratumConnection connection)
     {
-        var lastActivityAgo = clock.Now - context.LastActivity;
+        var lastActivityAgo = clock.Now - connection.Context.LastActivity;
 
         if(poolConfig.ClientConnectionTimeout > 0 &&
            lastActivityAgo.TotalSeconds > poolConfig.ClientConnectionTimeout)
