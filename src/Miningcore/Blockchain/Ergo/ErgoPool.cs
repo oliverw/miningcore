@@ -147,7 +147,7 @@ public class ErgoPool : PoolBase
 
             banManager.Ban(connection.RemoteEndpoint.Address, loginFailureBanTimeout);
 
-            CloseConnection(connection);
+            Disconnect(connection);
         }
     }
 
@@ -201,6 +201,7 @@ public class ErgoPool : PoolBase
 
             // update client stats
             context.Stats.ValidShares++;
+
             await UpdateVarDiffAsync(connection);
         }
 
@@ -226,12 +227,12 @@ public class ErgoPool : PoolBase
 
         logger.Info(() => $"Broadcasting job {jobParams[0]}");
 
-        await ForEachMinerAsync(async (connection, ct) =>
+        await Guard(() => ForEachMinerAsync(async (connection, ct) =>
         {
             var context = connection.ContextAs<ErgoWorkerContext>();
 
             await SendJob(connection, context, currentJobParams);
-        });
+        }));
     }
 
     private async Task SendJob(StratumConnection connection, ErgoWorkerContext context, object[] jobParams)
@@ -372,9 +373,9 @@ public class ErgoPool : PoolBase
 
     protected override async Task OnVarDiffUpdateAsync(StratumConnection connection, double newDiff)
     {
-        var context = connection.ContextAs<ErgoWorkerContext>();
+        await base.OnVarDiffUpdateAsync(connection, newDiff);
 
-        context.EnqueueNewDifficulty(newDiff);
+        var context = connection.ContextAs<ErgoWorkerContext>();
 
         if(context.ApplyPendingDifficulty())
         {

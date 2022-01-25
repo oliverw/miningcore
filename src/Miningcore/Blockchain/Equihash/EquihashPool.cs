@@ -201,7 +201,7 @@ public class EquihashPool : PoolBase
 
             banManager.Ban(connection.RemoteEndpoint.Address, loginFailureBanTimeout);
 
-            CloseConnection(connection);
+            Disconnect(connection);
         }
     }
 
@@ -255,6 +255,7 @@ public class EquihashPool : PoolBase
 
             // update client stats
             context.Stats.ValidShares++;
+
             await UpdateVarDiffAsync(connection);
         }
 
@@ -361,7 +362,7 @@ public class EquihashPool : PoolBase
 
         logger.Info(() => $"Broadcasting job {((object[]) jobParams)[0]}");
 
-        await ForEachMinerAsync(async (connection, ct) =>
+        await Guard(() => ForEachMinerAsync(async (connection, ct) =>
         {
             var context = connection.ContextAs<BitcoinWorkerContext>();
 
@@ -371,7 +372,7 @@ public class EquihashPool : PoolBase
 
             // send job
             await connection.NotifyAsync(BitcoinStratumMethods.MiningNotify, currentJobParams);
-        });
+        }));
     }
 
     public override double HashrateFromShares(double shares, double interval)
@@ -387,14 +388,11 @@ public class EquihashPool : PoolBase
 
     protected override async Task OnVarDiffUpdateAsync(StratumConnection connection, double newDiff)
     {
-        var context = connection.ContextAs<BitcoinWorkerContext>();
+        await base.OnVarDiffUpdateAsync(connection, newDiff);
 
-        context.EnqueueNewDifficulty(newDiff);
-
-        // apply immediately and notify
-        if(context.ApplyPendingDifficulty())
+        if(connection.Context.ApplyPendingDifficulty())
         {
-            await connection.NotifyAsync(EquihashStratumMethods.SetTarget, new object[] { EncodeTarget(context.Difficulty) });
+            await connection.NotifyAsync(EquihashStratumMethods.SetTarget, new object[] { EncodeTarget(connection.Context.Difficulty) });
             await connection.NotifyAsync(BitcoinStratumMethods.MiningNotify, currentJobParams);
         }
     }

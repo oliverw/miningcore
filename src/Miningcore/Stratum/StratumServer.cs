@@ -191,7 +191,7 @@ public abstract class StratumServer
         if(banManager?.IsBanned(connection.RemoteEndpoint.Address) == true)
         {
             logger.Info(() => $"[{connection.ConnectionId}] Disconnecting banned client @ {connection.RemoteEndpoint.Address}");
-            CloseConnection(connection);
+            Disconnect(connection);
             return;
         }
 
@@ -283,13 +283,11 @@ public abstract class StratumServer
         UnregisterConnection(connection);
     }
 
-    protected void CloseConnection(StratumConnection connection)
+    protected void Disconnect(StratumConnection connection)
     {
         Contract.RequiresNonNull(connection, nameof(connection));
 
         connection.Disconnect();
-
-        UnregisterConnection(connection);
     }
 
     private X509Certificate2 GetTlsCert(StratumEndpoint port)

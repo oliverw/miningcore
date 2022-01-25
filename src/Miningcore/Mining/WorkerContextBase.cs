@@ -18,8 +18,9 @@ public class WorkerContextBase
 
     public ShareStats Stats { get; set; }
     public VarDiffContext VarDiff { get; set; }
+    public DateTime Created { get; set; }
     public DateTime LastActivity { get; set; }
-    public bool IsAuthorized { get; set; } = false;
+    public bool IsAuthorized { get; set; }
     public bool IsSubscribed { get; set; }
 
     /// <summary>
@@ -52,10 +53,17 @@ public class WorkerContextBase
     {
         Difficulty = difficulty;
         LastActivity = clock.Now;
+        Created = clock.Now;
         Stats = new ShareStats();
 
         if(varDiffConfig != null)
-            VarDiff = new VarDiffContext { Config = varDiffConfig };
+        {
+            VarDiff = new VarDiffContext
+            {
+                Created = Created,
+                Config = varDiffConfig
+            };
+        }
     }
 
     public void EnqueueNewDifficulty(double difficulty)
@@ -82,7 +90,4 @@ public class WorkerContextBase
         Difficulty = difficulty;
     }
 
-    public void Dispose()
-    {
-    }
 }

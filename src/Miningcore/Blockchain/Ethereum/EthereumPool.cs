@@ -155,7 +155,7 @@ public class EthereumPool : PoolBase
 
             banManager.Ban(connection.RemoteEndpoint.Address, loginFailureBanTimeout);
 
-            CloseConnection(connection);
+            Disconnect(connection);
         }
     }
 
@@ -218,6 +218,7 @@ public class EthereumPool : PoolBase
 
             // update client stats
             context.Stats.ValidShares++;
+
             await UpdateVarDiffAsync(connection);
         }
 
@@ -327,7 +328,7 @@ public class EthereumPool : PoolBase
 
             banManager.Ban(connection.RemoteEndpoint.Address, loginFailureBanTimeout);
 
-            CloseConnection(connection);
+            Disconnect(connection);
         }
     }
 
@@ -416,7 +417,7 @@ public class EthereumPool : PoolBase
 
         logger.Info(() => $"Broadcasting job {currentJobParams[0]}");
 
-        await ForEachMinerAsync(async (connection, ct) =>
+        await Guard(() => ForEachMinerAsync(async (connection, ct) =>
         {
             var context = connection.ContextAs<EthereumWorkerContext>();
 
@@ -430,7 +431,7 @@ public class EthereumPool : PoolBase
                     await SendJob(context, connection, currentJobParams);
                     break;
             }
-        });
+        }));
     }
 
     protected void EnsureProtocolVersion(EthereumWorkerContext context, int version)
@@ -524,7 +525,6 @@ public class EthereumPool : PoolBase
     {
         await base.OnVarDiffUpdateAsync(connection, newDiff);
 
-        // apply immediately and notify client
         var context = connection.ContextAs<EthereumWorkerContext>();
 
         if(context.ApplyPendingDifficulty())

@@ -143,7 +143,7 @@ public class CryptonotePool : PoolBase
 
             banManager.Ban(connection.RemoteEndpoint.Address, loginFailureBanTimeout);
 
-            CloseConnection(connection);
+            Disconnect(connection);
         }
     }
 
@@ -260,6 +260,7 @@ public class CryptonotePool : PoolBase
 
             // update client stats
             context.Stats.ValidShares++;
+
             await UpdateVarDiffAsync(connection);
         }
 
@@ -288,12 +289,12 @@ public class CryptonotePool : PoolBase
     {
         logger.Info(() => "Broadcasting jobs");
 
-        await ForEachMinerAsync(async (connection, ct) =>
+        await Guard(() => ForEachMinerAsync(async (connection, ct) =>
         {
             // send job
             var job = CreateWorkerJob(connection);
             await connection.NotifyAsync(CryptonoteStratumMethods.JobNotify, job);
-        });
+        }));
     }
 
     #region Overrides
@@ -406,10 +407,7 @@ public class CryptonotePool : PoolBase
     {
         await base.OnVarDiffUpdateAsync(connection, newDiff);
 
-        // apply immediately and notify client
-        var context = connection.ContextAs<CryptonoteWorkerContext>();
-
-        if(context.ApplyPendingDifficulty())
+        if(connection.Context.ApplyPendingDifficulty())
         {
             // re-send job
             var job = CreateWorkerJob(connection);
