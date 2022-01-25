@@ -327,13 +327,6 @@ public abstract class StratumServer
         return false;
     }
 
-    protected IEnumerable<Task> TaskForEachMiner(Func<StratumConnection, Task> func)
-    {
-        var tmp = connections.Values.ToArray();
-
-        return tmp.Where(x=> x.IsAlive).Select(func);
-    }
-
     protected void PublishTelemetry(TelemetryCategory cat, TimeSpan elapsed, bool? success = null, int? total = null)
     {
         messageBus.SendTelemetry(poolConfig.Id, cat, elapsed, success, null, total);

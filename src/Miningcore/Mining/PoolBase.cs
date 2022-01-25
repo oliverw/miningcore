@@ -233,27 +233,19 @@ public abstract class PoolBase : StratumServer,
     protected async Task ForEachMinerAsync(Func<StratumConnection, CancellationToken, Task> func,
         Action<Exception> errorHandler, CancellationToken ct)
     {
-        try
+        await Guard(()=> Parallel.ForEachAsync(connections, ct, async (kvp, _ct) =>
         {
-            var _connections = connections.Values.ToArray();
+            var connection = kvp.Value;
+            var context = connection.ContextAs<WorkerContextBase>();
 
-            await Parallel.ForEachAsync(_connections, ct, async (connection, _ct) =>
+            // don't bother with any connection which is not fully alive
+            if(!_ct.IsCancellationRequested &&
+               connection.IsAlive && context.IsSubscribed && context.IsAuthorized &&
+               !CloseIfDead(connection, context))
             {
-                var context = connection.ContextAs<WorkerContextBase>();
-
-                if(!_ct.IsCancellationRequested &&
-                   connection.IsAlive && context.IsSubscribed && context.IsAuthorized &&
-                   !CloseIfDead(connection, context))
-                {
-                    await func(connection, _ct);
-                }
-            });
-        }
-
-        catch(Exception ex)
-        {
-            errorHandler.Invoke(ex);
-        }
+                await func(connection, _ct);
+            }
+        }), errorHandler);
     }
 
     protected bool CloseIfDead(StratumConnection connection, WorkerContextBase context)
