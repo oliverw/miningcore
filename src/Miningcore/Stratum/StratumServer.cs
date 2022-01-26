@@ -101,7 +101,7 @@ public abstract class StratumServer
             server.Bind(port.IPEndPoint);
             server.Listen();
 
-            return Task.Run(()=> Listen(server, port, ct), ct);
+            return Listen(server, port, ct);
         }).ToArray();
 
         return Task.WhenAll(tasks);

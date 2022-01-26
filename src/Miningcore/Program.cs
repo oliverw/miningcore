@@ -364,28 +364,25 @@ public class Program : BackgroundService
             .Select(config => RunPool(config, coinTemplates, ct)));
     }
 
-    private Task RunPool(PoolConfig poolConfig, Dictionary<string, CoinTemplate> coinTemplates, CancellationToken ct)
+    private async Task RunPool(PoolConfig poolConfig, Dictionary<string, CoinTemplate> coinTemplates, CancellationToken ct)
     {
-        return Task.Run(async () =>
-        {
-            // Lookup coin
-            if(!coinTemplates.TryGetValue(poolConfig.Coin, out var template))
-                throw new PoolStartupException($"Pool {poolConfig.Id} references undefined coin '{poolConfig.Coin}'");
+        // Lookup coin
+        if(!coinTemplates.TryGetValue(poolConfig.Coin, out var template))
+            throw new PoolStartupException($"Pool {poolConfig.Id} references undefined coin '{poolConfig.Coin}'");
 
-            poolConfig.Template = template;
+        poolConfig.Template = template;
 
-            // resolve implementation
-            var poolImpl = container.Resolve<IEnumerable<Meta<Lazy<IMiningPool, CoinFamilyAttribute>>>>()
-                .First(x => x.Value.Metadata.SupportedFamilies.Contains(poolConfig.Template.Family)).Value;
+        // resolve implementation
+        var poolImpl = container.Resolve<IEnumerable<Meta<Lazy<IMiningPool, CoinFamilyAttribute>>>>()
+            .First(x => x.Value.Metadata.SupportedFamilies.Contains(poolConfig.Template.Family)).Value;
 
-            // configure
-            var pool = poolImpl.Value;
-            pool.Configure(poolConfig, clusterConfig);
-            pools[poolConfig.Id] = pool;
+        // configure
+        var pool = poolImpl.Value;
+        pool.Configure(poolConfig, clusterConfig);
+        pools[poolConfig.Id] = pool;
 
-            // go
-            await pool.RunAsync(ct);
-        }, ct);
+        // go
+        await pool.RunAsync(ct);
     }
 
     private Task RecoverSharesAsync(string recoveryFilename)

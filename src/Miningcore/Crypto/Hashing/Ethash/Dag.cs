@@ -57,7 +57,7 @@ public class Dag : IDisposable
         }
     }
 
-    public async ValueTask GenerateAsync(string dagDir, ILogger logger, CancellationToken ct)
+    public async Task GenerateAsync(string dagDir, ILogger logger, CancellationToken ct)
     {
         Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(dagDir), $"{nameof(dagDir)} must not be empty");
 
