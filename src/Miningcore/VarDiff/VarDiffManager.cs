@@ -79,11 +79,10 @@ public static class VarDiffManager
         if(!Monitor.TryEnter(ctx))
             return null;
 
-        var now = clock.Now;
-        var ts = now.ToUnixSeconds();
-
         try
         {
+            var now = clock.Now;
+            var ts = now.ToUnixSeconds();
             double timeDelta;
 
             if(ctx.LastTs.HasValue)
