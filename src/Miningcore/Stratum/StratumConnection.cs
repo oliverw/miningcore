@@ -235,7 +235,7 @@ public class StratumConnection
             if(cb == 0)
                 break; // EOF
 
-            logger.Debug(() => $"[{ConnectionId}] [NET] Received data: {StratumConstants.Encoding.GetString(memory.ToArray(), 0, cb)}");
+            logger.Debug(() => $"[{ConnectionId}] [NET] Received data: {StratumConstants.Encoding.GetString(memory.Slice(0, cb).Span)}");
 
             LastReceive = clock.Now;
 
