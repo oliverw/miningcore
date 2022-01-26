@@ -340,24 +340,24 @@ public class StratumConnection
     {
         await using var stream = rmsm.GetStream(nameof(StratumConnection)) as RecyclableMemoryStream;
 
-        // serialize to RecyclableMemoryStream
+        // serialize
         await using (var writer = new StreamWriter(stream!, StratumConstants.Encoding, -1, true))
         {
             serializer.Serialize(writer, msg);
         }
 
-        // ReSharper disable once AccessToDisposedClosure
         logger.Debug(() => $"[{ConnectionId}] Sending: {StratumConstants.Encoding.GetString(stream.GetReadOnlySequence())}");
 
-        stream.WriteByte((byte) '\n'); // terminator
-        stream.Seek(0, SeekOrigin.Begin); // rewind for copy
+        // append newline
+        stream.WriteByte((byte) '\n');
 
-        // copy to network
-        using var ctsTimeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        ctsTimeout.CancelAfter(sendTimeout);
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        cts.CancelAfter(sendTimeout);
 
-        await stream.CopyToAsync(networkStream, ctsTimeout.Token);
-        await networkStream.FlushAsync(ctsTimeout.Token);
+        // send
+        stream.Position = 0;
+        await stream.CopyToAsync(networkStream, cts.Token);
+        await networkStream.FlushAsync(cts.Token);
     }
 
     private async Task ProcessRequestAsync(
