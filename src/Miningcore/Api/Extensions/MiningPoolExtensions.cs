@@ -1,7 +1,9 @@
 using AutoMapper;
 using Miningcore.Api.Responses;
 using Miningcore.Blockchain;
+using Miningcore.Blockchain.Ethereum.Configuration;
 using Miningcore.Configuration;
+using Miningcore.Extensions;
 using Miningcore.Mining;
 
 namespace Miningcore.Api.Extensions;
@@ -12,8 +14,12 @@ public static class MiningPoolExtensions
     {
         var poolInfo = mapper.Map<PoolInfo>(poolConfig);
 
-        poolInfo.PoolStats = mapper.Map<PoolStats>(stats);
-        poolInfo.NetworkStats = pool?.NetworkStats ?? mapper.Map<BlockchainStats>(stats);
+        // map stats if it is not null
+        if (null != stats)
+        {
+            poolInfo.PoolStats = mapper.Map<PoolStats>(stats);
+            poolInfo.NetworkStats = pool?.NetworkStats ?? mapper.Map<BlockchainStats>(stats);
+        }
 
         // pool wallet link
         var addressInfobaseUrl = poolConfig.Template.ExplorerAccountLink;
@@ -28,7 +34,8 @@ public static class MiningPoolExtensions
         {
             var extra = poolInfo.PaymentProcessing.Extra;
 
-            //extra.StripValue(nameof(EthereumPoolPaymentProcessingConfigExtra.CoinbasePassword));
+            extra.StripValue(nameof(EthereumPoolPaymentProcessingConfigExtra.CoinbasePassword));
+            extra.StripValue(nameof(EthereumPoolPaymentProcessingConfigExtra.PrivateKey));
         }
 
         return poolInfo;

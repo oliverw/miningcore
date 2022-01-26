@@ -76,6 +76,13 @@ public class PoolApiController : ApiControllerBase
 
                 result.TopMiners = minersByHashrate.Select(mapper.Map<MinerPerformanceStats>).ToArray();
 
+                // overwrite the hashvalue with the one calculated by payment processing
+                var poolState = await cf.Run(con => paymentsRepo.GetPoolState(con, pool.Config.Id));
+                if(poolState.HashValue > 0)
+                {
+                    result.PaymentProcessing.HashValue = poolState.HashValue;
+                }
+
                 return result;
             }).ToArray())
         };
@@ -114,28 +121,20 @@ public class PoolApiController : ApiControllerBase
     {
         var pool = GetPool(poolId);
 
-        // load stats
-        var stats = await cf.Run(con => statsRepo.GetLastPoolStatsAsync(con, pool.Id));
-
         // get pool
         pools.TryGetValue(pool.Id, out var poolInstance);
 
         var response = new GetPoolResponse
         {
-            Pool = pool.ToPoolInfo(mapper, stats, poolInstance)
+            Pool = pool.ToPoolInfo(mapper, null, poolInstance)
         };
 
-        // enrich
-        response.Pool.TotalPaid = await cf.Run(con => statsRepo.GetTotalPoolPaymentsAsync(con, pool.Id));
-        response.Pool.TotalBlocks = await cf.Run(con => blocksRepo.GetPoolBlockCountAsync(con, pool.Id));
-        response.Pool.LastPoolBlockTime = await cf.Run(con => blocksRepo.GetLastPoolBlockTimeAsync(con, pool.Id));
-
-        var from = clock.Now.AddDays(-1);
-
-        response.Pool.TopMiners = (await cf.Run(con => statsRepo.PagePoolMinersByHashrateAsync(
-                con, pool.Id, from, 0, 15)))
-            .Select(mapper.Map<MinerPerformanceStats>)
-            .ToArray();
+        // overwrite the hashvalue with the one calculated by payment processing
+        var poolState = await cf.Run(con => paymentsRepo.GetPoolState(con, pool.Id));
+        if(poolState.HashValue > 0)
+        {
+            response.Pool.PaymentProcessing.HashValue = poolState.HashValue;
+        }
 
         return response;
     }
@@ -445,49 +444,6 @@ public class PoolApiController : ApiControllerBase
         }
 
         var response = new PagedResultResponse<Responses.Payment[]>(payments, pageCount);
-        return response;
-    }
-
-    [HttpGet("{poolId}/miners/{address}/balancechanges")]
-    public async Task<Responses.BalanceChange[]> PageMinerBalanceChangesAsync(
-        string poolId, string address, [FromQuery] int page, [FromQuery] int pageSize = 15)
-    {
-        var pool = GetPool(poolId);
-
-        if(string.IsNullOrEmpty(address))
-            throw new ApiException("Invalid or missing miner address", HttpStatusCode.NotFound);
-
-        if(pool.Template.Family == CoinFamily.Ethereum)
-            address = address.ToLower();
-
-        var balanceChanges = (await cf.Run(con => paymentsRepo.PageBalanceChangesAsync(
-                con, pool.Id, address, page, pageSize)))
-            .Select(mapper.Map<Responses.BalanceChange>)
-            .ToArray();
-
-        return balanceChanges;
-    }
-
-    [HttpGet("/api/v2/pools/{poolId}/miners/{address}/balancechanges")]
-    public async Task<PagedResultResponse<Responses.BalanceChange[]>> PageMinerBalanceChangesV2Async(
-        string poolId, string address, [FromQuery] int page, [FromQuery] int pageSize = 15)
-    {
-        var pool = GetPool(poolId);
-
-        if(string.IsNullOrEmpty(address))
-            throw new ApiException("Invalid or missing miner address", HttpStatusCode.NotFound);
-
-        if(pool.Template.Family == CoinFamily.Ethereum)
-            address = address.ToLower();
-
-        uint pageCount = (uint) Math.Floor((await cf.Run(con => paymentsRepo.GetBalanceChangesCountAsync(con, poolId, address))) / (double) pageSize);
-
-        var balanceChanges = (await cf.Run(con => paymentsRepo.PageBalanceChangesAsync(
-                con, pool.Id, address, page, pageSize)))
-            .Select(mapper.Map<Responses.BalanceChange>)
-            .ToArray();
-
-        var response = new PagedResultResponse<Responses.BalanceChange[]>(balanceChanges, pageCount);
         return response;
     }
 

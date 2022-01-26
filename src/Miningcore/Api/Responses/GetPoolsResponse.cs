@@ -38,6 +38,7 @@ public class ApiCoinConfig
 public class ApiPoolPaymentProcessingConfig
 {
     public bool Enabled { get; set; }
+    public decimal HashValue { get; set; } // value of a hash in pool-base-currency, if using PPS payouts
     public decimal MinimumPayment { get; set; } // in pool-base-currency (ie. Bitcoin, not Satoshis)
     public string PayoutScheme { get; set; }
     public JToken PayoutSchemeConfig { get; set; }
