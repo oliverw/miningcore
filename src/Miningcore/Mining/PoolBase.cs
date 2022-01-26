@@ -150,7 +150,10 @@ public abstract class PoolBase : StratumServer,
 
             var poolEndpoint = poolConfig.Ports[connection.LocalEndpoint.Port];
             var manager = varDiffManagers.GetOrAdd(poolEndpoint, _ => new VarDiffManager(poolEndpoint.VarDiff, clock));
-            var newDiff = manager.Update(context.VarDiff, context.Difficulty, idle);
+
+            var newDiff = !idle ?
+                manager.Update(context.VarDiff, context.Difficulty) :
+                manager.IdleUpdate(context.VarDiff, context.Difficulty);
 
             if(newDiff != null)
             {
@@ -161,24 +164,21 @@ public abstract class PoolBase : StratumServer,
         }
     }
 
-    private async Task VardiffIdleUpdaterAsync(int interval, CancellationToken ct)
+    private async Task RunVardiffIdleUpdaterAsync(int interval, CancellationToken ct)
     {
-        await Task.Run(async () =>
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(interval));
+
+        while (await timer.WaitForNextTickAsync(ct))
         {
-            using var timer = new PeriodicTimer(TimeSpan.FromSeconds(interval));
+            logger.Debug(()=> "Vardiff Idle Update pass begins");
 
-            while (await timer.WaitForNextTickAsync(ct))
+            await Guard(() => ForEachMinerAsync(async (connection, _ct) =>
             {
-                logger.Debug(()=> "Vardiff Idle Update pass begins");
+                await UpdateVarDiffAsync(connection, true);
+            }, ct));
 
-                await Guard(() => ForEachMinerAsync(async (connection, _ct) =>
-                {
-                    await UpdateVarDiffAsync(connection, true);
-                }, ct));
-
-                logger.Debug(()=> "Vardiff Idle Update pass ends");
-            }
-        }, ct);
+            logger.Debug(()=> "Vardiff Idle Update pass ends");
+        }
     }
 
     protected virtual Task OnVarDiffUpdateAsync(StratumConnection connection, double newDiff)
@@ -384,10 +384,7 @@ Pool Fee:               {(poolConfig.RewardRecipients?.Any() == true ? poolConfi
                 };
 
                 if(varDiffEnabled)
-                {
-                    var interval = (int) ipEndpoints.Min(x => x.PoolEndpoint.VarDiff.RetargetTime);
-                    tasks.Add(VardiffIdleUpdaterAsync(interval, ct));
-                }
+                    tasks.Add(RunVardiffIdleUpdaterAsync(30, ct));
 
                 await Task.WhenAll(tasks);
             }
