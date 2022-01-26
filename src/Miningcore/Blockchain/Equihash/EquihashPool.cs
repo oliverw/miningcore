@@ -256,7 +256,7 @@ public class EquihashPool : PoolBase
             // update client stats
             context.Stats.ValidShares++;
 
-            await UpdateVarDiffAsync(connection);
+            await UpdateVarDiffAsync(connection, false, ct);
         }
 
         catch(StratumException ex)
@@ -386,9 +386,9 @@ public class EquihashPool : PoolBase
 
     public override double ShareMultiplier => 1;
 
-    protected override async Task OnVarDiffUpdateAsync(StratumConnection connection, double newDiff)
+    protected override async Task OnVarDiffUpdateAsync(StratumConnection connection, double newDiff, CancellationToken ct)
     {
-        await base.OnVarDiffUpdateAsync(connection, newDiff);
+        await base.OnVarDiffUpdateAsync(connection, newDiff, ct);
 
         if(connection.Context.ApplyPendingDifficulty())
         {

@@ -202,7 +202,7 @@ public class ErgoPool : PoolBase
             // update client stats
             context.Stats.ValidShares++;
 
-            await UpdateVarDiffAsync(connection);
+            await UpdateVarDiffAsync(connection, false, ct);
         }
 
         catch(StratumException ex)
@@ -371,9 +371,9 @@ public class ErgoPool : PoolBase
         return result;
     }
 
-    protected override async Task OnVarDiffUpdateAsync(StratumConnection connection, double newDiff)
+    protected override async Task OnVarDiffUpdateAsync(StratumConnection connection, double newDiff, CancellationToken ct)
     {
-        await base.OnVarDiffUpdateAsync(connection, newDiff);
+        await base.OnVarDiffUpdateAsync(connection, newDiff, ct);
 
         var context = connection.ContextAs<ErgoWorkerContext>();
 

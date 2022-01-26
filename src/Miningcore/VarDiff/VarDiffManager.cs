@@ -1,6 +1,7 @@
 using CircularBuffer;
 using Miningcore.Configuration;
 using Miningcore.Extensions;
+using Miningcore.Mining;
 using Miningcore.Time;
 
 namespace Miningcore.VarDiff;
@@ -9,8 +10,10 @@ public class VarDiffManager
 {
     private const int BufferSize = 10;  // Last 10 shares is always enough
 
-    public double? Update(VarDiffContext ctx, VarDiffConfig options, IMasterClock clock, double difficulty)
+    public double? Update(WorkerContextBase context, VarDiffConfig options, IMasterClock clock)
     {
+        var ctx = context.VarDiff;
+        var difficulty = context.Difficulty;
         var now = clock.Now;
         var ts = now.ToUnixSeconds();
 
@@ -61,8 +64,10 @@ public class VarDiffManager
 
     const double SafetyMargin = 1;    // ensure we don't miss a cycle due a sub-second fraction delta;
 
-    public double? IdleUpdate(VarDiffContext ctx, VarDiffConfig options, IMasterClock clock, double difficulty)
+    public double? IdleUpdate(WorkerContextBase context, VarDiffConfig options, IMasterClock clock)
     {
+        var ctx = context.VarDiff;
+        var difficulty = context.Difficulty;
         var now = clock.Now;
         var ts = now.ToUnixSeconds();
 

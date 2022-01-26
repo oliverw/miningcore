@@ -139,7 +139,7 @@ public abstract class PoolBase : StratumServer,
 
     #region VarDiff
 
-    protected async Task UpdateVarDiffAsync(StratumConnection connection, bool idle = false)
+    protected async Task UpdateVarDiffAsync(StratumConnection connection, bool idle, CancellationToken ct)
     {
         var context = connection.Context;
 
@@ -150,14 +150,14 @@ public abstract class PoolBase : StratumServer,
             var poolEndpoint = poolConfig.Ports[connection.LocalEndpoint.Port];
 
             var newDiff = !idle ?
-                varDiffManager.Update(context.VarDiff, poolEndpoint.VarDiff, clock, context.Difficulty) :
-                varDiffManager.IdleUpdate(context.VarDiff, poolEndpoint.VarDiff, clock, context.Difficulty);
+                varDiffManager.Update(context, poolEndpoint.VarDiff, clock) :
+                varDiffManager.IdleUpdate(context, poolEndpoint.VarDiff, clock);
 
             if(newDiff != null)
             {
                 logger.Info(() => $"[{connection.ConnectionId}] VarDiff update to {Math.Round(newDiff.Value, 3)}{(idle ? " [IDLE]" : "")}");
 
-                await OnVarDiffUpdateAsync(connection, newDiff.Value);
+                await OnVarDiffUpdateAsync(connection, newDiff.Value, ct);
             }
         }
     }
@@ -172,14 +172,15 @@ public abstract class PoolBase : StratumServer,
 
             await Guard(() => ForEachMinerAsync(async (connection, _ct) =>
             {
-                await UpdateVarDiffAsync(connection, true);
+                await Guard(() => UpdateVarDiffAsync(connection, true, _ct),
+                    ex=> logger.Error(() => $"[{connection.ConnectionId}] Error updating vardiff: {ex.Message}"));
             }, ct));
 
             logger.Debug(()=> "Vardiff Idle Update pass ends");
         }
     }
 
-    protected virtual Task OnVarDiffUpdateAsync(StratumConnection connection, double newDiff)
+    protected virtual Task OnVarDiffUpdateAsync(StratumConnection connection, double newDiff, CancellationToken _)
     {
         connection.Context.EnqueueNewDifficulty(newDiff);
 
@@ -229,7 +230,7 @@ public abstract class PoolBase : StratumServer,
         }
     }
 
-    protected void SetupBanning(ClusterConfig clusterConfig)
+    protected void SetupBanManagement()
     {
         if(poolConfig.Banning?.Enabled == true)
         {
@@ -296,6 +297,25 @@ public abstract class PoolBase : StratumServer,
         }
     }
 
+    protected async Task RunStratum(CancellationToken ct)
+    {
+        var ipEndpoints = poolConfig.Ports.Keys
+            .Select(port => PoolEndpoint2IPEndpoint(port, poolConfig.Ports[port]))
+            .ToArray();
+
+        var varDiffEnabled = ipEndpoints.Any(x => x.PoolEndpoint.VarDiff != null);
+
+        var tasks = new List<Task>
+        {
+            base.RunAsync(ct, ipEndpoints)
+        };
+
+        if(varDiffEnabled)
+            tasks.Add(RunVardiffIdleUpdaterAsync(poolConfig.VardiffIdleSweepInterval ?? 30, ct));
+
+        await Task.WhenAll(tasks);
+    }
+
     protected virtual async Task<double?> GetNicehashStaticMinDiff(WorkerContextBase context, string coinName, string algoName)
     {
         if(context.IsNicehash && clusterConfig.Nicehash?.EnableAutoDiff == true)
@@ -313,8 +333,10 @@ public abstract class PoolBase : StratumServer,
         return new StratumEndpoint(new IPEndPoint(listenAddress, port), pep);
     }
 
-    private void OutputPoolInfo()
+    private void LogPoolInfo()
     {
+        logger.Info(() => "Pool Online");
+
         var msg = $@"
 
 Mining Pool:            {poolConfig.Id}
@@ -359,33 +381,17 @@ Pool Fee:               {(poolConfig.RewardRecipients?.Any() == true ? poolConfi
 
         try
         {
-            SetupBanning(clusterConfig);
+            SetupBanManagement();
+
             await SetupJobManager(ct);
             await InitStatsAsync(ct);
 
-            logger.Info(() => "Pool Online");
-            OutputPoolInfo();
+            LogPoolInfo();
 
             messageBus.NotifyPoolStatus(this, PoolStatus.Online);
 
             if(poolConfig.EnableInternalStratum == true)
-            {
-                var ipEndpoints = poolConfig.Ports.Keys
-                    .Select(port => PoolEndpoint2IPEndpoint(port, poolConfig.Ports[port]))
-                    .ToArray();
-
-                var varDiffEnabled = ipEndpoints.Any(x => x.PoolEndpoint.VarDiff != null);
-
-                var tasks = new List<Task>
-                {
-                    RunAsync(ct, ipEndpoints)
-                };
-
-                if(varDiffEnabled)
-                    tasks.Add(RunVardiffIdleUpdaterAsync(poolConfig.VardiffIdleSweepInterval ?? 30, ct));
-
-                await Task.WhenAll(tasks);
-            }
+                await RunStratum(ct);
         }
 
         catch(PoolStartupException)

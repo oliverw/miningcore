@@ -198,7 +198,7 @@ public class BitcoinPool : PoolBase
             // update client stats
             context.Stats.ValidShares++;
 
-            await UpdateVarDiffAsync(connection);
+            await UpdateVarDiffAsync(connection, false, ct);
         }
 
         catch(StratumException ex)
@@ -456,9 +456,9 @@ public class BitcoinPool : PoolBase
         }
     }
 
-    protected override async Task OnVarDiffUpdateAsync(StratumConnection connection, double newDiff)
+    protected override async Task OnVarDiffUpdateAsync(StratumConnection connection, double newDiff, CancellationToken ct)
     {
-        await base.OnVarDiffUpdateAsync(connection, newDiff);
+        await base.OnVarDiffUpdateAsync(connection, newDiff, ct);
 
         if(connection.Context.ApplyPendingDifficulty())
         {
