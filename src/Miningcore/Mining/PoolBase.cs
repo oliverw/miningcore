@@ -65,13 +65,12 @@ public abstract class PoolBase : StratumServer,
     protected readonly IMapper mapper;
     protected readonly NicehashService nicehashService;
     protected readonly CompositeDisposable disposables = new();
+    protected static readonly VarDiffManager varDiffManager = new();
     protected BlockchainStats blockchainStats;
     protected static readonly TimeSpan maxShareAge = TimeSpan.FromSeconds(6);
     protected static readonly TimeSpan loginFailureBanTimeout = TimeSpan.FromSeconds(10);
     protected static readonly Regex regexStaticDiff = new(@";?d=(\d*(\.\d+)?)", RegexOptions.Compiled);
     protected const string PasswordControlVarsSeparator = ";";
-
-    protected readonly ConcurrentDictionary<PoolEndpoint, VarDiffManager> varDiffManagers = new();
 
     protected abstract Task SetupJobManager(CancellationToken ct);
     protected abstract WorkerContextBase CreateWorkerContext();
@@ -149,15 +148,14 @@ public abstract class PoolBase : StratumServer,
             logger.Debug(() => $"[{connection.ConnectionId}] Updating VarDiff" + (idle ? " [idle]" : string.Empty));
 
             var poolEndpoint = poolConfig.Ports[connection.LocalEndpoint.Port];
-            var manager = varDiffManagers.GetOrAdd(poolEndpoint, _ => new VarDiffManager(poolEndpoint.VarDiff, clock));
 
             var newDiff = !idle ?
-                manager.Update(context.VarDiff, context.Difficulty) :
-                manager.IdleUpdate(context.VarDiff, context.Difficulty);
+                varDiffManager.Update(context.VarDiff, poolEndpoint.VarDiff, clock, context.Difficulty) :
+                varDiffManager.IdleUpdate(context.VarDiff, poolEndpoint.VarDiff, clock, context.Difficulty);
 
             if(newDiff != null)
             {
-                logger.Info(() => $"[{connection.ConnectionId}] VarDiff update to {Math.Round(newDiff.Value, 3)}");
+                logger.Info(() => $"[{connection.ConnectionId}] VarDiff update to {Math.Round(newDiff.Value, 3)}{(idle ? " [IDLE]" : "")}");
 
                 await OnVarDiffUpdateAsync(connection, newDiff.Value);
             }

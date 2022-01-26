@@ -2,30 +2,14 @@ using CircularBuffer;
 using Miningcore.Configuration;
 using Miningcore.Extensions;
 using Miningcore.Time;
-using Contract = Miningcore.Contracts.Contract;
 
 namespace Miningcore.VarDiff;
 
 public class VarDiffManager
 {
-    public VarDiffManager(VarDiffConfig varDiffOptions, IMasterClock clock)
-    {
-        options = varDiffOptions;
-        this.clock = clock;
-        bufferSize = 10; // Last 10 shares is always enough
+    private const int BufferSize = 10;  // Last 10 shares is always enough
 
-        var variance = varDiffOptions.TargetTime * (varDiffOptions.VariancePercent / 100.0);
-        tMin = varDiffOptions.TargetTime - variance;
-        tMax = varDiffOptions.TargetTime + variance;
-    }
-
-    private readonly int bufferSize;
-    private readonly VarDiffConfig options;
-    private readonly double tMax;
-    private readonly double tMin;
-    private readonly IMasterClock clock;
-
-    public double? Update(VarDiffContext ctx, double difficulty)
+    public double? Update(VarDiffContext ctx, VarDiffConfig options, IMasterClock clock, double difficulty)
     {
         var now = clock.Now;
         var ts = now.ToUnixSeconds();
@@ -39,7 +23,7 @@ public class VarDiffManager
                 var timeDelta = ts - ctx.LastTs.Value;
 
                 // make sure buffer exists as this point
-                ctx.TimeBuffer ??= new CircularBuffer<double>(bufferSize);
+                ctx.TimeBuffer ??= new CircularBuffer<double>(BufferSize);
 
                 // Always calculate the time until now even there is no share submitted.
                 var timeTotal = ctx.TimeBuffer.Sum() + timeDelta;
@@ -50,13 +34,17 @@ public class VarDiffManager
                 ctx.LastTs = ts;
 
                 // Check if we need to change the difficulty
+                var variance = options.TargetTime * (options.VariancePercent / 100.0);
+                var tMin = options.TargetTime - variance;
+                var tMax = options.TargetTime + variance;
+
                 if(ts - ctx.LastRetarget < options.RetargetTime || avg >= tMin && avg <= tMax)
                     return null;
 
                 // Possible New Diff
                 var newDiff = difficulty * options.TargetTime / avg;
 
-                if(TryApplyNewDiff(ctx, ref newDiff, difficulty, minDiff, maxDiff, ts))
+                if(TryApplyNewDiff(ref newDiff, difficulty, minDiff, maxDiff, ts, ctx, options, clock))
                     return newDiff;
             }
 
@@ -73,7 +61,7 @@ public class VarDiffManager
 
     const double SafetyMargin = 1;    // ensure we don't miss a cycle due a sub-second fraction delta;
 
-    public double? IdleUpdate(VarDiffContext ctx, double difficulty)
+    public double? IdleUpdate(VarDiffContext ctx, VarDiffConfig options, IMasterClock clock, double difficulty)
     {
         var now = clock.Now;
         var ts = now.ToUnixSeconds();
@@ -106,14 +94,15 @@ public class VarDiffManager
             // Possible New Diff
             var newDiff = difficulty * options.TargetTime / avg;
 
-            if(TryApplyNewDiff(ctx, ref newDiff, difficulty, minDiff, maxDiff, ts))
+            if(TryApplyNewDiff(ref newDiff, difficulty, minDiff, maxDiff, ts, ctx, options, clock))
                 return newDiff;
         }
 
         return null;
     }
 
-    private bool TryApplyNewDiff(VarDiffContext ctx, ref double newDiff, double oldDiff, double minDiff, double maxDiff, double ts)
+    private bool TryApplyNewDiff(ref double newDiff, double oldDiff, double minDiff, double maxDiff, double ts,
+        VarDiffContext ctx, VarDiffConfig options, IMasterClock clock)
     {
         // Max delta
         if(options.MaxDelta is > 0)
@@ -144,7 +133,7 @@ public class VarDiffManager
 
         // Due to change of diff, Buffer needs to be cleared
         if(ctx.TimeBuffer != null)
-            ctx.TimeBuffer = new CircularBuffer<double>(bufferSize);
+            ctx.TimeBuffer = new CircularBuffer<double>(BufferSize);
 
         return true;
     }
