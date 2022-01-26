@@ -8,7 +8,7 @@ namespace Miningcore.VarDiff;
 
 public class VarDiffManager
 {
-    private const int BufferSize = 10;  // Last 10 shares is always enough
+    private const int BufferSize = 10;  // Last 10 shares should be enough
 
     public double? Update(WorkerContextBase context, VarDiffConfig options, IMasterClock clock)
     {
@@ -17,8 +17,10 @@ public class VarDiffManager
         var now = clock.Now;
         var ts = now.ToUnixSeconds();
 
-        lock(ctx)
+        try
         {
+            Monitor.Enter(ctx);
+
             if(ctx.LastTs.HasValue)
             {
                 var minDiff = options.MinDiff;
@@ -59,6 +61,11 @@ public class VarDiffManager
             }
         }
 
+        finally
+        {
+            Monitor.Exit(ctx);
+        }
+
         return null;
     }
 
@@ -68,10 +75,15 @@ public class VarDiffManager
     {
         var ctx = context.VarDiff;
         var difficulty = context.Difficulty;
+
+        // abort if a regular update is just happening
+        if(!Monitor.TryEnter(ctx))
+            return null;
+
         var now = clock.Now;
         var ts = now.ToUnixSeconds();
 
-        lock(ctx)
+        try
         {
             double timeDelta;
 
@@ -103,9 +115,17 @@ public class VarDiffManager
                 return newDiff;
         }
 
+        finally
+        {
+            Monitor.Exit(ctx);
+        }
+
         return null;
     }
 
+    /// <summary>
+    /// Assumes to be called with lock held
+    /// </summary>
     private bool TryApplyNewDiff(ref double newDiff, double oldDiff, double minDiff, double maxDiff, double ts,
         VarDiffContext ctx, VarDiffConfig options, IMasterClock clock)
     {
