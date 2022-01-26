@@ -65,7 +65,6 @@ public abstract class PoolBase : StratumServer,
     protected readonly IMapper mapper;
     protected readonly NicehashService nicehashService;
     protected readonly CompositeDisposable disposables = new();
-    protected static readonly VarDiffManager varDiffManager = new();
     protected BlockchainStats blockchainStats;
     protected static readonly TimeSpan maxShareAge = TimeSpan.FromSeconds(6);
     protected static readonly TimeSpan loginFailureBanTimeout = TimeSpan.FromSeconds(10);
@@ -150,8 +149,8 @@ public abstract class PoolBase : StratumServer,
             var poolEndpoint = poolConfig.Ports[connection.LocalEndpoint.Port];
 
             var newDiff = !idle ?
-                varDiffManager.Update(context, poolEndpoint.VarDiff, clock) :
-                varDiffManager.IdleUpdate(context, poolEndpoint.VarDiff, clock);
+                VarDiffManager.Update(context, poolEndpoint.VarDiff, clock) :
+                VarDiffManager.IdleUpdate(context, poolEndpoint.VarDiff, clock);
 
             if(newDiff != null)
             {

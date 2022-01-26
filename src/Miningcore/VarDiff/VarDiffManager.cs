@@ -6,11 +6,12 @@ using Miningcore.Time;
 
 namespace Miningcore.VarDiff;
 
-public class VarDiffManager
+public static class VarDiffManager
 {
     private const int BufferSize = 10;  // Last 10 shares should be enough
+    private const double SafetyMargin = 1;    // ensure we don't miss a cycle due a sub-second fraction delta;
 
-    public double? Update(WorkerContextBase context, VarDiffConfig options, IMasterClock clock)
+    public static double? Update(WorkerContextBase context, VarDiffConfig options, IMasterClock clock)
     {
         var ctx = context.VarDiff;
         var difficulty = context.Difficulty;
@@ -69,9 +70,7 @@ public class VarDiffManager
         return null;
     }
 
-    const double SafetyMargin = 1;    // ensure we don't miss a cycle due a sub-second fraction delta;
-
-    public double? IdleUpdate(WorkerContextBase context, VarDiffConfig options, IMasterClock clock)
+    public static double? IdleUpdate(WorkerContextBase context, VarDiffConfig options, IMasterClock clock)
     {
         var ctx = context.VarDiff;
         var difficulty = context.Difficulty;
@@ -126,7 +125,7 @@ public class VarDiffManager
     /// <summary>
     /// Assumes to be called with lock held
     /// </summary>
-    private bool TryApplyNewDiff(ref double newDiff, double oldDiff, double minDiff, double maxDiff, double ts,
+    private static bool TryApplyNewDiff(ref double newDiff, double oldDiff, double minDiff, double maxDiff, double ts,
         VarDiffContext ctx, VarDiffConfig options, IMasterClock clock)
     {
         // Max delta
