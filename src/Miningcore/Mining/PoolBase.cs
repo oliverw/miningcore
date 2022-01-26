@@ -145,7 +145,7 @@ public abstract class PoolBase : StratumServer,
 
         if(context.VarDiff != null)
         {
-            logger.Debug(() => $"[{connection.ConnectionId}] Updating VarDiff" + (idle ? " [idle]" : string.Empty));
+            logger.Debug(() => $"[{connection.ConnectionId}] Updating VarDiff{(idle ? " [IDLE]" : "")}");
 
             var poolEndpoint = poolConfig.Ports[connection.LocalEndpoint.Port];
 
@@ -382,7 +382,7 @@ Pool Fee:               {(poolConfig.RewardRecipients?.Any() == true ? poolConfi
                 };
 
                 if(varDiffEnabled)
-                    tasks.Add(RunVardiffIdleUpdaterAsync(30, ct));
+                    tasks.Add(RunVardiffIdleUpdaterAsync(poolConfig.VardiffIdleSweepInterval ?? 30, ct));
 
                 await Task.WhenAll(tasks);
             }

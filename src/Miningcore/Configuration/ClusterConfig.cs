@@ -928,6 +928,11 @@ public partial class PoolConfig
     public bool? EnableInternalStratum { get; set; }
 
     /// <summary>
+    /// Interval in seconds for performing sweeps over connected miners operating on a too high diff to submit shares and adjust varDiff down
+    /// </summary>
+    public int? VardiffIdleSweepInterval { get; set; }
+
+    /// <summary>
     /// Arbitrary extension data
     /// </summary>
     [JsonExtensionData]

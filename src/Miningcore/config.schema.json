@@ -453,6 +453,12 @@
           "items": {
             "$ref": "#/definitions/RewardRecipient"
           }
+        },
+        "vardiffIdleSweepInterval": {
+          "type": [
+            "integer",
+            "null"
+          ]
         }
       },
       "required": [
