@@ -175,12 +175,10 @@ public class BitcoinPool : PoolBase
             else if(!context.IsSubscribed)
                 throw new StratumException(StratumError.NotSubscribed, "not subscribed");
 
-            // submit
             var requestParams = request.ParamsAs<string[]>();
-            var poolEndpoint = poolConfig.Ports[connection.LocalEndpoint.Port];
 
+            // submit
             var share = await manager.SubmitShareAsync(connection, requestParams, ct);
-
             await connection.RespondAsync(true, request.Id);
 
             // publish

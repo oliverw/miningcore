@@ -254,7 +254,7 @@ public class ErgoJobManager : JobManagerBase<ErgoJob>
         return responseData;
     }
 
-    public async ValueTask<Share> SubmitShareAsync(StratumConnection worker, object submission, double stratumDifficultyBase, CancellationToken ct)
+    public async ValueTask<Share> SubmitShareAsync(StratumConnection worker, object submission, CancellationToken ct)
     {
         Contract.RequiresNonNull(worker, nameof(worker));
         Contract.RequiresNonNull(submission, nameof(submission));

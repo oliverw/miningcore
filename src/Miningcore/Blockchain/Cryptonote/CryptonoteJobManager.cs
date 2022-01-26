@@ -323,7 +323,7 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
     }
 
     public async ValueTask<Share> SubmitShareAsync(StratumConnection worker,
-        CryptonoteSubmitShareRequest request, CryptonoteWorkerJob workerJob, double stratumDifficultyBase, CancellationToken ct)
+        CryptonoteSubmitShareRequest request, CryptonoteWorkerJob workerJob, CancellationToken ct)
     {
         Contract.RequiresNonNull(worker, nameof(worker));
         Contract.RequiresNonNull(request, nameof(request));

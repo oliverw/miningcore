@@ -179,12 +179,10 @@ public class ErgoPool : PoolBase
             else if(!context.IsSubscribed)
                 throw new StratumException(StratumError.NotSubscribed, "not subscribed");
 
-            // submit
             var requestParams = request.ParamsAs<string[]>();
-            var poolEndpoint = poolConfig.Ports[connection.LocalEndpoint.Port];
 
-            var share = await manager.SubmitShareAsync(connection, requestParams, poolEndpoint.Difficulty, ct);
-
+            // submit
+            var share = await manager.SubmitShareAsync(connection, requestParams, ct);
             await connection.RespondAsync(true, request.Id);
 
             // publish
