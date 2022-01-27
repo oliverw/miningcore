@@ -229,8 +229,8 @@ public class Program : BackgroundService
                         app.UseMvc();
                     });
 
-                    logger.Info(() => $"Prometheus Metrics {address}:{port}/metrics");
-                    logger.Info(() => $"WebSocket notifications streaming {address}:{port}/notifications");
+                    logger.Info(() => $"Prometheus Metrics API listening on http{(apiTlsEnable ? "s" : "")}://{address}:{port}/metrics");
+                    logger.Info(() => $"WebSocket Events streaming on ws{(apiTlsEnable ? "s" : "")}://{address}:{port}/notifications");
                 });
             }
 
