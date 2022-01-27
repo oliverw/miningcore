@@ -80,19 +80,6 @@ public class PaymentRepository : IPaymentRepository
             .ToArray();
     }
 
-    public async Task<BalanceChange[]> PageBalanceChangesAsync(IDbConnection con, string poolId, string address, int page, int pageSize)
-    {
-        logger.LogInvoke(new object[] { poolId });
-
-        const string query = @"SELECT * FROM balance_changes WHERE poolid = @poolid
-            AND address = @address
-            ORDER BY created DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
-
-        return (await con.QueryAsync<Entities.BalanceChange>(query, new { poolId, address, offset = page * pageSize, pageSize }))
-            .Select(mapper.Map<BalanceChange>)
-            .ToArray();
-    }
-
     public async Task<AmountByDate[]> PageMinerPaymentsByDayAsync(IDbConnection con, string poolId, string address, int page, int pageSize)
     {
         logger.LogInvoke(new object[] { poolId });
@@ -132,16 +119,25 @@ public class PaymentRepository : IPaymentRepository
         return con.ExecuteScalarAsync<uint>(query, new { poolId, address });
     }
 
-    public Task<uint> GetBalanceChangesCountAsync(IDbConnection con, string poolId, string address = null)
+    public async Task<PoolState> GetPoolState(IDbConnection con, string poolId)
     {
-        logger.LogInvoke(new object[] { poolId });
+        logger.LogInvoke();
 
-        var query = @"SELECT COUNT(*) FROM balance_changes WHERE poolid = @poolId";
+        const string query = "SELECT poolid, hashvalue, lastpayout FROM poolstate WHERE poolid = @poolId";
 
-        if(!string.IsNullOrEmpty(address))
-            query += " AND address = @address ";
+        return await con.QuerySingleOrDefaultAsync<PoolState>(query, new { poolId });
+    }
 
+    public async Task SetPoolState(IDbConnection con, PoolState state)
+    {
+        logger.LogInvoke();
 
-        return con.ExecuteScalarAsync<uint>(query, new { poolId, address });
+        var mapped = mapper.Map<Entities.PoolState>(state);
+
+        const string query = @"INSERT INTO poolstate as ps(poolid, hashvalue, lastpayout) VALUES (@poolId, @hashValue, @lastpayout)
+            ON CONFLICT (poolid)
+            DO UPDATE SET hashvalue = (CASE WHEN EXCLUDED.hashvalue ISNULL OR EXCLUDED.hashvalue=0 THEN ps.hashvalue ELSE EXCLUDED.hashvalue END), lastpayout = COALESCE(EXCLUDED.lastpayout, ps.lastpayout)";
+
+        await con.ExecuteAsync(query, mapped);
     }
 }

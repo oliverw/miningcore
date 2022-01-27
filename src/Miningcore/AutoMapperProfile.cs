@@ -49,10 +49,10 @@ public class AutoMapperProfile : Profile
 
         CreateMap<PoolStats, Api.Responses.PoolInfo>();
         CreateMap<PoolStats, Api.Responses.AggregatedPoolStats>();
+        CreateMap<BalanceChange, Api.Responses.BalanceChange>();
         CreateMap<Block, Api.Responses.Block>();
         CreateMap<MinerSettings, Api.Responses.MinerSettings>();
         CreateMap<Payment, Api.Responses.Payment>();
-        CreateMap<BalanceChange, Api.Responses.BalanceChange>();
         CreateMap<PoolPaymentProcessingConfig, Api.Responses.ApiPoolPaymentProcessingConfig>();
 
         CreateMap<MinerStats, Api.Responses.MinerStats>()
@@ -85,11 +85,13 @@ public class AutoMapperProfile : Profile
         CreateMap<Persistence.Postgres.Entities.Block, Block>();
         CreateMap<Persistence.Postgres.Entities.Balance, Balance>();
         CreateMap<Persistence.Postgres.Entities.Payment, Payment>();
-        CreateMap<Persistence.Postgres.Entities.BalanceChange, BalanceChange>();
         CreateMap<Persistence.Postgres.Entities.PoolStats, PoolStats>();
         CreateMap<Persistence.Postgres.Entities.MinerSettings, MinerSettings>();
         CreateMap<Persistence.Postgres.Entities.MinerWorkerPerformanceStats, MinerWorkerPerformanceStats>();
         CreateMap<Persistence.Postgres.Entities.MinerWorkerPerformanceStats, Api.Responses.MinerPerformanceStats>();
+
+        // Cosmos
+        CreateMap<Persistence.Cosmos.Entities.BalanceChange, BalanceChange>();
 
         CreateMap<PoolStats, Mining.PoolStats>();
         CreateMap<BlockchainStats, Mining.PoolStats>();

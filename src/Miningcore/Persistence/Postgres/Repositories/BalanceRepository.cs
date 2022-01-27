@@ -26,24 +26,8 @@ public class BalanceRepository : IBalanceRepository
 
         var now = DateTime.UtcNow;
 
-        // record balance change
-        var query = @"INSERT INTO balance_changes(poolid, address, amount, usage, tags, created)
-            VALUES(@poolid, @address, @amount, @usage, @tags, @created)";
-
-        var balanceChange = new Entities.BalanceChange
-        {
-            PoolId = poolId,
-            Created = now,
-            Address = address,
-            Amount = amount,
-            Usage = usage,
-            Tags = tags
-        };
-
-        await con.ExecuteAsync(query, balanceChange, tx);
-
         // update balance
-        query = "SELECT * FROM balances WHERE poolid = @poolId AND address = @address";
+        var query = "SELECT * FROM balances WHERE poolid = @poolId AND address = @address";
 
         var balance = (await con.QueryAsync<Entities.Balance>(query, new { poolId, address }, tx))
             .FirstOrDefault();
@@ -132,28 +116,6 @@ public class BalanceRepository : IBalanceRepository
 
         return (await con.QueryAsync<Entities.Balance>(query, new { poolId, minimum }))
             .Select(mapper.Map<Balance>)
-            .ToArray();
-    }
-
-    public Task<int> GetBalanceChangeCountByTagAsync(IDbConnection con, IDbTransaction tx, string poolId, string tag)
-    {
-        logger.LogInvoke(new object[] { poolId });
-
-        const string query = @"SELECT COUNT(*) FROM balance_changes WHERE poolid = @poolid AND @tag <@ tags";
-
-        return con.ExecuteScalarAsync<int>(query, new { poolId, tag = new[] { tag } }, tx);
-    }
-
-    public async Task<BalanceChange[]> GetBalanceChangesByTagAsync(IDbConnection con, IDbTransaction tx, string poolId, string tag)
-    {
-        logger.LogInvoke(new object[] { poolId });
-
-        const string query = @"SELECT * FROM balance_changes WHERE poolid = @poolid
-            AND @tag <@ tags
-            ORDER BY created DESC";
-
-        return (await con.QueryAsync<Entities.BalanceChange>(query, new { poolId, tag = new[] { tag } }, tx))
-            .Select(mapper.Map<BalanceChange>)
             .ToArray();
     }
 }

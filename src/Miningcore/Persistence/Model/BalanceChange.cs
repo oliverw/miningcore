@@ -1,17 +1,17 @@
-namespace Miningcore.Persistence.Model;
-
-public class BalanceChange
+namespace Miningcore.Persistence.Model
 {
-    public long Id { get; set; }
-    public string PoolId { get; set; }
-    public string Address { get; set; }
+    public class BalanceChange
+    {
+        public string PoolId { get; set; }
 
-    /// <summary>
-    /// Amount owed in pool-base-currency (ie. Bitcoin, not Satoshis)
-    /// </summary>
-    public decimal Amount { get; set; }
+        public string Address { get; set; }
 
-    public string Usage { get; set; }
+        public decimal Amount { get; set; }
 
-    public DateTime Created { get; set; }
+        public string Usage {get; set;}
+
+        public DateTime Created { get; set; }
+
+        public string ETag { get; }
+    }
 }

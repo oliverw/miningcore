@@ -10,9 +10,9 @@ public interface IPaymentRepository
     Task BatchInsertAsync(IDbConnection con, IDbTransaction tx, IEnumerable<Payment> shares);
 
     Task<Payment[]> PagePaymentsAsync(IDbConnection con, string poolId, string address, int page, int pageSize);
-    Task<BalanceChange[]> PageBalanceChangesAsync(IDbConnection con, string poolId, string address, int page, int pageSize);
     Task<AmountByDate[]> PageMinerPaymentsByDayAsync(IDbConnection con, string poolId, string address, int page, int pageSize);
     Task<uint> GetPaymentsCountAsync(IDbConnection con, string poolId, string address = null);
     Task<uint> GetMinerPaymentsByDayCountAsync(IDbConnection con, string poolId, string address);
-    Task<uint> GetBalanceChangesCountAsync(IDbConnection con, string poolId, string address = null);
+    Task<PoolState> GetPoolState(IDbConnection con, string poolId);
+    Task SetPoolState(IDbConnection con, PoolState state);
 }

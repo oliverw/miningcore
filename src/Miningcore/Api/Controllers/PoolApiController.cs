@@ -27,6 +27,7 @@ public class PoolApiController : ApiControllerBase
     public PoolApiController(IComponentContext ctx, IActionDescriptorCollectionProvider _adcp) : base(ctx)
     {
         statsRepo = ctx.Resolve<IStatsRepository>();
+        balanceChangeRepo = ctx.Resolve<IBalanceChangeRepository>();
         blocksRepo = ctx.Resolve<IBlockRepository>();
         minerRepo = ctx.Resolve<IMinerRepository>();
         shareRepo = ctx.Resolve<IShareRepository>();
@@ -37,6 +38,7 @@ public class PoolApiController : ApiControllerBase
     }
 
     private readonly IStatsRepository statsRepo;
+    private readonly IBalanceChangeRepository balanceChangeRepo;
     private readonly IBlockRepository blocksRepo;
     private readonly IPaymentRepository paymentsRepo;
     private readonly IMinerRepository minerRepo;
@@ -76,6 +78,13 @@ public class PoolApiController : ApiControllerBase
 
                 result.TopMiners = minersByHashrate.Select(mapper.Map<MinerPerformanceStats>).ToArray();
 
+                // overwrite the hashvalue with the one calculated by payment processing
+                var poolState = await cf.Run(con => paymentsRepo.GetPoolState(con, pool.Config.Id));
+                if(poolState.HashValue > 0)
+                {
+                    result.PaymentProcessing.HashValue = poolState.HashValue;
+                }
+
                 return result;
             }).ToArray())
         };
@@ -114,28 +123,20 @@ public class PoolApiController : ApiControllerBase
     {
         var pool = GetPool(poolId);
 
-        // load stats
-        var stats = await cf.Run(con => statsRepo.GetLastPoolStatsAsync(con, pool.Id));
-
         // get pool
         pools.TryGetValue(pool.Id, out var poolInstance);
 
         var response = new GetPoolResponse
         {
-            Pool = pool.ToPoolInfo(mapper, stats, poolInstance)
+            Pool = pool.ToPoolInfo(mapper, null, poolInstance)
         };
 
-        // enrich
-        response.Pool.TotalPaid = await cf.Run(con => statsRepo.GetTotalPoolPaymentsAsync(con, pool.Id));
-        response.Pool.TotalBlocks = await cf.Run(con => blocksRepo.GetPoolBlockCountAsync(con, pool.Id));
-        response.Pool.LastPoolBlockTime = await cf.Run(con => blocksRepo.GetLastPoolBlockTimeAsync(con, pool.Id));
-
-        var from = clock.Now.AddDays(-1);
-
-        response.Pool.TopMiners = (await cf.Run(con => statsRepo.PagePoolMinersByHashrateAsync(
-                con, pool.Id, from, 0, 15)))
-            .Select(mapper.Map<MinerPerformanceStats>)
-            .ToArray();
+        // overwrite the hashvalue with the one calculated by payment processing
+        var poolState = await cf.Run(con => paymentsRepo.GetPoolState(con, pool.Id));
+        if(poolState.HashValue > 0)
+        {
+            response.Pool.PaymentProcessing.HashValue = poolState.HashValue;
+        }
 
         return response;
     }
@@ -460,8 +461,7 @@ public class PoolApiController : ApiControllerBase
         if(pool.Template.Family == CoinFamily.Ethereum)
             address = address.ToLower();
 
-        var balanceChanges = (await cf.Run(con => paymentsRepo.PageBalanceChangesAsync(
-                con, pool.Id, address, page, pageSize)))
+        var balanceChanges = (await balanceChangeRepo.PageBalanceChangesAsync(pool.Id, address, page, pageSize))
             .Select(mapper.Map<Responses.BalanceChange>)
             .ToArray();
 
@@ -480,10 +480,9 @@ public class PoolApiController : ApiControllerBase
         if(pool.Template.Family == CoinFamily.Ethereum)
             address = address.ToLower();
 
-        uint pageCount = (uint) Math.Floor((await cf.Run(con => paymentsRepo.GetBalanceChangesCountAsync(con, poolId, address))) / (double) pageSize);
+        uint pageCount = (uint) Math.Floor((await cf.Run(con => balanceChangeRepo.GetBalanceChangesCountAsync(poolId, address))) / (double) pageSize);
 
-        var balanceChanges = (await cf.Run(con => paymentsRepo.PageBalanceChangesAsync(
-                con, pool.Id, address, page, pageSize)))
+        var balanceChanges = (await balanceChangeRepo.PageBalanceChangesAsync(pool.Id, address, page, pageSize))
             .Select(mapper.Map<Responses.BalanceChange>)
             .ToArray();
 
