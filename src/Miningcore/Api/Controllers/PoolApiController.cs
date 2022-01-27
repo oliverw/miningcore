@@ -27,6 +27,7 @@ public class PoolApiController : ApiControllerBase
     public PoolApiController(IComponentContext ctx, IActionDescriptorCollectionProvider _adcp) : base(ctx)
     {
         statsRepo = ctx.Resolve<IStatsRepository>();
+        balanceChangeRepo = ctx.Resolve<IBalanceChangeRepository>();
         blocksRepo = ctx.Resolve<IBlockRepository>();
         minerRepo = ctx.Resolve<IMinerRepository>();
         shareRepo = ctx.Resolve<IShareRepository>();
@@ -37,6 +38,7 @@ public class PoolApiController : ApiControllerBase
     }
 
     private readonly IStatsRepository statsRepo;
+    private readonly IBalanceChangeRepository balanceChangeRepo;
     private readonly IBlockRepository blocksRepo;
     private readonly IPaymentRepository paymentsRepo;
     private readonly IMinerRepository minerRepo;
@@ -444,6 +446,47 @@ public class PoolApiController : ApiControllerBase
         }
 
         var response = new PagedResultResponse<Responses.Payment[]>(payments, pageCount);
+        return response;
+    }
+
+    [HttpGet("{poolId}/miners/{address}/balancechanges")]
+    public async Task<Responses.BalanceChange[]> PageMinerBalanceChangesAsync(
+        string poolId, string address, [FromQuery] int page, [FromQuery] int pageSize = 15)
+    {
+        var pool = GetPool(poolId);
+
+        if(string.IsNullOrEmpty(address))
+            throw new ApiException("Invalid or missing miner address", HttpStatusCode.NotFound);
+
+        if(pool.Template.Family == CoinFamily.Ethereum)
+            address = address.ToLower();
+
+        var balanceChanges = (await balanceChangeRepo.PageBalanceChangesAsync(pool.Id, address, page, pageSize))
+            .Select(mapper.Map<Responses.BalanceChange>)
+            .ToArray();
+
+        return balanceChanges;
+    }
+
+    [HttpGet("/api/v2/pools/{poolId}/miners/{address}/balancechanges")]
+    public async Task<PagedResultResponse<Responses.BalanceChange[]>> PageMinerBalanceChangesV2Async(
+        string poolId, string address, [FromQuery] int page, [FromQuery] int pageSize = 15)
+    {
+        var pool = GetPool(poolId);
+
+        if(string.IsNullOrEmpty(address))
+            throw new ApiException("Invalid or missing miner address", HttpStatusCode.NotFound);
+
+        if(pool.Template.Family == CoinFamily.Ethereum)
+            address = address.ToLower();
+
+        uint pageCount = (uint) Math.Floor((await cf.Run(con => balanceChangeRepo.GetBalanceChangesCountAsync(poolId, address))) / (double) pageSize);
+
+        var balanceChanges = (await balanceChangeRepo.PageBalanceChangesAsync(pool.Id, address, page, pageSize))
+            .Select(mapper.Map<Responses.BalanceChange>)
+            .ToArray();
+
+        var response = new PagedResultResponse<Responses.BalanceChange[]>(balanceChanges, pageCount);
         return response;
     }
 
