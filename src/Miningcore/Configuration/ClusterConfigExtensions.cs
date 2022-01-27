@@ -154,11 +154,11 @@ public partial class CryptonoteCoinTemplate
     {
         switch(Hash)
         {
-            case CryptonightHashType.RandomX:
-                return "RandomX";
+//            case CryptonightHashType.RandomX:
+//                return "RandomX";
         }
 
-        throw new NotSupportedException("Invalid hash type");
+        return Hash.ToString();
     }
 
     #endregion
