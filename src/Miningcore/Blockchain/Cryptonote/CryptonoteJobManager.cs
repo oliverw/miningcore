@@ -86,28 +86,7 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
                 else
                     logger.Info(() => $"Detected new block {blockTemplate.Height}");
 
-                // detect seed hash change
-                if(currentSeedHash != blockTemplate.SeedHash)
-                {
-                    logger.Info(()=> $"Detected new seed hash {blockTemplate.SeedHash} starting @ height {blockTemplate.Height}");
-
-                    if(poolConfig.EnableInternalStratum == true)
-                    {
-                        RandomX.WithLock(() =>
-                        {
-                            // delete old seed
-                            if(currentSeedHash != null)
-                                RandomX.DeleteSeed(randomXRealm, currentSeedHash);
-
-                            // activate new one
-                            currentSeedHash = blockTemplate.SeedHash;
-                            RandomX.CreateSeed(randomXRealm, currentSeedHash, randomXFlagsOverride, randomXFlagsAdd, extraPoolConfig.RandomXVMCount);
-                        });
-                    }
-
-                    else
-                        currentSeedHash = blockTemplate.SeedHash;
-                }
+                UpdateHashParams(blockTemplate);
 
                 // init job
                 job = new CryptonoteJob(blockTemplate, instanceId, NextJobId(), coin, poolConfig, clusterConfig, newHash, randomXRealm);
@@ -138,6 +117,68 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
         }
 
         return false;
+    }
+
+    private void UpdateHashParams(GetBlockTemplateResponse blockTemplate)
+    {
+        switch(coin.Hash)
+        {
+            case CryptonightHashType.RandomX:
+            {
+                // detect seed hash change
+                if(currentSeedHash != blockTemplate.SeedHash)
+                {
+                    logger.Info(()=> $"Detected new seed hash {blockTemplate.SeedHash} starting @ height {blockTemplate.Height}");
+
+                    if(poolConfig.EnableInternalStratum == true)
+                    {
+                        RandomX.WithLock(() =>
+                        {
+                            // delete old seed
+                            if(currentSeedHash != null)
+                                RandomX.DeleteSeed(randomXRealm, currentSeedHash);
+
+                            // activate new one
+                            currentSeedHash = blockTemplate.SeedHash;
+                            RandomX.CreateSeed(randomXRealm, currentSeedHash, randomXFlagsOverride, randomXFlagsAdd, extraPoolConfig.RandomXVMCount);
+                        });
+                    }
+
+                    else
+                        currentSeedHash = blockTemplate.SeedHash;
+                }
+
+                break;
+            }
+
+            case CryptonightHashType.RandomARQ:
+            {
+                // detect seed hash change
+                if(currentSeedHash != blockTemplate.SeedHash)
+                {
+                    logger.Info(()=> $"Detected new seed hash {blockTemplate.SeedHash} starting @ height {blockTemplate.Height}");
+
+                    if(poolConfig.EnableInternalStratum == true)
+                    {
+                        RandomARQ.WithLock(() =>
+                        {
+                            // delete old seed
+                            if(currentSeedHash != null)
+                                RandomARQ.DeleteSeed(randomXRealm, currentSeedHash);
+
+                            // activate new one
+                            currentSeedHash = blockTemplate.SeedHash;
+                            RandomARQ.CreateSeed(randomXRealm, currentSeedHash, randomXFlagsOverride, randomXFlagsAdd, extraPoolConfig.RandomXVMCount);
+                        });
+                    }
+
+                    else
+                        currentSeedHash = blockTemplate.SeedHash;
+                }
+
+                break;
+            }
+        }
     }
 
     private async Task<RpcResponse<GetBlockTemplateResponse>> GetBlockTemplateAsync(CancellationToken ct)

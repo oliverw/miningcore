@@ -152,11 +152,11 @@ public partial class CryptonoteCoinTemplate
 
     public override string GetAlgorithmName()
     {
-        switch(Hash)
-        {
+//        switch(Hash)
+//        {
 //            case CryptonightHashType.RandomX:
 //                return "RandomX";
-        }
+//        }
 
         return Hash.ToString();
     }
