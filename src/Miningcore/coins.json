@@ -18,6 +18,22 @@
         "explorerTxLink": "http://insight.auroracoin.is/tx/{0}",
         "explorerAccountLink": "http://insight.auroracoin.is/address/{0}"
     },
+    "babycoin": {
+        "name": "BabyCoin",
+        "symbol": "BABY",
+        "family": "cryptonote",
+        "hash": "randomarq",
+        "hashVariant": 0,
+        "smallestUnit": 1000000000,
+        "addressPrefix": 0x231e4e,
+        "addressPrefixStagenet": 0x1b5e4e,
+        "addressPrefixTestnet": 0x239e4e,
+        "addressPrefixIntegrated": 0x1c31e4e,
+        "addressPrefixIntegratedStagenet": 0x229e4e,
+        "addressPrefixIntegratedTestnet": 0x2039e4e,
+        "explorerBlockLink": "https://blockchain.babycoin.dev/block/$height$",
+        "explorerTxLink": "https://blockchain.babycoin.dev/tx/{0}"
+    },
     "auroracoin-scrypt": {
         "name": "Auroracoin-Scrypt",
         "canonicalName": "Auroracoin",
