@@ -345,23 +345,23 @@ public class ErgoJobManager : JobManagerBase<ErgoJob>
     {
         // validate pool address
         if(string.IsNullOrEmpty(poolConfig.Address))
-            throw new PoolStartupException($"Pool address is not configured");
+            throw new PoolStartupException($"Pool address is not configured", poolConfig.Id);
 
         var validity = await Guard(() => rpc.CheckAddressValidityAsync(poolConfig.Address, ct),
-            ex=> throw new PoolStartupException($"Error validating pool address: {ex}"));
+            ex=> throw new PoolStartupException($"Error validating pool address: {ex}", poolConfig.Id));
 
         if(!validity.IsValid)
-            throw new PoolStartupException($"Daemon reports pool address {poolConfig.Address} as invalid: {validity.Error}");
+            throw new PoolStartupException($"Daemon reports pool address {poolConfig.Address} as invalid: {validity.Error}", poolConfig.Id);
 
         var info = await Guard(() => rpc.GetNodeInfoAsync(ct),
-            ex=> throw new PoolStartupException($"Daemon reports: {ex.Message}"));
+            ex=> throw new PoolStartupException($"Daemon reports: {ex.Message}", poolConfig.Id));
 
         blockVersion = info.Parameters.BlockVersion;
 
         // chain detection
         var m = ErgoConstants.RegexChain.Match(info.Name);
         if(!m.Success)
-            throw new PoolStartupException($"Unable to identify network type ({info.Name}");
+            throw new PoolStartupException($"Unable to identify network type ({info.Name}", poolConfig.Id);
 
         network = m.Groups[1].Value.ToLower();
 
@@ -372,7 +372,7 @@ public class ErgoJobManager : JobManagerBase<ErgoJob>
             var walletAddresses = await rpc.WalletAddressesAsync(ct);
 
             if(!walletAddresses.Contains(poolConfig.Address))
-                throw new PoolStartupException($"Pool address {poolConfig.Address} is not controlled by wallet");
+                throw new PoolStartupException($"Pool address {poolConfig.Address} is not controlled by wallet", poolConfig.Id);
         }
 
         // update stats
@@ -402,10 +402,10 @@ public class ErgoJobManager : JobManagerBase<ErgoJob>
     protected override async Task<bool> AreDaemonsHealthyAsync(CancellationToken ct)
     {
         var info = await Guard(() => rpc.GetNodeInfoAsync(ct),
-            ex=> throw new PoolStartupException($"Daemon reports: {ex.Message}"));
+            ex=> throw new PoolStartupException($"Daemon reports: {ex.Message}", poolConfig.Id));
 
         if(info?.IsMining != true)
-            throw new PoolStartupException($"Mining is disabled in Ergo Daemon");
+            throw new PoolStartupException("Mining is disabled in Ergo Daemon", poolConfig.Id);
 
         return true;
     }

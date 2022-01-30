@@ -447,7 +447,7 @@ public abstract class BitcoinJobManagerBase<TJob> : JobManagerBase<TJob>
                 .ToArray();
 
             if(errors.Any())
-                throw new PoolStartupException($"Init RPC failed: {string.Join(", ", errors.Select(y => y.Error.Message))}");
+                throw new PoolStartupException($"Init RPC failed: {string.Join(", ", errors.Select(y => y.Error.Message))}", poolConfig.Id);
         }
 
         // extract results
@@ -468,7 +468,7 @@ public abstract class BitcoinJobManagerBase<TJob> : JobManagerBase<TJob>
 
         // ensure pool owns wallet
         if(validateAddressResponse is not {IsValid: true})
-            throw new PoolStartupException($"Daemon reports pool-address '{poolConfig.Address}' as invalid");
+            throw new PoolStartupException($"Daemon reports pool-address '{poolConfig.Address}' as invalid", poolConfig.Id);
 
         isPoS = poolConfig.Template is BitcoinTemplate {IsPseudoPoS: true} || difficultyResponse.Values().Any(x => x.Path == "proof-of-stake");
 
@@ -502,7 +502,7 @@ public abstract class BitcoinJobManagerBase<TJob> : JobManagerBase<TJob>
         else if(submitBlockResponse.Error?.Code == -1)
             hasSubmitBlockMethod = true;
         else
-            throw new PoolStartupException("Unable detect block submission RPC method");
+            throw new PoolStartupException("Unable detect block submission RPC method", poolConfig.Id);
 
         if(!hasLegacyDaemon)
             await UpdateNetworkStatsAsync(ct);

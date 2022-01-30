@@ -517,7 +517,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
                 .ToArray();
 
             if(errors.Any())
-                throw new PoolStartupException($"Init RPC failed: {string.Join(", ", errors.Select(y => y.Error.Message))}");
+                throw new PoolStartupException($"Init RPC failed: {string.Join(", ", errors.Select(y => y.Error.Message))}", poolConfig.Id);
         }
 
         // extract results
@@ -624,7 +624,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
                     goto retry;
                 }
 
-                throw new PoolStartupException($"Unable to subscribe to geth websocket '{wsSubscription}': {subcriptionResponse.Error.Message} [{subcriptionResponse.Error.Code}]");
+                throw new PoolStartupException($"Unable to subscribe to geth websocket '{wsSubscription}': {subcriptionResponse.Error.Message} [{subcriptionResponse.Error.Code}]", poolConfig.Id);
             }
 
             var websocketNotify = getWorkObs.Where(x => x != null)

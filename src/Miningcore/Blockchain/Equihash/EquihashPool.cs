@@ -56,7 +56,7 @@ public class EquihashPool : PoolBase
 
         if(pc.Template.As<EquihashCoinTemplate>().UsesZCashAddressFormat &&
            string.IsNullOrEmpty(extraConfig?.ZAddress))
-            throw new PoolStartupException("Pool z-address is not configured");
+            throw new PoolStartupException("Pool z-address is not configured", pc.Id);
     }
 
     protected override async Task SetupJobManager(CancellationToken ct)

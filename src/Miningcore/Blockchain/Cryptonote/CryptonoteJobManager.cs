@@ -306,7 +306,7 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
                 .ToArray();
 
             if(walletDaemonEndpoints.Length == 0)
-                throw new PoolStartupException("Wallet-RPC daemon is not configured (Daemon configuration for monero-pools require an additional entry of category \'wallet' pointing to the wallet daemon)");
+                throw new PoolStartupException("Wallet-RPC daemon is not configured (Daemon configuration for monero-pools require an additional entry of category \'wallet' pointing to the wallet daemon)", pc.Id);
         }
 
         ConfigureDaemons();
@@ -542,7 +542,7 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
         var infoResponse = await rpc.ExecuteAsync(logger, CryptonoteCommands.GetInfo, ct);
 
         if(infoResponse.Error != null)
-            throw new PoolStartupException($"Init RPC failed: {infoResponse.Error.Message} (Code {infoResponse.Error.Code})");
+            throw new PoolStartupException($"Init RPC failed: {infoResponse.Error.Message} (Code {infoResponse.Error.Code})", poolConfig.Id);
 
         if(clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
         {
@@ -550,7 +550,7 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
 
             // ensure pool owns wallet
             if(clusterConfig.PaymentProcessing?.Enabled == true && addressResponse.Response?.Address != poolConfig.Address)
-                throw new PoolStartupException($"Wallet-Daemon does not own pool-address '{poolConfig.Address}'");
+                throw new PoolStartupException($"Wallet-Daemon does not own pool-address '{poolConfig.Address}'", poolConfig.Id);
         }
 
         var info = infoResponse.Response.ToObject<GetInfoResponse>();
@@ -570,7 +570,7 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
                     networkType = CryptonoteNetworkType.Test;
                     break;
                 default:
-                    throw new PoolStartupException($"Unsupport net type '{info.NetType}'");
+                    throw new PoolStartupException($"Unsupport net type '{info.NetType}'", poolConfig.Id);
             }
         }
 
@@ -580,23 +580,23 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
         // address validation
         poolAddressBase58Prefix = CryptonoteBindings.DecodeAddress(poolConfig.Address);
         if(poolAddressBase58Prefix == 0)
-            throw new PoolStartupException("Unable to decode pool-address");
+            throw new PoolStartupException("Unable to decode pool-address", poolConfig.Id);
 
         switch(networkType)
         {
             case CryptonoteNetworkType.Main:
                 if(poolAddressBase58Prefix != coin.AddressPrefix)
-                    throw new PoolStartupException($"Invalid pool address prefix. Expected {coin.AddressPrefix}, got {poolAddressBase58Prefix}");
+                    throw new PoolStartupException($"Invalid pool address prefix. Expected {coin.AddressPrefix}, got {poolAddressBase58Prefix}", poolConfig.Id);
                 break;
 
             case CryptonoteNetworkType.Stage:
                 if(poolAddressBase58Prefix != coin.AddressPrefixStagenet)
-                    throw new PoolStartupException($"Invalid pool address prefix. Expected {coin.AddressPrefixStagenet}, got {poolAddressBase58Prefix}");
+                    throw new PoolStartupException($"Invalid pool address prefix. Expected {coin.AddressPrefixStagenet}, got {poolAddressBase58Prefix}", poolConfig.Id);
                 break;
 
             case CryptonoteNetworkType.Test:
                 if(poolAddressBase58Prefix != coin.AddressPrefixTestnet)
-                    throw new PoolStartupException($"Invalid pool address prefix. Expected {coin.AddressPrefixTestnet}, got {poolAddressBase58Prefix}");
+                    throw new PoolStartupException($"Invalid pool address prefix. Expected {coin.AddressPrefixTestnet}, got {poolAddressBase58Prefix}", poolConfig.Id);
                 break;
         }
 

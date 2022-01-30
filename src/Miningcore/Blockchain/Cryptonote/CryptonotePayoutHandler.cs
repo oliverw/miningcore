@@ -113,7 +113,7 @@ public class CryptonotePayoutHandler : PayoutHandlerBase,
             var info = infoResponse.Response.ToObject<GetInfoResponse>();
 
             if(info == null)
-                throw new PoolStartupException($"{LogCategory}] Unable to determine network type");
+                throw new PoolStartupException($"{LogCategory}] Unable to determine network type", poolConfig.Id);
 
             // chain detection
             if(!string.IsNullOrEmpty(info.NetType))
@@ -130,7 +130,7 @@ public class CryptonotePayoutHandler : PayoutHandlerBase,
                         networkType = CryptonoteNetworkType.Test;
                         break;
                     default:
-                        throw new PoolStartupException($"Unsupported net type '{info.NetType}'");
+                        throw new PoolStartupException($"Unsupported net type '{info.NetType}'", poolConfig.Id);
                 }
             }
 

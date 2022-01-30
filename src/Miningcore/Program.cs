@@ -369,7 +369,9 @@ public class Program : BackgroundService
             {
                 if(ex is PoolStartupException pse)
                 {
-                    logger.Error(() => $"{pse.Message}");
+                    var _logger = pse.PoolId != null ? LogUtil.GetPoolScopedLogger(GetType(), pse.PoolId) : logger;
+                    _logger.Error(() => $"{pse.Message}");
+
                     logger.Error(() => "Cluster cannot start. Good Bye!");
 
                     hal.StopApplication();
@@ -384,7 +386,7 @@ public class Program : BackgroundService
     {
         // Lookup coin
         if(!coinTemplates.TryGetValue(poolConfig.Coin, out var template))
-            throw new PoolStartupException($"Pool {poolConfig.Id} references undefined coin '{poolConfig.Coin}'");
+            throw new PoolStartupException($"Pool {poolConfig.Id} references undefined coin '{poolConfig.Coin}'", poolConfig.Id);
 
         poolConfig.Template = template;
 
