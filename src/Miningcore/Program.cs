@@ -55,6 +55,7 @@ using Prometheus;
 using WebSocketManager;
 using ILogger = NLog.ILogger;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
+using static Miningcore.Util.ActionUtils;
 
 // ReSharper disable AssignNullToNotNullAttribute
 // ReSharper disable PossibleNullReferenceException
@@ -315,6 +316,7 @@ public class Program : BackgroundService
 
     private static IHost host;
     private readonly IComponentContext container;
+    private readonly IHostApplicationLifetime hal;
     private static ILogger logger;
     private static CommandOption versionOption;
     private static CommandOption configFileOption;
@@ -326,9 +328,10 @@ public class Program : BackgroundService
     private static readonly ConcurrentDictionary<string, IMiningPool> pools = new();
     private static readonly AdminGcStats gcStats = new();
 
-    public Program(IComponentContext container)
+    public Program(IComponentContext container, IHostApplicationLifetime hal)
     {
         this.container = container;
+        this.hal = hal;
     }
 
     private static void ConfigureAutofac(ContainerBuilder builder)
@@ -359,9 +362,22 @@ public class Program : BackgroundService
         var coinTemplates = LoadCoinTemplates();
         logger.Info($"{coinTemplates.Keys.Count} coins loaded from '{string.Join(", ", clusterConfig.CoinTemplates)}'");
 
-        await Task.WhenAll(clusterConfig.Pools
+        await Guard(()=> Task.WhenAll(clusterConfig.Pools
             .Where(config => config.Enabled)
-            .Select(config => RunPool(config, coinTemplates, ct)));
+            .Select(config => RunPool(config, coinTemplates, ct))),
+            ex =>
+            {
+                if(ex is PoolStartupException pse)
+                {
+                    logger.Error(() => $"{pse.Message}");
+                    logger.Error(() => "Cluster cannot start. Good Bye!");
+
+                    hal.StopApplication();
+                }
+
+                else
+                    throw ex;
+            });
     }
 
     private async Task RunPool(PoolConfig poolConfig, Dictionary<string, CoinTemplate> coinTemplates, CancellationToken ct)
@@ -630,6 +646,7 @@ public class Program : BackgroundService
             loggingConfig.AddRule(level, NLog.LogLevel.Info, nullTarget, "Microsoft.AspNetCore.Mvc.Internal.*", true);
             loggingConfig.AddRule(level, NLog.LogLevel.Info, nullTarget, "Microsoft.AspNetCore.Mvc.Infrastructure.*", true);
             loggingConfig.AddRule(level, NLog.LogLevel.Warn, nullTarget, "System.Net.Http.HttpClient.*", true);
+            loggingConfig.AddRule(level, NLog.LogLevel.Fatal, nullTarget, "Microsoft.Extensions.Hosting.Internal.*", true);
 
             // Api Log
             if(!string.IsNullOrEmpty(config.ApiLogFile) && !isShareRecoveryMode)
