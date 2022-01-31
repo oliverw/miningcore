@@ -34,13 +34,13 @@ public class StatsRecorder : BackgroundService
         IShareRepository shareRepo,
         IStatsRepository statsRepo)
     {
-        Contract.RequiresNonNull(ctx, nameof(ctx));
-        Contract.RequiresNonNull(clock, nameof(clock));
-        Contract.RequiresNonNull(cf, nameof(cf));
-        Contract.RequiresNonNull(messageBus, nameof(messageBus));
-        Contract.RequiresNonNull(mapper, nameof(mapper));
-        Contract.RequiresNonNull(shareRepo, nameof(shareRepo));
-        Contract.RequiresNonNull(statsRepo, nameof(statsRepo));
+        Contract.RequiresNonNull(ctx);
+        Contract.RequiresNonNull(clock);
+        Contract.RequiresNonNull(cf);
+        Contract.RequiresNonNull(messageBus);
+        Contract.RequiresNonNull(mapper);
+        Contract.RequiresNonNull(shareRepo);
+        Contract.RequiresNonNull(statsRepo);
 
         this.clock = clock;
         this.cf = cf;

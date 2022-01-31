@@ -214,7 +214,7 @@ public class StratumConnection
 
     private Task SendAsync<T>(T payload)
     {
-        Contract.RequiresNonNull(payload, nameof(payload));
+        Contract.RequiresNonNull(payload);
 
         if(sendQueue.Count >= SendQueueCapacity)
             throw new IOException("Sendqueue stalled");

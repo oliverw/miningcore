@@ -17,7 +17,7 @@ public class ShareRelay : IHostedService
 {
     public ShareRelay(ClusterConfig clusterConfig, IMessageBus messageBus)
     {
-        Contract.RequiresNonNull(messageBus, nameof(messageBus));
+        Contract.RequiresNonNull(messageBus);
 
         this.clusterConfig = clusterConfig;
         this.messageBus = messageBus;

@@ -186,10 +186,10 @@ public class ErgoJob
 
     public virtual Share ProcessShare(StratumConnection worker, string extraNonce2, string nTime, string nonce)
     {
-        Contract.RequiresNonNull(worker, nameof(worker));
-        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(extraNonce2), $"{nameof(extraNonce2)} must not be empty");
-        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(nTime), $"{nameof(nTime)} must not be empty");
-        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(nonce), $"{nameof(nonce)} must not be empty");
+        Contract.RequiresNonNull(worker);
+        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(extraNonce2));
+        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(nTime));
+        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(nonce));
 
         var context = worker.ContextAs<ErgoWorkerContext>();
 

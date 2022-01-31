@@ -35,10 +35,10 @@ public abstract class StratumServer
         RecyclableMemoryStreamManager rmsm,
         IMasterClock clock)
     {
-        Contract.RequiresNonNull(ctx, nameof(ctx));
-        Contract.RequiresNonNull(messageBus, nameof(messageBus));
-        Contract.RequiresNonNull(rmsm, nameof(rmsm));
-        Contract.RequiresNonNull(clock, nameof(clock));
+        Contract.RequiresNonNull(ctx);
+        Contract.RequiresNonNull(messageBus);
+        Contract.RequiresNonNull(rmsm);
+        Contract.RequiresNonNull(clock);
 
         this.ctx = ctx;
         this.messageBus = messageBus;
@@ -90,7 +90,7 @@ public abstract class StratumServer
 
     protected Task RunAsync(CancellationToken ct, params StratumEndpoint[] endpoints)
     {
-        Contract.RequiresNonNull(endpoints, nameof(endpoints));
+        Contract.RequiresNonNull(endpoints);
 
         logger.Info(() => $"Stratum ports {string.Join(", ", endpoints.Select(x => $"{x.IPEndPoint.Address}:{x.IPEndPoint.Port}").ToArray())} online");
 
@@ -285,7 +285,7 @@ public abstract class StratumServer
 
     protected void Disconnect(StratumConnection connection)
     {
-        Contract.RequiresNonNull(connection, nameof(connection));
+        Contract.RequiresNonNull(connection);
 
         connection.Disconnect();
     }

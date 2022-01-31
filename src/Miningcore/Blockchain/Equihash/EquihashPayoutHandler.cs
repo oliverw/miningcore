@@ -67,7 +67,7 @@ public class EquihashPayoutHandler : BitcoinPayoutHandler
 
     public override async Task PayoutAsync(IMiningPool pool, Balance[] balances, CancellationToken ct)
     {
-        Contract.RequiresNonNull(balances, nameof(balances));
+        Contract.RequiresNonNull(balances);
 
         // Shield first
         if(supportsNativeShielding)

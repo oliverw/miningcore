@@ -24,8 +24,8 @@ public class ErgoJobManager : JobManagerBase<ErgoJob>
         IExtraNonceProvider extraNonceProvider) :
         base(ctx, messageBus)
     {
-        Contract.RequiresNonNull(clock, nameof(clock));
-        Contract.RequiresNonNull(extraNonceProvider, nameof(extraNonceProvider));
+        Contract.RequiresNonNull(clock);
+        Contract.RequiresNonNull(extraNonceProvider);
 
         this.clock = clock;
         this.extraNonceProvider = extraNonceProvider;
@@ -237,7 +237,7 @@ public class ErgoJobManager : JobManagerBase<ErgoJob>
 
     public object[] GetSubscriberData(StratumConnection worker)
     {
-        Contract.RequiresNonNull(worker, nameof(worker));
+        Contract.RequiresNonNull(worker);
 
         var context = worker.ContextAs<ErgoWorkerContext>();
 
@@ -256,8 +256,8 @@ public class ErgoJobManager : JobManagerBase<ErgoJob>
 
     public async ValueTask<Share> SubmitShareAsync(StratumConnection worker, object submission, CancellationToken ct)
     {
-        Contract.RequiresNonNull(worker, nameof(worker));
-        Contract.RequiresNonNull(submission, nameof(submission));
+        Contract.RequiresNonNull(worker);
+        Contract.RequiresNonNull(submission);
 
         if(submission is not object[] submitParams)
             throw new StratumException(StratumError.Other, "invalid params");

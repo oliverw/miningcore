@@ -37,10 +37,10 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
         IExtraNonceProvider extraNonceProvider) :
         base(ctx, messageBus)
     {
-        Contract.RequiresNonNull(ctx, nameof(ctx));
-        Contract.RequiresNonNull(clock, nameof(clock));
-        Contract.RequiresNonNull(messageBus, nameof(messageBus));
-        Contract.RequiresNonNull(extraNonceProvider, nameof(extraNonceProvider));
+        Contract.RequiresNonNull(ctx);
+        Contract.RequiresNonNull(clock);
+        Contract.RequiresNonNull(messageBus);
+        Contract.RequiresNonNull(extraNonceProvider);
 
         this.clock = clock;
         this.extraNonceProvider = extraNonceProvider;
@@ -368,8 +368,8 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
 
     public async Task<Share> SubmitShareV1Async(StratumConnection worker, string[] request, string workerName, CancellationToken ct)
     {
-        Contract.RequiresNonNull(worker, nameof(worker));
-        Contract.RequiresNonNull(request, nameof(request));
+        Contract.RequiresNonNull(worker);
+        Contract.RequiresNonNull(request);
 
         var context = worker.ContextAs<EthereumWorkerContext>();
         var nonce = request[0];
@@ -391,8 +391,8 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
 
     public async Task<Share> SubmitShareV2Async(StratumConnection worker, string[] request, CancellationToken ct)
     {
-        Contract.RequiresNonNull(worker, nameof(worker));
-        Contract.RequiresNonNull(request, nameof(request));
+        Contract.RequiresNonNull(worker);
+        Contract.RequiresNonNull(request);
 
         var context = worker.ContextAs<EthereumWorkerContext>();
         var jobId = request[1];

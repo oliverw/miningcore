@@ -280,7 +280,7 @@ public static unsafe class RandomX
 
     public static void CalculateHash(string realm, string seedHex, ReadOnlySpan<byte> data, Span<byte> result)
     {
-        Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
+        Contract.Requires<ArgumentException>(result.Length >= 32);
 
         var sw = Stopwatch.StartNew();
         var success = false;

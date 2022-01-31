@@ -16,8 +16,8 @@ public abstract class JobManagerBase<TJob>
 {
     protected JobManagerBase(IComponentContext ctx, IMessageBus messageBus)
     {
-        Contract.RequiresNonNull(ctx, nameof(ctx));
-        Contract.RequiresNonNull(messageBus, nameof(messageBus));
+        Contract.RequiresNonNull(ctx);
+        Contract.RequiresNonNull(messageBus);
 
         this.ctx = ctx;
         this.messageBus = messageBus;
@@ -89,8 +89,8 @@ public abstract class JobManagerBase<TJob>
 
     public virtual void Configure(PoolConfig pc, ClusterConfig cc)
     {
-        Contract.RequiresNonNull(pc, nameof(pc));
-        Contract.RequiresNonNull(cc, nameof(cc));
+        Contract.RequiresNonNull(pc);
+        Contract.RequiresNonNull(cc);
 
         logger = LogUtil.GetPoolScopedLogger(typeof(JobManagerBase<TJob>), pc);
         poolConfig = pc;
@@ -101,7 +101,7 @@ public abstract class JobManagerBase<TJob>
 
     public async Task StartAsync(CancellationToken ct)
     {
-        Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
+        Contract.RequiresNonNull(poolConfig);
 
         logger.Info(() => "Starting Job Manager ...");
 

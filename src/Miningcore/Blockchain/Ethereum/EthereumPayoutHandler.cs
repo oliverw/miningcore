@@ -39,9 +39,9 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
         IMessageBus messageBus) :
         base(cf, mapper, shareRepo, blockRepo, balanceRepo, paymentRepo, clock, messageBus)
     {
-        Contract.RequiresNonNull(ctx, nameof(ctx));
-        Contract.RequiresNonNull(balanceRepo, nameof(balanceRepo));
-        Contract.RequiresNonNull(paymentRepo, nameof(paymentRepo));
+        Contract.RequiresNonNull(ctx);
+        Contract.RequiresNonNull(balanceRepo);
+        Contract.RequiresNonNull(paymentRepo);
 
         this.ctx = ctx;
     }
@@ -77,8 +77,8 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
 
     public async Task<Block[]> ClassifyBlocksAsync(IMiningPool pool, Block[] blocks, CancellationToken ct)
     {
-        Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
-        Contract.RequiresNonNull(blocks, nameof(blocks));
+        Contract.RequiresNonNull(poolConfig);
+        Contract.RequiresNonNull(blocks);
 
         var coin = poolConfig.Template.As<EthereumCoinTemplate>();
         var pageSize = 100;

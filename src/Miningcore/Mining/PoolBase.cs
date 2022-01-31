@@ -42,14 +42,14 @@ public abstract class PoolBase : StratumServer,
         RecyclableMemoryStreamManager rmsm,
         NicehashService nicehashService) : base(ctx, messageBus, rmsm, clock)
     {
-        Contract.RequiresNonNull(ctx, nameof(ctx));
-        Contract.RequiresNonNull(serializerSettings, nameof(serializerSettings));
-        Contract.RequiresNonNull(cf, nameof(cf));
-        Contract.RequiresNonNull(statsRepo, nameof(statsRepo));
-        Contract.RequiresNonNull(mapper, nameof(mapper));
-        Contract.RequiresNonNull(clock, nameof(clock));
-        Contract.RequiresNonNull(messageBus, nameof(messageBus));
-        Contract.RequiresNonNull(nicehashService, nameof(nicehashService));
+        Contract.RequiresNonNull(ctx);
+        Contract.RequiresNonNull(serializerSettings);
+        Contract.RequiresNonNull(cf);
+        Contract.RequiresNonNull(statsRepo);
+        Contract.RequiresNonNull(mapper);
+        Contract.RequiresNonNull(clock);
+        Contract.RequiresNonNull(messageBus);
+        Contract.RequiresNonNull(nicehashService);
 
         this.serializerSettings = serializerSettings;
         this.cf = cf;
@@ -361,8 +361,8 @@ Pool Fee:               {(poolConfig.RewardRecipients?.Any() == true ? poolConfi
 
     public virtual void Configure(PoolConfig pc, ClusterConfig cc)
     {
-        Contract.RequiresNonNull(pc, nameof(pc));
-        Contract.RequiresNonNull(cc, nameof(cc));
+        Contract.RequiresNonNull(pc);
+        Contract.RequiresNonNull(cc);
 
         logger = LogUtil.GetPoolScopedLogger(typeof(PoolBase), pc);
         poolConfig = pc;
@@ -374,7 +374,7 @@ Pool Fee:               {(poolConfig.RewardRecipients?.Any() == true ? poolConfi
 
     public virtual async Task RunAsync(CancellationToken ct)
     {
-        Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
+        Contract.RequiresNonNull(poolConfig);
 
         logger.Info(() => "Starting Pool ...");
 

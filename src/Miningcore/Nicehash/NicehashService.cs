@@ -24,8 +24,8 @@ public class NicehashService
 
     public Task<double?> GetStaticDiff(string coin, string algo, CancellationToken ct)
     {
-        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(coin), $"{nameof(coin)} must not be empty");
-        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(algo), $"{nameof(algo)} must not be empty");
+        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(coin));
+        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(algo));
 
         return Guard(async () =>
         {

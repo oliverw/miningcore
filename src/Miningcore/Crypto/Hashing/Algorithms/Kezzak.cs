@@ -9,9 +9,9 @@ public unsafe class Kezzak : IHashAlgorithm
 {
     public void Digest(ReadOnlySpan<byte> data, Span<byte> result, params object[] extra)
     {
-        Contract.RequiresNonNull(extra, nameof(extra));
-        Contract.Requires<ArgumentException>(extra.Length > 0, $"{nameof(extra)} must not be empty");
-        Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
+        Contract.RequiresNonNull(extra);
+        Contract.Requires<ArgumentException>(extra.Length > 0);
+        Contract.Requires<ArgumentException>(result.Length >= 32);
 
         // concat nTime as hex string to data
         var nTime = (ulong) extra[0];

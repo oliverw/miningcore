@@ -21,8 +21,8 @@ public class IntegratedBanManager : IBanManager
 
     public void Ban(IPAddress address, TimeSpan duration)
     {
-        Contract.RequiresNonNull(address, nameof(address));
-        Contract.Requires<ArgumentException>(duration.TotalMilliseconds > 0, $"{nameof(duration)} must not be empty");
+        Contract.RequiresNonNull(address);
+        Contract.Requires<ArgumentException>(duration.TotalMilliseconds > 0);
 
         // don't ban loopback
         if(address.Equals(IPAddress.Loopback) || address.Equals(IPAddress.IPv6Loopback))

@@ -52,7 +52,7 @@ public class Cache : IDisposable
 
     public unsafe bool Compute(ILogger logger, byte[] hash, ulong nonce, out byte[] mixDigest, out byte[] result)
     {
-        Contract.RequiresNonNull(hash, nameof(hash));
+        Contract.RequiresNonNull(hash);
 
         mixDigest = null;
         result = null;

@@ -314,13 +314,13 @@ public class EquihashJob
         IDestination poolAddressDestination, Network network,
         EquihashSolver solver)
     {
-        Contract.RequiresNonNull(blockTemplate, nameof(blockTemplate));
-        Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
-        Contract.RequiresNonNull(clusterConfig, nameof(clusterConfig));
-        Contract.RequiresNonNull(clock, nameof(clock));
-        Contract.RequiresNonNull(poolAddressDestination, nameof(poolAddressDestination));
-        Contract.RequiresNonNull(solver, nameof(solver));
-        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(jobId), $"{nameof(jobId)} must not be empty");
+        Contract.RequiresNonNull(blockTemplate);
+        Contract.RequiresNonNull(poolConfig);
+        Contract.RequiresNonNull(clusterConfig);
+        Contract.RequiresNonNull(clock);
+        Contract.RequiresNonNull(poolAddressDestination);
+        Contract.RequiresNonNull(solver);
+        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(jobId));
 
         this.clock = clock;
         this.poolAddressDestination = poolAddressDestination;
@@ -436,10 +436,10 @@ public class EquihashJob
 
     public (Share Share, string BlockHex) ProcessShare(StratumConnection worker, string extraNonce2, string nTime, string solution)
     {
-        Contract.RequiresNonNull(worker, nameof(worker));
-        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(extraNonce2), $"{nameof(extraNonce2)} must not be empty");
-        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(nTime), $"{nameof(nTime)} must not be empty");
-        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(solution), $"{nameof(solution)} must not be empty");
+        Contract.RequiresNonNull(worker);
+        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(extraNonce2));
+        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(nTime));
+        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(solution));
 
         var context = worker.ContextAs<BitcoinWorkerContext>();
 

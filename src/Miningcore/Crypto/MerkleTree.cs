@@ -55,7 +55,7 @@ public class MerkleTree
     /// <returns></returns>
     private IList<byte[]> CalculateSteps(IEnumerable<byte[]> hashList)
     {
-        Contract.RequiresNonNull(hashList, nameof(hashList));
+        Contract.RequiresNonNull(hashList);
 
         var steps = new List<byte[]>();
 
@@ -107,7 +107,7 @@ public class MerkleTree
 
     public byte[] WithFirst(byte[] first)
     {
-        Contract.RequiresNonNull(first, nameof(first));
+        Contract.RequiresNonNull(first);
 
         foreach(var step in Steps)
             first = DoubleDigest(first.Concat(step)).ToArray();

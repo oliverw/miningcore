@@ -31,8 +31,8 @@ public class ShareReceiver : BackgroundService
         IMasterClock clock,
         IMessageBus messageBus)
     {
-        Contract.RequiresNonNull(clock, nameof(clock));
-        Contract.RequiresNonNull(messageBus, nameof(messageBus));
+        Contract.RequiresNonNull(clock);
+        Contract.RequiresNonNull(messageBus);
 
         this.clusterConfig = clusterConfig;
         this.clock = clock;

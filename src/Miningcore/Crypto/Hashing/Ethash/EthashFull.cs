@@ -8,7 +8,7 @@ public class EthashFull : IDisposable
 {
     public EthashFull(int numCaches, string dagDir)
     {
-        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(dagDir), $"{nameof(dagDir)} must not be empty");
+        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(dagDir));
 
         this.numCaches = numCaches;
         this.dagDir = dagDir;

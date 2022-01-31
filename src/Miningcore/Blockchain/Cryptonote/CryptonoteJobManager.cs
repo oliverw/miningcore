@@ -36,9 +36,9 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
         IMessageBus messageBus) :
         base(ctx, messageBus)
     {
-        Contract.RequiresNonNull(ctx, nameof(ctx));
-        Contract.RequiresNonNull(clock, nameof(clock));
-        Contract.RequiresNonNull(messageBus, nameof(messageBus));
+        Contract.RequiresNonNull(ctx);
+        Contract.RequiresNonNull(clock);
+        Contract.RequiresNonNull(messageBus);
 
         this.clock = clock;
     }
@@ -263,8 +263,8 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
 
     public override void Configure(PoolConfig pc, ClusterConfig cc)
     {
-        Contract.RequiresNonNull(pc, nameof(pc));
-        Contract.RequiresNonNull(cc, nameof(cc));
+        Contract.RequiresNonNull(pc);
+        Contract.RequiresNonNull(cc);
 
         logger = LogUtil.GetPoolScopedLogger(typeof(JobManagerBase<CryptonoteJob>), pc);
         poolConfig = pc;
@@ -366,8 +366,8 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
     public async ValueTask<Share> SubmitShareAsync(StratumConnection worker,
         CryptonoteSubmitShareRequest request, CryptonoteWorkerJob workerJob, CancellationToken ct)
     {
-        Contract.RequiresNonNull(worker, nameof(worker));
-        Contract.RequiresNonNull(request, nameof(request));
+        Contract.RequiresNonNull(worker);
+        Contract.RequiresNonNull(request);
 
         var context = worker.ContextAs<CryptonoteWorkerContext>();
 
