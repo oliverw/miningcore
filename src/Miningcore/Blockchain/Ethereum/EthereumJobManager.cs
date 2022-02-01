@@ -473,9 +473,11 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
 
     protected override async Task EnsureDaemonsSynchedAsync(CancellationToken ct)
     {
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(5));
+
         var syncPendingNotificationShown = false;
 
-        while(true)
+        do
         {
             var syncStateResponse = await rpc.ExecuteAsync<object>(logger, EC.GetSyncState, ct);
 
@@ -494,10 +496,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
             }
 
             await ShowDaemonSyncProgressAsync(ct);
-
-            // delay retry by 5s
-            await Task.Delay(5000, ct);
-        }
+        } while(await timer.WaitForNextTickAsync(ct));
     }
 
     protected override async Task PostStartInitAsync(CancellationToken ct)
@@ -545,7 +544,9 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
         if(poolConfig.EnableInternalStratum == true)
         {
             // make sure we have a current DAG
-            while(true)
+            using var timer = new PeriodicTimer(TimeSpan.FromSeconds(5));
+
+            do
             {
                 var blockTemplate = await GetBlockTemplateAsync(ct);
 
@@ -560,8 +561,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
                 }
 
                 logger.Info(() => "Waiting for first valid block template");
-                await Task.Delay(TimeSpan.FromSeconds(5), ct);
-            }
+            } while(await timer.WaitForNextTickAsync(ct));
         }
 
         await SetupJobUpdates(ct);

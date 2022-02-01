@@ -499,9 +499,11 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
 
     protected override async Task EnsureDaemonsSynchedAsync(CancellationToken ct)
     {
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(5));
+
         var syncPendingNotificationShown = false;
 
-        while(true)
+        do
         {
             var request = new GetBlockTemplateRequest
             {
@@ -527,10 +529,7 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
             }
 
             await ShowDaemonSyncProgressAsync(ct);
-
-            // delay retry by 5s
-            await Task.Delay(5000, ct);
-        }
+        } while(await timer.WaitForNextTickAsync(ct));
     }
 
     protected override async Task PostStartInitAsync(CancellationToken ct)

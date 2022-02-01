@@ -420,9 +420,11 @@ public class ErgoJobManager : JobManagerBase<ErgoJob>
 
     protected override async Task EnsureDaemonsSynchedAsync(CancellationToken ct)
     {
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(5));
+
         var syncPendingNotificationShown = false;
 
-        while(true)
+        do
         {
             var work = await Guard(() => rpc.MiningRequestBlockCandidateAsync(ct),
                 ex=> logger.Debug(ex));
@@ -442,10 +444,7 @@ public class ErgoJobManager : JobManagerBase<ErgoJob>
             }
 
             await ShowDaemonSyncProgressAsync();
-
-            // delay retry by 5s
-            await Task.Delay(5000, ct);
-        }
+        } while(await timer.WaitForNextTickAsync(ct));
     }
 
     private object[] GetJobParamsForStratum(bool isNew)

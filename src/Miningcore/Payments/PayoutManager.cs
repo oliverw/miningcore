@@ -260,7 +260,9 @@ public class PayoutManager : BackgroundService
             // Allow all pools to actually come up before the first payment processing run
             await Task.Delay(initialRunDelay, ct);
 
-            while(!ct.IsCancellationRequested)
+            using var timer = new PeriodicTimer(interval);
+
+            do
             {
                 try
                 {
@@ -271,9 +273,7 @@ public class PayoutManager : BackgroundService
                 {
                     logger.Error(ex);
                 }
-
-                await Task.Delay(interval, ct);
-            }
+            } while(await timer.WaitForNextTickAsync(ct));
 
             logger.Info(() => "Offline");
         }

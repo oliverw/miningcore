@@ -39,11 +39,13 @@ public abstract class JobManagerBase<TJob>
 
     protected async Task StartDaemonAsync(CancellationToken ct)
     {
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(10));
+
         while(!await AreDaemonsHealthyAsync(ct))
         {
             logger.Info(() => "Waiting for daemons to come online ...");
 
-            await Task.Delay(TimeSpan.FromSeconds(10), ct);
+            await timer.WaitForNextTickAsync(ct);
         }
 
         logger.Info(() => "All daemons online");
@@ -52,7 +54,7 @@ public abstract class JobManagerBase<TJob>
         {
             logger.Info(() => "Waiting for daemon to connect to peers ...");
 
-            await Task.Delay(TimeSpan.FromSeconds(10), ct);
+            await timer.WaitForNextTickAsync(ct);
         }
     }
 

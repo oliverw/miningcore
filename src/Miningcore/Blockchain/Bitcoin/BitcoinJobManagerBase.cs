@@ -396,9 +396,11 @@ public abstract class BitcoinJobManagerBase<TJob> : JobManagerBase<TJob>
 
     protected override async Task EnsureDaemonsSynchedAsync(CancellationToken ct)
     {
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(5));
+
         var syncPendingNotificationShown = false;
 
-        while(true)
+        do
         {
             var response = await rpc.ExecuteAsync<BlockTemplate>(logger,
                 BitcoinCommands.GetBlockTemplate, ct, GetBlockTemplateParams());
@@ -418,10 +420,7 @@ public abstract class BitcoinJobManagerBase<TJob> : JobManagerBase<TJob>
             }
 
             await ShowDaemonSyncProgressAsync(ct);
-
-            // delay retry by 5s
-            await Task.Delay(5000, ct);
-        }
+        } while(await timer.WaitForNextTickAsync(ct));
     }
 
     protected override async Task PostStartInitAsync(CancellationToken ct)

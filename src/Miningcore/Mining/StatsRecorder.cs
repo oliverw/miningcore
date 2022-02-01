@@ -308,7 +308,9 @@ public class StatsRecorder : BackgroundService
 
     private async Task UpdateAsync(CancellationToken ct)
     {
-        while(!ct.IsCancellationRequested)
+        using var timer = new PeriodicTimer(updateInterval);
+
+        do
         {
             try
             {
@@ -324,14 +326,14 @@ public class StatsRecorder : BackgroundService
             {
                 logger.Error(ex);
             }
-
-            await Task.Delay(updateInterval, ct);
-        }
+        } while(await timer.WaitForNextTickAsync(ct));
     }
 
     private async Task GcAsync(CancellationToken ct)
     {
-        while(!ct.IsCancellationRequested)
+        using var timer = new PeriodicTimer(gcInterval);
+
+        do
         {
             try
             {
@@ -347,9 +349,7 @@ public class StatsRecorder : BackgroundService
             {
                 logger.Error(ex);
             }
-
-            await Task.Delay(gcInterval, ct);
-        }
+        } while(await timer.WaitForNextTickAsync(ct));
     }
 
     private void BuildFaultHandlingPolicy()
