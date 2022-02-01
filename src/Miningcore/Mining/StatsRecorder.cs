@@ -315,6 +315,11 @@ public class StatsRecorder : BackgroundService
                 await UpdatePoolHashratesAsync(ct);
             }
 
+            catch(OperationCanceledException)
+            {
+                // ignored
+            }
+
             catch(Exception ex)
             {
                 logger.Error(ex);
@@ -331,6 +336,11 @@ public class StatsRecorder : BackgroundService
             try
             {
                 await StatsGcAsync(ct);
+            }
+
+            catch(OperationCanceledException)
+            {
+                // ignored
             }
 
             catch(Exception ex)
