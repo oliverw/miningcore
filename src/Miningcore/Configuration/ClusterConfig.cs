@@ -713,6 +713,7 @@ public partial class PoolPaymentProcessingConfig
 {
     public bool Enabled { get; set; }
     public decimal MinimumPayment { get; set; } // in pool-base-currency (ie. Bitcoin, not Satoshis)
+    public bool PayoutEnabled { get; set; }
     public PayoutScheme PayoutScheme { get; set; }
     public JToken PayoutSchemeConfig { get; set; }
 
@@ -733,6 +734,7 @@ public partial class ClusterPaymentProcessingConfig
     /// Indentifier used in coinbase transactions to identify the pool
     /// </summary>
     public string CoinbaseString  { get; set; }
+    public bool OnDemandPayout { get; set; }
 }
 
 [UsedImplicitly]

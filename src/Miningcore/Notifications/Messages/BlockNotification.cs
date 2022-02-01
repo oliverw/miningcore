@@ -10,6 +10,7 @@ public abstract class BlockNotification
     public ulong BlockHeight { get; set; }
     public string Symbol { get; set; }
     public string Name { get; set; }
+    public ulong BaseFeePerGas { get; set; }
 }
 
 public class BlockFoundNotification : BlockNotification

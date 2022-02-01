@@ -24,43 +24,23 @@ public class BalanceRepository : IBalanceRepository
     {
         logger.LogInvoke();
 
+        const string query = @"INSERT INTO balances(poolid, address, amount, created, updated)
+                VALUES(@poolId, @address, @amount, @created, @updated)
+                ON CONFLICT (poolid, address)
+                DO UPDATE SET amount = balances.amount + EXCLUDED.amount, updated = EXCLUDED.updated";
+
         var now = DateTime.UtcNow;
 
-        // update balance
-        var query = "SELECT * FROM balances WHERE poolid = @poolId AND address = @address";
-
-        var balance = (await con.QueryAsync<Entities.Balance>(query, new { poolId, address }, tx))
-            .FirstOrDefault();
-
-        if(balance == null)
+        var balance = new Entities.Balance
         {
-            balance = new Entities.Balance
-            {
-                PoolId = poolId,
-                Created = now,
-                Address = address,
-                Amount = amount,
-                Updated = now
-            };
+            PoolId = poolId,
+            Created = now,
+            Address = address,
+            Amount = amount,
+            Updated = now
+        };
 
-            query = @"INSERT INTO balances(poolid, address, amount, created, updated)
-                VALUES(@poolid, @address, @amount, @created, @updated)";
-
-            return await con.ExecuteAsync(query, balance, tx);
-        }
-
-        else
-        {
-            query = @"UPDATE balances SET amount = amount + @amount, updated = now() at time zone 'utc'
-                WHERE poolid = @poolId AND address = @address";
-
-            return await con.ExecuteAsync(query, new
-            {
-                poolId,
-                address,
-                amount
-            }, tx);
-        }
+        return await con.ExecuteAsync(query, balance, tx);
     }
 
     public async Task<decimal> GetBalanceAsync(IDbConnection con, IDbTransaction tx, string poolId, string address)
@@ -112,10 +92,44 @@ public class BalanceRepository : IBalanceRepository
         const string query = @"SELECT b.*
             FROM balances b
             LEFT JOIN miner_settings ms ON ms.poolid = b.poolid AND ms.address = b.address
-            WHERE b.poolid = @poolId AND b.amount >= COALESCE(ms.paymentthreshold, @minimum)";
+            WHERE b.poolid = @poolId AND b.amount >= COALESCE(ms.paymentthreshold, @minimum)
+            GROUP BY b.poolid, b.address, b.amount, b.created, b.updated ORDER BY b.amount DESC";
 
         return (await con.QueryAsync<Entities.Balance>(query, new { poolId, minimum }))
             .Select(mapper.Map<Balance>)
             .ToArray();
+    }
+
+    public async Task<Balance[]> GetPoolBalancesOverThresholdAsync(IDbConnection con, string poolId, decimal minimum, int recordLimit)
+    {
+        logger.LogInvoke();
+
+        const string query = "SELECT b.poolid, b.address, b.amount, b.created, b.updated, MAX(p.created) AS paiddate FROM balances AS b " +
+                                "LEFT JOIN payments AS p ON  p.address = b.address AND p.poolid = b.poolid " +
+                                "WHERE b.poolid = @poolId AND b.amount >= @minimum " +
+                                "GROUP BY b.poolid, b.address, b.amount, b.created, b.updated ORDER BY b.amount DESC LIMIT @recordLimit;";
+
+        return (await con.QueryAsync<Entities.Balance>(query, new { poolId, minimum, recordLimit }))
+            .Select(mapper.Map<Balance>)
+            .ToArray();
+    }
+
+    public async Task<List<BalanceSummary>> GetTotalBalanceSum(IDbConnection con, string poolId, decimal minimum)
+    {
+        logger.LogInvoke();
+
+        const string query = @"SELECT days_old AS NoOfDaysOld, COUNT(address) AS CustomersCount, SUM(amount) AS TotalAmount,
+        SUM(over_threshold) AS TotalAmountOverThreshold
+        FROM(SELECT *, CASE WHEN DATE_PART('day', now() - updated) >= 90 THEN 90
+                            WHEN DATE_PART('day', now() - updated) >= 60 THEN 60
+                            WHEN DATE_PART('day', now() - updated) >= 30 THEN 30
+                            ELSE 0 END AS days_old,
+                        CASE WHEN amount >= @minimum THEN amount ELSE 0 END as over_threshold
+        FROM balances WHERE poolid = @poolId ORDER BY updated) AS history
+        GROUP BY days_old ORDER BY days_old";
+
+        return (await con.QueryAsync<Entities.BalanceSummary>(query, new { poolId, minimum }))
+            .Select(mapper.Map<BalanceSummary>)
+            .ToList();
     }
 }
