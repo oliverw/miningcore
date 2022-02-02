@@ -2,7 +2,6 @@ using System.Text.Json.Serialization;
 using Miningcore.Blockchain;
 using Miningcore.Configuration;
 using Miningcore.Mining;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Miningcore.Api.Responses;

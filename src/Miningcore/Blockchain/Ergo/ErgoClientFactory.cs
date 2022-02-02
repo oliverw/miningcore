@@ -1,11 +1,9 @@
 using System.Net;
 using System.Net.Http.Headers;
-using System.Text;
 using Miningcore.Blockchain.Ergo.Configuration;
 using Miningcore.Configuration;
 using Miningcore.Extensions;
 using Miningcore.Mining;
-using Miningcore.Util;
 using NLog;
 
 namespace Miningcore.Blockchain.Ergo;

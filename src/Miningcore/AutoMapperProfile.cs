@@ -3,6 +3,7 @@ using Miningcore.Blockchain;
 using Miningcore.Configuration;
 using Miningcore.Persistence.Model;
 using Miningcore.Persistence.Model.Projections;
+using Newtonsoft.Json.Linq;
 using MinerStats = Miningcore.Persistence.Model.Projections.MinerStats;
 
 namespace Miningcore;
@@ -13,6 +14,9 @@ public class AutoMapperProfile : Profile
 
     public AutoMapperProfile()
     {
+        // Fix for Automapper 11 which chokes on recursive objects such as JToken
+        CreateMap<JToken, JToken>().ConvertUsing(x=> x);
+
         //////////////////////
         // outgoing mappings
 

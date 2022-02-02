@@ -4,7 +4,6 @@ using Miningcore.Blockchain.Bitcoin.Configuration;
 using Miningcore.Blockchain.Bitcoin.DaemonResponses;
 using Miningcore.Configuration;
 using Miningcore.Extensions;
-using Miningcore.JsonRpc;
 using Miningcore.Messaging;
 using Miningcore.Mining;
 using Miningcore.Payments;
@@ -318,7 +317,7 @@ public class BitcoinPayoutHandler : PayoutHandlerBase,
         throw new NotImplementedException();
     }
 
-    public Task ConfigureOnDemandPayoutAsync(CancellationToken ct)
+    public void ConfigureOnDemandPayoutAsync(CancellationToken ct)
     {
         throw new NotImplementedException();
     }

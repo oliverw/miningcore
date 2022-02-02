@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using Miningcore.Contracts;
 using Miningcore.Native;
 

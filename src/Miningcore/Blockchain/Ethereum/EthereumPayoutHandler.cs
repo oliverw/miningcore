@@ -8,7 +8,6 @@ using Miningcore.Blockchain.Ethereum.DaemonRequests;
 using Miningcore.Blockchain.Ethereum.DaemonResponses;
 using Miningcore.Configuration;
 using Miningcore.Extensions;
-using Miningcore.JsonRpc;
 using Miningcore.Messaging;
 using Miningcore.Mining;
 using Miningcore.Notifications.Messages;
@@ -341,7 +340,7 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
         return receipt;
     }
 
-    public async Task ConfigureOnDemandPayoutAsync(CancellationToken ct)
+    public void ConfigureOnDemandPayoutAsync(CancellationToken ct)
     {
         messageBus.Listen<NetworkBlockNotification>().Subscribe(block =>
         {

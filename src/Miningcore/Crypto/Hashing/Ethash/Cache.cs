@@ -1,6 +1,5 @@
 using Miningcore.Blockchain.Ethereum;
 using Miningcore.Contracts;
-using Miningcore.Extensions;
 using Miningcore.Native;
 using NLog;
 
@@ -54,8 +53,6 @@ public class Cache : IDisposable
     public unsafe bool Compute(ILogger logger, byte[] hash, ulong nonce, out byte[] mixDigest, out byte[] result)
     {
         Contract.RequiresNonNull(hash, nameof(hash));
-
-        logger.LogInvoke();
 
         mixDigest = null;
         result = null;

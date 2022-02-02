@@ -7,7 +7,6 @@ using Miningcore.Configuration;
 using Miningcore.Contracts;
 using Miningcore.Extensions;
 using Miningcore.Messaging;
-using Miningcore.Util;
 using NLog;
 using ProtoBuf;
 using ZeroMQ;

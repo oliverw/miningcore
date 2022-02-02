@@ -3,13 +3,12 @@ using System.ComponentModel.DataAnnotations;
 using System.Runtime.Serialization;
 using System.Security.Cryptography.X509Certificates;
 using AspNetCoreRateLimit;
-using JetBrains.Annotations;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
 // ReSharper disable UnusedAutoPropertyAccessor.Global
 // ReSharper disable PropertyCanBeMadeInitOnly.Global
-
+// ReSharper disable ClassNeverInstantiated.Global
 // ReSharper disable InconsistentNaming
 
 namespace Miningcore.Configuration;
@@ -490,7 +489,6 @@ public enum PayoutScheme
     PPBS = 5,
 }
 
-[UsedImplicitly]
 public partial class ClusterLoggingConfig
 {
     public string Level { get; set; }
@@ -543,7 +541,6 @@ public class DaemonEndpointConfig : AuthenticatedNetworkEndpointConfig
     public IDictionary<string, object> Extra { get; set; }
 }
 
-[UsedImplicitly]
 public class DatabaseConfig : AuthenticatedNetworkEndpointConfig
 {
     public string Database { get; set; }
@@ -571,7 +568,36 @@ public class DatabasePoolConfig
     public int MinPoolSize { get; set; }
 }
 
-[UsedImplicitly]
+public class PostgresConfig : DatabaseConfig
+{
+    /// <summary>
+    /// Enable Transport layer security (TLS)
+    /// </summary>
+    public bool Tls { get; set; }
+
+    /// <summary>
+    /// Location of a client certificate to be sent to the server (.PFX or .PEM)
+    /// </summary>
+    public string TlsCert { get; set; }
+
+    /// <summary>
+    /// Location of a client certificate private key to be sent to the server
+    /// </summary>
+    public string TlsKey { get; set; }
+
+    /// <summary>
+    /// Client certificate password
+    /// </summary>
+    public string TlsPassword { get; set; }
+
+    /// <summary>
+    /// Trust (self-signed) server certificate
+    /// </summary>
+    public bool TlsNoValidate { get; set; }
+
+    public int? CommandTimeout { get; set; }
+}
+
 public class CosmosConfig
 {
     public string EndpointUrl { get; set; }
@@ -586,7 +612,6 @@ public class CosmosConfig
     public List<string> PreferredLocations { get; set; }
 }
 
-[UsedImplicitly]
 public class TcpProxyProtocolConfig
 {
     /// <summary>
@@ -605,7 +630,6 @@ public class TcpProxyProtocolConfig
     public string[] ProxyAddresses { get; set; }
 }
 
-[UsedImplicitly]
 public class PoolEndpoint
 {
     public string ListenAddress { get; set; }
@@ -643,7 +667,6 @@ public class PoolEndpoint
     public X509Certificate2 TlsPfx { get; set; }
 }
 
-[UsedImplicitly]
 public partial class VarDiffConfig
 {
     /// <summary>
@@ -683,7 +706,6 @@ public enum BanManagerKind
     IpTables
 }
 
-[UsedImplicitly]
 public class ClusterBanningConfig
 {
     public BanManagerKind? Manager { get; set; }
@@ -699,7 +721,6 @@ public class ClusterBanningConfig
     public bool? BanOnInvalidShares { get; set; }
 }
 
-[UsedImplicitly]
 public partial class PoolShareBasedBanningConfig
 {
     public bool Enabled { get; set; }
@@ -708,7 +729,6 @@ public partial class PoolShareBasedBanningConfig
     public int Time { get; set; } // How many seconds to ban worker for
 }
 
-[UsedImplicitly]
 public partial class PoolPaymentProcessingConfig
 {
     public bool Enabled { get; set; }
@@ -724,7 +744,6 @@ public partial class PoolPaymentProcessingConfig
     public IDictionary<string, object> Extra { get; set; }
 }
 
-[UsedImplicitly]
 public partial class ClusterPaymentProcessingConfig
 {
     public bool Enabled { get; set; }
@@ -737,10 +756,9 @@ public partial class ClusterPaymentProcessingConfig
     public bool OnDemandPayout { get; set; }
 }
 
-[UsedImplicitly]
 public partial class PersistenceConfig
 {
-    public DatabaseConfig Postgres { get; set; }
+    public PostgresConfig Postgres { get; set; }
     public CosmosConfig Cosmos { get; set; }
 }
 
@@ -755,14 +773,12 @@ public class RewardRecipient
     public string Type { get; set; }
 }
 
-[UsedImplicitly]
 public partial class EmailSenderConfig : AuthenticatedNetworkEndpointConfig
 {
     public string FromAddress { get; set; }
     public string FromName { get; set; }
 }
 
-[UsedImplicitly]
 public class PushoverConfig
 {
     public bool Enabled { get; set; }
@@ -770,7 +786,6 @@ public class PushoverConfig
     public string Token { get; set; }
 }
 
-[UsedImplicitly]
 public partial class AdminNotifications
 {
     public bool Enabled { get; set; }
@@ -779,7 +794,6 @@ public partial class AdminNotifications
     public bool NotifyPaymentSuccess { get; set; }
 }
 
-[UsedImplicitly]
 public partial class NotificationsConfig
 {
     public bool Enabled { get; set; }
@@ -789,7 +803,6 @@ public partial class NotificationsConfig
     public AdminNotifications Admin { get; set; }
 }
 
-[UsedImplicitly]
 public class ApiRateLimitConfig
 {
     public bool Disabled { get; set; }
@@ -798,7 +811,6 @@ public class ApiRateLimitConfig
     public string[] IpWhitelist { get; set; }
 }
 
-[UsedImplicitly]
 public class ApiTlsConfig
 {
     public bool Enabled { get; set; }
@@ -807,7 +819,6 @@ public class ApiTlsConfig
 }
 
 
-[UsedImplicitly]
 public partial class ApiConfig
 {
     public bool Enabled { get; set; }
@@ -840,13 +851,17 @@ public partial class ApiConfig
     /// </summary>
     public string[] MetricsIpWhitelist { get; set; }
 
+    /// <summary>
+    /// Enable serialization of null values in API responses
+    /// </summary>
+    public bool LegacyNullValueHandling { get; set; }
+
     public bool OidcValidateAudience { get; set; }
     public string OidcValidAudience { get; set; }
     public string OidcValidIssuer { get; set; }
     public string OidcMetadataAddress { get; set; }
 }
 
-[UsedImplicitly]
 public class ZmqPubSubEndpointConfig
 {
     public string Url { get; set; }
@@ -856,7 +871,6 @@ public class ZmqPubSubEndpointConfig
     public string SharedEncryptionKey { get; set; }
 }
 
-[UsedImplicitly]
 public class ShareRelayEndpointConfig
 {
     public string Url { get; set; }
@@ -867,7 +881,6 @@ public class ShareRelayEndpointConfig
     public string SharedEncryptionKey { get; set; }
 }
 
-[UsedImplicitly]
 public class ShareRelayConfig
 {
     public string PublishUrl { get; set; }
@@ -881,7 +894,6 @@ public class ShareRelayConfig
     public string SharedEncryptionKey { get; set; }
 }
 
-[UsedImplicitly]
 public class Statistics
 {
     /// <summary>
@@ -905,7 +917,6 @@ public class Statistics
     public int? CleanupDays { get; set; }
 
 }
-[UsedImplicitly]
 public class NicehashClusterConfig
 {
     /// <summary>
@@ -921,7 +932,6 @@ public partial class EtherScan
     public int DaysToLookBack { get; set; } = 1;
 }
 
-[UsedImplicitly]
 public partial class PoolConfig
 {
     /// <summary>
@@ -966,7 +976,6 @@ public partial class PoolConfig
     public IDictionary<string, object> Extra { get; set; }
 }
 
-[UsedImplicitly]
 public partial class ClusterConfig
 {
     /// <summary>

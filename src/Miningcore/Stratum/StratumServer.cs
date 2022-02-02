@@ -9,6 +9,7 @@ using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Autofac;
+using Microsoft.IO;
 using Miningcore.Banning;
 using Miningcore.Configuration;
 using Miningcore.Extensions;
@@ -29,14 +30,17 @@ public abstract class StratumServer
     protected StratumServer(
         IComponentContext ctx,
         IMessageBus messageBus,
+        RecyclableMemoryStreamManager rmsm,
         IMasterClock clock)
     {
         Contract.RequiresNonNull(ctx, nameof(ctx));
         Contract.RequiresNonNull(messageBus, nameof(messageBus));
+        Contract.RequiresNonNull(rmsm, nameof(rmsm));
         Contract.RequiresNonNull(clock, nameof(clock));
 
         this.ctx = ctx;
         this.messageBus = messageBus;
+        this.rmsm = rmsm;
         this.clock = clock;
     }
 
@@ -75,6 +79,7 @@ public abstract class StratumServer
 
     protected readonly IComponentContext ctx;
     protected readonly IMessageBus messageBus;
+    private readonly RecyclableMemoryStreamManager rmsm;
     protected readonly IMasterClock clock;
     protected ClusterConfig clusterConfig;
     protected PoolConfig poolConfig;
@@ -108,9 +113,15 @@ public abstract class StratumServer
         {
             try
             {
-                var socket = await server.AcceptAsync();
+                var socket = await server.AcceptAsync(ct);
 
                 AcceptConnection(socket, port, cert, ct);
+            }
+
+            catch(OperationCanceledException)
+            {
+                // ignored
+                break;
             }
 
             catch(ObjectDisposedException)
@@ -143,7 +154,7 @@ public abstract class StratumServer
                 return;
 
             // init connection
-            var connection = new StratumConnection(logger, clock, CorrelationIdGenerator.GetNextId());
+            var connection = new StratumConnection(logger, rmsm, clock, CorrelationIdGenerator.GetNextId());
 
             logger.Info(() => $"[{connection.ConnectionId}] Accepting connection from {remoteEndpoint.Address}:{remoteEndpoint.Port} ...");
 
@@ -199,12 +210,16 @@ public abstract class StratumServer
         {
             case SocketException sockEx:
                 if(!ignoredSocketErrors.Contains(sockEx.ErrorCode))
-                    logger.Error(() => $"[{connection.ConnectionId}] Connection error state: {ex}");
+                    logger.Error(() => $"[{connection.ConnectionId}] Connection error: {ex}");
+                break;
+
+            case InvalidDataException idEx:
+                logger.Error(() => $"[{connection.ConnectionId}] Connection error: {idEx}");
                 break;
 
             case JsonException jsonEx:
                 // junk received (invalid json)
-                logger.Error(() => $"[{connection.ConnectionId}] Connection json error state: {jsonEx.Message}");
+                logger.Error(() => $"[{connection.ConnectionId}] Connection json error: {jsonEx.Message}");
 
                 if(clusterConfig.Banning?.BanOnJunkReceive.HasValue == false || clusterConfig.Banning?.BanOnJunkReceive == true)
                 {
@@ -215,7 +230,7 @@ public abstract class StratumServer
 
             case AuthenticationException authEx:
                 // junk received (SSL handshake)
-                logger.Error(() => $"[{connection.ConnectionId}] Connection json error state: {authEx.Message}");
+                logger.Error(() => $"[{connection.ConnectionId}] Connection json error: {authEx.Message}");
 
                 if(clusterConfig.Banning?.BanOnJunkReceive.HasValue == false || clusterConfig.Banning?.BanOnJunkReceive == true)
                 {
@@ -226,7 +241,7 @@ public abstract class StratumServer
 
             case IOException ioEx:
                 // junk received (SSL handshake)
-                logger.Error(() => $"[{connection.ConnectionId}] Connection json error state: {ioEx.Message}");
+                logger.Error(() => $"[{connection.ConnectionId}] Connection json error: {ioEx.Message}");
 
                 if(ioEx.Source == "System.Net.Security")
                 {
@@ -244,7 +259,7 @@ public abstract class StratumServer
 
             case ArgumentException argEx:
                 if(argEx.TargetSite != streamWriterCtor || argEx.ParamName != "stream")
-                    logger.Error(() => $"[{connection.ConnectionId}] Connection error state: {ex}");
+                    logger.Error(() => $"[{connection.ConnectionId}] Connection error: {ex}");
                 break;
 
             case InvalidOperationException:
@@ -252,7 +267,7 @@ public abstract class StratumServer
                 break;
 
             default:
-                logger.Error(() => $"[{connection.ConnectionId}] Connection error state: {ex}");
+                logger.Error(() => $"[{connection.ConnectionId}] Connection error: {ex}");
                 break;
         }
 
@@ -315,11 +330,11 @@ public abstract class StratumServer
         return false;
     }
 
-    protected IEnumerable<Task> ForEachConnection(Func<StratumConnection, Task> func)
+    protected IEnumerable<Task> TaskForEach(Func<StratumConnection, Task> func)
     {
         var tmp = connections.Values.ToArray();
 
-        return tmp.Select(func);
+        return tmp.Where(x=> x.IsAlive).Select(func);
     }
 
     protected void PublishTelemetry(TelemetryCategory cat, TimeSpan elapsed, bool? success = null, int? total = null)
