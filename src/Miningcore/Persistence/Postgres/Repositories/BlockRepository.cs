@@ -49,6 +49,8 @@ public class BlockRepository : IBlockRepository
 
         var mapped = mapper.Map<Entities.Block>(block);
 
+        logger.Info(() => $"UpdateBlockAsync: |{mapped.BlockHeight}|{mapped.Status}|{mapped.Type}|{mapped.Reward}|{mapped.Effort}|{mapped.ConfirmationProgress}|{mapped.Id}|");
+
         const string query = @"UPDATE blocks SET blockheight = @blockheight, status = @status, type = @type,
             reward = @reward, effort = @effort, confirmationprogress = @confirmationprogress, hash = @hash WHERE id = @id";
 

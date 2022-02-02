@@ -10,6 +10,7 @@ using Miningcore.Persistence;
 using Miningcore.Persistence.Model;
 using Miningcore.Persistence.Repositories;
 using Miningcore.Time;
+using Miningcore.Util;
 using Newtonsoft.Json;
 using NLog;
 using Polly;
@@ -157,7 +158,30 @@ public abstract class PayoutHandlerBase
     public string FormatAmount(decimal amount)
     {
         var coin = poolConfig.Template.As<CoinTemplate>();
-        return $"{amount:0.#####} {coin.Symbol}";
+        return $"{amount:0.#######} {coin.Symbol}";
+    }
+
+    protected void NotifyPayoutSuccess(string poolId, Dictionary<PayoutReceipt, Balance> txHashes, decimal? txFee)
+    {
+        var coin = poolConfig.Template.As<CoinTemplate>();
+
+        // admin notifications
+        var explorerLinks = !string.IsNullOrEmpty(coin.ExplorerTxLink)
+            ? txHashes.Select(x => string.Format(coin.ExplorerTxLink, x.Key.Id)).ToArray()
+            : Array.Empty<string>();
+
+        foreach(var (receipt, balance) in txHashes)
+        {
+            TelemetryUtil.TrackEvent("Payout_" + poolConfig.Id, new Dictionary<string, string> {
+                    {"wallet", balance.Address},
+                    {"amount", balance.Amount.ToStr()},
+                    {"fees", receipt.Fees.ToStr()},
+                    {"fees2", receipt.Fees2.ToStr()}
+                });
+        }
+
+        messageBus.SendMessage(new PaymentNotification(poolId, null, txHashes.Values.Sum(x => x.Amount), coin.Symbol, txHashes.Count,
+            txHashes.Keys.Select(h => h.Id).ToArray(), explorerLinks, txFee));
     }
 
     protected virtual void NotifyPayoutSuccess(string poolId, Balance[] balances, string[] txHashes, decimal? txFee)
@@ -175,6 +199,14 @@ public abstract class PayoutHandlerBase
     protected virtual void NotifyPayoutFailure(string poolId, Balance[] balances, string error, Exception ex)
     {
         var coin = poolConfig.Template.As<CoinTemplate>();
+
+        foreach(var balance in balances)
+        {
+            TelemetryUtil.TrackEvent("PayoutFailure_" + coin.CanonicalName, new Dictionary<string, string> {
+                    {"wallet", balance.Address},
+                    {"amount", balance.Amount.ToString()}
+                });
+        }
 
         messageBus.SendMessage(new PaymentNotification(poolId, error ?? ex?.Message, balances.Sum(x => x.Amount), coin.Symbol));
     }

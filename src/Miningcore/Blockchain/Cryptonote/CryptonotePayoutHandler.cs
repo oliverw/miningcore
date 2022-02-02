@@ -566,5 +566,25 @@ public class CryptonotePayoutHandler : PayoutHandlerBase,
         throw new NotImplementedException();
     }
 
+    public Task ConfigureOnDemandPayoutAsync(CancellationToken ct)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<decimal> GetWalletBalance()
+    {
+        throw new NotImplementedException();
+    }
+
+    public decimal GetTransactionDeduction(decimal amount)
+    {
+        throw new NotImplementedException();
+    }
+
+    public bool MinersPayTxFees()
+    {
+        throw new NotImplementedException();
+    }
+
     #endregion // IPayoutHandler
 }

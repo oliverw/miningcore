@@ -11,4 +11,6 @@ public interface IBalanceRepository
     Task<Balance> GetBalanceDataAsync(IDbConnection con, string poolId, string address);
     Task<Balance> GetBalanceDataWithPaidDateAsync(IDbConnection con, string poolId, string address);
     Task<Balance[]> GetPoolBalancesOverThresholdAsync(IDbConnection con, string poolId, decimal minimum);
+    Task<Balance[]> GetPoolBalancesOverThresholdAsync(IDbConnection con, string poolId, decimal minimum, int recordLimit);
+    Task<List<BalanceSummary>> GetTotalBalanceSum(IDbConnection connection, string poolId, decimal minimum);
 }
