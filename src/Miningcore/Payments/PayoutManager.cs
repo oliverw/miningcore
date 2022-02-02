@@ -269,6 +269,11 @@ public class PayoutManager : BackgroundService
                     await ProcessPoolsAsync(ct);
                 }
 
+                catch(OperationCanceledException)
+                {
+                    // ignored
+                }
+
                 catch(Exception ex)
                 {
                     logger.Error(ex);

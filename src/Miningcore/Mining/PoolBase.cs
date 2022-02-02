@@ -163,20 +163,27 @@ public abstract class PoolBase : StratumServer,
 
     private async Task RunVardiffIdleUpdaterAsync(int interval, CancellationToken ct)
     {
-        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(interval));
-
-        while (await timer.WaitForNextTickAsync(ct))
+        await Guard(async () =>
         {
-            logger.Debug(()=> "Vardiff Idle Update pass begins");
+            using var timer = new PeriodicTimer(TimeSpan.FromSeconds(interval));
 
-            await Guard(() => ForEachMinerAsync(async (connection, _ct) =>
+            while(await timer.WaitForNextTickAsync(ct))
             {
-                await Guard(() => UpdateVarDiffAsync(connection, true, _ct),
-                    ex=> logger.Error(() => $"[{connection.ConnectionId}] Error updating vardiff: {ex.Message}"));
-            }, ct));
+                logger.Debug(() => "Vardiff Idle Update pass begins");
 
-            logger.Debug(()=> "Vardiff Idle Update pass ends");
-        }
+                await Guard(() => ForEachMinerAsync(async (connection, _ct) =>
+                {
+                    await Guard(() => UpdateVarDiffAsync(connection, true, _ct),
+                        ex => logger.Error(() => $"[{connection.ConnectionId}] Error updating vardiff: {ex.Message}"));
+                }, ct));
+
+                logger.Debug(() => "Vardiff Idle Update pass ends");
+            }
+        }, ex =>
+        {
+            if(ex is not OperationCanceledException)
+                logger.Error(ex);
+        });
     }
 
     protected virtual Task OnVarDiffUpdateAsync(StratumConnection connection, double newDiff, CancellationToken _)
