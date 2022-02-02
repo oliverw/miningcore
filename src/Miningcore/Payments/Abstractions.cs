@@ -14,8 +14,12 @@ public interface IPayoutHandler
     Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, IMiningPool pool, Block block, CancellationToken ct);
     Task PayoutAsync(IMiningPool pool, Balance[] balances, CancellationToken ct);
     Task<PayoutReceipt> PayoutAsync(Balance balance);
+    void ConfigureOnDemandPayoutAsync(CancellationToken ct);
+    Task<decimal> GetWalletBalance();
+    decimal GetTransactionDeduction(decimal amount);
+    bool MinersPayTxFees();
     double AdjustShareDifficulty(double difficulty);
-
+    
     string FormatAmount(decimal amount);
 }
 

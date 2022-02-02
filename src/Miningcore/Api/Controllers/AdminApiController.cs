@@ -40,6 +40,7 @@ public class AdminApiController : ApiControllerBase
     private readonly Responses.AdminGcStats gcStats;
 
     private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
+    private static readonly ConcurrentDictionary<string, bool> PayoutCurrentQueue = new();
 
     #region Actions
 
@@ -121,6 +122,14 @@ public class AdminApiController : ApiControllerBase
     public async Task<string> ForcePayout(string poolId, string address)
     {
         logger.Info($"Forcing payout for {address}");
+
+        if(PayoutCurrentQueue.TryGetValue(address, out _))
+        {
+            logger.Warn($"Payout already inprogress. miner:{address}");
+            throw new ApiException("Payout already inprogress", HttpStatusCode.Conflict);
+        }
+        PayoutCurrentQueue.TryAdd(address, true);
+
         try
         {
             if(string.IsNullOrEmpty(poolId))
@@ -143,6 +152,10 @@ public class AdminApiController : ApiControllerBase
         {
             //rethrow as ApiException to be handled by ApiExceptionHandlingMiddleware
             throw new ApiException(ex.Message, HttpStatusCode.InternalServerError);
+        }
+        finally
+        {
+            PayoutCurrentQueue.TryRemove(address, out _);
         }
     }
 

@@ -90,22 +90,39 @@ public class PayoutManager : BackgroundService
 
             try
             {
-                var family = HandleFamilyOverride(config.Template.Family, config);
-
-                // resolve payout handler
-                var handlerImpl = ctx.Resolve<IEnumerable<Meta<Lazy<IPayoutHandler, CoinFamilyAttribute>>>>()
-                    .First(x => x.Value.Metadata.SupportedFamilies.Contains(family)).Value;
-
-                var handler = handlerImpl.Value;
-                await handler.ConfigureAsync(clusterConfig, config, ct);
+                var handler = await ResolvePayoutHandlerAsync(pool, ct);
 
                 // resolve payout scheme
                 var scheme = ctx.ResolveKeyed<IPayoutScheme>(config.PaymentProcessing.PayoutScheme);
 
                 await UpdatePoolBalancesAsync(pool, config, handler, scheme, ct);
-                await PayoutPoolBalancesAsync(pool, config, handler, ct);
-            }
 
+                // telemetry
+                var poolBalance = TelemetryUtil.TrackDependency(() => cf.Run(con => balanceRepo.GetTotalBalanceSum(con, pool.Config.Id, pool.Config.PaymentProcessing.MinimumPayment)),
+                    DependencyType.Sql, "GetTotalBalanceSum", "GetTotalBalanceSum");
+                var walletBalance = TelemetryUtil.TrackDependency(() => handler.GetWalletBalance(), DependencyType.Web3, "GetWalletBalance", "GetWalletBalance");
+                await Task.WhenAll(poolBalance, walletBalance);
+
+                TelemetryUtil.TrackEvent($"Balance_{pool.Config.Id}", new Dictionary<string, string>
+                {
+                    {"TotalBalance", poolBalance.Result.Sum(b => b.TotalAmount).ToStr()},
+                    {"TotalOverThreshold", poolBalance.Result.Sum(b => b.TotalAmountOverThreshold).ToStr()},
+                    {"WalletBalance", walletBalance.Result.ToStr()},
+                    {"BalLT30Days", poolBalance.Result.FirstOrDefault(b=>b.NoOfDaysOld == 0)?.TotalAmount.ToStr()},
+                    {"CusLT30Days", poolBalance.Result.FirstOrDefault(b=>b.NoOfDaysOld == 0)?.CustomersCount.ToString()},
+                    {"BalGT30Days", poolBalance.Result.FirstOrDefault(b=>b.NoOfDaysOld == 30)?.TotalAmount.ToStr()},
+                    {"CusGT30Days", poolBalance.Result.FirstOrDefault(b=>b.NoOfDaysOld == 30)?.CustomersCount.ToString()},
+                    {"BalGT60Days", poolBalance.Result.FirstOrDefault(b=>b.NoOfDaysOld == 60)?.TotalAmount.ToStr()},
+                    {"CusGT60Days", poolBalance.Result.FirstOrDefault(b=>b.NoOfDaysOld == 60)?.CustomersCount.ToString()},
+                    {"BalGT90Days", poolBalance.Result.FirstOrDefault(b=>b.NoOfDaysOld == 90)?.TotalAmount.ToStr()},
+                    {"CusGT90Days", poolBalance.Result.FirstOrDefault(b=>b.NoOfDaysOld == 90)?.CustomersCount.ToString()},
+                });
+
+                if(!clusterConfig.PaymentProcessing.OnDemandPayout)
+                {
+                    await PayoutPoolBalancesAsync(pool, config, handler, ct);
+                }
+            }
             catch(InvalidOperationException ex)
             {
                 logger.Error(ex.InnerException ?? ex, () => $"[{config.Id}] Payment processing failed");
@@ -151,7 +168,8 @@ public class PayoutManager : BackgroundService
     private async Task UpdatePoolBalancesAsync(IMiningPool pool, PoolConfig config, IPayoutHandler handler, IPayoutScheme scheme, CancellationToken ct)
     {
         // get pending blockRepo for pool
-        var pendingBlocks = await cf.Run(con => blockRepo.GetPendingBlocksForPoolAsync(con, config.Id));
+        var pendingBlocks = await TelemetryUtil.TrackDependency(() => cf.Run(con => blockRepo.GetPendingBlocksForPoolAsync(con, config.Id)),
+                DependencyType.Sql, "getPendingBlocks", "getPendingBlocks");
 
         // classify
         var updatedBlocks = await handler.ClassifyBlocksAsync(pool, pendingBlocks, ct);
@@ -188,23 +206,33 @@ public class PayoutManager : BackgroundService
         }
 
         else
+        {
             logger.Info(() => $"No updated blocks for pool {config.Id}");
+            await TelemetryUtil.TrackDependency(() => cf.RunTx(async (con, tx) =>
+            {
+                var blockReward = await handler.UpdateBlockRewardBalancesAsync(con, tx, pool, null, ct);
+                await scheme.UpdateBalancesAsync(con, tx, pool, handler, null, blockReward, ct);
+            }), DependencyType.Sql, "UpdateBalancesAsync", "UpdateBalances");
+        }
     }
 
     private async Task PayoutPoolBalancesAsync(IMiningPool pool, PoolConfig config, IPayoutHandler handler, CancellationToken ct)
     {
-        var poolBalancesOverMinimum = await cf.Run(con =>
-            balanceRepo.GetPoolBalancesOverThresholdAsync(con, config.Id, config.PaymentProcessing.MinimumPayment));
+        var poolBalancesOverMinimum = await TelemetryUtil.TrackDependency(() => cf.Run(con =>
+            balanceRepo.GetPoolBalancesOverThresholdAsync(con, config.Id, config.PaymentProcessing.MinimumPayment)),
+            DependencyType.Sql, "GetPoolBalancesOverThresholdAsync", "GetPoolBalancesOverThresholdAsync");
 
         if(poolBalancesOverMinimum.Length > 0)
         {
             try
             {
-                await handler.PayoutAsync(pool, poolBalancesOverMinimum, ct);
+                await TelemetryUtil.TrackDependency(() => handler.PayoutAsync(pool, poolBalancesOverMinimum, ct),DependencyType.Sql, "PayoutPoolBalancesAsync",
+                    $"miners:{poolBalancesOverMinimum.Length}");
             }
 
             catch(Exception ex)
             {
+                logger.Error(ex, "Error while processing balance payout");
                 await NotifyPayoutFailureAsync(poolBalancesOverMinimum, config, ex);
                 throw;
             }
@@ -261,6 +289,12 @@ public class PayoutManager : BackgroundService
             // Allow all pools to actually come up before the first payment processing run
             await Task.Delay(initialRunDelay, ct);
 
+            // Configure on-demand payout for each payout handler
+            if(clusterConfig.PaymentProcessing.OnDemandPayout)
+            {
+                await ConfigureOnDemandPayoutAsync(ct);
+            }
+
             while(!ct.IsCancellationRequested)
             {
                 try
@@ -292,14 +326,7 @@ public class PayoutManager : BackgroundService
         decimal amount = 0;
         try
         {
-            var family = HandleFamilyOverride(pool.Config.Template.Family, pool.Config);
-
-            // resolve payout handler
-            var handlerImpl = ctx.Resolve<IEnumerable<Meta<Lazy<IPayoutHandler, CoinFamilyAttribute>>>>()
-                .First(x => x.Value.Metadata.SupportedFamilies.Contains(family)).Value;
-
-            var handler = handlerImpl.Value;
-            await handler.ConfigureAsync(clusterConfig, pool.Config, CancellationToken.None);
+            var handler = await ResolvePayoutHandlerAsync(pool, CancellationToken.None);
 
             var balance = await cf.Run(con => balanceRepo.GetBalanceDataWithPaidDateAsync(con, pool.Config.Id, miner));
             amount = balance.Amount;
@@ -316,6 +343,39 @@ public class PayoutManager : BackgroundService
         finally
         {
             TelemetryUtil.TrackMetric("FORCED_PAYOUT", "success", "duration", (double) amount, success.ToString(), timer.ElapsedMilliseconds.ToString());
+        }
+    }
+
+    private async Task<IPayoutHandler> ResolvePayoutHandlerAsync(IMiningPool pool, CancellationToken ct)
+    {
+        var family = HandleFamilyOverride(pool.Config.Template.Family, pool.Config);
+
+        // resolve payout handler
+        var handlerImpl = ctx.Resolve<IEnumerable<Meta<Lazy<IPayoutHandler, CoinFamilyAttribute>>>>()
+            .First(x => x.Value.Metadata.SupportedFamilies.Contains(family)).Value;
+
+        var handler = handlerImpl.Value;
+        await handler.ConfigureAsync(clusterConfig, pool.Config, ct);
+        return handler;
+    }
+
+    private async Task ConfigureOnDemandPayoutAsync(CancellationToken ct)
+    {
+        foreach(var pool in pools.Values.ToArray().Where(x => x.Config.Enabled && x.Config.PaymentProcessing.Enabled))
+        {
+            logger.Info(() => $"Configuring on-demand payouts for pool {pool.Config.Id}");
+
+            var handler = await ResolvePayoutHandlerAsync(pool, ct);
+
+            try
+            {
+                handler.ConfigureOnDemandPayoutAsync(ct);
+            }
+            catch(Exception ex)
+            {
+                logger.Error(ex, () => $"Configuring on-demand payout failed for pool [{pool.Config.Id}]");
+                throw;
+            }
         }
     }
 }

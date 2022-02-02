@@ -3,6 +3,7 @@ using AutoMapper;
 using Dapper;
 using Miningcore.Persistence.Model;
 using Miningcore.Persistence.Repositories;
+using NLog;
 
 namespace Miningcore.Persistence.Postgres.Repositories;
 
@@ -14,6 +15,7 @@ public class BlockRepository : IBlockRepository
     }
 
     private readonly IMapper mapper;
+    private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
     public async Task InsertAsync(IDbConnection con, IDbTransaction tx, Block block)
     {
@@ -37,6 +39,8 @@ public class BlockRepository : IBlockRepository
     public async Task UpdateBlockAsync(IDbConnection con, IDbTransaction tx, Block block)
     {
         var mapped = mapper.Map<Entities.Block>(block);
+
+        logger.Info(() => $"UpdateBlockAsync: |{mapped.BlockHeight}|{mapped.Status}|{mapped.Type}|{mapped.Reward}|{mapped.Effort}|{mapped.ConfirmationProgress}|{mapped.Id}|");
 
         const string query = @"UPDATE blocks SET blockheight = @blockheight, status = @status, type = @type,
             reward = @reward, effort = @effort, confirmationprogress = @confirmationprogress, hash = @hash WHERE id = @id";

@@ -23,9 +23,29 @@ public class EthereumPoolPaymentProcessingConfigExtra
     public ulong Gas { get; set; }
 
     /// <summary>
+    /// Percentage as a decimal value between 0 and 100
+    /// </summary>
+    public decimal GasDeductionPercentage { get; set; }
+
+    /// <summary>
     /// maximum amount you’re willing to pay
     /// </summary>
     public ulong MaxFeePerGas { get; set; }
+
+    /// <summary>
+    /// Maximum gas price allowed for the transaction outside the specified time frame since last payout for the miner
+    /// </summary>
+    public ulong MaxGasLimit { get; set; }
+
+    /// <summary>
+    /// if True, miners pay payment tx fees
+    /// </summary>
+    public bool MinersPayTxFees { get; set; }
+
+    /// <summary>
+    /// No of transactions to spawn on each on-demand payout cycle
+    /// </summary>
+    public int PayoutBatchSize { get; set; }
 
     /// <summary>
     /// Hex encoded private key

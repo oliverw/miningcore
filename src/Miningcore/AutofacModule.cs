@@ -159,7 +159,6 @@ public class AutofacModule : Module
         // Ethereum
 
         builder.RegisterType<EthereumJobManager>();
-        builder.RegisterType<EthereumJobManager>();
 
         //////////////////////
         // ZCash
@@ -169,7 +168,6 @@ public class AutofacModule : Module
         //////////////////////
         // Ergo
 
-        builder.RegisterType<EquihashJobManager>();
         builder.RegisterType<ErgoJobManager>();
 
         base.Load(builder);

@@ -73,12 +73,12 @@ namespace Miningcore.Persistence.Cosmos.Repositories
                 .ReplaceItemAsync(entity, entity.Id, new PartitionKey(entity.PartitionKey));
         }
 
-        public async Task<uint> GetBalanceChangesCountAsync(string poolId, string address = null)
+        public Task<uint> GetBalanceChangesCountAsync(string poolId, string address = null)
         {
             throw new NotImplementedException();
         }
 
-        public async Task<Model.BalanceChange[]> PageBalanceChangesAsync(string poolId, string address, int page, int pageSize)
+        public Task<Model.BalanceChange[]> PageBalanceChangesAsync(string poolId, string address, int page, int pageSize)
         {
             throw new NotImplementedException();
         }

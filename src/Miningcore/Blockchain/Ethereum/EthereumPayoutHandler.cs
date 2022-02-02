@@ -10,6 +10,7 @@ using Miningcore.Configuration;
 using Miningcore.Extensions;
 using Miningcore.Messaging;
 using Miningcore.Mining;
+using Miningcore.Notifications.Messages;
 using Miningcore.Payments;
 using Miningcore.Persistence;
 using Miningcore.Persistence.Model;
@@ -39,7 +40,8 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
         IBalanceRepository balanceRepo,
         IPaymentRepository paymentRepo,
         IMasterClock clock,
-        IMessageBus messageBus) :
+        IMessageBus messageBus,
+        EthereumJobManager ethereumJobManager) :
         base(cf, mapper, shareRepo, blockRepo, balanceRepo, paymentRepo, clock, messageBus)
     {
         Contract.RequiresNonNull(ctx, nameof(ctx));
@@ -47,8 +49,11 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
         Contract.RequiresNonNull(paymentRepo, nameof(paymentRepo));
 
         this.ctx = ctx;
+
+        this.ethereumJobManager = ethereumJobManager;
     }
 
+    private const int BlockSearchOffset = 50;
     private const decimal MaxPayout = 0.1m; // ethereum
 
     private readonly IComponentContext ctx;
@@ -56,10 +61,11 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
     private EthereumNetworkType networkType;
     private GethChainType chainType;
     private BigInteger chainId;
-    private const int BlockSearchOffset = 50;
+    private EthereumJobManager ethereumJobManager;
     private EthereumPoolConfigExtra extraPoolConfig;
     private EthereumPoolPaymentProcessingConfigExtra extraConfig;
     private IWeb3 web3Connection;
+    private Task ondemandPayTask;
     private static ConcurrentDictionary<string, string> transactionHashes = new();
 
     protected override string LogCategory => "Ethereum Payout Handler";
@@ -334,6 +340,72 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
         return receipt;
     }
 
+    public void ConfigureOnDemandPayoutAsync(CancellationToken ct)
+    {
+        messageBus.Listen<NetworkBlockNotification>().Subscribe(block =>
+        {
+            logger.Info($"[{LogCategory}] NetworkBlockNotification height={block.BlockHeight}, gasfee={block.BaseFeePerGas}");
+
+            // Handle an invalid gas fee
+            if(block.BaseFeePerGas <= 0)
+            {
+                logger.Warn($"[{LogCategory}] NetworkBlockNotification invalid gas fee value, gasfee={block.BaseFeePerGas}");
+                return;
+            }
+
+            // Check if we are over our hard limit
+            if(block.BaseFeePerGas > extraConfig.MaxGasLimit)
+            {
+                logger.Info($"[{LogCategory}] Gas exceeds the MaxGasLimit={extraConfig.MaxGasLimit}, skipping payouts");
+                return;
+            }
+
+            var minimumPayout = GetMinimumPayout(poolConfig.PaymentProcessing.MinimumPayment, block.BaseFeePerGas, extraConfig.GasDeductionPercentage, extraConfig.Gas);
+
+            // Trigger payouts
+            if(ondemandPayTask == null || ondemandPayTask.IsCompleted)
+            {
+                logger.Info($"[{LogCategory}] Triggering a new on-demand payouts since gas is below {extraConfig.MaxGasLimit}, gasfee={block.BaseFeePerGas}, minimumPayout={minimumPayout}");
+                ondemandPayTask = PayoutBalancesOverThresholdAsync(minimumPayout);
+            }
+            else
+            {
+                logger.Info($"[{LogCategory}] Existing on-demand payouts is still processing, gasfee={block.BaseFeePerGas}");
+            }
+        });
+    }
+
+    public async Task<decimal> GetWalletBalance()
+    {
+        if(web3Connection == null) return 0;
+
+        try
+        {
+            var balance = await web3Connection.Eth.GetBalance.SendRequestAsync(poolConfig.Address);
+            return Web3.Convert.FromWei(balance.Value);
+        }
+        catch(Exception ex)
+        {
+            logger.Error(ex, "Error while fetching wallet balance");
+            return 0;
+        }
+    }
+
+    public decimal GetTransactionDeduction(decimal amount)
+    {
+        if(extraConfig.GasDeductionPercentage < 0 || extraConfig.GasDeductionPercentage > 100)
+        {
+            throw new Exception($"Invalid GasDeductionPercentage: {extraConfig.GasDeductionPercentage}");
+        }
+
+        return amount * extraConfig.GasDeductionPercentage / 100;
+    }
+
+    public bool MinersPayTxFees()
+    {
+        return extraConfig?.MinersPayTxFees == true;
+    }
+
     #endregion // IPayoutHandler
 
     private async Task<DaemonResponses.Block[]> FetchBlocks(Dictionary<long, DaemonResponses.Block> blockCache, CancellationToken ct, params long[] blockHeights)
@@ -383,6 +455,34 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
             default:
                 throw new Exception("Unable to determine block reward: Unsupported chain type");
         }
+    }
+
+    internal static decimal GetMinimumPayout(decimal defaultMinimumPayout, ulong baseFeePerGas, decimal gasDeductionPercentage, ulong transferGas)
+    {
+        // The default minimum payout is based on the configuration
+        var minimumPayout = defaultMinimumPayout;
+
+        // If the GasDeductionPercentage is set, use a ratio instead
+        if(gasDeductionPercentage > 0)
+        {
+            var latestGasFee = baseFeePerGas / EthereumConstants.Wei;
+            if(latestGasFee <= 0)
+            {
+                throw new Exception($"LatestGasFee is invalid: {latestGasFee}");
+            }
+
+            var transactionCost = transferGas * latestGasFee;
+            // preSkimPayout = transactionCost / deductionPercentage
+            // minimumPayout = preSkimPayout - transactionCost
+            // minimumPayout = transactionCost / deductionPercentage - transactionCost
+
+            // alternatively:
+            // minimumPayout = (transactionCost / deductionPercentage) * (1 - deductionPercentage)
+            // => minimumPayout = transactionCost / deductionPercentage - transactionCost
+            minimumPayout = transactionCost / (gasDeductionPercentage / 100) - transactionCost;
+        }
+
+        return minimumPayout;
     }
 
     private async Task<decimal> GetTxRewardAsync(DaemonResponses.Block blockInfo, CancellationToken ct)
@@ -585,5 +685,112 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
         }
 
         return null;
+    }
+
+    private async Task PayoutBalancesOverThresholdAsync(decimal minimumPayout)
+    {
+        logger.Info(() => $"[{LogCategory}] Processing payout for pool [{poolConfig.Id}]");
+
+        try
+        {
+            // Get the balances over the dynamically calculated threshold
+            var poolBalancesOverMinimum = await TelemetryUtil.TrackDependency(
+                () => cf.Run(con => balanceRepo.GetPoolBalancesOverThresholdAsync(con, poolConfig.Id, minimumPayout, extraConfig.PayoutBatchSize)),
+                DependencyType.Sql,
+                "GetPoolBalancesOverThresholdAsync",
+                $"minimumPayout={minimumPayout}");
+
+            // Payout the balances above the threshold
+            if(poolBalancesOverMinimum.Length > 0)
+            {
+                await TelemetryUtil.TrackDependency(
+                    () => PayoutBatchAsync(poolBalancesOverMinimum, minimumPayout),
+                    DependencyType.Sql,
+                    "PayoutBalancesOverThresholdAsync",
+                    $"miners:{poolBalancesOverMinimum.Length},minimumPayout={minimumPayout}");
+            }
+            else
+            {
+                logger.Info(() => $"[{LogCategory}] No balances over calculated minimum payout {minimumPayout.ToStr()} for pool {poolConfig.Id}");
+            }
+        }
+        catch(Exception ex)
+        {
+            logger.Error(ex, $"[{LogCategory}] Error while processing payout balances over threshold");
+        }
+    }
+
+    private async Task PayoutBatchAsync(Balance[] balances, decimal minimumPayout)
+    {
+        logger.Info(() => $"[{LogCategory}] Beginning payout to top {extraConfig.PayoutBatchSize} miners.");
+
+        // Ensure we have peers
+        if(networkType == EthereumNetworkType.Mainnet && ethereumJobManager.BlockchainStats.ConnectedPeers < EthereumConstants.MinPayoutPeerCount)
+        {
+            logger.Warn(() => $"[{LogCategory}] Payout aborted. Not enough peers (4 required)");
+            return;
+        }
+
+        // Init web3
+        var daemonEndpointConfig = poolConfig.Daemons.First(x => string.IsNullOrEmpty(x.Category));
+        if(!string.IsNullOrEmpty(extraConfig.PrivateKey) && web3Connection == null) 
+        {
+            InitializeWeb3(daemonEndpointConfig);
+        }
+
+        var txHashes = new Dictionary<PayoutReceipt, Balance>();
+        var payTasks = new List<Task>(balances.Length);
+
+        foreach(var balance in balances)
+        {
+            var balanceOverThreshold = balance.Amount - minimumPayout;
+            if(balanceOverThreshold > 0)
+            {
+                decimal gasFeesOvercharged = (balanceOverThreshold / (1 - (extraConfig.GasDeductionPercentage / 100))) - balanceOverThreshold;
+                logger.Info(() => $"[{LogCategory}] miner:{balance.Address}, amount:{balance.Amount}, minimumPayout:{minimumPayout}, gasDeduction:{extraConfig.GasDeductionPercentage}, overcharge:{gasFeesOvercharged}");
+            }
+
+            payTasks.Add(Task.Run(async () =>
+            {
+                var logInfo = $",addr={balance.Address},amt={balance.Amount.ToStr()}";
+                try
+                {
+                    var receipt = await PayoutAsync(balance);
+                    if(receipt != null)
+                    {
+                        lock(txHashes)
+                        {
+                            txHashes.Add(receipt, balance);
+                        }
+                    }
+                }
+                catch(Nethereum.JsonRpc.Client.RpcResponseException ex)
+                {
+                    if(ex.Message.Contains("Insufficient funds", StringComparison.OrdinalIgnoreCase))
+                    {
+                        logger.Warn($"[{LogCategory}] {ex.Message}{logInfo}");
+                    }
+                    else
+                    {
+                        logger.Error(ex, $"[{LogCategory}] {ex.Message}{logInfo}");
+                    }
+
+                    NotifyPayoutFailure(poolConfig.Id, new[] { balance }, ex.Message, null);
+                }
+                catch(Exception ex)
+                {
+                    logger.Error(ex, $"[{LogCategory}] {ex.Message}{logInfo}");
+                    NotifyPayoutFailure(poolConfig.Id, new[] { balance }, ex.Message, null);
+                }
+            }));
+        }
+        // Wait for all payment to finish
+        await Task.WhenAll(payTasks);
+
+        if(txHashes.Any()) NotifyPayoutSuccess(poolConfig.Id, txHashes, null);
+        // Reset web3 when transactions are failing
+        if(txHashes.Count < balances.Length) web3Connection = null;
+
+        logger.Info(() => $"[{LogCategory}] Payouts complete.  Successfully processed top {txHashes.Count} of {balances.Length} payouts.");
     }
 }
