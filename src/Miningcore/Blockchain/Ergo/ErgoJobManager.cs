@@ -159,6 +159,11 @@ public class ErgoJobManager : JobManagerBase<ErgoJob>
             return (isNew, forceUpdate);
         }
 
+        catch(OperationCanceledException)
+        {
+            // ignored
+        }
+
         catch(ApiException<ApiError> ex)
         {
             logger.Error(() => $"Error during {nameof(UpdateJob)}: {ex.Result.Detail ?? ex.Result.Reason}");

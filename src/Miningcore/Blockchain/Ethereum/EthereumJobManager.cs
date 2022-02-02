@@ -69,6 +69,11 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
             return UpdateJob(bt, via);
         }
 
+        catch(OperationCanceledException)
+        {
+            // ignored
+        }
+
         catch(Exception ex)
         {
             logger.Error(ex, () => $"Error during {nameof(UpdateJob)}");
@@ -125,6 +130,11 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
             }
 
             return isNew;
+        }
+
+        catch(OperationCanceledException)
+        {
+            // ignored
         }
 
         catch(Exception ex)

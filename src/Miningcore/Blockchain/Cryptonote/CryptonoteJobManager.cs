@@ -111,6 +111,11 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
             return isNew;
         }
 
+        catch(OperationCanceledException)
+        {
+            // ignored
+        }
+
         catch(Exception ex)
         {
             logger.Error(ex, () => $"Error during {nameof(UpdateJob)}");

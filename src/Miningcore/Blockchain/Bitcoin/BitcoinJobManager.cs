@@ -151,6 +151,11 @@ public class BitcoinJobManager : BitcoinJobManagerBase<BitcoinJob>
             return (isNew, forceUpdate);
         }
 
+        catch(OperationCanceledException)
+        {
+            // ignored
+        }
+
         catch(Exception ex)
         {
             logger.Error(ex, () => $"Error during {nameof(UpdateJob)}");
