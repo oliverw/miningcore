@@ -240,7 +240,7 @@ public class PayoutManager : BackgroundService
 
         // get combined diff of all shares for block
         var accumulatedShareDiffForBlock = await cf.Run(con =>
-            shareRepo.GetAccumulatedShareDifficultyBetweenCreatedAsync(con, config.Id, from, to));
+            shareRepo.GetAccumulatedShareDifficultyBetweenCreatedAsync(con, config.Id, from, to, ct));
 
         // handler has the final say
         if(accumulatedShareDiffForBlock.HasValue)

@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using AspNetCoreRateLimit;
 using Autofac;
@@ -47,7 +48,6 @@ using Miningcore.Persistence.Dummy;
 using Miningcore.Persistence.Postgres;
 using Miningcore.Persistence.Postgres.Repositories;
 using Miningcore.Util;
-using MoreLinq.Extensions;
 using NBitcoin.Zcash;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -108,10 +108,10 @@ public class Program : BackgroundService
             {
                 clusterConfig = ReadConfig(configFileOption.Value());
             }
-            else if (appConfigPrefixOption.HasValue())
+            else if(appConfigPrefixOption.HasValue())
             {
                 var vault = Environment.GetEnvironmentVariable(VaultName);
-                if (!string.IsNullOrEmpty(vault))
+                if(!string.IsNullOrEmpty(vault))
                 {
                     clusterConfig = ReadConfigFromKeyVault(vault, appConfigPrefixOption.Value());
                 }
@@ -120,7 +120,7 @@ public class Program : BackgroundService
                     clusterConfig = ReadConfigFromAppConfig(Environment.GetEnvironmentVariable(AppConfigConnectionStringEnvVar), appConfigPrefixOption.Value());
                 }
             }
-            else if (!string.IsNullOrEmpty(envConfig))
+            else if(!string.IsNullOrEmpty(envConfig))
             {
                 clusterConfig = ReadConfigFromJson(envConfig);
             }
@@ -206,18 +206,21 @@ public class Program : BackgroundService
                         .AddJsonOptions(options =>
                         {
                             options.JsonSerializerOptions.WriteIndented = true;
+
+                            if(!clusterConfig.Api.LegacyNullValueHandling)
+                                options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
                         });
 
                         // Prevent null pointer when launching from a test container
                         services.AddTransient<WebSocketNotificationsRelay>();
 
                         // NSwag
-                        #if DEBUG
+#if DEBUG
                         services.AddOpenApiDocument(settings =>
                         {
                             settings.DocumentProcessors.Insert(0, new NSwagDocumentProcessor());
                         });
-                        #endif
+#endif
 
                         // Authentication
                         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -261,9 +264,9 @@ public class Program : BackgroundService
                             "/metrics"
                         }, clusterConfig.Api?.MetricsIpWhitelist);
 
-                        #if DEBUG
+#if DEBUG
                         app.UseOpenApi();
-                        #endif
+#endif
 
                         app.UseResponseCompression();
                         app.UseCors(corsPolicyBuilder => corsPolicyBuilder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
@@ -358,7 +361,7 @@ public class Program : BackgroundService
             services.AddHostedService<StatsRecorder>();
         }
     }
-    
+
     private const string AppConfigConnectionStringEnvVar = "ConnectionString";
     private const string BaseConfigFile = "config.json";
     private const string CoinbasePassword = "coinbasePassword";
@@ -567,7 +570,7 @@ public class Program : BackgroundService
         versionOption = app.Option("-v|--version", "Version Information", CommandOptionType.NoValue);
         configFileOption = app.Option("-c|--config <configfile>", "Configuration File", CommandOptionType.SingleValue);
         appConfigPrefixOption = app.Option("-ac|--appconfig <prefix>", "Azure App Configuration Prefix", CommandOptionType.SingleValue);
-        dumpConfigOption = app.Option("-dc|--dumpconfig", "Dump the configuration (useful for trouble-shooting typos in the config file)",CommandOptionType.NoValue);
+        dumpConfigOption = app.Option("-dc|--dumpconfig", "Dump the configuration (useful for trouble-shooting typos in the config file)", CommandOptionType.NoValue);
         shareRecoveryOption = app.Option("-rs", "Import lost shares using existing recovery file", CommandOptionType.SingleValue);
         generateSchemaOption = app.Option("-gcs|--generate-config-schema <outputfile>", "Generate JSON schema from configuration options", CommandOptionType.SingleValue);
         app.HelpOption("-? | -h | --help");
@@ -594,7 +597,7 @@ public class Program : BackgroundService
                 {
                     using(var validatingReader = new JSchemaValidatingReader(jsonReader)
                     {
-                        Schema =  LoadSchema()
+                        Schema = LoadSchema()
                     })
                     {
                         return serializer.Deserialize<ClusterConfig>(validatingReader);
@@ -839,7 +842,7 @@ public class Program : BackgroundService
 
         if(isLegacyTimestamps)
         {
-            logger.Info(()=> "Enabling Npgsql Legacy Timestamp Behavior");
+            logger.Info(() => "Enabling Npgsql Legacy Timestamp Behavior");
 
             AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
         }
@@ -884,29 +887,29 @@ public class Program : BackgroundService
 
         logger.Info(() => $"Connecting to Cosmos Server {cosmosConfig.EndpointUrl}");
 
-        try 
+        try
         {
             var cosmosClientOptions = new CosmosClientOptions();
 
-            if (Enum.TryParse(cosmosConfig.ConsistencyLevel, out ConsistencyLevel consistencyLevel))
+            if(Enum.TryParse(cosmosConfig.ConsistencyLevel, out ConsistencyLevel consistencyLevel))
                 cosmosClientOptions.ConsistencyLevel = consistencyLevel;
 
-            if (Enum.TryParse(cosmosConfig.ConnectionMode, out ConnectionMode connectionMode))
+            if(Enum.TryParse(cosmosConfig.ConnectionMode, out ConnectionMode connectionMode))
                 cosmosClientOptions.ConnectionMode = connectionMode;
 
-            if (Double.TryParse(cosmosConfig.RequestTimeout, out Double requestTimeout))
+            if(Double.TryParse(cosmosConfig.RequestTimeout, out Double requestTimeout))
                 cosmosClientOptions.RequestTimeout = TimeSpan.FromSeconds(requestTimeout);
 
-            if (int.TryParse(cosmosConfig.MaxRetryAttempt, out int maxRetryAttempt))
+            if(int.TryParse(cosmosConfig.MaxRetryAttempt, out int maxRetryAttempt))
                 cosmosClientOptions.MaxRetryAttemptsOnRateLimitedRequests = maxRetryAttempt;
 
-            if (Double.TryParse(cosmosConfig.MaxRetryWaitTime, out Double maxRetryWaitTime))
+            if(Double.TryParse(cosmosConfig.MaxRetryWaitTime, out Double maxRetryWaitTime))
                 cosmosClientOptions.MaxRetryWaitTimeOnRateLimitedRequests = TimeSpan.FromSeconds(maxRetryWaitTime);
-            
-            if (int.TryParse(cosmosConfig.MaxPoolSize, out int maxPoolSize))
+
+            if(int.TryParse(cosmosConfig.MaxPoolSize, out int maxPoolSize))
                 cosmosClientOptions.MaxRequestsPerTcpConnection = maxPoolSize;
 
-            if (cosmosConfig.PreferredLocations != null && cosmosConfig.PreferredLocations.Count > 0)
+            if(cosmosConfig.PreferredLocations != null && cosmosConfig.PreferredLocations.Count > 0)
                 cosmosClientOptions.ApplicationPreferredRegions = cosmosConfig.PreferredLocations;
 
             var cosmos = new CosmosClient(cosmosConfig.EndpointUrl, cosmosConfig.AuthorizationKey, cosmosClientOptions);
@@ -920,13 +923,13 @@ public class Program : BackgroundService
                 .AsImplementedInterfaces()
                 .SingleInstance();
         }
-        catch (Exception e)
+        catch(Exception e)
         {
             throw new PoolStartupException($"Failed to connect to the cosmos database {e}");
         }
     }
 
-    private static void ConfigurePostgres(DatabaseConfig pgConfig, ContainerBuilder builder)
+    private static void ConfigurePostgres(PostgresConfig pgConfig, ContainerBuilder builder)
     {
         // validate config
         if(string.IsNullOrEmpty(pgConfig.Host))
@@ -942,22 +945,42 @@ public class Program : BackgroundService
             throw new PoolStartupException("Postgres configuration: invalid or missing 'user'");
 
         // build connection string
-        var connectionString = $"Server={pgConfig.Host};Port={pgConfig.Port};Database={pgConfig.Database};User Id={pgConfig.User};Password={pgConfig.Password};Timeout=60;CommandTimeout=60;Keepalive=60;";
+        var connectionString = new StringBuilder($"Server={pgConfig.Host};Port={pgConfig.Port};Database={pgConfig.Database};User Id={pgConfig.User};Password={pgConfig.Password};Timeout=60;CommandTimeout=60;Keepalive=60;");
+
+        if(pgConfig.Tls)
+        {
+            connectionString.Append("SSL Mode=Require;");
+
+            if(pgConfig.TlsNoValidate)
+                connectionString.Append("Trust Server Certificate=true;");
+
+            if(!string.IsNullOrEmpty(pgConfig.TlsCert?.Trim()))
+                connectionString.Append($"SSL Certificate={pgConfig.TlsCert.Trim()};");
+
+            if(!string.IsNullOrEmpty(pgConfig.TlsKey?.Trim()))
+                connectionString.Append($"SSL Key={pgConfig.TlsKey.Trim()};");
+
+            if(!string.IsNullOrEmpty(pgConfig.TlsPassword))
+                connectionString.Append($"SSL Password={pgConfig.TlsPassword};");
+        }
+
+        if(pgConfig.CommandTimeout.HasValue)
+            connectionString.Append($"CommandTimeout={pgConfig.CommandTimeout.Value};");
 
         if(pgConfig.Pooling != null)
-            connectionString += $"Pooling=true;Minimum Pool Size={pgConfig.Pooling.MinPoolSize};Maximum Pool Size={(pgConfig.Pooling.MaxPoolSize > 0 ? pgConfig.Pooling.MaxPoolSize : 100)};";
+            connectionString.Append($"Pooling=true;Minimum Pool Size={pgConfig.Pooling.MinPoolSize};Maximum Pool Size={(pgConfig.Pooling.MaxPoolSize > 0 ? pgConfig.Pooling.MaxPoolSize : 100)};");
 
         if(pgConfig.Ssl)
-            connectionString += "SSL Mode=Require;Trust Server Certificate=True;Server Compatibility Mode=Redshift;";
+            connectionString.Append("SSL Mode=Require;Trust Server Certificate=True;Server Compatibility Mode=Redshift;");
 
         // register connection factory
-        builder.RegisterInstance(new PgConnectionFactory(connectionString))
+        builder.RegisterInstance(new PgConnectionFactory(connectionString.ToString()))
             .AsImplementedInterfaces();
 
         // register repositories
         builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
             .Where(t =>
-            t?.Namespace?.StartsWith(typeof(ShareRepository).Namespace) == true)
+                t?.Namespace?.StartsWith(typeof(ShareRepository).Namespace) == true)
             .AsImplementedInterfaces()
             .SingleInstance();
     }
@@ -1125,13 +1148,13 @@ public class Program : BackgroundService
                 poolConfig.PaymentProcessing.Extra[CoinbasePassword] = remoteConfig.TryGetValue(string.Format(AppConfigConstants.CoinBasePassword, poolConfig.Id), poolConfig.PaymentProcessing.Extra[CoinbasePassword]?.ToString());
                 poolConfig.PaymentProcessing.Extra[PrivateKey] = remoteConfig.TryGetValue(string.Format(AppConfigConstants.PrivateKey, poolConfig.Id), poolConfig.PaymentProcessing.Extra[PrivateKey]?.ToString());
                 poolConfig.EtherScan.ApiKey = remoteConfig.TryGetValue(string.Format(AppConfigConstants.EtherscanApiKey, poolConfig.Id), poolConfig.EtherScan.ApiKey);
-                poolConfig.Ports.ForEach(p =>
+                foreach(var p in poolConfig.Ports)
                 {
                     try
                     {
-                        if(!p.Value.Tls) return;
+                        if(!p.Value.Tls) continue;
                         var cert = remoteConfig[string.Format(AppConfigConstants.TlsPfxFile, poolConfig.Id, p.Key)];
-                        if(cert == null) return;
+                        if(cert == null) continue;
                         p.Value.TlsPfx = new X509Certificate2(Convert.FromBase64String(cert), (string) null, X509KeyStorageFlags.MachineKeySet);
                         Console.WriteLine("Successfully loaded TLS certificate from app config");
                     }
@@ -1139,7 +1162,7 @@ public class Program : BackgroundService
                     {
                         Console.WriteLine($"Failed to load TLS certificate from app config, Error={ex.Message}");
                     }
-                });
+                }
             }
         }
         catch(JsonSerializationException ex)
@@ -1170,13 +1193,13 @@ public class Program : BackgroundService
         ReadConfigFromJson(remoteConfig[secretName]);
         foreach(var poolConfig in clusterConfig.Pools)
         {
-            poolConfig.Ports.ForEach(p =>
+            foreach(var p in poolConfig.Ports)
             {
                 try
                 {
-                    if(!p.Value.Tls) return;
+                    if(!p.Value.Tls) continue;
                     var cert = remoteConfig[p.Value.TlsPfxFile];
-                    if(cert == null) return;
+                    if(cert == null) continue;
                     p.Value.TlsPfx = new X509Certificate2(Convert.FromBase64String(cert), (string) null, X509KeyStorageFlags.MachineKeySet);
                     Console.WriteLine("Successfully loaded TLS certificate from key vault...");
                 }
@@ -1184,7 +1207,7 @@ public class Program : BackgroundService
                 {
                     Console.WriteLine($"Failed to load TLS certificate from key vault, Error={ex.Message}");
                 }
-            });
+            }
         }
         ValidateConfig();
 

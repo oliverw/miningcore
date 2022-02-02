@@ -8,7 +8,7 @@ using Miningcore.Configuration;
 
 namespace Miningcore.Persistence.Cosmos.Repositories
 {
-    public class BalanceChangeRepository: IBalanceChangeRepository
+    public class BalanceChangeRepository : IBalanceChangeRepository
     {
         public BalanceChangeRepository(CosmosClient cosmosClient, ClusterConfig clusterConfig, IMapper mapper)
         {
@@ -24,8 +24,6 @@ namespace Miningcore.Persistence.Cosmos.Repositories
 
         public async Task AddNewBalanceChange(string poolId, string address, decimal amount, string usage)
         {
-            logger.LogInvoke();
-
             var date = DateTime.UtcNow.Date;
 
             var balanceChange = new BalanceChange()
@@ -38,7 +36,7 @@ namespace Miningcore.Persistence.Cosmos.Repositories
             };
             var requestOptions = new ItemRequestOptions();
 
-            if (!String.IsNullOrEmpty(balanceChange.ETag))
+            if(!String.IsNullOrEmpty(balanceChange.ETag))
             {
                 requestOptions.IfMatchEtag = balanceChange.ETag;
             }
@@ -46,10 +44,8 @@ namespace Miningcore.Persistence.Cosmos.Repositories
                 .CreateItemAsync(balanceChange, new PartitionKey(balanceChange.PartitionKey), requestOptions);
         }
 
-        public async Task<Miningcore.Persistence.Model.BalanceChange> GetBalanceChangeByDate(string poolId, string address, DateTime created)
+        public async Task<Model.BalanceChange> GetBalanceChangeByDate(string poolId, string address, DateTime created)
         {
-            logger.LogInvoke();
-
             var date = created.Date;
             var balanceChange = new BalanceChange()
             {
@@ -61,7 +57,7 @@ namespace Miningcore.Persistence.Cosmos.Repositories
             {
                 ItemResponse<BalanceChange> balanceChangeResponse = await cosmosClient.GetContainer(databaseId, balanceChange.CollectionName)
                     .ReadItemAsync<BalanceChange>(balanceChange.Id, new PartitionKey(balanceChange.PartitionKey));
-                return mapper.Map<Miningcore.Persistence.Model.BalanceChange>(balanceChangeResponse.Resource);
+                return mapper.Map<Model.BalanceChange>(balanceChangeResponse.Resource);
             }
             catch(CosmosException ex) when(ex.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
@@ -69,10 +65,8 @@ namespace Miningcore.Persistence.Cosmos.Repositories
             }
         }
 
-        public async Task UpdateBalanceChange(Miningcore.Persistence.Model.BalanceChange balanceChange)
+        public async Task UpdateBalanceChange(Model.BalanceChange balanceChange)
         {
-            logger.LogInvoke();
-
             var entity = mapper.Map<BalanceChange>(balanceChange);
 
             await cosmosClient.GetContainer(databaseId, entity.CollectionName)
@@ -84,7 +78,7 @@ namespace Miningcore.Persistence.Cosmos.Repositories
             throw new NotImplementedException();
         }
 
-        public async Task<Miningcore.Persistence.Model.BalanceChange[]> PageBalanceChangesAsync(string poolId, string address, int page, int pageSize)
+        public async Task<Model.BalanceChange[]> PageBalanceChangesAsync(string poolId, string address, int page, int pageSize)
         {
             throw new NotImplementedException();
         }

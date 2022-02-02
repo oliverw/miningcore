@@ -1,10 +1,8 @@
-using JetBrains.Annotations;
 using Miningcore.Configuration;
 using Newtonsoft.Json.Linq;
 
 namespace Miningcore.Blockchain.Bitcoin.Configuration;
 
-[UsedImplicitly]
 public class BitcoinPoolConfigExtra
 {
     public BitcoinAddressType AddressType { get; set; } = BitcoinAddressType.Legacy;

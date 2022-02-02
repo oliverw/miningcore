@@ -141,7 +141,7 @@ Once you have done this for all of your existing pools you should now restore yo
 
 ### Configuration
 
-Create a configuration file `config.json` as described [here](https://github.com/oliverw/miningcore/wiki/Configuration)
+Create a configuration file `config.json` as described [here](https://github.com/oliverw/miningcore/wiki/Configuration).
 
 ### Start the Pool
 

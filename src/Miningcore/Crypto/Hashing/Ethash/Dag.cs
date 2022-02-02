@@ -116,8 +116,6 @@ public class Dag : IDisposable
     {
         Contract.RequiresNonNull(hash, nameof(hash));
 
-        logger.LogInvoke();
-
         var sw = Stopwatch.StartNew();
 
         mixDigest = null;

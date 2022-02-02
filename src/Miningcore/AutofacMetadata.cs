@@ -1,12 +1,10 @@
-using JetBrains.Annotations;
 using Miningcore.Configuration;
 
 namespace Miningcore;
 
 public class CoinFamilyAttribute : Attribute
 {
-    [UsedImplicitly]
-    public CoinFamilyAttribute(IDictionary<string, object> values)
+        public CoinFamilyAttribute(IDictionary<string, object> values)
     {
         if(values.ContainsKey(nameof(SupportedFamilies)))
             SupportedFamilies = (CoinFamily[]) values[nameof(SupportedFamilies)];
