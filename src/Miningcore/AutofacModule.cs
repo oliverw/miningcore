@@ -137,6 +137,10 @@ public class AutofacModule : Module
             .Keyed<IPayoutScheme>(PayoutScheme.PROP)
             .SingleInstance();
 
+        builder.RegisterType<PPSPaymentScheme>()
+            .Keyed<IPayoutScheme>(PayoutScheme.PPS)
+            .SingleInstance();
+
         //////////////////////
         // Bitcoin and family
 

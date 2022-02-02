@@ -152,6 +152,13 @@ public class StatsRecorder : BackgroundService
                 logger.Info(() => $"[{poolId}] Reset performance stats for pool");
             }
 
+            logger.Info(() => $"[{poolId}] Connected Miners : {pool.PoolStats.ConnectedMiners} miners");
+            logger.Info(() => $"[{poolId}] Pool hashrate    : {pool.PoolStats.PoolHashrate} hashes/sec");
+            logger.Info(() => $"[{poolId}] Pool shares      : {pool.PoolStats.SharesPerSecond} shares/sec");
+
+            TelemetryUtil.TrackMetric("PoolHashRate_" + poolId, pool.PoolStats.PoolHashrate);
+            TelemetryUtil.TrackMetric("PoolMinerCount_" + poolId, pool.PoolStats.ConnectedMiners);
+
             // persist
             await cf.RunTx(async (con, tx) =>
             {
@@ -218,8 +225,12 @@ public class StatsRecorder : BackgroundService
                         if( (timeFrameBeforeFirstShare >= (hashrateCalculationWindow.TotalSeconds * 0.1)) && (timeFrameAfterLastShare >= (hashrateCalculationWindow.TotalSeconds * 0.1)) )
                             minerHashTimeFrame = (hashrateCalculationWindow.TotalSeconds - timeFrameBeforeFirstShare + timeFrameAfterLastShare);
 
-                        if(minerHashTimeFrame < 1)
-                            minerHashTimeFrame = 1;
+                        // let's not update hashrate if minerHashTimeFrame is too small, less than 10% of hashrateCalculationWindow. Otherwise, hashrate will be too high.
+                        if(minerHashTimeFrame < hashrateCalculationWindow.TotalSeconds * 0.1)
+                        {
+                            logger.Debug(() => $"MinerHashTimeFrame is too small. Skip calculate minerHashrate. [{poolId}] Miner: {stats.Miner}");
+                            continue;
+                        };
 
                         // calculate miner/worker stats
                         var minerHashrate = pool.HashrateFromShares(item.Sum, minerHashTimeFrame);
