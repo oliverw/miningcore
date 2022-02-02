@@ -7,7 +7,6 @@ using Miningcore.Blockchain.Bitcoin.DaemonResponses;
 using Miningcore.Configuration;
 using Miningcore.Contracts;
 using Miningcore.Extensions;
-using Miningcore.JsonRpc;
 using Miningcore.Messaging;
 using Miningcore.Mining;
 using Miningcore.Notifications.Messages;
@@ -222,8 +221,6 @@ public abstract class BitcoinJobManagerBase<TJob> : JobManagerBase<TJob>
 
     private async Task UpdateNetworkStatsAsync(CancellationToken ct)
     {
-        logger.LogInvoke();
-
         try
         {
             var results = await rpc.ExecuteBatchAsync(logger, ct,
@@ -340,8 +337,6 @@ public abstract class BitcoinJobManagerBase<TJob> : JobManagerBase<TJob>
 
     private async Task UpdateNetworkStatsLegacyAsync(CancellationToken ct)
     {
-        logger.LogInvoke();
-
         try
         {
             var results = await rpc.ExecuteBatchAsync(logger, ct,

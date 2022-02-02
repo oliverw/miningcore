@@ -30,6 +30,8 @@ public class EthereumJob
     private readonly uint256 blockTarget;
     private readonly ILogger logger;
 
+    public record SubmitResult(Share Share, string FullNonceHex = null, string HeaderHash = null, string MixHash = null);
+
     private void RegisterNonce(StratumConnection worker, string nonce)
     {
         var nonceLower = nonce.ToLower();
@@ -49,10 +51,10 @@ public class EthereumJob
         }
     }
 
-    public async ValueTask<(Share Share, string FullNonceHex, string HeaderHash, string MixHash)> ProcessShareAsync(
-        StratumConnection worker, string workerName, string fullNonceHex, EthashFull ethash, CancellationToken ct)
+    public async Task<SubmitResult> ProcessShareAsync(StratumConnection worker,
+        string workerName, string fullNonceHex, EthashFull ethash, CancellationToken ct)
     {
-        // duplicate nonce?
+        // dupe check
         lock(workerNonces)
         {
             RegisterNonce(worker, fullNonceHex);
@@ -97,7 +99,6 @@ public class EthereumJob
                 throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({shareDiff})");
         }
 
-        // create share
         var share = new Share
         {
             BlockHeight = (long) BlockTemplate.Height,
@@ -117,10 +118,10 @@ public class EthereumJob
 
             share.TransactionConfirmationData = "";
 
-            return (share, fullNonceHex, headerHash, mixHash);
+            return new SubmitResult(share, fullNonceHex, headerHash, mixHash);
         }
 
-        return (share, null, null, null);
+        return new SubmitResult(share);
     }
 
     public object[] GetJobParamsForStratum()

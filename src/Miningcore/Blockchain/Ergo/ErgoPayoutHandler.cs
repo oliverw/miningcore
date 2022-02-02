@@ -392,7 +392,7 @@ public class ErgoPayoutHandler : PayoutHandlerBase,
         throw new NotImplementedException();
     }
 
-    public Task ConfigureOnDemandPayoutAsync(CancellationToken ct)
+    public void ConfigureOnDemandPayoutAsync(CancellationToken ct)
     {
         throw new NotImplementedException();
     }

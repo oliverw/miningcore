@@ -4,7 +4,7 @@ using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
 using Autofac;
 using AutoMapper;
-using JetBrains.Annotations;
+using Microsoft.IO;
 using Miningcore.Blockchain.Cryptonote.StratumRequests;
 using Miningcore.Blockchain.Cryptonote.StratumResponses;
 using Miningcore.Configuration;
@@ -24,7 +24,6 @@ using static Miningcore.Util.ActionUtils;
 namespace Miningcore.Blockchain.Cryptonote;
 
 [CoinFamily(CoinFamily.Cryptonote)]
-[UsedImplicitly]
 public class CryptonotePool : PoolBase
 {
     public CryptonotePool(IComponentContext ctx,
@@ -34,8 +33,9 @@ public class CryptonotePool : PoolBase
         IMapper mapper,
         IMasterClock clock,
         IMessageBus messageBus,
+        RecyclableMemoryStreamManager rmsm,
         NicehashService nicehashService) :
-        base(ctx, serializerSettings, cf, statsRepo, mapper, clock, messageBus, nicehashService)
+        base(ctx, serializerSettings, cf, statsRepo, mapper, clock, messageBus, rmsm, nicehashService)
     {
     }
 
@@ -288,11 +288,8 @@ public class CryptonotePool : PoolBase
     {
         logger.Info(() => "Broadcasting job");
 
-        return Guard(()=> Task.WhenAll(ForEachConnection(async connection =>
+        return Guard(Task.WhenAll(TaskForEach(async connection =>
         {
-            if(!connection.IsAlive)
-                return;
-
             var context = connection.ContextAs<CryptonoteWorkerContext>();
 
             if(!context.IsSubscribed || !context.IsAuthorized || CloseIfDead(connection, context))
@@ -349,9 +346,9 @@ public class CryptonotePool : PoolBase
         return null;
     }
 
-    protected override async Task InitStatsAsync()
+    protected override async Task InitStatsAsync(CancellationToken ct)
     {
-        await base.InitStatsAsync();
+        await base.InitStatsAsync(ct);
 
         blockchainStats = manager.BlockchainStats;
     }

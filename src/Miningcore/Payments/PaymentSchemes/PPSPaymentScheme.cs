@@ -28,7 +28,8 @@ namespace Miningcore.Payments.PaymentSchemes
             IBlockRepository blockRepo,
             IBalanceRepository balanceRepo,
             IPaymentRepository paymentRepo,
-            IBalanceChangeRepository balanceChangeRepo)
+            IBalanceChangeRepository balanceChangeRepo,
+            ClusterConfig clusterConfig)
         {
             Contract.RequiresNonNull(cf, nameof(cf));
             Contract.RequiresNonNull(shareRepo, nameof(shareRepo));
@@ -44,6 +45,7 @@ namespace Miningcore.Payments.PaymentSchemes
             this.statsRepo = statsRepo;
             this.mapper = mapper;
             this.paymentRepo = paymentRepo;
+            this.clusterConfig = clusterConfig;
 
             BuildFaultHandlingPolicy();
         }
@@ -62,11 +64,6 @@ namespace Miningcore.Payments.PaymentSchemes
         private Policy shareReadFaultPolicy;
 
         #region IPayoutScheme
-
-        public async Task ConfigureAsync(ClusterConfig cc, PoolConfig pc, CancellationToken ct)
-        {
-            clusterConfig = cc;
-        }
 
         public async Task UpdateBalancesAsync(IDbConnection con, IDbTransaction tx, IMiningPool pool, IPayoutHandler payoutHandler, Block block, decimal blockReward, CancellationToken ct)
         {
