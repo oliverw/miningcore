@@ -153,4 +153,14 @@ public class ShareRepository : IShareRepository
             .Select(mapper.Map<Share>)
             .ToArray();
     }
+
+    public async Task<MinerWorkerHashes[]> GetHashAccumulationBetweenAcceptedAsync(IDbConnection con, string poolId, DateTime start, DateTime end, CancellationToken ct)
+    {
+        const string query = "SELECT SUM(difficulty), COUNT(difficulty), MIN(accepted) AS firstshare, MAX(accepted) AS lastshare, miner, worker FROM shares " +
+            "WHERE poolid = @poolId AND accepted >= @start AND accepted <= @end " +
+            "GROUP BY miner, worker";
+
+        return (await con.QueryAsync<MinerWorkerHashes>(new CommandDefinition(query, new { poolId, start, end }, cancellationToken: ct)))
+            .ToArray();
+    }
 }
