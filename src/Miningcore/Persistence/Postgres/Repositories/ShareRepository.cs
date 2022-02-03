@@ -129,4 +129,38 @@ public class ShareRepository : IShareRepository
         return (await con.QueryAsync<string>(new CommandDefinition(query, new { poolId, miner }, tx, cancellationToken: ct)))
             .ToArray();
     }
+
+    public async Task DeleteProcessedSharesBeforeAcceptedAsync(IDbConnection con, IDbTransaction tx, string poolId, DateTime before)
+    {
+        const string query = "DELETE FROM shares WHERE poolid = @poolId AND processed is not null AND accepted <= @before";
+
+        await con.ExecuteAsync(query, new { poolId, before }, tx);
+    }
+
+    public async Task ProcessSharesForUserBeforeAcceptedAsync(IDbConnection con, IDbTransaction tx, string poolId, string miner, DateTime before)
+    {
+        const string query = "UPDATE shares SET processed = now() at time zone 'utc' WHERE poolid = @poolId AND miner = @miner AND accepted <= @before";
+
+        await con.ExecuteAsync(query, new { poolId, miner, before }, tx);
+    }
+
+    public async Task<Share[]> ReadUnprocessedSharesBeforeAcceptedAsync(IDbConnection con, string poolId, DateTime before, bool inclusive, int pageSize)
+    {
+        var query = $"SELECT * FROM shares WHERE poolid = @poolId AND processed is NULL AND accepted {(inclusive ? " <= " : " < ")} @before " +
+                    "ORDER BY accepted DESC FETCH NEXT (@pageSize) ROWS ONLY";
+
+        return (await con.QueryAsync<Entities.Share>(query, new { poolId, before, pageSize }))
+            .Select(mapper.Map<Share>)
+            .ToArray();
+    }
+
+    public async Task<MinerWorkerHashes[]> GetHashAccumulationBetweenAcceptedAsync(IDbConnection con, string poolId, DateTime start, DateTime end, CancellationToken ct)
+    {
+        const string query = "SELECT SUM(difficulty), COUNT(difficulty), MIN(accepted) AS firstshare, MAX(accepted) AS lastshare, miner, worker FROM shares " +
+            "WHERE poolid = @poolId AND accepted >= @start AND accepted <= @end " +
+            "GROUP BY miner, worker";
+
+        return (await con.QueryAsync<MinerWorkerHashes>(new CommandDefinition(query, new { poolId, start, end }, cancellationToken: ct)))
+            .ToArray();
+    }
 }

@@ -9,7 +9,7 @@ public record BalanceChange
     /// <summary>
     /// Amount owed in pool-base-currency (ie. Bitcoin, not Satoshis)
     /// </summary>
-    public decimal Amount { get; init; }
+    public decimal Amount { get; set; }
 
     public string Usage { get; init; }
 
