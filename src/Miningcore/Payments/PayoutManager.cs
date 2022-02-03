@@ -38,6 +38,7 @@ public class PayoutManager : BackgroundService
         Contract.RequiresNonNull(shareRepo, nameof(shareRepo));
         Contract.RequiresNonNull(balanceRepo, nameof(balanceRepo));
         Contract.RequiresNonNull(messageBus, nameof(messageBus));
+        Contract.RequiresNonNull(clusterConfig, nameof(clusterConfig));
 
         this.ctx = ctx;
         this.cf = cf;

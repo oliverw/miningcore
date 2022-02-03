@@ -6,6 +6,7 @@ using Miningcore.Blockchain.Bitcoin;
 using Miningcore.Blockchain.Cryptonote;
 using Miningcore.Blockchain.Equihash;
 using Miningcore.Blockchain.Ethereum;
+using Miningcore.Blockchain.Ethereum.EtherScan;
 using Miningcore.Configuration;
 using Miningcore.Crypto;
 using Miningcore.Crypto.Hashing.Equihash;
@@ -173,6 +174,11 @@ public class AutofacModule : Module
         // Ergo
 
         builder.RegisterType<ErgoJobManager>();
+
+        //////////////////////
+        // EherScan
+
+        builder.RegisterType<EtherScanClient>();
 
         base.Load(builder);
     }
