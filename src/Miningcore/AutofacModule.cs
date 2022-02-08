@@ -176,7 +176,7 @@ public class AutofacModule : Module
         builder.RegisterType<ErgoJobManager>();
 
         //////////////////////
-        // EherScan
+        // EtherScan
 
         builder.RegisterType<EtherScanClient>();
 
