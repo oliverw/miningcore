@@ -26,6 +26,11 @@ public class EthereumPoolPaymentProcessingConfigExtra
     /// Percentage as a decimal value between 0 and 100
     /// </summary>
     public decimal GasDeductionPercentage { get; set; }
+    
+    /// <summary>
+    /// Max block reward
+    /// </summary>
+    public double MaxBlockReward { get; set; }
 
     /// <summary>
     /// maximum amount you’re willing to pay
@@ -51,4 +56,9 @@ public class EthereumPoolPaymentProcessingConfigExtra
     /// Hex encoded private key
     /// </summary>
     public string PrivateKey { get; set; }
+
+    /// <summary>
+    /// Percentage share miners receive as a decimal from 0 to 1
+    /// </summary>
+    public decimal RecipientShare { get; set; }
 }

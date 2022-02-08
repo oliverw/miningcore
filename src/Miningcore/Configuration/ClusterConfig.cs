@@ -732,6 +732,10 @@ public partial class PoolShareBasedBanningConfig
 public partial class PoolPaymentProcessingConfig
 {
     public bool Enabled { get; set; }
+    /// <summary>
+    /// When predicting block frequency for PPS payouts, set a guardrail on the maximum if the pool size is very small.
+    /// </summary>
+    public int MaxBlockFrequency { get; set; }
     public decimal MinimumPayment { get; set; } // in pool-base-currency (ie. Bitcoin, not Satoshis)
     public bool PayoutEnabled { get; set; }
     public PayoutScheme PayoutScheme { get; set; }

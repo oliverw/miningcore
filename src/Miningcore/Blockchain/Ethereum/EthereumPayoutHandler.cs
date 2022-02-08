@@ -3,9 +3,11 @@ using System.Data;
 using System.Numerics;
 using Autofac;
 using AutoMapper;
+using Microsoft.Extensions.Caching.Memory;
 using Miningcore.Blockchain.Ethereum.Configuration;
 using Miningcore.Blockchain.Ethereum.DaemonRequests;
 using Miningcore.Blockchain.Ethereum.DaemonResponses;
+using Miningcore.Blockchain.Ethereum.EtherScan;
 using Miningcore.Configuration;
 using Miningcore.Extensions;
 using Miningcore.Messaging;
@@ -39,25 +41,38 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
         IBlockRepository blockRepo,
         IBalanceRepository balanceRepo,
         IPaymentRepository paymentRepo,
+        IStatsRepository statsRepo,
         IMasterClock clock,
         IMessageBus messageBus,
         EthereumJobManager ethereumJobManager) :
         base(cf, mapper, shareRepo, blockRepo, balanceRepo, paymentRepo, clock, messageBus)
     {
         Contract.RequiresNonNull(ctx, nameof(ctx));
+        Contract.RequiresNonNull(cf, nameof(cf));
+        Contract.RequiresNonNull(mapper, nameof(mapper));
+        Contract.RequiresNonNull(shareRepo, nameof(shareRepo));
+        Contract.RequiresNonNull(blockRepo, nameof(blockRepo));
         Contract.RequiresNonNull(balanceRepo, nameof(balanceRepo));
         Contract.RequiresNonNull(paymentRepo, nameof(paymentRepo));
+        Contract.RequiresNonNull(statsRepo, nameof(statsRepo));
 
         this.ctx = ctx;
+        this.statsRepo = statsRepo;
 
         this.ethereumJobManager = ethereumJobManager;
     }
 
+    private const string BlockAvgTime = "blockAvgTime";
+    private const string BlockReward = "blockReward";
     private const int BlockSearchOffset = 50;
+    private const double DefaultMaxBlockReward = 0.1d; //ethereum
+    private const int DefaultPayoutInterval = 600;
+    private const decimal DefaultRecipientShare = 0.85m;
     private const decimal MaxPayout = 0.1m; // ethereum
 
     private readonly IComponentContext ctx;
-    private RpcClient rpcClient;
+    private IStatsRepository statsRepo;
+    private IRpcClient rpcClient;
     private EthereumNetworkType networkType;
     private GethChainType chainType;
     private BigInteger chainId;
@@ -67,8 +82,24 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
     private IWeb3 web3Connection;
     private Task ondemandPayTask;
     private static ConcurrentDictionary<string, string> transactionHashes = new();
+    protected static readonly IMemoryCache Cache = new MemoryCache(new MemoryCacheOptions());
 
     protected override string LogCategory => "Ethereum Payout Handler";
+
+    #region For Testing
+
+    public void ConfigureAsync(ClusterConfig cc, PoolConfig pc, IRpcClient rpcClient, IWeb3 web3)
+    {
+        poolConfig = pc;
+        clusterConfig = cc;
+        extraPoolConfig = poolConfig.Extra.SafeExtensionDataAs<EthereumPoolConfigExtra>();
+        extraConfig = poolConfig.PaymentProcessing.Extra.SafeExtensionDataAs<EthereumPoolPaymentProcessingConfigExtra>();
+        logger = LogUtil.GetPoolScopedLogger(typeof(EthereumPayoutHandler), poolConfig);
+        this.rpcClient = rpcClient;
+        web3Connection = web3;
+    }
+
+    #endregion // For Testing
 
     #region IPayoutHandler
 
@@ -251,6 +282,17 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
             }
         }
 
+        foreach(var block in result)
+        {
+            TelemetryUtil.TrackEvent("BlockFound_" + poolConfig.Id, new Dictionary<string, string>
+            {
+                {"miner", block.Miner},
+                {"height", block.BlockHeight.ToString()},
+                {"type", block.Type},
+                {"reward", FormatAmount(block.Reward)}
+            });
+        }
+
         return result.ToArray();
     }
 
@@ -263,16 +305,14 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
 
     public override async Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, IMiningPool pool, Block block, CancellationToken ct)
     {
-        var blockRewardRemaining = await base.UpdateBlockRewardBalancesAsync(con, tx, pool, block, ct);
-
-        // Deduct static reserve for tx fees
-        blockRewardRemaining -= EthereumConstants.StaticTransactionFeeReserve;
-
-        return blockRewardRemaining;
+        // Always calculate rewards based on ether scan api
+        return await CalculateBlockData(pool.Config, ct);
     }
 
     public async Task PayoutAsync(IMiningPool pool, Balance[] balances, CancellationToken ct)
     {
+        logger.Info(() => $"[{LogCategory}] Beginning payout to {balances?.Length} miners.");
+
         // ensure we have peers
         var infoResponse = await rpcClient.ExecuteAsync<string>(logger, EC.GetPeerCount, ct);
 
@@ -291,7 +331,10 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
             try
             {
                 var txHash = await PayoutAsync(balance, ct);
-                txHashes.Add(txHash);
+                if (!string.IsNullOrEmpty(txHash))
+                {
+                    txHashes.Add(txHash);
+                }
             }
 
             catch(Exception ex)
@@ -304,6 +347,8 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
 
         if(txHashes.Any())
             NotifyPayoutSuccess(poolConfig.Id, balances, txHashes.ToArray(), null);
+
+        logger.Info(() => $"[{LogCategory}] Payouts complete. Successfully processed {txHashes.Count} of {balances.Length} payouts.");
     }
 
     public async Task<PayoutReceipt> PayoutAsync(Balance balance)
@@ -541,6 +586,21 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
         var chainIdResult = results[1]?.Response?.ToObject<string>();
 
         EthereumUtils.DetectNetworkAndChain(netVersion, gethChain, chainIdResult ?? "0", out networkType, out chainType, out chainId);
+
+        if(chainType == GethChainType.Unknown)
+        {
+            logger.Warn(() => $"Unable to determine Ethereum chain type: {gethChain}");
+        }
+
+        if(networkType == EthereumNetworkType.Unknown)
+        {
+            logger.Warn(() => $"Unable to determine Ethereum network type: {netVersion}");
+        }
+
+        if(chainId == 0)
+        {
+            logger.Warn(() => $"Unable to determine Ethereum chain ID: {chainIdResult}");
+        }
     }
 
     private async Task<string> PayoutAsync(Balance balance, CancellationToken ct)
@@ -792,5 +852,157 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
         if(txHashes.Count < balances.Length) web3Connection = null;
 
         logger.Info(() => $"[{LogCategory}] Payouts complete.  Successfully processed top {txHashes.Count} of {balances.Length} payouts.");
+    }
+
+    private async Task<decimal> CalculateBlockData(PoolConfig poolConfig, CancellationToken ct)
+    {
+        var blockReward = await GetNetworkBlockReward(poolConfig);
+        var stats = await cf.Run(con => statsRepo.GetLastPoolStatsAsync(con, poolConfig.Id, ct));
+        var poolStats = new Miningcore.Mining.PoolStats();
+        BlockchainStats blockChainStats = null;
+        if(stats != null)
+        {
+            poolStats = mapper.Map<Miningcore.Mining.PoolStats>(stats);
+            blockChainStats = mapper.Map<BlockchainStats>(stats);
+        }
+
+        var networkHashRate = blockChainStats.NetworkHashrate;
+        double poolHashRate = poolStats.PoolHashrate;
+
+        if(networkHashRate == 0)
+        {
+            throw new Exception($"Invalid state in CalculateBlockData - NetworkHashRate is 0");
+        }
+
+        if(poolHashRate == 0)
+        {
+            throw new Exception($"Invalid state in CalculateBlockData - PoolHashRate is 0");
+        }
+
+        //double avgBlockTime = blockChainStats.NetworkDifficulty / networkHashRate;
+        var avgBlockTime = await GetNetworkBlockAverageTime(poolConfig);
+
+        if(avgBlockTime == 0)
+        {
+            throw new Exception($"Invalid state in CalculateBlockData - AvgBlockTime is 0");
+        }
+
+        var blockFrequency = networkHashRate / poolHashRate * (avgBlockTime / 60);
+
+        double maxBlockFrequency = poolConfig.PaymentProcessing.MaxBlockFrequency;
+        if(blockFrequency > maxBlockFrequency)
+        {
+            blockFrequency = maxBlockFrequency;
+        }
+
+        double payoutInterval = clusterConfig.PaymentProcessing.Interval;
+        
+        if (payoutInterval == 0)
+        {
+            logger.Warn(() => $"Payments are misconfigured. Interval should not be zero. Using the default interal of {DefaultPayoutInterval}");
+            payoutInterval = DefaultPayoutInterval;
+        }
+        
+        double pRatio = 1.0d;
+
+        var now = DateTime.UtcNow;
+
+        var poolState = await TelemetryUtil.TrackDependency(() => cf.Run(con => paymentRepo.GetPoolState(con, poolConfig.Id)),
+            DependencyType.Sql, "GetPoolState", "GetLastPayout");
+
+        if(poolState.LastPayout.HasValue && poolState.LastPayout.Value > now.AddDays(-7))
+        {
+            var sinceLastPayout = now - poolState.LastPayout.Value;
+            pRatio = Math.Round(sinceLastPayout.TotalSeconds / payoutInterval, 1);
+            payoutInterval = sinceLastPayout.TotalSeconds;
+            logger.Info(() => $"Using payoutInterval from database. {payoutInterval}");
+        }
+        else
+        {
+            logger.Warn(() => $"payoutInterval from database is invalid or too old: {poolState.LastPayout}. Using interval from config");
+        }
+
+        // Try to get the recipient share from the config
+        var recipientShare = extraConfig.RecipientShare;
+        if (recipientShare <= 0 || recipientShare > 1)
+        {
+            recipientShare = DefaultRecipientShare;
+            logger.Info(() => $"Using the default recipient share of {recipientShare}");
+        }
+        else
+        {
+            logger.Info(() => $"Using the configured recipient share of {recipientShare}");
+        }
+
+        // Try to get the MaxBlockReward from the config
+        var maxBlockReward = extraConfig.MaxBlockReward;
+        if (maxBlockReward <= 0 || maxBlockReward > 1)
+        {
+            maxBlockReward = DefaultMaxBlockReward;
+            logger.Info(() => $"Using the default max block reward of {maxBlockReward}");
+        }
+        else
+        {
+            logger.Info(() => $"Using the configured max block reward of {maxBlockReward}");
+        }
+
+        var recipientBlockReward = (double) (blockReward * recipientShare);
+        var blockFrequencyPerPayout = blockFrequency / (payoutInterval / 60);
+        var blockData = recipientBlockReward / blockFrequencyPerPayout;
+        logger.Info(() => $"BlockData : {blockData}, Network Block Time : {avgBlockTime}, Block Frequency : {blockFrequency}, PayoutInterval : {payoutInterval}");
+
+        // When checking against this threshold, we should take the LastPayout value into account. 
+        // For example, if payoutInterval is 10m, but  LastPayout is 30m ago, then we should consider 3x maxBlockReward
+        if (blockData > pRatio * maxBlockReward)
+        {
+            logger.Error(() => $"Rewards calculation data is invalid. BlockData is above max threshold of {pRatio * maxBlockReward}.");
+            throw new Exception("Invalid data for calculating mining rewards.  Aborting updateBalances");
+        }
+
+        return (decimal) blockData;
+    }
+
+    private async Task<decimal> GetNetworkBlockReward(PoolConfig poolConfig)
+    {
+        if(Cache.TryGetValue(BlockReward, out decimal blockReward))
+        {
+            return blockReward;
+        }
+
+        var esApi = ctx.Resolve<EtherScanClient>();
+        var blockResp = await esApi.GetDailyBlockCount(poolConfig.EtherScan.DaysToLookBack);
+        if(blockResp == null || blockResp.Length == 0)
+        {
+            throw new InvalidDataException("GetNetworkBlockReward failed");
+        }
+        var block = blockResp.First();
+        blockReward = block.BlockRewardsEth / block.BlockCount;
+        //Add blockReward to cache and set cache data expiration to 24 hours
+        logger.Info(() => $"Block Reward from EtherScan: {blockReward}");
+        Cache.Set(BlockReward, blockReward, TimeSpan.FromHours(24));
+
+        return blockReward;
+    }
+
+    private async Task<double> GetNetworkBlockAverageTime(PoolConfig poolConfig)
+    {
+        if(Cache.TryGetValue(BlockAvgTime, out double blockAvgTime))
+        {
+            return blockAvgTime;
+        }
+
+        var esApi = ctx.Resolve<EtherScanClient>();
+        var blockResp = await esApi.GetDailyAverageBlockTime(poolConfig.EtherScan.DaysToLookBack);
+        if(blockResp == null || blockResp.Length == 0)
+        {
+            throw new InvalidDataException("GetNetworkBlockAverageTime failed");
+        }
+        var block = blockResp.First();
+        blockAvgTime = block.BlockTimeSec;
+        //Add blockReward to cache and set cache data expiration to 24 hours
+        logger.Info(() => $"Block avg time from EtherScan: {blockAvgTime}");
+        Cache.Set(BlockAvgTime, blockAvgTime, TimeSpan.FromHours(24));
+
+        return blockAvgTime;
     }
 }

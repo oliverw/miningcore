@@ -22,7 +22,7 @@ namespace Miningcore.Rpc;
 /// <summary>
 /// JsonRpc interface to blockchain node
 /// </summary>
-public class RpcClient
+public class RpcClient: IRpcClient
 {
     public RpcClient(DaemonEndpointConfig endPoint, JsonSerializerSettings serializerSettings, IMessageBus messageBus, string poolId)
     {
