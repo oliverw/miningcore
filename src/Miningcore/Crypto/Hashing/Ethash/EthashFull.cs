@@ -31,11 +31,10 @@ public class EthashFull : IDisposable
         var epoch = block / EthereumConstants.EpochLength;
         Dag result;
 
+        if(numCaches <= 0) numCaches = 3;
+
         lock(cacheLock)
         {
-            if(numCaches == 0)
-                numCaches = 3;
-
             if(!caches.TryGetValue(epoch, out result))
             {
                 // No cached DAG, evict the oldest if the cache limit was reached
@@ -75,14 +74,14 @@ public class EthashFull : IDisposable
                 future = new Dag(epoch + 1);
 
 #pragma warning disable 4014
-                future.GenerateAsync(dagDir, logger, ct);
+                future.GenerateAsync(dagDir, numCaches, logger, ct);
 #pragma warning restore 4014
             }
 
             result.LastUsed = DateTime.Now;
         }
 
-        await result.GenerateAsync(dagDir, logger, ct);
+        await result.GenerateAsync(dagDir, numCaches, logger, ct);
         return result;
     }
 }

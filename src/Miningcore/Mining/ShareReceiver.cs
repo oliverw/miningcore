@@ -291,7 +291,7 @@ public class ShareReceiver : BackgroundService
             var pool = poolContext.Pool;
             var shareMultiplier = poolContext.Pool.ShareMultiplier;
 
-            poolContext.Logger.Info(() => $"External {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}share accepted: D={Math.Round(share.Difficulty * shareMultiplier, 4)}");
+            poolContext.Logger.Debug(() => $"External {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}share accepted: D={Math.Round(share.Difficulty * shareMultiplier, 4)}");
 
             if(pool.NetworkStats != null)
             {
@@ -311,7 +311,7 @@ public class ShareReceiver : BackgroundService
         }
 
         else
-            logger.Info(() => $"External {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}share accepted: D={Math.Round(share.Difficulty, 4)}");
+            logger.Debug(() => $"External {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}share accepted: D={Math.Round(share.Difficulty, 4)}");
     }
 
     protected override async Task ExecuteAsync(CancellationToken ct)

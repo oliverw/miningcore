@@ -14,6 +14,7 @@ using Miningcore.Persistence;
 using Miningcore.Persistence.Repositories;
 using Miningcore.Stratum;
 using Miningcore.Time;
+using Miningcore.Util;
 using Newtonsoft.Json;
 using static Miningcore.Util.ActionUtils;
 
@@ -164,6 +165,7 @@ public class EthereumPool : PoolBase
         var request = tsRequest.Value;
         var context = connection.ContextAs<EthereumWorkerContext>();
 
+        double difficulty = 0;
         try
         {
             if(request.Id == null)
@@ -202,6 +204,8 @@ public class EthereumPool : PoolBase
             else
                 share = await manager.SubmitShareV1Async(connection, submitRequest, GetWorkerNameFromV1Request(request, context), ct);
 
+            difficulty = Math.Round(share.Difficulty / EthereumConstants.Pow2x32, 3);
+            
             await connection.RespondAsync(true, request.Id);
 
             // publish
@@ -210,7 +214,7 @@ public class EthereumPool : PoolBase
             // telemetry
             PublishTelemetry(TelemetryCategory.Share, clock.Now - tsRequest.Timestamp.UtcDateTime, true);
 
-            logger.Info(() => $"[{connection.ConnectionId}] Share accepted: D={Math.Round(share.Difficulty / EthereumConstants.Pow2x32, 3)}");
+            logger.Debug(() => $"[{connection.ConnectionId}] Share accepted: D={difficulty}");
 
             // update pool stats
             if(share.IsBlockCandidate)
@@ -219,12 +223,16 @@ public class EthereumPool : PoolBase
             // update client stats
             context.Stats.ValidShares++;
             await UpdateVarDiffAsync(connection);
+
+            TelemetryUtil.TrackMetric("ACCEPT_SHARES", difficulty);
         }
 
         catch(StratumException ex)
         {
             // telemetry
             PublishTelemetry(TelemetryCategory.Share, clock.Now - tsRequest.Timestamp.UtcDateTime, false);
+
+            TelemetryUtil.TrackMetric("REJECT_SHARES", "Cause", difficulty, ex.Message);
 
             // update client stats
             context.Stats.InvalidShares++;

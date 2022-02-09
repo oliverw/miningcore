@@ -136,7 +136,7 @@ public class ShareRelay : IHostedService
 
     public Task StopAsync(CancellationToken ct)
     {
-        pubSocket.Dispose();
+        pubSocket?.Dispose();
 
         queueSub?.Dispose();
         queueSub = null;

@@ -126,7 +126,7 @@ public abstract class PoolBase : StratumServer,
                 {
                     if(connection.LastReceive == null)
                     {
-                        logger.Info(() => $"[{connection.ConnectionId}] Booting zombie-worker (post-connect silence)");
+                        logger.Debug(() => $"[{connection.ConnectionId}] Booting zombie-worker (post-connect silence)");
 
                         CloseConnection(connection);
                     }
@@ -177,7 +177,8 @@ public abstract class PoolBase : StratumServer,
 
             if(newDiff != null)
             {
-                logger.Info(() => $"[{connection.ConnectionId}] VarDiff update to {Math.Round(newDiff.Value, 3)}");
+                logger.Debug(() => $"[{connection.ConnectionId}] VarDiff update to {Math.Round(newDiff.Value, 3)}");
+                TelemetryUtil.TrackMetric("VarDiff_Update", newDiff.Value);
 
                 await OnVarDiffUpdateAsync(connection, newDiff.Value);
             }
@@ -229,7 +230,7 @@ public abstract class PoolBase : StratumServer,
         if(poolConfig.ClientConnectionTimeout > 0 &&
            lastActivityAgo.TotalSeconds > poolConfig.ClientConnectionTimeout)
         {
-            logger.Info(() => $"[[{connection.ConnectionId}] Booting zombie-worker (idle-timeout exceeded)");
+            logger.Debug(() => $"[[{connection.ConnectionId}] Booting zombie-worker (idle-timeout exceeded)");
             CloseConnection(connection);
 
             return true;
@@ -355,6 +356,8 @@ Pool Fee:               {(poolConfig.RewardRecipients?.Any() == true ? poolConfi
         logger = LogUtil.GetPoolScopedLogger(typeof(PoolBase), pc);
         poolConfig = pc;
         clusterConfig = cc;
+
+        TelemetryUtil.Init(clusterConfig.Logging.AzureLogKey);
     }
 
     public abstract double HashrateFromShares(double shares, double interval);

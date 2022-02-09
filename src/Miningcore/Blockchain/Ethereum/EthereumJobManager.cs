@@ -57,6 +57,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
     private const int MaxBlockBacklog = 8;
     protected readonly Dictionary<string, EthereumJob> validJobs = new();
     private EthereumPoolConfigExtra extraPoolConfig;
+    private Task refreshBlockTask;
 
     protected async Task<bool> UpdateJob(CancellationToken ct, string via = null)
     {
@@ -95,6 +96,12 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
             {
                 messageBus.NotifyChainHeight(poolConfig.Id, blockTemplate.Height, poolConfig.Template);
 
+                // Get latest block asynchronously when new block reported
+                if(refreshBlockTask == null || refreshBlockTask.IsCompleted)
+                {
+                    refreshBlockTask = GetLatestBlockAsync();
+                }
+
                 var jobId = NextJobId("x8");
 
                 // update template
@@ -123,6 +130,10 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
                 BlockchainStats.NetworkDifficulty = job.BlockTemplate.Difficulty;
                 BlockchainStats.NextNetworkTarget = job.BlockTemplate.Target;
                 BlockchainStats.NextNetworkBits = "";
+            }
+            else
+            {
+                logger.Info(() => $"Ignoring old block with height {currentJob.BlockTemplate.Height} and header {currentJob.BlockTemplate.Header} via [{(via ?? "Unknown")}]");
             }
 
             return isNew;
@@ -184,6 +195,27 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
         };
 
         return result;
+    }
+
+    private async Task GetLatestBlockAsync()
+    {
+        var response = await rpc.ExecuteAsync<Block>(logger, EthCommands.GetBlockByNumber, CancellationToken.None, new[] { (object) "latest", true });
+
+        if(response?.Error != null)
+        {
+            logger.Warn(() => $"Error(s) refreshing latest block: {response.Error.Message}");
+            return;
+        }
+
+        if(response?.Response == null)
+        {
+            logger.Warn(() => $"Error(s) refreshing latest block: {EthCommands.GetBlockByNumber} returned null response");
+            return;
+        }
+
+        var block = response.Response;
+        logger.Debug($"Latest block received. height={block.Height}, gasfee={block.BaseFeePerGas}");
+        messageBus.NotifyNetworkBlock(poolConfig.Id, block.BaseFeePerGas, block.Height.GetValueOrDefault(), poolConfig.Template);
     }
 
     private async Task ShowDaemonSyncProgressAsync(CancellationToken ct)
