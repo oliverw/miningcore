@@ -491,6 +491,7 @@ public enum PayoutScheme
 
 public partial class ClusterLoggingConfig
 {
+    public string AzureLogKey { get; set; }
     public string Level { get; set; }
     public bool EnableConsoleLog { get; set; }
     public bool EnableConsoleColors { get; set; }

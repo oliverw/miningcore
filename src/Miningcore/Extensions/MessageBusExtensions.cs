@@ -130,4 +130,16 @@ public static class MessageBusExtensions
             Total = total ?? 0,
         });
     }
+
+    public static void NotifyNetworkBlock(this IMessageBus messageBus, string poolId, ulong baseFeePerGas, ulong height, CoinTemplate coin)
+    {
+        messageBus.SendMessage(new NetworkBlockNotification
+        {
+            PoolId = poolId,
+            BaseFeePerGas = baseFeePerGas,
+            BlockHeight = height,
+            Symbol = coin.Symbol,
+            Name = coin.CanonicalName ?? coin.Name,
+        });
+    }
 }

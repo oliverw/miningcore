@@ -178,7 +178,8 @@ public class AutofacModule : Module
         //////////////////////
         // EtherScan
 
-        builder.RegisterType<EtherScanClient>();
+        builder.RegisterType<EtherScanClient>()
+            .SingleInstance();
 
         base.Load(builder);
     }

@@ -13,6 +13,7 @@ using Miningcore.Notifications.Messages;
 using Miningcore.Persistence;
 using Miningcore.Persistence.Model;
 using Miningcore.Persistence.Repositories;
+using Miningcore.Util;
 using Newtonsoft.Json;
 using NLog;
 using Polly;
@@ -84,28 +85,38 @@ public class ShareRecorder : BackgroundService
 
     private async Task PersistSharesCoreAsync(IList<Share> shares)
     {
-        await cf.RunTx(async (con, tx) =>
+        try
         {
-            // Insert shares
-            var mapped = shares.Select(mapper.Map<Persistence.Model.Share>).ToArray();
-            await shareRepo.BatchInsertAsync(con, tx, mapped, CancellationToken.None);
-
-            // Insert blocks
-            foreach(var share in shares)
+            await TelemetryUtil.TrackDependency(async () => await cf.RunTx(async (con, tx) =>
             {
-                if(!share.IsBlockCandidate)
-                    continue;
+                // Insert shares
+                var mapped = shares.Select(mapper.Map<Persistence.Model.Share>).ToArray();
+                await shareRepo.BatchInsertAsync(con, tx, mapped, CancellationToken.None);
 
-                var blockEntity = mapper.Map<Block>(share);
-                blockEntity.Status = BlockStatus.Pending;
-                await blockRepo.InsertAsync(con, tx, blockEntity);
+                // Insert blocks
+                foreach(var share in shares)
+                {
+                    if(!share.IsBlockCandidate)
+                        continue;
 
-                if(pools.TryGetValue(share.PoolId, out var poolConfig))
-                    messageBus.NotifyBlockFound(share.PoolId, blockEntity, poolConfig.Template);
-                else
-                    logger.Warn(()=> $"Block found for unknown pool {share.PoolId}");
-            }
-        });
+                    var blockEntity = mapper.Map<Block>(share);
+                    blockEntity.Status = BlockStatus.Pending;
+                    logger.Info(() => $"Storing BlockCandidate {blockEntity.BlockHeight} in BlockRepo for Pool {share.PoolId}");
+                    await blockRepo.InsertAsync(con, tx, blockEntity);
+
+                    if(pools.TryGetValue(share.PoolId, out var poolConfig))
+                        messageBus.NotifyBlockFound(share.PoolId, blockEntity, poolConfig.Template);
+                    else
+                        logger.Warn(()=> $"Block found for unknown pool {share.PoolId}");
+                }
+            }), DependencyType.Sql, "PersistSharesCoreAsync", $"{shares.Count} shares");
+        }
+        catch(Exception e)
+        {
+            var tc = TelemetryUtil.GetTelemetryClient();
+            tc.TrackException(e);
+            throw;
+        }
     }
 
     private static void OnPolicyRetry(Exception ex, TimeSpan timeSpan, int retry, object context)
@@ -258,6 +269,9 @@ public class ShareRecorder : BackgroundService
                 logger.Info(() => $"Successfully imported {successCount} shares");
             else
                 logger.Warn(() => $"Successfully imported {successCount} shares with {failCount} failures");
+
+            // Cleanup file after exporting shares
+            await File.WriteAllTextAsync(recoveryFilename, string.Empty);
         }
 
         catch(FileNotFoundException)
