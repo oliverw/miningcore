@@ -93,33 +93,36 @@ public class PayoutManager : BackgroundService
             {
                 var handler = await ResolvePayoutHandlerAsync(pool, ct);
 
-                // resolve payout scheme
-                var scheme = ctx.ResolveKeyed<IPayoutScheme>(config.PaymentProcessing.PayoutScheme);
-
-                await UpdatePoolBalancesAsync(pool, config, handler, scheme, ct);
-
-                // telemetry
-                var poolBalance = TelemetryUtil.TrackDependency(() => cf.Run(con => balanceRepo.GetTotalBalanceSum(con, pool.Config.Id, pool.Config.PaymentProcessing.MinimumPayment)),
-                    DependencyType.Sql, "GetTotalBalanceSum", "GetTotalBalanceSum");
-                var walletBalance = TelemetryUtil.TrackDependency(() => handler.GetWalletBalance(), DependencyType.Web3, "GetWalletBalance", "GetWalletBalance");
-                await Task.WhenAll(poolBalance, walletBalance);
-
-                TelemetryUtil.TrackEvent($"Balance_{pool.Config.Id}", new Dictionary<string, string>
+                if(config.PaymentProcessing.BalanceUpdateEnabled)
                 {
-                    {"TotalBalance", poolBalance.Result.Sum(b => b.TotalAmount).ToStr()},
-                    {"TotalOverThreshold", poolBalance.Result.Sum(b => b.TotalAmountOverThreshold).ToStr()},
-                    {"WalletBalance", walletBalance.Result.ToStr()},
-                    {"BalLT30Days", poolBalance.Result.FirstOrDefault(b=>b.NoOfDaysOld == 0)?.TotalAmount.ToStr()},
-                    {"CusLT30Days", poolBalance.Result.FirstOrDefault(b=>b.NoOfDaysOld == 0)?.CustomersCount.ToString()},
-                    {"BalGT30Days", poolBalance.Result.FirstOrDefault(b=>b.NoOfDaysOld == 30)?.TotalAmount.ToStr()},
-                    {"CusGT30Days", poolBalance.Result.FirstOrDefault(b=>b.NoOfDaysOld == 30)?.CustomersCount.ToString()},
-                    {"BalGT60Days", poolBalance.Result.FirstOrDefault(b=>b.NoOfDaysOld == 60)?.TotalAmount.ToStr()},
-                    {"CusGT60Days", poolBalance.Result.FirstOrDefault(b=>b.NoOfDaysOld == 60)?.CustomersCount.ToString()},
-                    {"BalGT90Days", poolBalance.Result.FirstOrDefault(b=>b.NoOfDaysOld == 90)?.TotalAmount.ToStr()},
-                    {"CusGT90Days", poolBalance.Result.FirstOrDefault(b=>b.NoOfDaysOld == 90)?.CustomersCount.ToString()},
-                });
+                    // resolve payout scheme
+                    var scheme = ctx.ResolveKeyed<IPayoutScheme>(config.PaymentProcessing.PayoutScheme);
 
-                if(!clusterConfig.PaymentProcessing.OnDemandPayout)
+                    await UpdatePoolBalancesAsync(pool, config, handler, scheme, ct);
+
+                    // telemetry
+                    var poolBalance = TelemetryUtil.TrackDependency(() => cf.Run(con => balanceRepo.GetTotalBalanceSum(con, pool.Config.Id, pool.Config.PaymentProcessing.MinimumPayment)),
+                        DependencyType.Sql, "GetTotalBalanceSum", "GetTotalBalanceSum");
+                    var walletBalance = TelemetryUtil.TrackDependency(() => handler.GetWalletBalance(), DependencyType.Web3, "GetWalletBalance", "GetWalletBalance");
+                    await Task.WhenAll(poolBalance, walletBalance);
+
+                    TelemetryUtil.TrackEvent($"Balance_{pool.Config.Id}", new Dictionary<string, string>
+                    {
+                        {"TotalBalance", poolBalance.Result.Sum(b => b.TotalAmount).ToStr()},
+                        {"TotalOverThreshold", poolBalance.Result.Sum(b => b.TotalAmountOverThreshold).ToStr()},
+                        {"WalletBalance", walletBalance.Result.ToStr()},
+                        {"BalLT30Days", poolBalance.Result.FirstOrDefault(b=>b.NoOfDaysOld == 0)?.TotalAmount.ToStr()},
+                        {"CusLT30Days", poolBalance.Result.FirstOrDefault(b=>b.NoOfDaysOld == 0)?.CustomersCount.ToString()},
+                        {"BalGT30Days", poolBalance.Result.FirstOrDefault(b=>b.NoOfDaysOld == 30)?.TotalAmount.ToStr()},
+                        {"CusGT30Days", poolBalance.Result.FirstOrDefault(b=>b.NoOfDaysOld == 30)?.CustomersCount.ToString()},
+                        {"BalGT60Days", poolBalance.Result.FirstOrDefault(b=>b.NoOfDaysOld == 60)?.TotalAmount.ToStr()},
+                        {"CusGT60Days", poolBalance.Result.FirstOrDefault(b=>b.NoOfDaysOld == 60)?.CustomersCount.ToString()},
+                        {"BalGT90Days", poolBalance.Result.FirstOrDefault(b=>b.NoOfDaysOld == 90)?.TotalAmount.ToStr()},
+                        {"CusGT90Days", poolBalance.Result.FirstOrDefault(b=>b.NoOfDaysOld == 90)?.CustomersCount.ToString()},
+                    });
+                }
+                
+                if(!clusterConfig.PaymentProcessing.OnDemandPayout && config.PaymentProcessing.PayoutEnabled)
                 {
                     await PayoutPoolBalancesAsync(pool, config, handler, ct);
                 }
@@ -364,6 +367,8 @@ public class PayoutManager : BackgroundService
     {
         foreach(var pool in pools.Values.ToArray().Where(x => x.Config.Enabled && x.Config.PaymentProcessing.Enabled))
         {
+            if (!pool.Config.PaymentProcessing.PayoutEnabled) continue;
+            
             logger.Info(() => $"Configuring on-demand payouts for pool {pool.Config.Id}");
 
             var handler = await ResolvePayoutHandlerAsync(pool, ct);

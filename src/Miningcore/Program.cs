@@ -18,6 +18,7 @@ using Azure.Security.KeyVault.Secrets;
 using Dapper;
 using FluentValidation;
 using McMaster.Extensions.CommandLineUtils;
+using Microsoft.ApplicationInsights.NLogTarget;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -64,7 +65,7 @@ using NLog.Targets;
 using Prometheus;
 using WebSocketManager;
 using ILogger = NLog.ILogger;
-using LogLevel = Microsoft.Extensions.Logging.LogLevel;
+using LogLevel = NLog.LogLevel;
 
 // ReSharper disable AssignNullToNotNullAttribute
 // ReSharper disable PossibleNullReferenceException
@@ -148,7 +149,7 @@ public class Program : BackgroundService
                 {
                     logging.ClearProviders();
                     logging.AddNLog();
-                    logging.SetMinimumLevel(LogLevel.Trace);
+                    logging.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Trace);
                 })
                 .ConfigureServices((ctx, services) =>
                 {
@@ -463,8 +464,8 @@ public class Program : BackgroundService
     private static string GetVersion()
     {
         var assembly = Assembly.GetEntryAssembly();
-        var gitVersionInformationType = assembly.GetType("GitVersionInformation");
-
+        var gitVersionInformationType = assembly?.GetType("GitVersionInformation");
+        
         if(gitVersionInformationType != null)
         {
             var assemblySemVer = gitVersionInformationType.GetField("AssemblySemVer").GetValue(null);
@@ -693,6 +694,21 @@ public class Program : BackgroundService
             loggingConfig.AddRule(level, NLog.LogLevel.Info, nullTarget, "Microsoft.AspNetCore.Mvc.Internal.*", true);
             loggingConfig.AddRule(level, NLog.LogLevel.Info, nullTarget, "Microsoft.AspNetCore.Mvc.Infrastructure.*", true);
             loggingConfig.AddRule(level, NLog.LogLevel.Warn, nullTarget, "System.Net.Http.HttpClient.*", true);
+
+            // ApplicationInsights
+            if(!string.IsNullOrEmpty(config.AzureLogKey))
+            {
+                var aiLevel = !string.IsNullOrEmpty(config.AzureLogLevel)
+                    ? LogLevel.FromString(config.AzureLogLevel)
+                    : level;
+
+                var target = new ApplicationInsightsTarget();
+                target.InstrumentationKey = config.AzureLogKey;
+                target.Name = "azurelog";
+
+                loggingConfig.AddTarget(target);
+                loggingConfig.AddRule(aiLevel, LogLevel.Fatal, target);
+            }
 
             // Api Log
             if(!string.IsNullOrEmpty(config.ApiLogFile) && !isShareRecoveryMode)

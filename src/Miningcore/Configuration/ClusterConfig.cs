@@ -492,6 +492,7 @@ public enum PayoutScheme
 public partial class ClusterLoggingConfig
 {
     public string AzureLogKey { get; set; }
+    public string AzureLogLevel { get; set; }
     public string Level { get; set; }
     public bool EnableConsoleLog { get; set; }
     public bool EnableConsoleColors { get; set; }
@@ -665,6 +666,7 @@ public class PoolEndpoint
     /// <summary>
     /// PKCS certificate
     /// </summary>
+    [JsonIgnore]
     public X509Certificate2 TlsPfx { get; set; }
 }
 
@@ -732,6 +734,7 @@ public partial class PoolShareBasedBanningConfig
 
 public partial class PoolPaymentProcessingConfig
 {
+    public bool BalanceUpdateEnabled { get; set; }
     public bool Enabled { get; set; }
     /// <summary>
     /// When predicting block frequency for PPS payouts, set a guardrail on the maximum if the pool size is very small.
