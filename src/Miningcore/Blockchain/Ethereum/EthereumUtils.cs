@@ -26,11 +26,10 @@ public static class EthereumUtils
             chainType = GethChainType.Unknown;
         }
 
-        if(chainType == GethChainType.Ethereum)
+        if(gethChainResponse.ToLower() == "ethereum classic")
+        {
             chainType = GethChainType.Ethereum;
-
-        if(chainType == GethChainType.Callisto)
-            chainType = GethChainType.Callisto;
+        }
 
         // convert chainId
         if(chainIdResponse.ToLower().StartsWith("0x")) 

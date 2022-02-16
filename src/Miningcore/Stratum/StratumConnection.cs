@@ -27,6 +27,11 @@ namespace Miningcore.Stratum;
 
 public class StratumConnection
 {
+    public StratumConnection()
+    {
+        // For unit testing only
+    }
+
     public StratumConnection(ILogger logger, RecyclableMemoryStreamManager rmsm, IMasterClock clock, string connectionId)
     {
         this.logger = logger;

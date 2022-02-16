@@ -35,6 +35,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.0.0" />
     <PackageReference Include="Microsoft.Reactive.Testing" Version="5.0.0" />
+    <PackageReference Include="Moq" Version="4.16.1" />
     <PackageReference Include="NLog" Version="4.7.13" />
     <PackageReference Include="Npgsql" Version="6.0.3" />
     <PackageReference Include="xunit" Version="2.4.1" />
@@ -49,6 +50,15 @@
   </ItemGroup>
 
   <ItemGroup>
+      <Reference Include="ZeroMQ">
+          <HintPath>..\..\libs\ZeroMQ.dll</HintPath>
+      </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="config_test.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="test.runsettings">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
