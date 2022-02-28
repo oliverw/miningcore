@@ -283,19 +283,24 @@ public class PayoutManager : BackgroundService
     {
         try
         {
+            try{
             // monitor pool lifetime
             disposables.Add(messageBus.Listen<PoolStatusNotification>()
                 .ObserveOn(TaskPoolScheduler.Default)
                 .Subscribe(OnPoolStatusNotification));
+            } catch (Exception e) { Console.WriteLine("JAB: " + e.Message + "\n" + e.StackTrace); throw; }
 
             logger.Info(() => "Online");
 
             // Allow all pools to actually come up before the first payment processing run
             await Task.Delay(initialRunDelay, ct);
 
+            Console.WriteLine("JAB: " + clusterConfig.PaymentProcessing.OnDemandPayout);
+
             // Configure on-demand payout for each payout handler
             if(clusterConfig.PaymentProcessing.OnDemandPayout)
             {
+                Console.WriteLine("JAB: Configuring OnDemandPayoutAsync");
                 await ConfigureOnDemandPayoutAsync(ct);
             }
 

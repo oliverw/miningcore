@@ -1,7 +1,6 @@
 using AutoMapper;
 using Microsoft.Azure.Cosmos;
 using Miningcore.Persistence.Cosmos.Entities;
-using Miningcore.Extensions;
 using NLog;
 using Miningcore.Persistence.Repositories;
 using Miningcore.Configuration;

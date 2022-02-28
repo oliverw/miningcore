@@ -1,8 +1,8 @@
 {
     "logging": {
         "level": "info",
-        "enableConsoleLog": true,
-        "enableConsoleColors": true,
+        "enableConsoleLog": false,
+        "enableConsoleColors": false,
         "logFile": "core.log",
         "apiLogFile": "api.log",
         "logBaseDirectory": "logs/",
@@ -31,17 +31,30 @@
     },
     "persistence": {
         "postgres": {
-            "host": "db_host",
+            "host": "mue1-ncrypto-dev-pgdb.postgres.database.azure.com",
             "port": 5432,
-            "user": "db_user",
-            "password": "db_password",
-            "database": "db_name",
+            "user": "miningcore@mue1-ncrypto-dev-pgdb",
+            "password": "c#VB?8?h6R",
+            "database": "miningcore",
             "Pooling": {
                 "MaxPoolSize": 100
-            }
+            },
+            "ssl": "true"
+        },
+        "cosmos": {
+            "endpointUrl": "https://mue1-ncrypto-dev-cdb.documents.azure.com:443/",
+            "authorizationKey": "4pVhUHo5bG9hBoPRGVXpg9lLI5xvFRQSI9jLxWImIykd4DRn4JNNKz5JCuN30T44q2PQPHwkVt7OPFF9GPkHRA==",
+            "databaseId": "Wallets",
+            "maxRetryAttempt": "2",
+            "maxRetryWaitTime": "30",
+            "requestTimeout": "30",
+            "connectionMode": "Gateway",
+            "consistencyLevel": "Session",
+            "preferredLocations": [
+                "East US"
+            ]
         }
     },
-
     "paymentProcessing": {
         "enabled": true,
         "interval": 300,
@@ -115,16 +128,15 @@
                     "tls": false,
                     "tlsPfxFile": "ncrypto-int-nortonlifelock-com-pfx"
                 }
-
             },
             "daemons": [
                 {
                     "host": "127.0.0.1",
-                    "port": 0
+                    "port": 8545
                 }
             ],
             "etherscan": {
-                "apiUrl": "https://api.etherscan.io/api",
+                "apiUrl": "http://localhost:1080/etherscan/api",
                 "apiKey": "api_key",
                 "daysToLookBack": 1
             },
@@ -150,8 +162,7 @@
                 "maxGasLimit": 180000000000,
                 "gasDeductionPercentage": 20,
                 "payoutBatchSize": 5,
-                "minersPayTxFees": true,
-                "maxBlockReward": 0.1
+                "minersPayTxFees": true
             }
         }
     ]

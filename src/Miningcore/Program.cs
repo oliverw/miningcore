@@ -78,6 +78,11 @@ public class Program : BackgroundService
 {
     public static async Task Main(string[] args)
     {
+        await Start(args);
+    }
+
+    public static async Task Start(string[] args, CancellationToken ct = default)
+    {
         try
         {
             AppDomain.CurrentDomain.UnhandledException += OnAppDomainUnhandledException;
@@ -288,7 +293,7 @@ public class Program : BackgroundService
 
             await PreFlightChecks(host.Services);
 
-            await host.RunAsync();
+            await host.RunAsync(ct);
         }
 
         catch(PoolStartupException ex)
@@ -935,7 +940,7 @@ public class Program : BackgroundService
 
             // register repositories
             builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
-                .Where(t => t.Namespace.StartsWith(typeof(BalanceChangeRepository).Namespace))
+                .Where(t => t?.Namespace?.StartsWith(typeof(BalanceChangeRepository).Namespace) == true)
                 .AsImplementedInterfaces()
                 .SingleInstance();
         }
