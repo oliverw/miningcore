@@ -44,7 +44,7 @@
         <PackageReference Include="AspNetCoreRateLimit" Version="4.0.1" />
         <PackageReference Include="Autofac" Version="6.3.0" />
         <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="7.2.0" />
-        <PackageReference Include="CircularBuffer" Version="1.1.0" />
+        <PackageReference Include="CircularBuffer" Version="1.2.1" />
         <PackageReference Include="GitVersion.MsBuild" Version="5.8.1">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
