@@ -70,7 +70,7 @@
         <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="6.0.0" />
         <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="6.0.0" />
         <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="6.0.0" />
-        <PackageReference Include="NBitcoin" Version="5.0.83" />
+        <PackageReference Include="NBitcoin" Version="7.0.6" />
         <PackageReference Include="NBitcoin.Altcoins" Version="2.0.34" />
         <PackageReference Include="NBitcoin.Zcash" Version="3.0.0" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
