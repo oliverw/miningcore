@@ -59,7 +59,7 @@
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="NLog.Extensions.Hosting" Version="1.7.4" />
-        <PackageReference Include="AutoMapper" Version="11.0.0" />
+        <PackageReference Include="AutoMapper" Version="11.0.1" />
         <PackageReference Include="Dapper" Version="2.0.123" />
         <PackageReference Include="FluentValidation" Version="10.3.6" />
         <PackageReference Include="FluentValidation.AspNetCore" Version="10.3.6" />
