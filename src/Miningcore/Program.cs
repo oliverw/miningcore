@@ -781,7 +781,7 @@ public class Program : BackgroundService
 
         // Configure Cryptonight
         Cryptonight.messageBus = messageBus;
-        Cryptonight.InitContexts(clusterConfig.CryptonightMaxThreads ?? 1);
+        Cryptonight.InitContexts(GetDefaultConcurrency(clusterConfig.CryptonightMaxThreads));
 
         // Configure RandomX
         RandomX.messageBus = messageBus;
@@ -977,6 +977,18 @@ public class Program : BackgroundService
         options.GeneralRules = rules;
 
         logger.Info(() => $"API access limited to {(string.Join(", ", rules.Select(x => $"{x.Limit} requests per {x.Period}")))}, except from {string.Join(", ", options.IpWhitelist)}");
+    }
+
+    private static int GetDefaultConcurrency(int? value)
+    {
+        value = value switch
+        {
+            null => 1,
+            -1 => Environment.ProcessorCount,
+            _ => value
+        };
+
+        return value.Value;
     }
 
     private static void OnAppDomainUnhandledException(object sender, UnhandledExceptionEventArgs e)
