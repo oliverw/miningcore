@@ -168,6 +168,7 @@ public class StratumConnection
     public DateTime? LastReceive { get; set; }
     public bool IsAlive { get; set; }
     public IObservable<Unit> Terminated => terminated.AsObservable();
+    public WorkerContextBase Context => context;
 
     public void SetContext<T>(T value) where T : WorkerContextBase
     {
@@ -213,23 +214,12 @@ public class StratumConnection
 
     private Task SendAsync<T>(T payload)
     {
-        Contract.RequiresNonNull(payload, nameof(payload));
+        Contract.RequiresNonNull(payload);
 
-        try
-        {
-            if(sendQueue.Count >= SendQueueCapacity)
-                throw new IOException("Sendqueue stalled");
+        if(sendQueue.Count >= SendQueueCapacity)
+            throw new IOException("Sendqueue stalled");
 
-            return sendQueue.SendAsync(payload);
-        }
-
-        catch(Exception ex)
-        {
-            logger.Error(() => $"[{ConnectionId}] {LogUtil.DotTerminate(ex.Message)} Closing connection ...");
-
-            Disconnect();
-            throw;
-        }
+        return sendQueue.SendAsync(payload);
     }
 
     private async Task FillReceivePipeAsync(CancellationToken ct)
@@ -245,7 +235,7 @@ public class StratumConnection
             if(cb == 0)
                 break; // EOF
 
-            logger.Debug(() => $"[{ConnectionId}] [NET] Received data: {StratumConstants.Encoding.GetString(memory.ToArray(), 0, cb)}");
+            logger.Debug(() => $"[{ConnectionId}] [NET] Received data: {StratumConstants.Encoding.GetString(memory.Slice(0, cb).Span)}");
 
             LastReceive = clock.Now;
 
@@ -350,24 +340,24 @@ public class StratumConnection
     {
         await using var stream = rmsm.GetStream(nameof(StratumConnection)) as RecyclableMemoryStream;
 
-        // serialize to RecyclableMemoryStream
+        // serialize
         await using (var writer = new StreamWriter(stream!, StratumConstants.Encoding, -1, true))
         {
             serializer.Serialize(writer, msg);
         }
 
-        // ReSharper disable once AccessToDisposedClosure
         logger.Debug(() => $"[{ConnectionId}] Sending: {StratumConstants.Encoding.GetString(stream.GetReadOnlySequence())}");
 
-        stream.WriteByte((byte) '\n'); // terminator
-        stream.Seek(0, SeekOrigin.Begin); // rewind for copy
+        // append newline
+        stream.WriteByte((byte) '\n');
 
-        // copy to network
-        using var ctsTimeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        ctsTimeout.CancelAfter(sendTimeout);
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        cts.CancelAfter(sendTimeout);
 
-        await stream.CopyToAsync(networkStream, ctsTimeout.Token);
-        await networkStream.FlushAsync(ctsTimeout.Token);
+        // send
+        stream.Position = 0;
+        await stream.CopyToAsync(networkStream, cts.Token);
+        await networkStream.FlushAsync(cts.Token);
     }
 
     private async Task ProcessRequestAsync(

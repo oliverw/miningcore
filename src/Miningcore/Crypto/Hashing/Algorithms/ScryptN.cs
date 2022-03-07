@@ -31,7 +31,7 @@ public unsafe class ScryptN : IHashAlgorithm
 
     public void Digest(ReadOnlySpan<byte> data, Span<byte> result, params object[] extra)
     {
-        Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
+        Contract.Requires<ArgumentException>(result.Length >= 32);
 
         // get nFactor
         var ts = ((DateTimeOffset) Clock.Now).ToUnixTimeSeconds();

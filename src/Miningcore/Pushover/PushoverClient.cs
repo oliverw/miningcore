@@ -18,8 +18,8 @@ public class PushoverClient
     public async Task<PushoverReponse> PushMessage(string title, string message,
         PushoverMessagePriority priority, CancellationToken ct)
     {
-        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(title), $"{nameof(title)} must not be empty");
-        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(message), $"{nameof(message)} must not be empty");
+        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(title));
+        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(message));
 
         var msg = new PushoverRequest
         {

@@ -152,13 +152,13 @@ public partial class CryptonoteCoinTemplate
 
     public override string GetAlgorithmName()
     {
-        switch(Hash)
-        {
-            case CryptonightHashType.RandomX:
-                return "RandomX";
-        }
+//        switch(Hash)
+//        {
+//            case CryptonightHashType.RandomX:
+//                return "RandomX";
+//        }
 
-        throw new NotSupportedException("Invalid hash type");
+        return Hash.ToString();
     }
 
     #endregion

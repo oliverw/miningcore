@@ -17,7 +17,7 @@ public static class ErgoClientFactory
 
         if(logger != null && clusterConfig.PaymentProcessing?.Enabled == true &&
            poolConfig.PaymentProcessing?.Enabled == true && string.IsNullOrEmpty(extra?.ApiKey))
-            throw new PoolStartupException("Ergo daemon apiKey not provided");
+            throw new PoolStartupException("Ergo daemon apiKey not provided", poolConfig.Id);
 
         var baseUrl = new UriBuilder(epConfig.Ssl || epConfig.Http2 ? Uri.UriSchemeHttps : Uri.UriSchemeHttp,
             epConfig.Host, epConfig.Port, epConfig.HttpPath);

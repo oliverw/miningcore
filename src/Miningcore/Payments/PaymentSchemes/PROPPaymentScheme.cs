@@ -26,10 +26,10 @@ public class PROPPaymentScheme : IPayoutScheme
         IBlockRepository blockRepo,
         IBalanceRepository balanceRepo)
     {
-        Contract.RequiresNonNull(cf, nameof(cf));
-        Contract.RequiresNonNull(shareRepo, nameof(shareRepo));
-        Contract.RequiresNonNull(blockRepo, nameof(blockRepo));
-        Contract.RequiresNonNull(balanceRepo, nameof(balanceRepo));
+        Contract.RequiresNonNull(cf);
+        Contract.RequiresNonNull(shareRepo);
+        Contract.RequiresNonNull(blockRepo);
+        Contract.RequiresNonNull(balanceRepo);
 
         this.cf = cf;
         this.shareRepo = shareRepo;

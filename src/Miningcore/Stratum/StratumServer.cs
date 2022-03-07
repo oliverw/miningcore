@@ -11,10 +11,12 @@ using System.Text;
 using Autofac;
 using Microsoft.IO;
 using Miningcore.Banning;
+using Miningcore.Blockchain.Ethereum;
 using Miningcore.Configuration;
 using Miningcore.Extensions;
 using Miningcore.JsonRpc;
 using Miningcore.Messaging;
+using Miningcore.Mining;
 using Miningcore.Notifications.Messages;
 using Miningcore.Time;
 using Miningcore.Util;
@@ -33,10 +35,10 @@ public abstract class StratumServer
         RecyclableMemoryStreamManager rmsm,
         IMasterClock clock)
     {
-        Contract.RequiresNonNull(ctx, nameof(ctx));
-        Contract.RequiresNonNull(messageBus, nameof(messageBus));
-        Contract.RequiresNonNull(rmsm, nameof(rmsm));
-        Contract.RequiresNonNull(clock, nameof(clock));
+        Contract.RequiresNonNull(ctx);
+        Contract.RequiresNonNull(messageBus);
+        Contract.RequiresNonNull(rmsm);
+        Contract.RequiresNonNull(clock);
 
         this.ctx = ctx;
         this.messageBus = messageBus;
@@ -88,7 +90,7 @@ public abstract class StratumServer
 
     protected Task RunAsync(CancellationToken ct, params StratumEndpoint[] endpoints)
     {
-        Contract.RequiresNonNull(endpoints, nameof(endpoints));
+        Contract.RequiresNonNull(endpoints);
 
         logger.Info(() => $"Stratum ports {string.Join(", ", endpoints.Select(x => $"{x.IPEndPoint.Address}:{x.IPEndPoint.Port}").ToArray())} online");
 
@@ -99,7 +101,7 @@ public abstract class StratumServer
             server.Bind(port.IPEndPoint);
             server.Listen();
 
-            return Task.Run(()=> Listen(server, port, ct), ct);
+            return Listen(server, port, ct);
         }).ToArray();
 
         return Task.WhenAll(tasks);
@@ -189,7 +191,7 @@ public abstract class StratumServer
         if(banManager?.IsBanned(connection.RemoteEndpoint.Address) == true)
         {
             logger.Info(() => $"[{connection.ConnectionId}] Disconnecting banned client @ {connection.RemoteEndpoint.Address}");
-            CloseConnection(connection);
+            Disconnect(connection);
             return;
         }
 
@@ -281,13 +283,11 @@ public abstract class StratumServer
         UnregisterConnection(connection);
     }
 
-    protected void CloseConnection(StratumConnection connection)
+    protected void Disconnect(StratumConnection connection)
     {
-        Contract.RequiresNonNull(connection, nameof(connection));
+        Contract.RequiresNonNull(connection);
 
         connection.Disconnect();
-
-        UnregisterConnection(connection);
     }
 
     private X509Certificate2 GetTlsCert(StratumEndpoint port)
@@ -323,13 +323,6 @@ public abstract class StratumServer
         }
 
         return false;
-    }
-
-    protected IEnumerable<Task> TaskForEach(Func<StratumConnection, Task> func)
-    {
-        var tmp = connections.Values.ToArray();
-
-        return tmp.Where(x=> x.IsAlive).Select(func);
     }
 
     protected void PublishTelemetry(TelemetryCategory cat, TimeSpan elapsed, bool? success = null, int? total = null)

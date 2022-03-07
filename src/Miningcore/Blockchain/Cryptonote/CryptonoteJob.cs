@@ -15,11 +15,11 @@ public class CryptonoteJob
     public CryptonoteJob(GetBlockTemplateResponse blockTemplate, byte[] instanceId, string jobId,
         CryptonoteCoinTemplate coin, PoolConfig poolConfig, ClusterConfig clusterConfig, string prevHash, string randomXRealm)
     {
-        Contract.RequiresNonNull(blockTemplate, nameof(blockTemplate));
-        Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
-        Contract.RequiresNonNull(clusterConfig, nameof(clusterConfig));
-        Contract.RequiresNonNull(instanceId, nameof(instanceId));
-        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(jobId), $"{nameof(jobId)} must not be empty");
+        Contract.RequiresNonNull(blockTemplate);
+        Contract.RequiresNonNull(poolConfig);
+        Contract.RequiresNonNull(clusterConfig);
+        Contract.RequiresNonNull(instanceId);
+        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(jobId));
 
         BlockTemplate = blockTemplate;
         PrepareBlobTemplate(instanceId);
@@ -133,9 +133,9 @@ public class CryptonoteJob
 
     public (Share Share, string BlobHex) ProcessShare(string nonce, uint workerExtraNonce, string workerHash, StratumConnection worker)
     {
-        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(nonce), $"{nameof(nonce)} must not be empty");
-        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(workerHash), $"{nameof(workerHash)} must not be empty");
-        Contract.Requires<ArgumentException>(workerExtraNonce != 0, $"{nameof(workerExtraNonce)} must not be empty");
+        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(nonce));
+        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(workerHash));
+        Contract.Requires<ArgumentException>(workerExtraNonce != 0);
 
         var context = worker.ContextAs<CryptonoteWorkerContext>();
 

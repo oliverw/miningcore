@@ -164,6 +164,11 @@ public class EquihashJobManager : BitcoinJobManagerBase<EquihashJob>
             return (isNew, forceUpdate);
         }
 
+        catch(OperationCanceledException)
+        {
+            // ignored
+        }
+
         catch(Exception ex)
         {
             logger.Error(ex, () => $"Error during {nameof(UpdateJob)}");
@@ -205,7 +210,7 @@ public class EquihashJobManager : BitcoinJobManagerBase<EquihashJob>
 
     public object[] GetSubscriberData(StratumConnection worker)
     {
-        Contract.RequiresNonNull(worker, nameof(worker));
+        Contract.RequiresNonNull(worker);
 
         var context = worker.ContextAs<BitcoinWorkerContext>();
 
@@ -224,8 +229,8 @@ public class EquihashJobManager : BitcoinJobManagerBase<EquihashJob>
     public async ValueTask<Share> SubmitShareAsync(StratumConnection worker,
         object submission, CancellationToken ct)
     {
-        Contract.RequiresNonNull(worker, nameof(worker));
-        Contract.RequiresNonNull(submission, nameof(submission));
+        Contract.RequiresNonNull(worker);
+        Contract.RequiresNonNull(submission);
 
         if(submission is not object[] submitParams)
             throw new StratumException(StratumError.Other, "invalid params");

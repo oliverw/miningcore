@@ -36,12 +36,12 @@ public class ShareRecorder : BackgroundService
         ClusterConfig clusterConfig,
         IMessageBus messageBus)
     {
-        Contract.RequiresNonNull(cf, nameof(cf));
-        Contract.RequiresNonNull(mapper, nameof(mapper));
-        Contract.RequiresNonNull(shareRepo, nameof(shareRepo));
-        Contract.RequiresNonNull(blockRepo, nameof(blockRepo));
-        Contract.RequiresNonNull(jsonSerializerSettings, nameof(jsonSerializerSettings));
-        Contract.RequiresNonNull(messageBus, nameof(messageBus));
+        Contract.RequiresNonNull(cf);
+        Contract.RequiresNonNull(mapper);
+        Contract.RequiresNonNull(shareRepo);
+        Contract.RequiresNonNull(blockRepo);
+        Contract.RequiresNonNull(jsonSerializerSettings);
+        Contract.RequiresNonNull(messageBus);
 
         this.cf = cf;
         this.mapper = mapper;

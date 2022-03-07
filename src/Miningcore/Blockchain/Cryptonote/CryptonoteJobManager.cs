@@ -36,9 +36,9 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
         IMessageBus messageBus) :
         base(ctx, messageBus)
     {
-        Contract.RequiresNonNull(ctx, nameof(ctx));
-        Contract.RequiresNonNull(clock, nameof(clock));
-        Contract.RequiresNonNull(messageBus, nameof(messageBus));
+        Contract.RequiresNonNull(ctx);
+        Contract.RequiresNonNull(clock);
+        Contract.RequiresNonNull(messageBus);
 
         this.clock = clock;
     }
@@ -86,28 +86,7 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
                 else
                     logger.Info(() => $"Detected new block {blockTemplate.Height}");
 
-                // detect seed hash change
-                if(currentSeedHash != blockTemplate.SeedHash)
-                {
-                    logger.Info(()=> $"Detected new seed hash {blockTemplate.SeedHash} starting @ height {blockTemplate.Height}");
-
-                    if(poolConfig.EnableInternalStratum == true)
-                    {
-                        RandomX.WithLock(() =>
-                        {
-                            // delete old seed
-                            if(currentSeedHash != null)
-                                RandomX.DeleteSeed(randomXRealm, currentSeedHash);
-
-                            // activate new one
-                            currentSeedHash = blockTemplate.SeedHash;
-                            RandomX.CreateSeed(randomXRealm, currentSeedHash, randomXFlagsOverride, randomXFlagsAdd, extraPoolConfig.RandomXVMCount);
-                        });
-                    }
-
-                    else
-                        currentSeedHash = blockTemplate.SeedHash;
-                }
+                UpdateHashParams(blockTemplate);
 
                 // init job
                 job = new CryptonoteJob(blockTemplate, instanceId, NextJobId(), coin, poolConfig, clusterConfig, newHash, randomXRealm);
@@ -132,12 +111,79 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
             return isNew;
         }
 
+        catch(OperationCanceledException)
+        {
+            // ignored
+        }
+
         catch(Exception ex)
         {
             logger.Error(ex, () => $"Error during {nameof(UpdateJob)}");
         }
 
         return false;
+    }
+
+    private void UpdateHashParams(GetBlockTemplateResponse blockTemplate)
+    {
+        switch(coin.Hash)
+        {
+            case CryptonightHashType.RandomX:
+            {
+                // detect seed hash change
+                if(currentSeedHash != blockTemplate.SeedHash)
+                {
+                    logger.Info(()=> $"Detected new seed hash {blockTemplate.SeedHash} starting @ height {blockTemplate.Height}");
+
+                    if(poolConfig.EnableInternalStratum == true)
+                    {
+                        RandomX.WithLock(() =>
+                        {
+                            // delete old seed
+                            if(currentSeedHash != null)
+                                RandomX.DeleteSeed(randomXRealm, currentSeedHash);
+
+                            // activate new one
+                            currentSeedHash = blockTemplate.SeedHash;
+                            RandomX.CreateSeed(randomXRealm, currentSeedHash, randomXFlagsOverride, randomXFlagsAdd, extraPoolConfig.RandomXVMCount);
+                        });
+                    }
+
+                    else
+                        currentSeedHash = blockTemplate.SeedHash;
+                }
+
+                break;
+            }
+
+            case CryptonightHashType.RandomARQ:
+            {
+                // detect seed hash change
+                if(currentSeedHash != blockTemplate.SeedHash)
+                {
+                    logger.Info(()=> $"Detected new seed hash {blockTemplate.SeedHash} starting @ height {blockTemplate.Height}");
+
+                    if(poolConfig.EnableInternalStratum == true)
+                    {
+                        RandomARQ.WithLock(() =>
+                        {
+                            // delete old seed
+                            if(currentSeedHash != null)
+                                RandomARQ.DeleteSeed(randomXRealm, currentSeedHash);
+
+                            // activate new one
+                            currentSeedHash = blockTemplate.SeedHash;
+                            RandomARQ.CreateSeed(randomXRealm, currentSeedHash, randomXFlagsOverride, randomXFlagsAdd, extraPoolConfig.RandomXVMCount);
+                        });
+                    }
+
+                    else
+                        currentSeedHash = blockTemplate.SeedHash;
+                }
+
+                break;
+            }
+        }
     }
 
     private async Task<RpcResponse<GetBlockTemplateResponse>> GetBlockTemplateAsync(CancellationToken ct)
@@ -222,8 +268,8 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
 
     public override void Configure(PoolConfig pc, ClusterConfig cc)
     {
-        Contract.RequiresNonNull(pc, nameof(pc));
-        Contract.RequiresNonNull(cc, nameof(cc));
+        Contract.RequiresNonNull(pc);
+        Contract.RequiresNonNull(cc);
 
         logger = LogUtil.GetPoolScopedLogger(typeof(JobManagerBase<CryptonoteJob>), pc);
         poolConfig = pc;
@@ -265,7 +311,7 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
                 .ToArray();
 
             if(walletDaemonEndpoints.Length == 0)
-                throw new PoolStartupException("Wallet-RPC daemon is not configured (Daemon configuration for monero-pools require an additional entry of category \'wallet' pointing to the wallet daemon)");
+                throw new PoolStartupException("Wallet-RPC daemon is not configured (Daemon configuration for monero-pools require an additional entry of category \'wallet' pointing to the wallet daemon)", pc.Id);
         }
 
         ConfigureDaemons();
@@ -323,10 +369,10 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
     }
 
     public async ValueTask<Share> SubmitShareAsync(StratumConnection worker,
-        CryptonoteSubmitShareRequest request, CryptonoteWorkerJob workerJob, double stratumDifficultyBase, CancellationToken ct)
+        CryptonoteSubmitShareRequest request, CryptonoteWorkerJob workerJob, CancellationToken ct)
     {
-        Contract.RequiresNonNull(worker, nameof(worker));
-        Contract.RequiresNonNull(request, nameof(request));
+        Contract.RequiresNonNull(worker);
+        Contract.RequiresNonNull(request);
 
         var context = worker.ContextAs<CryptonoteWorkerContext>();
 
@@ -458,9 +504,11 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
 
     protected override async Task EnsureDaemonsSynchedAsync(CancellationToken ct)
     {
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(5));
+
         var syncPendingNotificationShown = false;
 
-        while(true)
+        do
         {
             var request = new GetBlockTemplateRequest
             {
@@ -486,10 +534,7 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
             }
 
             await ShowDaemonSyncProgressAsync(ct);
-
-            // delay retry by 5s
-            await Task.Delay(5000, ct);
-        }
+        } while(await timer.WaitForNextTickAsync(ct));
     }
 
     protected override async Task PostStartInitAsync(CancellationToken ct)
@@ -501,7 +546,7 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
         var infoResponse = await rpc.ExecuteAsync(logger, CryptonoteCommands.GetInfo, ct);
 
         if(infoResponse.Error != null)
-            throw new PoolStartupException($"Init RPC failed: {infoResponse.Error.Message} (Code {infoResponse.Error.Code})");
+            throw new PoolStartupException($"Init RPC failed: {infoResponse.Error.Message} (Code {infoResponse.Error.Code})", poolConfig.Id);
 
         if(clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
         {
@@ -509,7 +554,7 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
 
             // ensure pool owns wallet
             if(clusterConfig.PaymentProcessing?.Enabled == true && addressResponse.Response?.Address != poolConfig.Address)
-                throw new PoolStartupException($"Wallet-Daemon does not own pool-address '{poolConfig.Address}'");
+                throw new PoolStartupException($"Wallet-Daemon does not own pool-address '{poolConfig.Address}'", poolConfig.Id);
         }
 
         var info = infoResponse.Response.ToObject<GetInfoResponse>();
@@ -529,7 +574,7 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
                     networkType = CryptonoteNetworkType.Test;
                     break;
                 default:
-                    throw new PoolStartupException($"Unsupport net type '{info.NetType}'");
+                    throw new PoolStartupException($"Unsupport net type '{info.NetType}'", poolConfig.Id);
             }
         }
 
@@ -539,23 +584,23 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
         // address validation
         poolAddressBase58Prefix = CryptonoteBindings.DecodeAddress(poolConfig.Address);
         if(poolAddressBase58Prefix == 0)
-            throw new PoolStartupException("Unable to decode pool-address");
+            throw new PoolStartupException("Unable to decode pool-address", poolConfig.Id);
 
         switch(networkType)
         {
             case CryptonoteNetworkType.Main:
                 if(poolAddressBase58Prefix != coin.AddressPrefix)
-                    throw new PoolStartupException($"Invalid pool address prefix. Expected {coin.AddressPrefix}, got {poolAddressBase58Prefix}");
+                    throw new PoolStartupException($"Invalid pool address prefix. Expected {coin.AddressPrefix}, got {poolAddressBase58Prefix}", poolConfig.Id);
                 break;
 
             case CryptonoteNetworkType.Stage:
                 if(poolAddressBase58Prefix != coin.AddressPrefixStagenet)
-                    throw new PoolStartupException($"Invalid pool address prefix. Expected {coin.AddressPrefixStagenet}, got {poolAddressBase58Prefix}");
+                    throw new PoolStartupException($"Invalid pool address prefix. Expected {coin.AddressPrefixStagenet}, got {poolAddressBase58Prefix}", poolConfig.Id);
                 break;
 
             case CryptonoteNetworkType.Test:
                 if(poolAddressBase58Prefix != coin.AddressPrefixTestnet)
-                    throw new PoolStartupException($"Invalid pool address prefix. Expected {coin.AddressPrefixTestnet}, got {poolAddressBase58Prefix}");
+                    throw new PoolStartupException($"Invalid pool address prefix. Expected {coin.AddressPrefixTestnet}, got {poolAddressBase58Prefix}", poolConfig.Id);
                 break;
         }
 

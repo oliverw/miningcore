@@ -25,6 +25,7 @@ public class AutoMapperProfile : Profile
         CreateMap<Blockchain.Share, Block>()
             .ForMember(dest => dest.Reward, opt => opt.MapFrom(src => src.BlockReward))
             .ForMember(dest => dest.Hash, opt => opt.MapFrom(src => src.BlockHash))
+            .ForMember(dest => dest.Type, opt => opt.MapFrom(src => src.BlockType))
             .ForMember(dest => dest.Status, opt => opt.Ignore());
 
         CreateMap<BlockStatus, string>().ConvertUsing(e => e.ToString().ToLower());

@@ -147,7 +147,7 @@ public class ErgoPool : PoolBase
 
             banManager.Ban(connection.RemoteEndpoint.Address, loginFailureBanTimeout);
 
-            CloseConnection(connection);
+            Disconnect(connection);
         }
     }
 
@@ -179,12 +179,10 @@ public class ErgoPool : PoolBase
             else if(!context.IsSubscribed)
                 throw new StratumException(StratumError.NotSubscribed, "not subscribed");
 
-            // submit
             var requestParams = request.ParamsAs<string[]>();
-            var poolEndpoint = poolConfig.Ports[connection.LocalEndpoint.Port];
 
-            var share = await manager.SubmitShareAsync(connection, requestParams, poolEndpoint.Difficulty, ct);
-
+            // submit
+            var share = await manager.SubmitShareAsync(connection, requestParams, ct);
             await connection.RespondAsync(true, request.Id);
 
             // publish
@@ -201,7 +199,8 @@ public class ErgoPool : PoolBase
 
             // update client stats
             context.Stats.ValidShares++;
-            await UpdateVarDiffAsync(connection);
+
+            await UpdateVarDiffAsync(connection, false, ct);
         }
 
         catch(StratumException ex)
@@ -220,21 +219,18 @@ public class ErgoPool : PoolBase
         }
     }
 
-    protected virtual Task OnNewJobAsync(object[] jobParams)
+    protected virtual async Task OnNewJobAsync(object[] jobParams)
     {
         currentJobParams = jobParams;
 
-        logger.Info(() => "Broadcasting job");
+        logger.Info(() => $"Broadcasting job {jobParams[0]}");
 
-        return Guard(Task.WhenAll(TaskForEach(async connection =>
+        await Guard(() => ForEachMinerAsync(async (connection, ct) =>
         {
             var context = connection.ContextAs<ErgoWorkerContext>();
 
-            if(!context.IsSubscribed || !context.IsAuthorized || CloseIfDead(connection, context))
-                return;
-
             await SendJob(connection, context, currentJobParams);
-        })), ex=> logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}"));
+        }));
     }
 
     private async Task SendJob(StratumConnection connection, ErgoWorkerContext context, object[] jobParams)
@@ -373,11 +369,11 @@ public class ErgoPool : PoolBase
         return result;
     }
 
-    protected override async Task OnVarDiffUpdateAsync(StratumConnection connection, double newDiff)
+    protected override async Task OnVarDiffUpdateAsync(StratumConnection connection, double newDiff, CancellationToken ct)
     {
-        var context = connection.ContextAs<ErgoWorkerContext>();
+        await base.OnVarDiffUpdateAsync(connection, newDiff, ct);
 
-        context.EnqueueNewDifficulty(newDiff);
+        var context = connection.ContextAs<ErgoWorkerContext>();
 
         if(context.ApplyPendingDifficulty())
         {

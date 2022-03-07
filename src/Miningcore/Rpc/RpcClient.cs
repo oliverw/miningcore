@@ -26,9 +26,9 @@ public class RpcClient
 {
     public RpcClient(DaemonEndpointConfig endPoint, JsonSerializerSettings serializerSettings, IMessageBus messageBus, string poolId)
     {
-        Contract.RequiresNonNull(serializerSettings, nameof(serializerSettings));
-        Contract.RequiresNonNull(messageBus, nameof(messageBus));
-        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(poolId), $"{nameof(poolId)} must not be empty");
+        Contract.RequiresNonNull(serializerSettings);
+        Contract.RequiresNonNull(messageBus);
+        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(poolId));
 
         config = endPoint;
         this.serializerSettings = serializerSettings;
@@ -60,7 +60,7 @@ public class RpcClient
         object payload = null, bool throwOnError = false)
         where TResponse : class
     {
-        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(method), $"{nameof(method)} must not be empty");
+        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(method));
 
         try
         {
@@ -93,7 +93,7 @@ public class RpcClient
 
     public async Task<RpcResponse<JToken>[]> ExecuteBatchAsync(ILogger logger, CancellationToken ct, params RpcRequest[] batch)
     {
-        Contract.RequiresNonNull(batch, nameof(batch));
+        Contract.RequiresNonNull(batch);
 
         try
         {
@@ -114,7 +114,7 @@ public class RpcClient
         string method, object payload = null,
         JsonSerializerSettings payloadJsonSerializerSettings = null)
     {
-        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(method), $"{nameof(method)} must not be empty");
+        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(method));
 
         return WebsocketSubscribeEndpoint(logger, ct, endPoint, method, payload, payloadJsonSerializerSettings)
             .Publish()

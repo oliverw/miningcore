@@ -113,7 +113,7 @@ public class SimpleRestClient
 
     public async Task<T> Send<T>(HttpRequestMessage request, CancellationToken ct)
     {
-        Contract.RequiresNonNull(request, nameof(request));
+        Contract.RequiresNonNull(request);
 
         PrepareRequest(request, null);
 
@@ -128,7 +128,7 @@ public class SimpleRestClient
 
     public async Task<ResponseContent<T>> SendWithResponse<T>(HttpRequestMessage request, CancellationToken ct)
     {
-        Contract.RequiresNonNull(request, nameof(request));
+        Contract.RequiresNonNull(request);
 
         PrepareRequest(request, null);
 
@@ -163,7 +163,7 @@ public class SimpleRestClient
         IEnumerable<KeyValuePair<string, string>> queryParams = null,
         IEnumerable<KeyValuePair<string, string>> headers = null)
     {
-        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(path), $"{nameof(path)} must not be empty");
+        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(path));
 
         var requestUri = BuildRequestUri(path, PrepareQueryParams(queryParams));
 
@@ -181,7 +181,7 @@ public class SimpleRestClient
         IEnumerable<KeyValuePair<string, string>> queryParams = null,
         IEnumerable<KeyValuePair<string, string>> headers = null) where T: class
     {
-        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(path), $"{nameof(path)} must not be empty");
+        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(path));
 
         var requestUri = BuildRequestUri(path, PrepareQueryParams(queryParams));
 
@@ -205,7 +205,7 @@ public class SimpleRestClient
         IEnumerable<KeyValuePair<string, string>> queryParams = null,
         IEnumerable<KeyValuePair<string, string>> headers = null)
     {
-        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(path), $"{nameof(path)} must not be empty");
+        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(path));
 
         var requestUri = BuildRequestUri(path, PrepareQueryParams(queryParams));
 
@@ -226,7 +226,7 @@ public class SimpleRestClient
         IEnumerable<KeyValuePair<string, string>> queryParams = null,
         IEnumerable<KeyValuePair<string, string>> headers = null)
     {
-        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(path), $"{nameof(path)} must not be empty");
+        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(path));
 
         var requestUri = BuildRequestUri(path, PrepareQueryParams(queryParams));
         var request = new HttpRequestMessage(HttpMethod.Delete, requestUri);
@@ -240,7 +240,7 @@ public class SimpleRestClient
         IEnumerable<KeyValuePair<string, string>> queryParams = null,
         IEnumerable<KeyValuePair<string, string>> headers = null)
     {
-        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(path), $"{nameof(path)} must not be empty");
+        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(path));
 
         var requestUri = BuildRequestUri(path, PrepareQueryParams(queryParams));
         var request = new HttpRequestMessage(HttpMethod.Delete, requestUri);
@@ -260,7 +260,7 @@ public class SimpleRestClient
         IEnumerable<KeyValuePair<string, string>> queryParams = null,
         IEnumerable<KeyValuePair<string, string>> headers = null)
     {
-        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(path), $"{nameof(path)} must not be empty");
+        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(path));
 
         var requestUri = BuildRequestUri(path, PrepareQueryParams(queryParams));
         var request = new HttpRequestMessage(HttpMethod.Delete, requestUri);

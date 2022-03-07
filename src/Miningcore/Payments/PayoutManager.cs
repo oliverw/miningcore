@@ -31,12 +31,12 @@ public class PayoutManager : BackgroundService
         ClusterConfig clusterConfig,
         IMessageBus messageBus)
     {
-        Contract.RequiresNonNull(ctx, nameof(ctx));
-        Contract.RequiresNonNull(cf, nameof(cf));
-        Contract.RequiresNonNull(blockRepo, nameof(blockRepo));
-        Contract.RequiresNonNull(shareRepo, nameof(shareRepo));
-        Contract.RequiresNonNull(balanceRepo, nameof(balanceRepo));
-        Contract.RequiresNonNull(messageBus, nameof(messageBus));
+        Contract.RequiresNonNull(ctx);
+        Contract.RequiresNonNull(cf);
+        Contract.RequiresNonNull(blockRepo);
+        Contract.RequiresNonNull(shareRepo);
+        Contract.RequiresNonNull(balanceRepo);
+        Contract.RequiresNonNull(messageBus);
 
         this.ctx = ctx;
         this.cf = cf;
@@ -260,20 +260,25 @@ public class PayoutManager : BackgroundService
             // Allow all pools to actually come up before the first payment processing run
             await Task.Delay(initialRunDelay, ct);
 
-            while(!ct.IsCancellationRequested)
+            using var timer = new PeriodicTimer(interval);
+
+            do
             {
                 try
                 {
                     await ProcessPoolsAsync(ct);
                 }
 
+                catch(OperationCanceledException)
+                {
+                    // ignored
+                }
+
                 catch(Exception ex)
                 {
                     logger.Error(ex);
                 }
-
-                await Task.Delay(interval, ct);
-            }
+            } while(await timer.WaitForNextTickAsync(ct));
 
             logger.Info(() => "Offline");
         }

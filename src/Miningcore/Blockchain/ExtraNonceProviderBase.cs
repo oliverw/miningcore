@@ -25,7 +25,7 @@ public class ExtraNonceProviderBase : IExtraNonceProvider
             id = instanceId.Value;
 
             if(id > idMax)
-                throw new PoolStartupException($"Provided instance id too large to fit into {IdBits} bits (limit {idMax})");
+                throw new PoolStartupException($"Provided instance id too large to fit into {IdBits} bits (limit {idMax})", poolId);
         }
 
         else

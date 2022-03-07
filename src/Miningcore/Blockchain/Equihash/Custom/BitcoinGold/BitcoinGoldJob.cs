@@ -140,12 +140,12 @@ public class BitcoinGoldJob : EquihashJob
         IDestination poolAddressDestination, Network network,
         EquihashSolver solver)
     {
-        Contract.RequiresNonNull(blockTemplate, nameof(blockTemplate));
-        Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
-        Contract.RequiresNonNull(clusterConfig, nameof(clusterConfig));
-        Contract.RequiresNonNull(clock, nameof(clock));
-        Contract.RequiresNonNull(poolAddressDestination, nameof(poolAddressDestination));
-        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(jobId), $"{nameof(jobId)} must not be empty");
+        Contract.RequiresNonNull(blockTemplate);
+        Contract.RequiresNonNull(poolConfig);
+        Contract.RequiresNonNull(clusterConfig);
+        Contract.RequiresNonNull(clock);
+        Contract.RequiresNonNull(poolAddressDestination);
+        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(jobId));
 
         this.clock = clock;
         this.poolAddressDestination = poolAddressDestination;

@@ -1,900 +1,962 @@
 ﻿{
-    "definitions": {
-        "AdminNotifications": {
-            "type": [
-                "object",
-                "null"
-            ],
-            "properties": {
-                "enabled": {
-                    "type": "boolean"
-                },
-                "emailAddress": {
-                    "type": [
-                        "string",
-                        "null"
-                    ]
-                },
-                "notifyBlockFound": {
-                    "type": "boolean"
-                },
-                "notifyPaymentSuccess": {
-                    "type": "boolean"
-                }
-            }
+  "definitions": {
+    "AdminNotifications": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "emailAddress": {
+          "type": [
+            "string",
+            "null"
+          ]
         },
-        "ApiConfig": {
-            "type": [
-                "object",
-                "null"
-            ],
-            "properties": {
-                "enabled": {
-                    "type": "boolean"
-                },
-                "listenAddress": {
-                    "type": [
-                        "string",
-                        "null"
-                    ]
-                },
-                "port": {
-                    "type": "integer"
-                },
-                "tls": {
-                    "$ref": "#/definitions/ApiTlsConfig"
-                },
-                "rateLimiting": {
-                    "$ref": "#/definitions/ApiRateLimitConfig"
-                },
-                "adminPort": {
-                    "type": [
-                        "integer",
-                        "null"
-                    ]
-                },
-                "metricsPort": {
-                    "type": [
-                        "integer",
-                        "null"
-                    ]
-                },
-                "adminIpWhitelist": {
-                    "type": [
-                        "array",
-                        "null"
-                    ],
-                    "items": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    }
-                },
-                "metricsIpWhitelist": {
-                    "type": [
-                        "array",
-                        "null"
-                    ],
-                    "items": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    }
-                }
-            }
+        "enabled": {
+          "type": "boolean"
         },
-        "ApiRateLimitConfig": {
-            "type": [
-                "object",
-                "null"
-            ],
-            "properties": {
-                "disabled": {
-                    "type": "boolean"
-                },
-                "rules": {
-                    "type": [
-                        "array",
-                        "null"
-                    ],
-                    "items": {
-                        "$ref": "#/definitions/RateLimitRule"
-                    }
-                },
-                "ipWhitelist": {
-                    "type": [
-                        "array",
-                        "null"
-                    ],
-                    "items": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    }
-                }
-            }
+        "notifyBlockFound": {
+          "type": "boolean"
         },
-        "ApiTlsConfig": {
-            "type": [
-                "object",
-                "null"
-            ],
-            "properties": {
-                "enabled": {
-                    "type": "boolean"
-                },
-                "tlsPfxFile": {
-                    "type": [
-                        "string",
-                        "null"
-                    ]
-                },
-                "tlsPfxPassword": {
-                    "type": [
-                        "string",
-                        "null"
-                    ]
-                }
-            }
-        },
-        "ClusterBanningConfig": {
-            "type": [
-                "object",
-                "null"
-            ],
-            "properties": {
-                "manager": {
-                    "type": [
-                        "string",
-                        "null"
-                    ],
-                    "enum": [
-                        null,
-                        "Integrated",
-                        "IpTables"
-                    ]
-                },
-                "banOnJunkReceive": {
-                    "type": [
-                        "boolean",
-                        "null"
-                    ]
-                },
-                "banOnInvalidShares": {
-                    "type": [
-                        "boolean",
-                        "null"
-                    ]
-                }
-            }
-        },
-        "ClusterLoggingConfig": {
-            "type": [
-                "object",
-                "null"
-            ],
-            "properties": {
-                "level": {
-                    "type": [
-                        "string",
-                        "null"
-                    ]
-                },
-                "enableConsoleLog": {
-                    "type": "boolean"
-                },
-                "enableConsoleColors": {
-                    "type": "boolean"
-                },
-                "logFile": {
-                    "type": [
-                        "string",
-                        "null"
-                    ]
-                },
-                "apiLogFile": {
-                    "type": [
-                        "string",
-                        "null"
-                    ]
-                },
-                "perPoolLogFile": {
-                    "type": "boolean"
-                },
-                "logBaseDirectory": {
-                    "type": [
-                        "string",
-                        "null"
-                    ]
-                }
-            }
-        },
-        "ClusterPaymentProcessingConfig": {
-            "type": [
-                "object",
-                "null"
-            ],
-            "properties": {
-                "enabled": {
-                    "type": "boolean"
-                },
-                "interval": {
-                    "type": "integer"
-                },
-                "coinbaseString": {
-                    "type": [
-                        "string",
-                        "null"
-                    ]
-                }
-            }
-        },
-        "DaemonEndpointConfig": {
-            "type": [
-                "object",
-                "null"
-            ],
-            "properties": {
-                "ssl": {
-                    "type": "boolean"
-                },
-                "http2": {
-                    "type": "boolean"
-                },
-                "category": {
-                    "type": [
-                        "string",
-                        "null"
-                    ]
-                },
-                "httpPath": {
-                    "type": [
-                        "string",
-                        "null"
-                    ]
-                },
-                "user": {
-                    "type": [
-                        "string",
-                        "null"
-                    ]
-                },
-                "password": {
-                    "type": [
-                        "string",
-                        "null"
-                    ]
-                },
-                "host": {
-                    "type": [
-                        "string",
-                        "null"
-                    ]
-                },
-                "port": {
-                    "type": "integer"
-                }
-            }
-        },
-        "DatabaseConfig": {
-            "type": [
-                "object",
-                "null"
-            ],
-            "properties": {
-                "database": {
-                    "type": [
-                        "string",
-                        "null"
-                    ]
-                },
-                "user": {
-                    "type": [
-                        "string",
-                        "null"
-                    ]
-                },
-                "password": {
-                    "type": [
-                        "string",
-                        "null"
-                    ]
-                },
-                "host": {
-                    "type": [
-                        "string",
-                        "null"
-                    ]
-                },
-                "port": {
-                    "type": "integer"
-                }
-            }
-        },
-        "EmailSenderConfig": {
-            "type": [
-                "object",
-                "null"
-            ],
-            "properties": {
-                "fromAddress": {
-                    "type": [
-                        "string",
-                        "null"
-                    ]
-                },
-                "fromName": {
-                    "type": [
-                        "string",
-                        "null"
-                    ]
-                },
-                "user": {
-                    "type": [
-                        "string",
-                        "null"
-                    ]
-                },
-                "password": {
-                    "type": [
-                        "string",
-                        "null"
-                    ]
-                },
-                "host": {
-                    "type": [
-                        "string",
-                        "null"
-                    ]
-                },
-                "port": {
-                    "type": "integer"
-                }
-            }
-        },
-        "NicehashClusterConfig": {
-            "type": [
-                "object",
-                "null"
-            ],
-            "properties": {
-                "enableAutoDiff": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "NotificationsConfig": {
-            "type": [
-                "object",
-                "null"
-            ],
-            "properties": {
-                "enabled": {
-                    "type": "boolean"
-                },
-                "email": {
-                    "$ref": "#/definitions/EmailSenderConfig"
-                },
-                "pushover": {
-                    "$ref": "#/definitions/PushoverConfig"
-                },
-                "admin": {
-                    "$ref": "#/definitions/AdminNotifications"
-                }
-            }
-        },
-        "PersistenceConfig": {
-            "type": [
-                "object",
-                "null"
-            ],
-            "properties": {
-                "postgres": {
-                    "$ref": "#/definitions/DatabaseConfig"
-                }
-            }
-        },
-        "PoolConfig": {
-            "type": [
-                "object",
-                "null"
-            ],
-            "properties": {
-                "id": {
-                    "type": "string"
-                },
-                "coin": {
-                    "type": "string"
-                },
-                "enabled": {
-                    "type": "boolean"
-                },
-                "ports": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "$ref": "#/definitions/PoolEndpoint"
-                    }
-                },
-                "daemons": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/DaemonEndpointConfig"
-                    }
-                },
-                "paymentProcessing": {
-                    "$ref": "#/definitions/PoolPaymentProcessingConfig"
-                },
-                "banning": {
-                    "$ref": "#/definitions/PoolShareBasedBanningConfig"
-                },
-                "rewardRecipients": {
-                    "type": [
-                        "array",
-                        "null"
-                    ],
-                    "items": {
-                        "$ref": "#/definitions/RewardRecipient"
-                    }
-                },
-                "address": {
-                    "type": [
-                        "string",
-                        "null"
-                    ]
-                },
-                "pubKey": {
-                    "type": [
-                        "string",
-                        "null"
-                    ]
-                },
-                "clientConnectionTimeout": {
-                    "type": "integer"
-                },
-                "jobRebroadcastTimeout": {
-                    "type": "integer"
-                },
-                "blockRefreshInterval": {
-                    "type": "integer"
-                },
-                "enableInternalStratum": {
-                    "type": [
-                        "boolean",
-                        "null"
-                    ]
-                }
-            },
-            "required": [
-                "id",
-                "coin",
-                "ports",
-                "daemons"
-            ]
-        },
-        "PoolEndpoint": {
-            "type": [
-                "object",
-                "null"
-            ],
-            "properties": {
-                "listenAddress": {
-                    "type": [
-                        "string",
-                        "null"
-                    ]
-                },
-                "name": {
-                    "type": [
-                        "string",
-                        "null"
-                    ]
-                },
-                "difficulty": {
-                    "type": "number"
-                },
-                "tcpProxyProtocol": {
-                    "$ref": "#/definitions/TcpProxyProtocolConfig"
-                },
-                "varDiff": {
-                    "$ref": "#/definitions/VarDiffConfig"
-                },
-                "tls": {
-                    "type": "boolean"
-                },
-                "tlsAuto": {
-                    "type": "boolean"
-                },
-                "tlsPfxFile": {
-                    "type": [
-                        "string",
-                        "null"
-                    ]
-                },
-                "tlsPfxPassword": {
-                    "type": [
-                        "string",
-                        "null"
-                    ]
-                }
-            }
-        },
-        "PoolPaymentProcessingConfig": {
-            "type": [
-                "object",
-                "null"
-            ],
-            "properties": {
-                "enabled": {
-                    "type": "boolean"
-                },
-                "minimumPayment": {
-                    "type": "number"
-                },
-                "payoutScheme": {
-                    "type": "string",
-                    "enum": [
-                        "PPLNS",
-                        "PROP",
-                        "SOLO",
-                        "PPS",
-                        "PPBS"
-                    ]
-                },
-                "payoutSchemeConfig": {}
-            }
-        },
-        "PoolShareBasedBanningConfig": {
-            "type": [
-                "object",
-                "null"
-            ],
-            "properties": {
-                "enabled": {
-                    "type": "boolean"
-                },
-                "checkThreshold": {
-                    "type": "integer"
-                },
-                "invalidPercent": {
-                    "type": "number"
-                },
-                "time": {
-                    "type": "integer"
-                }
-            }
-        },
-        "PushoverConfig": {
-            "type": [
-                "object",
-                "null"
-            ],
-            "properties": {
-                "enabled": {
-                    "type": "boolean"
-                },
-                "user": {
-                    "type": [
-                        "string",
-                        "null"
-                    ]
-                },
-                "token": {
-                    "type": [
-                        "string",
-                        "null"
-                    ]
-                }
-            }
-        },
-        "QuotaExceededResponse": {
-            "type": [
-                "object",
-                "null"
-            ],
-            "properties": {
-                "contentType": {
-                    "type": [
-                        "string",
-                        "null"
-                    ]
-                },
-                "content": {
-                    "type": [
-                        "string",
-                        "null"
-                    ]
-                },
-                "statusCode": {
-                    "type": [
-                        "integer",
-                        "null"
-                    ]
-                }
-            }
-        },
-        "RateLimitRule": {
-            "type": [
-                "object",
-                "null"
-            ],
-            "properties": {
-                "endpoint": {
-                    "type": [
-                        "string",
-                        "null"
-                    ]
-                },
-                "period": {
-                    "type": [
-                        "string",
-                        "null"
-                    ]
-                },
-                "periodTimespan": {
-                    "type": [
-                        "string",
-                        "null"
-                    ]
-                },
-                "limit": {
-                    "type": "number"
-                },
-                "quotaExceededResponse": {
-                    "$ref": "#/definitions/QuotaExceededResponse"
-                },
-                "monitorMode": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "RewardRecipient": {
-            "type": [
-                "object",
-                "null"
-            ],
-            "properties": {
-                "address": {
-                    "type": [
-                        "string",
-                        "null"
-                    ]
-                },
-                "percentage": {
-                    "type": "number"
-                },
-                "type": {
-                    "type": [
-                        "string",
-                        "null"
-                    ]
-                }
-            }
-        },
-        "ShareRelayConfig": {
-            "type": [
-                "object",
-                "null"
-            ],
-            "properties": {
-                "publishUrl": {
-                    "type": [
-                        "string",
-                        "null"
-                    ]
-                },
-                "connect": {
-                    "type": "boolean"
-                },
-                "sharedEncryptionKey": {
-                    "type": [
-                        "string",
-                        "null"
-                    ]
-                }
-            }
-        },
-        "ShareRelayEndpointConfig": {
-            "type": [
-                "object",
-                "null"
-            ],
-            "properties": {
-                "url": {
-                    "type": [
-                        "string",
-                        "null"
-                    ]
-                },
-                "sharedEncryptionKey": {
-                    "type": [
-                        "string",
-                        "null"
-                    ]
-                }
-            }
-        },
-        "Statistics": {
-            "type": [
-                "object",
-                "null"
-            ],
-            "properties": {
-                "updateInterval": {
-                    "type": [
-                        "integer",
-                        "null"
-                    ]
-                },
-                "hashrateCalculationWindow": {
-                    "type": [
-                        "integer",
-                        "null"
-                    ]
-                },
-                "gcInterval": {
-                    "type": [
-                        "integer",
-                        "null"
-                    ]
-                },
-                "cleanupDays": {
-                    "type": [
-                        "integer",
-                        "null"
-                    ]
-                }
-            }
-        },
-        "TcpProxyProtocolConfig": {
-            "type": [
-                "object",
-                "null"
-            ],
-            "properties": {
-                "enable": {
-                    "type": "boolean"
-                },
-                "mandatory": {
-                    "type": "boolean"
-                },
-                "proxyAddresses": {
-                    "type": [
-                        "array",
-                        "null"
-                    ],
-                    "items": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    }
-                }
-            }
-        },
-        "VarDiffConfig": {
-            "type": [
-                "object",
-                "null"
-            ],
-            "properties": {
-                "minDiff": {
-                    "type": "number"
-                },
-                "maxDiff": {
-                    "type": [
-                        "number",
-                        "null"
-                    ]
-                },
-                "maxDelta": {
-                    "type": [
-                        "number",
-                        "null"
-                    ]
-                },
-                "targetTime": {
-                    "type": "number"
-                },
-                "retargetTime": {
-                    "type": "number"
-                },
-                "variancePercent": {
-                    "type": "number"
-                }
-            }
+        "notifyPaymentSuccess": {
+          "type": "boolean"
         }
+      }
     },
-    "type": "object",
-    "properties": {
-        "instanceId": {
+    "ApiConfig": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "adminIpWhitelist": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
             "type": [
-                "integer",
-                "null"
+              "string",
+              "null"
             ]
+          }
         },
-        "coinTemplates": {
-            "type": [
-                "array",
-                "null"
-            ],
-            "items": {
-                "type": [
-                    "string",
-                    "null"
-                ]
-            }
+        "adminPort": {
+          "type": [
+            "integer",
+            "null"
+          ]
         },
-        "clusterName": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "legacyNullValueHandling": {
+          "type": "boolean"
+        },
+        "listenAddress": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "metricsIpWhitelist": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
             "type": [
-                "string",
-                "null"
+              "string",
+              "null"
             ]
+          }
         },
-        "logging": {
-            "$ref": "#/definitions/ClusterLoggingConfig"
+        "metricsPort": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "port": {
+          "type": "integer"
+        },
+        "rateLimiting": {
+          "$ref": "#/definitions/ApiRateLimitConfig"
+        },
+        "tls": {
+          "$ref": "#/definitions/ApiTlsConfig"
+        }
+      }
+    },
+    "ApiRateLimitConfig": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "disabled": {
+          "type": "boolean"
+        },
+        "ipWhitelist": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "rules": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/definitions/RateLimitRule"
+          }
+        }
+      }
+    },
+    "ApiTlsConfig": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "tlsPfxFile": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "tlsPfxPassword": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "ClusterBanningConfig": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "banOnInvalidShares": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "banOnJunkReceive": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "manager": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            null,
+            "Integrated",
+            "IpTables"
+          ]
+        }
+      }
+    },
+    "ClusterLoggingConfig": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "apiLogFile": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "enableConsoleColors": {
+          "type": "boolean"
+        },
+        "enableConsoleLog": {
+          "type": "boolean"
+        },
+        "level": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "logBaseDirectory": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "logFile": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "perPoolLogFile": {
+          "type": "boolean"
+        }
+      }
+    },
+    "ClusterMemoryConfig": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "rmsmMaximumFreeLargePoolBytes": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "rmsmMaximumFreeSmallPoolBytes": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      }
+    },
+    "ClusterPaymentProcessingConfig": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "coinbaseString": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "interval": {
+          "type": "integer"
+        }
+      }
+    },
+    "DaemonEndpointConfig": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "category": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "host": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "http2": {
+          "type": "boolean"
+        },
+        "httpPath": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "password": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "port": {
+          "type": "integer"
+        },
+        "ssl": {
+          "type": "boolean"
+        },
+        "user": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "EmailSenderConfig": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "fromAddress": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "fromName": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "host": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "password": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "port": {
+          "type": "integer"
+        },
+        "user": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "NicehashClusterConfig": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "enableAutoDiff": {
+          "type": "boolean"
+        }
+      }
+    },
+    "NotificationsConfig": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "admin": {
+          "$ref": "#/definitions/AdminNotifications"
+        },
+        "email": {
+          "$ref": "#/definitions/EmailSenderConfig"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "pushover": {
+          "$ref": "#/definitions/PushoverConfig"
+        }
+      }
+    },
+    "PersistenceConfig": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "postgres": {
+          "$ref": "#/definitions/PostgresConfig"
+        }
+      }
+    },
+    "PoolConfig": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "address": {
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "banning": {
-            "$ref": "#/definitions/ClusterBanningConfig"
+          "$ref": "#/definitions/PoolShareBasedBanningConfig"
         },
-        "persistence": {
-            "$ref": "#/definitions/PersistenceConfig"
+        "blockRefreshInterval": {
+          "type": "integer"
+        },
+        "clientConnectionTimeout": {
+          "type": "integer"
+        },
+        "coin": {
+          "type": "string"
+        },
+        "daemons": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/DaemonEndpointConfig"
+          }
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "enableInternalStratum": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "id": {
+          "type": "string"
+        },
+        "jobRebroadcastTimeout": {
+          "type": "integer"
         },
         "paymentProcessing": {
-            "$ref": "#/definitions/ClusterPaymentProcessingConfig"
+          "$ref": "#/definitions/PoolPaymentProcessingConfig"
         },
-        "notifications": {
-            "$ref": "#/definitions/NotificationsConfig"
+        "ports": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/PoolEndpoint"
+          }
         },
-        "api": {
-            "$ref": "#/definitions/ApiConfig"
+        "pubKey": {
+          "type": [
+            "string",
+            "null"
+          ]
         },
-        "statistics": {
-            "$ref": "#/definitions/Statistics"
+        "rewardRecipients": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/definitions/RewardRecipient"
+          }
         },
-        "nicehash": {
-            "$ref": "#/definitions/NicehashClusterConfig"
-        },
-        "shareRelay": {
-            "$ref": "#/definitions/ShareRelayConfig"
-        },
-        "shareRelays": {
-            "type": [
-                "array",
-                "null"
-            ],
-            "items": {
-                "$ref": "#/definitions/ShareRelayEndpointConfig"
-            }
-        },
-        "equihashMaxThreads": {
-            "type": [
-                "integer",
-                "null"
-            ]
-        },
-        "cryptonightMaxThreads": {
-            "type": [
-                "integer",
-                "null"
-            ]
-        },
-        "shareRecoveryFile": {
-            "type": [
-                "string",
-                "null"
-            ]
-        },
-        "pools": {
-            "type": "array",
-            "items": {
-                "$ref": "#/definitions/PoolConfig"
-            }
+        "vardiffIdleSweepInterval": {
+          "type": [
+            "integer",
+            "null"
+          ]
         }
+      },
+      "required": [
+        "coin",
+        "daemons",
+        "id",
+        "ports"
+      ]
     },
-    "required": [
-        "pools"
-    ]
+    "PoolEndpoint": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "difficulty": {
+          "type": "number"
+        },
+        "listenAddress": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "tcpProxyProtocol": {
+          "$ref": "#/definitions/TcpProxyProtocolConfig"
+        },
+        "tls": {
+          "type": "boolean"
+        },
+        "tlsAuto": {
+          "type": "boolean"
+        },
+        "tlsPfxFile": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "tlsPfxPassword": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "varDiff": {
+          "$ref": "#/definitions/VarDiffConfig"
+        }
+      }
+    },
+    "PoolPaymentProcessingConfig": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "minimumPayment": {
+          "type": "number"
+        },
+        "payoutScheme": {
+          "type": "string",
+          "enum": [
+            "PPLNS",
+            "PROP",
+            "SOLO",
+            "PPS",
+            "PPBS"
+          ]
+        },
+        "payoutSchemeConfig": {}
+      }
+    },
+    "PoolShareBasedBanningConfig": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "checkThreshold": {
+          "type": "integer"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "invalidPercent": {
+          "type": "number"
+        },
+        "time": {
+          "type": "integer"
+        }
+      }
+    },
+    "PostgresConfig": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "commandTimeout": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "database": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "host": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "password": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "port": {
+          "type": "integer"
+        },
+        "tls": {
+          "type": "boolean"
+        },
+        "tlsCert": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "tlsKey": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "tlsNoValidate": {
+          "type": "boolean"
+        },
+        "tlsPassword": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "user": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "PushoverConfig": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "token": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "user": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "QuotaExceededResponse": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "content": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "contentType": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "statusCode": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      }
+    },
+    "RateLimitRule": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "endpoint": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "limit": {
+          "type": "number"
+        },
+        "monitorMode": {
+          "type": "boolean"
+        },
+        "period": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "periodTimespan": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "quotaExceededResponse": {
+          "$ref": "#/definitions/QuotaExceededResponse"
+        }
+      }
+    },
+    "RewardRecipient": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "address": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "percentage": {
+          "type": "number"
+        },
+        "type": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "ShareRelayConfig": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "connect": {
+          "type": "boolean"
+        },
+        "publishUrl": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sharedEncryptionKey": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "ShareRelayEndpointConfig": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "sharedEncryptionKey": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "url": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "Statistics": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "cleanupDays": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "gcInterval": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "hashrateCalculationWindow": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "updateInterval": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      }
+    },
+    "TcpProxyProtocolConfig": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "enable": {
+          "type": "boolean"
+        },
+        "mandatory": {
+          "type": "boolean"
+        },
+        "proxyAddresses": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "VarDiffConfig": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "maxDelta": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "maxDiff": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "minDiff": {
+          "type": "number"
+        },
+        "retargetTime": {
+          "type": "number"
+        },
+        "targetTime": {
+          "type": "number"
+        },
+        "variancePercent": {
+          "type": "number"
+        }
+      }
+    }
+  },
+  "type": "object",
+  "properties": {
+    "api": {
+      "$ref": "#/definitions/ApiConfig"
+    },
+    "banning": {
+      "$ref": "#/definitions/ClusterBanningConfig"
+    },
+    "clusterName": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "coinTemplates": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": [
+          "string",
+          "null"
+        ]
+      }
+    },
+    "cryptonightMaxThreads": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "equihashMaxThreads": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "instanceId": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "logging": {
+      "$ref": "#/definitions/ClusterLoggingConfig"
+    },
+    "memory": {
+      "$ref": "#/definitions/ClusterMemoryConfig"
+    },
+    "nicehash": {
+      "$ref": "#/definitions/NicehashClusterConfig"
+    },
+    "notifications": {
+      "$ref": "#/definitions/NotificationsConfig"
+    },
+    "paymentProcessing": {
+      "$ref": "#/definitions/ClusterPaymentProcessingConfig"
+    },
+    "persistence": {
+      "$ref": "#/definitions/PersistenceConfig"
+    },
+    "pools": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/PoolConfig"
+      }
+    },
+    "shareRecoveryFile": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "shareRelay": {
+      "$ref": "#/definitions/ShareRelayConfig"
+    },
+    "shareRelays": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "$ref": "#/definitions/ShareRelayEndpointConfig"
+      }
+    },
+    "statistics": {
+      "$ref": "#/definitions/Statistics"
+    }
+  },
+  "required": [
+    "pools"
+  ]
 }

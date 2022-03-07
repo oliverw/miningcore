@@ -19,6 +19,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.IO;
 using Miningcore.Api;
 using Miningcore.Api.Controllers;
 using Miningcore.Api.Middlewares;
@@ -54,6 +55,7 @@ using Prometheus;
 using WebSocketManager;
 using ILogger = NLog.ILogger;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
+using static Miningcore.Util.ActionUtils;
 
 // ReSharper disable AssignNullToNotNullAttribute
 // ReSharper disable PossibleNullReferenceException
@@ -228,8 +230,8 @@ public class Program : BackgroundService
                         app.UseMvc();
                     });
 
-                    logger.Info(() => $"Prometheus Metrics {address}:{port}/metrics");
-                    logger.Info(() => $"WebSocket notifications streaming {address}:{port}/notifications");
+                    logger.Info(() => $"Prometheus Metrics API listening on http{(apiTlsEnable ? "s" : "")}://{address}:{port}/metrics");
+                    logger.Info(() => $"WebSocket Events streaming on ws{(apiTlsEnable ? "s" : "")}://{address}:{port}/notifications");
                 });
             }
 
@@ -314,6 +316,7 @@ public class Program : BackgroundService
 
     private static IHost host;
     private readonly IComponentContext container;
+    private readonly IHostApplicationLifetime hal;
     private static ILogger logger;
     private static CommandOption versionOption;
     private static CommandOption configFileOption;
@@ -325,9 +328,10 @@ public class Program : BackgroundService
     private static readonly ConcurrentDictionary<string, IMiningPool> pools = new();
     private static readonly AdminGcStats gcStats = new();
 
-    public Program(IComponentContext container)
+    public Program(IComponentContext container, IHostApplicationLifetime hal)
     {
         this.container = container;
+        this.hal = hal;
     }
 
     private static void ConfigureAutofac(ContainerBuilder builder)
@@ -358,33 +362,45 @@ public class Program : BackgroundService
         var coinTemplates = LoadCoinTemplates();
         logger.Info($"{coinTemplates.Keys.Count} coins loaded from '{string.Join(", ", clusterConfig.CoinTemplates)}'");
 
-        await Task.WhenAll(clusterConfig.Pools
+        await Guard(()=> Task.WhenAll(clusterConfig.Pools
             .Where(config => config.Enabled)
-            .Select(config => RunPool(config, coinTemplates, ct)));
+            .Select(config => RunPool(config, coinTemplates, ct))),
+            ex =>
+            {
+                if(ex is PoolStartupException pse)
+                {
+                    var _logger = pse.PoolId != null ? LogUtil.GetPoolScopedLogger(GetType(), pse.PoolId) : logger;
+                    _logger.Error(() => $"{pse.Message}");
+
+                    logger.Error(() => "Cluster cannot start. Good Bye!");
+
+                    hal.StopApplication();
+                }
+
+                else
+                    throw ex;
+            });
     }
 
-    private Task RunPool(PoolConfig poolConfig, Dictionary<string, CoinTemplate> coinTemplates, CancellationToken ct)
+    private async Task RunPool(PoolConfig poolConfig, Dictionary<string, CoinTemplate> coinTemplates, CancellationToken ct)
     {
-        return Task.Run(async () =>
-        {
-            // Lookup coin
-            if(!coinTemplates.TryGetValue(poolConfig.Coin, out var template))
-                throw new PoolStartupException($"Pool {poolConfig.Id} references undefined coin '{poolConfig.Coin}'");
+        // Lookup coin
+        if(!coinTemplates.TryGetValue(poolConfig.Coin, out var template))
+            throw new PoolStartupException($"Pool {poolConfig.Id} references undefined coin '{poolConfig.Coin}'", poolConfig.Id);
 
-            poolConfig.Template = template;
+        poolConfig.Template = template;
 
-            // resolve implementation
-            var poolImpl = container.Resolve<IEnumerable<Meta<Lazy<IMiningPool, CoinFamilyAttribute>>>>()
-                .First(x => x.Value.Metadata.SupportedFamilies.Contains(poolConfig.Template.Family)).Value;
+        // resolve implementation
+        var poolImpl = container.Resolve<IEnumerable<Meta<Lazy<IMiningPool, CoinFamilyAttribute>>>>()
+            .First(x => x.Value.Metadata.SupportedFamilies.Contains(poolConfig.Template.Family)).Value;
 
-            // configure
-            var pool = poolImpl.Value;
-            pool.Configure(poolConfig, clusterConfig);
-            pools[poolConfig.Id] = pool;
+        // configure
+        var pool = poolImpl.Value;
+        pool.Configure(poolConfig, clusterConfig);
+        pools[poolConfig.Id] = pool;
 
-            // go
-            await pool.RunAsync(ct);
-        }, ct);
+        // go
+        await pool.RunAsync(ct);
     }
 
     private Task RecoverSharesAsync(string recoveryFilename)
@@ -632,6 +648,7 @@ public class Program : BackgroundService
             loggingConfig.AddRule(level, NLog.LogLevel.Info, nullTarget, "Microsoft.AspNetCore.Mvc.Internal.*", true);
             loggingConfig.AddRule(level, NLog.LogLevel.Info, nullTarget, "Microsoft.AspNetCore.Mvc.Infrastructure.*", true);
             loggingConfig.AddRule(level, NLog.LogLevel.Warn, nullTarget, "System.Net.Http.HttpClient.*", true);
+            loggingConfig.AddRule(level, NLog.LogLevel.Fatal, nullTarget, "Microsoft.Extensions.Hosting.Internal.*", true);
 
             // Api Log
             if(!string.IsNullOrEmpty(config.ApiLogFile) && !isShareRecoveryMode)
@@ -746,6 +763,11 @@ public class Program : BackgroundService
         ZcashNetworks.Instance.EnsureRegistered();
 
         var messageBus = services.GetService<IMessageBus>();
+        var rmsm = services.GetService<RecyclableMemoryStreamManager>();
+
+        // Configure RecyclableMemoryStream
+        rmsm.MaximumFreeSmallPoolBytes = clusterConfig.Memory?.RmsmMaximumFreeSmallPoolBytes ?? 0x100000;   // 1 MB
+        rmsm.MaximumFreeLargePoolBytes = clusterConfig.Memory?.RmsmMaximumFreeLargePoolBytes ?? 0x800000;   // 8 MB
 
         // Configure Equihash
         EquihashSolver.messageBus = messageBus;
@@ -759,7 +781,7 @@ public class Program : BackgroundService
 
         // Configure Cryptonight
         Cryptonight.messageBus = messageBus;
-        Cryptonight.InitContexts(clusterConfig.CryptonightMaxThreads ?? 1);
+        Cryptonight.InitContexts(GetDefaultConcurrency(clusterConfig.CryptonightMaxThreads));
 
         // Configure RandomX
         RandomX.messageBus = messageBus;
@@ -955,6 +977,18 @@ public class Program : BackgroundService
         options.GeneralRules = rules;
 
         logger.Info(() => $"API access limited to {(string.Join(", ", rules.Select(x => $"{x.Limit} requests per {x.Period}")))}, except from {string.Join(", ", options.IpWhitelist)}");
+    }
+
+    private static int GetDefaultConcurrency(int? value)
+    {
+        value = value switch
+        {
+            null => 1,
+            -1 => Environment.ProcessorCount,
+            _ => value
+        };
+
+        return value.Value;
     }
 
     private static void OnAppDomainUnhandledException(object sender, UnhandledExceptionEventArgs e)

@@ -7,8 +7,8 @@ public static class IpAddressExtensions
 {
     public static bool IsEqual(this IPAddress address, IPAddress other)
     {
-        Contract.RequiresNonNull(address, nameof(address));
-        Contract.RequiresNonNull(other, nameof(other));
+        Contract.RequiresNonNull(address);
+        Contract.RequiresNonNull(other);
 
         if(address.Equals(other))
             return true;

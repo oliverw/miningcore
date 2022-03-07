@@ -34,13 +34,13 @@ public class StatsRecorder : BackgroundService
         IShareRepository shareRepo,
         IStatsRepository statsRepo)
     {
-        Contract.RequiresNonNull(ctx, nameof(ctx));
-        Contract.RequiresNonNull(clock, nameof(clock));
-        Contract.RequiresNonNull(cf, nameof(cf));
-        Contract.RequiresNonNull(messageBus, nameof(messageBus));
-        Contract.RequiresNonNull(mapper, nameof(mapper));
-        Contract.RequiresNonNull(shareRepo, nameof(shareRepo));
-        Contract.RequiresNonNull(statsRepo, nameof(statsRepo));
+        Contract.RequiresNonNull(ctx);
+        Contract.RequiresNonNull(clock);
+        Contract.RequiresNonNull(cf);
+        Contract.RequiresNonNull(messageBus);
+        Contract.RequiresNonNull(mapper);
+        Contract.RequiresNonNull(shareRepo);
+        Contract.RequiresNonNull(statsRepo);
 
         this.clock = clock;
         this.cf = cf;
@@ -308,38 +308,48 @@ public class StatsRecorder : BackgroundService
 
     private async Task UpdateAsync(CancellationToken ct)
     {
-        while(!ct.IsCancellationRequested)
+        using var timer = new PeriodicTimer(updateInterval);
+
+        do
         {
             try
             {
                 await UpdatePoolHashratesAsync(ct);
             }
 
+            catch(OperationCanceledException)
+            {
+                // ignored
+            }
+
             catch(Exception ex)
             {
                 logger.Error(ex);
             }
-
-            await Task.Delay(updateInterval, ct);
-        }
+        } while(await timer.WaitForNextTickAsync(ct));
     }
 
     private async Task GcAsync(CancellationToken ct)
     {
-        while(!ct.IsCancellationRequested)
+        using var timer = new PeriodicTimer(gcInterval);
+
+        do
         {
             try
             {
                 await StatsGcAsync(ct);
             }
 
+            catch(OperationCanceledException)
+            {
+                // ignored
+            }
+
             catch(Exception ex)
             {
                 logger.Error(ex);
             }
-
-            await Task.Delay(gcInterval, ct);
-        }
+        } while(await timer.WaitForNextTickAsync(ct));
     }
 
     private void BuildFaultHandlingPolicy()

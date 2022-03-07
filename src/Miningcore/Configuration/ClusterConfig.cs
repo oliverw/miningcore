@@ -867,12 +867,28 @@ public class Statistics
     public int? CleanupDays { get; set; }
 
 }
+
 public class NicehashClusterConfig
 {
     /// <summary>
     /// If set to true, the Nicehash service will be started
     /// </summary>
     public bool EnableAutoDiff { get; set; }
+}
+
+public class ClusterMemoryConfig
+{
+    /// <summary>
+    /// RecyclableMemoryStream MaximumFreeSmallPoolBytes
+    /// WARNING: Don't use this if you don't know what you are doing
+    /// </summary>
+    public int? RmsmMaximumFreeSmallPoolBytes { get; set; }
+
+    /// <summary>
+    /// RecyclableMemoryStream MaximumFreeLargePoolBytes
+    /// WARNING: Don't use this if you don't know what you are doing
+    /// </summary>
+    public int? RmsmMaximumFreeLargePoolBytes { get; set; }
 }
 
 public partial class PoolConfig
@@ -912,6 +928,11 @@ public partial class PoolConfig
     public bool? EnableInternalStratum { get; set; }
 
     /// <summary>
+    /// Interval in seconds for performing sweeps over connected miners operating on a too high diff to submit shares and adjust varDiff down
+    /// </summary>
+    public int? VardiffIdleSweepInterval { get; set; }
+
+    /// <summary>
     /// Arbitrary extension data
     /// </summary>
     [JsonExtensionData]
@@ -939,6 +960,7 @@ public partial class ClusterConfig
     public ApiConfig Api { get; set; }
     public Statistics Statistics { get; set; }
     public NicehashClusterConfig Nicehash { get; set; }
+    public ClusterMemoryConfig Memory { get; set; }
 
     /// <summary>
     /// If this is enabled, shares are not written to the database

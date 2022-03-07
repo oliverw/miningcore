@@ -155,7 +155,7 @@ public class EthereumPool : PoolBase
 
             banManager.Ban(connection.RemoteEndpoint.Address, loginFailureBanTimeout);
 
-            CloseConnection(connection);
+            Disconnect(connection);
         }
     }
 
@@ -218,7 +218,8 @@ public class EthereumPool : PoolBase
 
             // update client stats
             context.Stats.ValidShares++;
-            await UpdateVarDiffAsync(connection);
+
+            await UpdateVarDiffAsync(connection, false, ct);
         }
 
         catch(StratumException ex)
@@ -327,7 +328,7 @@ public class EthereumPool : PoolBase
 
             banManager.Ban(connection.RemoteEndpoint.Address, loginFailureBanTimeout);
 
-            CloseConnection(connection);
+            Disconnect(connection);
         }
     }
 
@@ -410,18 +411,15 @@ public class EthereumPool : PoolBase
         return context.Worker;
     }
 
-    protected virtual Task OnNewJobAsync()
+    protected virtual async Task OnNewJobAsync()
     {
         var currentJobParams = manager.GetJobParamsForStratum();
 
-        logger.Info(() => "Broadcasting job");
+        logger.Info(() => $"Broadcasting job {currentJobParams[0]}");
 
-        return Guard(Task.WhenAll(TaskForEach(async connection =>
+        await Guard(() => ForEachMinerAsync(async (connection, ct) =>
         {
             var context = connection.ContextAs<EthereumWorkerContext>();
-
-            if(!context.IsSubscribed || !context.IsAuthorized || CloseIfDead(connection, context))
-                return;
 
             switch(context.ProtocolVersion)
             {
@@ -433,7 +431,7 @@ public class EthereumPool : PoolBase
                     await SendJob(context, connection, currentJobParams);
                     break;
             }
-        })), ex=> logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}"));
+        }));
     }
 
     protected void EnsureProtocolVersion(EthereumWorkerContext context, int version)
@@ -523,11 +521,10 @@ public class EthereumPool : PoolBase
 
     public override double ShareMultiplier => 1;
 
-    protected override async Task OnVarDiffUpdateAsync(StratumConnection connection, double newDiff)
+    protected override async Task OnVarDiffUpdateAsync(StratumConnection connection, double newDiff, CancellationToken ct)
     {
-        await base.OnVarDiffUpdateAsync(connection, newDiff);
+        await base.OnVarDiffUpdateAsync(connection, newDiff, ct);
 
-        // apply immediately and notify client
         var context = connection.ContextAs<EthereumWorkerContext>();
 
         if(context.ApplyPendingDifficulty())

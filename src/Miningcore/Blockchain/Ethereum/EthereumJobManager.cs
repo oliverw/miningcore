@@ -37,10 +37,10 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
         IExtraNonceProvider extraNonceProvider) :
         base(ctx, messageBus)
     {
-        Contract.RequiresNonNull(ctx, nameof(ctx));
-        Contract.RequiresNonNull(clock, nameof(clock));
-        Contract.RequiresNonNull(messageBus, nameof(messageBus));
-        Contract.RequiresNonNull(extraNonceProvider, nameof(extraNonceProvider));
+        Contract.RequiresNonNull(ctx);
+        Contract.RequiresNonNull(clock);
+        Contract.RequiresNonNull(messageBus);
+        Contract.RequiresNonNull(extraNonceProvider);
 
         this.clock = clock;
         this.extraNonceProvider = extraNonceProvider;
@@ -53,7 +53,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
     private EthashFull ethash;
     private readonly IMasterClock clock;
     private readonly IExtraNonceProvider extraNonceProvider;
-    private const int MaxBlockBacklog = 8;
+    private const int MaxBlockBacklog = 6;
     protected readonly Dictionary<string, EthereumJob> validJobs = new();
     private EthereumPoolConfigExtra extraPoolConfig;
 
@@ -67,6 +67,11 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
                 return false;
 
             return UpdateJob(bt, via);
+        }
+
+        catch(OperationCanceledException)
+        {
+            // ignored
         }
 
         catch(Exception ex)
@@ -125,6 +130,11 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
             }
 
             return isNew;
+        }
+
+        catch(OperationCanceledException)
+        {
+            // ignored
         }
 
         catch(Exception ex)
@@ -368,8 +378,8 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
 
     public async Task<Share> SubmitShareV1Async(StratumConnection worker, string[] request, string workerName, CancellationToken ct)
     {
-        Contract.RequiresNonNull(worker, nameof(worker));
-        Contract.RequiresNonNull(request, nameof(request));
+        Contract.RequiresNonNull(worker);
+        Contract.RequiresNonNull(request);
 
         var context = worker.ContextAs<EthereumWorkerContext>();
         var nonce = request[0];
@@ -391,8 +401,8 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
 
     public async Task<Share> SubmitShareV2Async(StratumConnection worker, string[] request, CancellationToken ct)
     {
-        Contract.RequiresNonNull(worker, nameof(worker));
-        Contract.RequiresNonNull(request, nameof(request));
+        Contract.RequiresNonNull(worker);
+        Contract.RequiresNonNull(request);
 
         var context = worker.ContextAs<EthereumWorkerContext>();
         var jobId = request[1];
@@ -473,9 +483,11 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
 
     protected override async Task EnsureDaemonsSynchedAsync(CancellationToken ct)
     {
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(5));
+
         var syncPendingNotificationShown = false;
 
-        while(true)
+        do
         {
             var syncStateResponse = await rpc.ExecuteAsync<object>(logger, EC.GetSyncState, ct);
 
@@ -494,10 +506,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
             }
 
             await ShowDaemonSyncProgressAsync(ct);
-
-            // delay retry by 5s
-            await Task.Delay(5000, ct);
-        }
+        } while(await timer.WaitForNextTickAsync(ct));
     }
 
     protected override async Task PostStartInitAsync(CancellationToken ct)
@@ -517,7 +526,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
                 .ToArray();
 
             if(errors.Any())
-                throw new PoolStartupException($"Init RPC failed: {string.Join(", ", errors.Select(y => y.Error.Message))}");
+                throw new PoolStartupException($"Init RPC failed: {string.Join(", ", errors.Select(y => y.Error.Message))}", poolConfig.Id);
         }
 
         // extract results
@@ -545,7 +554,9 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
         if(poolConfig.EnableInternalStratum == true)
         {
             // make sure we have a current DAG
-            while(true)
+            using var timer = new PeriodicTimer(TimeSpan.FromSeconds(5));
+
+            do
             {
                 var blockTemplate = await GetBlockTemplateAsync(ct);
 
@@ -560,8 +571,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
                 }
 
                 logger.Info(() => "Waiting for first valid block template");
-                await Task.Delay(TimeSpan.FromSeconds(5), ct);
-            }
+            } while(await timer.WaitForNextTickAsync(ct));
         }
 
         await SetupJobUpdates(ct);
@@ -624,7 +634,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
                     goto retry;
                 }
 
-                throw new PoolStartupException($"Unable to subscribe to geth websocket '{wsSubscription}': {subcriptionResponse.Error.Message} [{subcriptionResponse.Error.Code}]");
+                throw new PoolStartupException($"Unable to subscribe to geth websocket '{wsSubscription}': {subcriptionResponse.Error.Message} [{subcriptionResponse.Error.Code}]", poolConfig.Id);
             }
 
             var websocketNotify = getWorkObs.Where(x => x != null)

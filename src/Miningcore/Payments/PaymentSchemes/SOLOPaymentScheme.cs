@@ -17,8 +17,8 @@ public class SOLOPaymentScheme : IPayoutScheme
         IShareRepository shareRepo,
         IBalanceRepository balanceRepo)
     {
-        Contract.RequiresNonNull(shareRepo, nameof(shareRepo));
-        Contract.RequiresNonNull(balanceRepo, nameof(balanceRepo));
+        Contract.RequiresNonNull(shareRepo);
+        Contract.RequiresNonNull(balanceRepo);
 
         this.shareRepo = shareRepo;
         this.balanceRepo = balanceRepo;

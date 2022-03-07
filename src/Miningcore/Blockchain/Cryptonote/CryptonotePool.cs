@@ -143,7 +143,7 @@ public class CryptonotePool : PoolBase
 
             banManager.Ban(connection.RemoteEndpoint.Address, loginFailureBanTimeout);
 
-            CloseConnection(connection);
+            Disconnect(connection);
         }
     }
 
@@ -241,9 +241,8 @@ public class CryptonotePool : PoolBase
             if(!job.Submissions.TryAdd(submitRequest.Nonce, true))
                 throw new StratumException(StratumError.MinusOne, "duplicate share");
 
-            var poolEndpoint = poolConfig.Ports[connection.LocalEndpoint.Port];
-
-            var share = await manager.SubmitShareAsync(connection, submitRequest, job, poolEndpoint.Difficulty, ct);
+            // submit
+            var share = await manager.SubmitShareAsync(connection, submitRequest, job, ct);
             await connection.RespondAsync(new CryptonoteResponseBase(), request.Id);
 
             // publish
@@ -260,7 +259,8 @@ public class CryptonotePool : PoolBase
 
             // update client stats
             context.Stats.ValidShares++;
-            await UpdateVarDiffAsync(connection);
+
+            await UpdateVarDiffAsync(connection, false, ct);
         }
 
         catch(StratumException ex)
@@ -284,21 +284,16 @@ public class CryptonotePool : PoolBase
         return Interlocked.Increment(ref currentJobId).ToString(CultureInfo.InvariantCulture);
     }
 
-    private Task OnNewJobAsync()
+    private async Task OnNewJobAsync()
     {
-        logger.Info(() => "Broadcasting job");
+        logger.Info(() => "Broadcasting jobs");
 
-        return Guard(Task.WhenAll(TaskForEach(async connection =>
+        await Guard(() => ForEachMinerAsync(async (connection, ct) =>
         {
-            var context = connection.ContextAs<CryptonoteWorkerContext>();
-
-            if(!context.IsSubscribed || !context.IsAuthorized || CloseIfDead(connection, context))
-                return;
-
             // send job
             var job = CreateWorkerJob(connection);
             await connection.NotifyAsync(CryptonoteStratumMethods.JobNotify, job);
-        })), ex=> logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}"));
+        }));
     }
 
     #region Overrides
@@ -407,14 +402,11 @@ public class CryptonotePool : PoolBase
 
     public override double ShareMultiplier => 1;
 
-    protected override async Task OnVarDiffUpdateAsync(StratumConnection connection, double newDiff)
+    protected override async Task OnVarDiffUpdateAsync(StratumConnection connection, double newDiff, CancellationToken ct)
     {
-        await base.OnVarDiffUpdateAsync(connection, newDiff);
+        await base.OnVarDiffUpdateAsync(connection, newDiff, ct);
 
-        // apply immediately and notify client
-        var context = connection.ContextAs<CryptonoteWorkerContext>();
-
-        if(context.ApplyPendingDifficulty())
+        if(connection.Context.ApplyPendingDifficulty())
         {
             // re-send job
             var job = CreateWorkerJob(connection);
