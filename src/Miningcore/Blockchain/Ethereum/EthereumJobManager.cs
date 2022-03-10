@@ -299,9 +299,23 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
             var sampleSize = (ulong) 300;
             var sampleBlockNumber = latestBlockHeight - sampleSize;
             var sampleBlockResults = await rpc.ExecuteAsync<Block>(logger, EC.GetBlockByNumber, ct, new[] { (object) sampleBlockNumber.ToStringHexWithPrefix(), true });
-            var sampleBlockTimestamp = sampleBlockResults.Response.Timestamp;
 
+            // If the sample block doesn't exist (e.g., in a private network), just get the latest block
+            if (null == sampleBlockResults.Response)
+            {
+                sampleBlockResults = await rpc.ExecuteAsync<Block>(logger, EC.GetBlockByNumber, ct, new[] { (object) "latest", true });
+            }
+
+            var sampleBlockTimestamp = sampleBlockResults.Response.Timestamp;
             var blockTime = (double) (latestBlockTimestamp - sampleBlockTimestamp) / sampleSize;
+
+            // If the sample block was the latest block, blockTime will be 0, let's make a guess instead
+            if (blockTime == 0)
+            {
+                // We are guessing that on average we will startup in the middle of two blocks
+                blockTime = ((ulong)((DateTimeOffset)DateTime.UtcNow).ToUnixTimeSeconds() - latestBlockTimestamp) * 2;
+            }
+
             var networkHashrate = latestBlockDifficulty / blockTime;
 
             BlockchainStats.NetworkHashrate = blockTime > 0 ? networkHashrate : 0;
@@ -579,23 +593,27 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
 
         if(poolConfig.EnableInternalStratum == true)
         {
-            // make sure we have a current DAG
-            while(true)
+            // Do not sync DAG for functional test
+            if (!clusterConfig.IsTestingMode.GetValueOrDefault(false))
             {
-                var blockTemplate = await GetBlockTemplateAsync(ct);
-
-                if(blockTemplate != null)
+                // make sure we have a current DAG
+                while(true)
                 {
-                    logger.Info(() => "Loading current DAG ...");
+                    var blockTemplate = await GetBlockTemplateAsync(ct);
 
-                    await ethash.GetDagAsync(blockTemplate.Height, logger, ct);
+                    if(blockTemplate != null)
+                    {
+                        logger.Info(() => "Loading current DAG ...");
 
-                    logger.Info(() => "Loaded current DAG");
-                    break;
+                        await ethash.GetDagAsync(blockTemplate.Height, logger, ct);
+
+                        logger.Info(() => "Loaded current DAG");
+                        break;
+                    }
+
+                    logger.Info(() => "Waiting for first valid block template");
+                    await Task.Delay(TimeSpan.FromSeconds(5), ct);
                 }
-
-                logger.Info(() => "Waiting for first valid block template");
-                await Task.Delay(TimeSpan.FromSeconds(5), ct);
             }
         }
 

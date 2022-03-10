@@ -43,8 +43,7 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
         IPaymentRepository paymentRepo,
         IStatsRepository statsRepo,
         IMasterClock clock,
-        IMessageBus messageBus,
-        EthereumJobManager ethereumJobManager) :
+        IMessageBus messageBus) :
         base(cf, mapper, shareRepo, blockRepo, balanceRepo, paymentRepo, clock, messageBus)
     {
         Contract.RequiresNonNull(ctx, nameof(ctx));
@@ -58,8 +57,6 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
 
         this.ctx = ctx;
         this.statsRepo = statsRepo;
-
-        this.ethereumJobManager = ethereumJobManager;
     }
 
     private const string BlockAvgTime = "blockAvgTime";
@@ -76,7 +73,6 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
     private EthereumNetworkType networkType;
     private GethChainType chainType;
     private BigInteger chainId;
-    private EthereumJobManager ethereumJobManager;
     private EthereumPoolConfigExtra extraPoolConfig;
     private EthereumPoolPaymentProcessingConfigExtra extraConfig;
     private IWeb3 web3Connection;
@@ -306,7 +302,7 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
     public override async Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, IMiningPool pool, Block block, CancellationToken ct)
     {
         // Always calculate rewards based on ether scan api
-        return await CalculateBlockData(pool.Config, ct);
+        return await CalculateBlockReward(pool.Config, ct);
     }
 
     public async Task PayoutAsync(IMiningPool pool, Balance[] balances, CancellationToken ct)
@@ -784,6 +780,8 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
     {
         logger.Info(() => $"[{LogCategory}] Beginning payout to top {extraConfig.PayoutBatchSize} miners.");
 
+        EthereumJobManager ethereumJobManager = ctx.Resolve<EthereumJobManager>();
+
         // Ensure we have peers
         if(networkType == EthereumNetworkType.Mainnet && ethereumJobManager.BlockchainStats.ConnectedPeers < EthereumConstants.MinPayoutPeerCount)
         {
@@ -854,7 +852,7 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
         logger.Info(() => $"[{LogCategory}] Payouts complete.  Successfully processed top {txHashes.Count} of {balances.Length} payouts.");
     }
 
-    private async Task<decimal> CalculateBlockData(PoolConfig poolConfig, CancellationToken ct)
+    private async Task<decimal> CalculateBlockReward(PoolConfig poolConfig, CancellationToken ct)
     {
         var blockReward = await GetNetworkBlockReward(poolConfig);
         var stats = await cf.Run(con => statsRepo.GetLastPoolStatsAsync(con, poolConfig.Id, ct));
@@ -871,12 +869,12 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
 
         if(networkHashRate == 0)
         {
-            throw new Exception($"Invalid state in CalculateBlockData - NetworkHashRate is 0");
+            throw new Exception($"Invalid state in CalculateBlockReward - NetworkHashRate is 0");
         }
 
         if(poolHashRate == 0)
         {
-            throw new Exception($"Invalid state in CalculateBlockData - PoolHashRate is 0");
+            throw new Exception($"Invalid state in CalculateBlockReward - PoolHashRate is 0");
         }
 
         //double avgBlockTime = blockChainStats.NetworkDifficulty / networkHashRate;
@@ -884,7 +882,18 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
 
         if(avgBlockTime == 0)
         {
-            throw new Exception($"Invalid state in CalculateBlockData - AvgBlockTime is 0");
+            throw new Exception($"Invalid state in CalculateBlockReward - AvgBlockTime is 0");
+        }
+
+        // Massage the stats for testing
+        if (clusterConfig.IsTestingMode.GetValueOrDefault(false))
+        {
+            // From Etherscan charts
+            avgBlockTime = 13;          // Seconds
+            networkHashRate = 1000000;  // GH/s
+
+            // From NLOK charts
+            poolHashRate = 290;         // GH/s
         }
 
         var blockFrequency = networkHashRate / poolHashRate * (avgBlockTime / 60);
@@ -948,18 +957,18 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
 
         var recipientBlockReward = (double) (blockReward * recipientShare);
         var blockFrequencyPerPayout = blockFrequency / (payoutInterval / 60);
-        var blockData = recipientBlockReward / blockFrequencyPerPayout;
-        logger.Info(() => $"BlockData : {blockData}, Network Block Time : {avgBlockTime}, Block Frequency : {blockFrequency}, PayoutInterval : {payoutInterval}");
+        var blockRewardPerPayout = recipientBlockReward / blockFrequencyPerPayout;
+        logger.Info(() => $"BlockReward : {blockRewardPerPayout}, Network Block Time : {avgBlockTime}, Block Frequency : {blockFrequency}, PayoutInterval : {payoutInterval}");
 
         // When checking against this threshold, we should take the LastPayout value into account. 
         // For example, if payoutInterval is 10m, but  LastPayout is 30m ago, then we should consider 3x maxBlockReward
-        if (blockData > pRatio * maxBlockReward)
+        if (blockRewardPerPayout > pRatio * maxBlockReward)
         {
-            logger.Error(() => $"Rewards calculation data is invalid. BlockData is above max threshold of {pRatio * maxBlockReward}.");
+            logger.Error(() => $"Rewards calculation data is invalid. BlockReward is above max threshold of {pRatio * maxBlockReward}.");
             throw new Exception("Invalid data for calculating mining rewards.  Aborting updateBalances");
         }
 
-        return (decimal) blockData;
+        return (decimal) blockRewardPerPayout;
     }
 
     private async Task<decimal> GetNetworkBlockReward(PoolConfig poolConfig)

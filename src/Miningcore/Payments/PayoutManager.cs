@@ -289,7 +289,7 @@ public class PayoutManager : BackgroundService
                 .Subscribe(OnPoolStatusNotification));
 
             logger.Info(() => "Online");
-
+            
             // Allow all pools to actually come up before the first payment processing run
             await Task.Delay(initialRunDelay, ct);
 

@@ -1,8 +1,9 @@
 {
+    "isTestingMode": true,
     "logging": {
         "level": "info",
-        "enableConsoleLog": true,
-        "enableConsoleColors": true,
+        "enableConsoleLog": false,
+        "enableConsoleColors": false,
         "logFile": "core.log",
         "apiLogFile": "api.log",
         "logBaseDirectory": "logs/",
@@ -33,15 +34,28 @@
         "postgres": {
             "host": "db_host",
             "port": 5432,
-            "user": "db_user",
-            "password": "db_password",
-            "database": "db_name",
+            "user": "",
+            "password": "",
+            "database": "miningcore",
             "Pooling": {
                 "MaxPoolSize": 100
-            }
+            },
+            "ssl": "true"
+        },
+        "cosmos": {
+            "endpointUrl": "endpoint_url",
+            "authorizationKey": "",
+            "databaseId": "Wallets",
+            "maxRetryAttempt": "2",
+            "maxRetryWaitTime": "30",
+            "requestTimeout": "30",
+            "connectionMode": "Gateway",
+            "consistencyLevel": "Session",
+            "preferredLocations": [
+                "East US"
+            ]
         }
     },
-
     "paymentProcessing": {
         "enabled": true,
         "interval": 300,
@@ -66,8 +80,8 @@
         },
         "oidcValidateAudience": false,
         "oidcValidAudience": "",
-        "oidcValidIssuer": "https://sts.windows.net/3b217a9b-6c58-428b-b022-5ad741ce2016/",
-        "oidcMetadataAddress": "https://sts.windows.net/3b217a9b-6c58-428b-b022-5ad741ce2016/.well-known/openid-configuration"
+        "oidcValidIssuer": "",
+        "oidcMetadataAddress": ""
     },
     "pools": [
         {
@@ -113,18 +127,17 @@
                         "variancePercent": 30
                     },
                     "tls": false,
-                    "tlsPfxFile": "ncrypto-int-nortonlifelock-com-pfx"
+                    "tlsPfxFile": ""
                 }
-
             },
             "daemons": [
                 {
                     "host": "127.0.0.1",
-                    "port": 0
+                    "port": 8501
                 }
             ],
             "etherscan": {
-                "apiUrl": "https://api.etherscan.io/api",
+                "apiUrl": "http://localhost:1080/etherscan/api",
                 "apiKey": "api_key",
                 "daysToLookBack": 1
             },
@@ -150,8 +163,7 @@
                 "maxGasLimit": 180000000000,
                 "gasDeductionPercentage": 20,
                 "payoutBatchSize": 5,
-                "minersPayTxFees": true,
-                "maxBlockReward": 0.1
+                "minersPayTxFees": true
             }
         }
     ]

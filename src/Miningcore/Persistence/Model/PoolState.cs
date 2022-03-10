@@ -1,5 +1,3 @@
-using System;
-
 namespace Miningcore.Persistence.Model
 {
     public class PoolState

@@ -52,7 +52,7 @@ namespace Miningcore.Blockchain.Ethereum.EtherScan
 
             if(resp?.Status > 0) return resp.Result;
 
-            logger.Error($"GetDailyUncleBlockCount failed. reason={resp?.Message}, status={resp?.Status}");
+            logger.Error($"GetDailyBlockCount failed. reason={resp?.Message}, status={resp?.Status}");
             return null;
         }
 

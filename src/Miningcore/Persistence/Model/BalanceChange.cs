@@ -2,7 +2,7 @@ namespace Miningcore.Persistence.Model;
 
 public record BalanceChange
 {
-    public long Id { get; init; }
+    public string Id { get; init; }
     public string PoolId { get; init; }
     public string Address { get; init; }
 

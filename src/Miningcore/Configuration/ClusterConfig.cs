@@ -986,6 +986,7 @@ public partial class PoolConfig
 
 public partial class ClusterConfig
 {
+    public bool? IsTestingMode { get; set; }
     /// <summary>
     /// cluster instance id (only used in clustering setups)
     /// </summary>
