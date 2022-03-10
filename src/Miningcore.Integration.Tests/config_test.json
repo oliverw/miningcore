@@ -1,4 +1,5 @@
 {
+    "isTestingMode": true,
     "logging": {
         "level": "info",
         "enableConsoleLog": false,
@@ -31,10 +32,10 @@
     },
     "persistence": {
         "postgres": {
-            "host": "mue1-ncrypto-dev-pgdb.postgres.database.azure.com",
+            "host": "db_host",
             "port": 5432,
-            "user": "miningcore@mue1-ncrypto-dev-pgdb",
-            "password": "c#VB?8?h6R",
+            "user": "",
+            "password": "",
             "database": "miningcore",
             "Pooling": {
                 "MaxPoolSize": 100
@@ -42,8 +43,8 @@
             "ssl": "true"
         },
         "cosmos": {
-            "endpointUrl": "https://mue1-ncrypto-dev-cdb.documents.azure.com:443/",
-            "authorizationKey": "4pVhUHo5bG9hBoPRGVXpg9lLI5xvFRQSI9jLxWImIykd4DRn4JNNKz5JCuN30T44q2PQPHwkVt7OPFF9GPkHRA==",
+            "endpointUrl": "endpoint_url",
+            "authorizationKey": "",
             "databaseId": "Wallets",
             "maxRetryAttempt": "2",
             "maxRetryWaitTime": "30",
@@ -79,8 +80,8 @@
         },
         "oidcValidateAudience": false,
         "oidcValidAudience": "",
-        "oidcValidIssuer": "https://sts.windows.net/3b217a9b-6c58-428b-b022-5ad741ce2016/",
-        "oidcMetadataAddress": "https://sts.windows.net/3b217a9b-6c58-428b-b022-5ad741ce2016/.well-known/openid-configuration"
+        "oidcValidIssuer": "",
+        "oidcMetadataAddress": ""
     },
     "pools": [
         {
@@ -126,13 +127,13 @@
                         "variancePercent": 30
                     },
                     "tls": false,
-                    "tlsPfxFile": "ncrypto-int-nortonlifelock-com-pfx"
+                    "tlsPfxFile": ""
                 }
             },
             "daemons": [
                 {
                     "host": "127.0.0.1",
-                    "port": 8545
+                    "port": 8501
                 }
             ],
             "etherscan": {

@@ -1,4 +1,4 @@
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace Miningcore.Blockchain.Ethereum.EtherScan
 {
@@ -14,7 +14,9 @@ namespace Miningcore.Blockchain.Ethereum.EtherScan
         public DateTime UtcDate { get; set; }
         public string UnixTimeStamp { get; set; }
         public long BlockCount { get; set; }
-        [JsonProperty("blockRewards_Eth")]
+
+        [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+        [JsonPropertyName("blockRewards_Eth")]
         public decimal BlockRewardsEth { get; set; }
     }
 
@@ -22,7 +24,9 @@ namespace Miningcore.Blockchain.Ethereum.EtherScan
     {
         public DateTime UtcDate { get; set; }
         public string UnixTimeStamp { get; set; }
-        [JsonProperty("blockTime_sec")]
+
+        [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+        [JsonPropertyName("blockTime_sec")]
         public double BlockTimeSec { get; set; }
     }
 }

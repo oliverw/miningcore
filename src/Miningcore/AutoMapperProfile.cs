@@ -71,8 +71,10 @@ public class AutoMapperProfile : Profile
         CreateMap<Persistence.Model.Share, Persistence.Postgres.Entities.Share>();
         CreateMap<Block, Persistence.Postgres.Entities.Block>();
         CreateMap<Balance, Persistence.Postgres.Entities.Balance>();
+        CreateMap<BalanceSummary, Persistence.Postgres.Entities.BalanceSummary>();
         CreateMap<Payment, Persistence.Postgres.Entities.Payment>();
         CreateMap<MinerSettings, Persistence.Postgres.Entities.MinerSettings>();
+        CreateMap<PoolState, Persistence.Postgres.Entities.PoolState>();
         CreateMap<PoolStats, Persistence.Postgres.Entities.PoolStats>();
 
         CreateMap<MinerWorkerPerformanceStats, Persistence.Postgres.Entities.MinerWorkerPerformanceStats>()
@@ -88,13 +90,16 @@ public class AutoMapperProfile : Profile
         CreateMap<Persistence.Postgres.Entities.Share, Persistence.Model.Share>();
         CreateMap<Persistence.Postgres.Entities.Block, Block>();
         CreateMap<Persistence.Postgres.Entities.Balance, Balance>();
+        CreateMap<Persistence.Postgres.Entities.BalanceSummary, BalanceSummary>();
         CreateMap<Persistence.Postgres.Entities.Payment, Payment>();
+        CreateMap<Persistence.Postgres.Entities.PoolState, PoolState>();
         CreateMap<Persistence.Postgres.Entities.PoolStats, PoolStats>();
         CreateMap<Persistence.Postgres.Entities.MinerSettings, MinerSettings>();
         CreateMap<Persistence.Postgres.Entities.MinerWorkerPerformanceStats, MinerWorkerPerformanceStats>();
         CreateMap<Persistence.Postgres.Entities.MinerWorkerPerformanceStats, Api.Responses.MinerPerformanceStats>();
 
         // Cosmos
+        CreateMap<BalanceChange, Persistence.Cosmos.Entities.BalanceChange>();
         CreateMap<Persistence.Cosmos.Entities.BalanceChange, BalanceChange>();
 
         CreateMap<PoolStats, Mining.PoolStats>();

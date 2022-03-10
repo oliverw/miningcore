@@ -33,6 +33,12 @@
         </None>
     </ItemGroup>
 
+    <ItemGroup>
+        <Content Include="..\..\build\libethhash.so">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
+
     <!-- Copy pre-built library binaries on Windows  -->
     <Target Name="BuildNativeLibsWin" AfterTargets="AfterBuild" Condition="'$(IsWindows)' == 'true'">
         <ItemGroup>

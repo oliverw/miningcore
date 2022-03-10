@@ -5,7 +5,7 @@ namespace Miningcore.Persistence.Cosmos.Entities
     public class BalanceChange
     {
         [JsonProperty(PropertyName = "id")]
-        public string Id { get => Created.ToString("yyyy-MM-ddTHH:mm:ss.fffffffZ");}
+        public string Id { get => Created.ToString("yyyy-MM-ddTHH:mm:ss.fffffffZ"); }
 
         [JsonProperty(PropertyName = "poolId")]
         public string PoolId { get; set; }

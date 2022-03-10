@@ -48,11 +48,18 @@ public abstract class JobManagerBase<TJob>
 
         logger.Info(() => "All daemons online");
 
-        while(!await AreDaemonsConnectedAsync(ct))
+        if (!clusterConfig.IsTestingMode.GetValueOrDefault(false))
         {
-            logger.Info(() => "Waiting for daemon to connect to peers ...");
+            while(!await AreDaemonsConnectedAsync(ct))
+            {
+                logger.Info(() => "Waiting for daemon to connect to peers ...");
 
-            await Task.Delay(TimeSpan.FromSeconds(10), ct);
+                await Task.Delay(TimeSpan.FromSeconds(10), ct);
+            }
+        }
+        else
+        {
+            logger.Info(() => "Not waiting for daemon to connect to peers ...");
         }
     }
 

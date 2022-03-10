@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -19,12 +20,22 @@ namespace Miningcore.Integration.Tests.Ethereum
 
             // Run pool for 30 secs
             CancellationTokenSource cts = new CancellationTokenSource();
-            var timeoutMs = 60000;
+            var timeoutMs = 30000;
             cts.CancelAfter(timeoutMs);
-            Task task = Program.Start(new string[]{"-c", "config_test.json"}, cts.Token);
-            
-            // Wait for the pool to timeout
-            Thread.Sleep(timeoutMs);
+
+            try
+            {
+                await Program.Start(new string[]{"-c", "config_test.json"}, cts.Token);
+            }
+            catch (Exception ex)
+            {
+                if (ex is OperationCanceledException || ex is TaskCanceledException)
+                {
+                    // Ignore
+                }
+
+                throw;
+            }
 
             // Validate if shares were processed successfully
             Assert.Equal(0, await DataHelper.GetUnProcessedSharesCountAsync());

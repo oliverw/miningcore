@@ -1,5 +1,3 @@
-using System;
-
 namespace Miningcore.Persistence.Postgres.Entities
 {
     public class PoolState
