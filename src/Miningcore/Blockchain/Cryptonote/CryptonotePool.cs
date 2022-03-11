@@ -139,7 +139,7 @@ public class CryptonotePool : PoolBase
         {
             await connection.RespondErrorAsync(StratumError.MinusOne, "invalid login", request.Id);
 
-            if(clusterConfig?.Banning?.BanOnLoginFailure is null or false)
+            if(clusterConfig?.Banning?.BanOnLoginFailure is null or true)
             {
                 logger.Info(() => $"[{connection.ConnectionId}] Banning unauthorized worker {context.Miner} for {loginFailureBanTimeout.TotalSeconds} sec");
 

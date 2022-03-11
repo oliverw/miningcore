@@ -151,7 +151,7 @@ public class EthereumPool : PoolBase
 
         else
         {
-            if(clusterConfig?.Banning?.BanOnLoginFailure is null or false)
+            if(clusterConfig?.Banning?.BanOnLoginFailure is null or true)
             {
                 logger.Info(() => $"[{connection.ConnectionId}] Banning unauthorized worker {minerName} for {loginFailureBanTimeout.TotalSeconds} sec");
 
@@ -327,7 +327,7 @@ public class EthereumPool : PoolBase
 
         else
         {
-            if(clusterConfig?.Banning?.BanOnLoginFailure is null or false)
+            if(clusterConfig?.Banning?.BanOnLoginFailure is null or true)
             {
                 banManager.Ban(connection.RemoteEndpoint.Address, loginFailureBanTimeout);
 
