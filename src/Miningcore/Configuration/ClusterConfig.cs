@@ -677,6 +677,11 @@ public class ClusterBanningConfig
     /// Ban miners for crossing invalid share threshold
     /// </summary>
     public bool? BanOnInvalidShares { get; set; }
+
+    /// <summary>
+    /// Ban clients sending invalid logins
+    /// </summary>
+    public bool? BanOnLoginFailure { get; set; }
 }
 
 public partial class PoolShareBasedBanningConfig
