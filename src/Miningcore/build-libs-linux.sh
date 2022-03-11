@@ -1,6 +1,5 @@
 #!/bin/bash
 
-# init
 OutDir=$1
 
 AES=$(../Native/check_cpu.sh aes && echo -maes || echo)
