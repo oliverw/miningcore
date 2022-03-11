@@ -995,7 +995,7 @@ public class Program : BackgroundService
     {
         if(logger != null)
         {
-            logger.Error(e.ExceptionObject);
+                logger.Error(e.ExceptionObject);
             LogManager.Flush(TimeSpan.Zero);
         }
 
