@@ -135,6 +135,8 @@ public class BitcoinPayoutHandler : PayoutHandlerBase,
                     result.Add(block);
 
                     logger.Info(() => $"[{LogCategory}] Block {block.BlockHeight} classified as orphaned due to missing tx details");
+
+                    messageBus.NotifyBlockUnlocked(poolConfig.Id, block, coin);
                 }
 
                 else
