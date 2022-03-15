@@ -341,7 +341,8 @@ public class BitcoinPool : PoolBase
         var multiplier = BitcoinConstants.Pow2x32;
         var result = shares * multiplier / interval;
 
-        //result *= coin.HashrateMultiplier;
+        if(coin.HashrateMultiplier.HasValue)
+            result *= coin.HashrateMultiplier.Value;
 
         return result;
     }

@@ -182,6 +182,9 @@ public partial class BitcoinTemplate : CoinTemplate
     [DefaultValue(1.0d)]
     public double ShareMultiplier { get; set; } = 1.0d;
 
+    [JsonProperty(DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
+    public double? HashrateMultiplier { get; set; }
+
     [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
     public bool CoinbaseIgnoreAuxFlags { get; set; }
 
