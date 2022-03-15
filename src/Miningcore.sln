@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.28729.10
+# Visual Studio Version 17
+VisualStudioVersion = 17.1.32228.430
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Miningcore", "Miningcore\Miningcore.csproj", "{A427248A-B5E1-4808-9883-BC2AD68EE997}"
 EndProject
@@ -10,9 +10,13 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{71672AAD-51F8-49EC-9EFD-E504D65A765A}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
+		..\build.sh = ..\build.sh
+		..\scripts\build_pipeline.sh = ..\scripts\build_pipeline.sh
+		..\scripts\build_test_pipeline.sh = ..\scripts\build_test_pipeline.sh
+		..\docker-compose.yml = ..\docker-compose.yml
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Miningcore.Integration.Tests", "Miningcore.Integration.Tests\Miningcore.Integration.Tests.csproj", "{59DF00D1-92D2-4B7D-B0E8-BFF3691AB196}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Miningcore.Integration.Tests", "Miningcore.Integration.Tests\Miningcore.Integration.Tests.csproj", "{59DF00D1-92D2-4B7D-B0E8-BFF3691AB196}"
 	ProjectSection(ProjectDependencies) = postProject
 		{A427248A-B5E1-4808-9883-BC2AD68EE997} = {A427248A-B5E1-4808-9883-BC2AD68EE997}
 	EndProjectSection
