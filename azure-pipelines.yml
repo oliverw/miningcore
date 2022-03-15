@@ -18,10 +18,10 @@ variables:
 
 steps:
 - task: UseDotNet@2
-  displayName: Use dotnet 5.x
+  displayName: Use dotnet 6.x
   inputs:
     packageType: 'sdk'
-    version: '5.x'
+    version: '6.x'
 - task: AzureKeyVault@2
   displayName: Pull secrets
   inputs:
