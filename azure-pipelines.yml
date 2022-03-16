@@ -42,13 +42,13 @@ steps:
     PERSISTENCE_COSMOS_ENDPOINTURL: $(persistence-cosmos-endpointUrl)
     PERSISTENCE_COSMOS_AUTHORIZATIONKEY: $(persistence-cosmos-authorizationKey)
     PERSISTENCE_COSMOS_DATABASEID: $(persistence-cosmos-databaseId)
-- task: DotNetCoreCLI@2
-  displayName: Run tests
-  inputs:
-    command: 'test'
-    arguments: '--no-build --filter "FullyQualifiedName~PayoutTests" ./Miningcore.Integration.Tests.dll'
-    testRunTitle: 'NCrypto_Pool'
-    workingDirectory: '$(Build.ArtifactStagingDirectory)'
+#- task: DotNetCoreCLI@2
+#  displayName: Run tests
+#  inputs:
+#    command: 'test'
+#    arguments: '--no-build --filter "FullyQualifiedName~PayoutTests" ./Miningcore.Integration.Tests.dll'
+#    testRunTitle: 'NCrypto_Pool'
+#    workingDirectory: '$(Build.ArtifactStagingDirectory)'
 - upload: $(Build.ArtifactStagingDirectory)
   displayName: 'Publish package'
   artifact: drop

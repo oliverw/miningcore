@@ -10,6 +10,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{71672AAD-51F8-49EC-9EFD-E504D65A765A}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
+		..\azure-pipelines.yml = ..\azure-pipelines.yml
 		..\build.sh = ..\build.sh
 		..\scripts\build_pipeline.sh = ..\scripts\build_pipeline.sh
 		..\scripts\build_test_pipeline.sh = ..\scripts\build_test_pipeline.sh
