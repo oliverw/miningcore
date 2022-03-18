@@ -692,7 +692,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
 
             triggers.Add(Observable.Timer(TimeSpan.FromMilliseconds(pollingInterval))
                 .TakeUntil(pollTimerRestart)
-                .Select(_ => (JobRefreshBy.Poll, (string) null))
+                .Select(_ => (JobRefreshBy.WebSocket, (string) null))
                 .Repeat());
         }
 

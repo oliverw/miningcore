@@ -48,6 +48,7 @@ public static class MiningPoolExtensions
 
                 portInfo.TlsPfxFile = null;
                 portInfo.TlsPfxPassword = null;
+                portInfo.TlsPfx = null;
             }
         }
         return poolInfo;
