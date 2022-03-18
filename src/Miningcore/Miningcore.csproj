@@ -45,8 +45,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <None Remove="config.json" />
-        <None Remove="config2.json" />
+        
     </ItemGroup>
 
     <ItemGroup>
@@ -117,6 +116,9 @@
     <ItemGroup>
         <None Update="coins.json">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="config.json">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
     </ItemGroup>
 
