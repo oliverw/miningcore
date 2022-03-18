@@ -11,9 +11,9 @@ BUILD_CONFIG=$3
 sudo apt-get update -y && sudo apt-get install -y --no-install-recommends default-jdk jq cmake build-essential libssl-dev libsodium-dev pkg-config libboost-all-dev libzmq5
 
 #Libs
-cd $SRC_DIR/src/Native/libmultihash && make clean && make && yes| cp -rf libmultihash.so $OUT_DIR
-cd $SRC_DIR/src/Native/libcryptonight && make clean && make && yes| cp -rf libcryptonight.so $OUT_DIR
-cd $SRC_DIR/src/Native/libcryptonote && make clean && make && yes| cp -rf libcryptonote.so $OUT_DIR
+#cd $SRC_DIR/src/Native/libmultihash && make clean && make && yes| cp -rf libmultihash.so $OUT_DIR
+#cd $SRC_DIR/src/Native/libcryptonight && make clean && make && yes| cp -rf libcryptonight.so $OUT_DIR
+#cd $SRC_DIR/src/Native/libcryptonote && make clean && make && yes| cp -rf libcryptonote.so $OUT_DIR
 
 #Build
 cd $SRC_DIR/src && dotnet build --configuration $BUILD_CONFIG --output $OUT_DIR
