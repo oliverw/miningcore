@@ -20,6 +20,7 @@ public class MetricsPublisher : BackgroundService
     private Summary btStreamLatencySummary;
     private Counter shareCounter;
     private Summary rpcRequestDurationSummary;
+    private Summary stratumRequestDurationSummary;
     private readonly IMessageBus messageBus;
     private Counter validShareCounter;
     private Counter invalidShareCounter;
@@ -58,6 +59,11 @@ public class MetricsPublisher : BackgroundService
             LabelNames = new[] { "pool", "method" }
         });
 
+        stratumRequestDurationSummary = Metrics.CreateSummary("miningcore_stratumrequest_execution_time", "Duration of Stratum requests ms", new SummaryConfiguration
+        {
+            LabelNames = new[] { "pool", "method" }
+        });
+
         hashComputationSummary = Metrics.CreateSummary("miningcore_hash_computation_time", "Duration of RPC requests ms", new SummaryConfiguration
         {
             LabelNames = new[] { "algo" }
@@ -86,6 +92,10 @@ public class MetricsPublisher : BackgroundService
 
             case TelemetryCategory.RpcRequest:
                 rpcRequestDurationSummary.WithLabels(msg.GroupId, msg.Info).Observe(msg.Elapsed.TotalMilliseconds);
+                break;
+
+            case TelemetryCategory.StratumRequest:
+                stratumRequestDurationSummary.WithLabels(msg.GroupId, msg.Info).Observe(msg.Elapsed.TotalMilliseconds);
                 break;
 
             case TelemetryCategory.Connections:
