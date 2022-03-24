@@ -20,13 +20,15 @@ public class MetricsPublisher : BackgroundService
         this.messageBus = messageBus;
     }
 
-    private static ILogger logger = LogManager.GetCurrentClassLogger();
+    private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
+
+    private readonly IMessageBus messageBus;
 
     private Summary btStreamLatencySummary;
     private Counter shareCounter;
     private Summary rpcRequestDurationSummary;
     private Summary stratumRequestDurationSummary;
-    private readonly IMessageBus messageBus;
+    private Summary apiRequestDurationSummary;
     private Counter validShareCounter;
     private Counter invalidShareCounter;
     private Summary hashComputationSummary;
@@ -65,17 +67,22 @@ public class MetricsPublisher : BackgroundService
             LabelNames = new[] { "pool" }
         });
 
-        rpcRequestDurationSummary = Metrics.CreateSummary("miningcore_rpcrequest_execution_time", "Duration of RPC requests ms", new SummaryConfiguration
+        rpcRequestDurationSummary = Metrics.CreateSummary("miningcore_rpcrequest_execution_time", "RPC request execution time ms", new SummaryConfiguration
         {
             LabelNames = new[] { "pool", "method" }
         });
 
-        stratumRequestDurationSummary = Metrics.CreateSummary("miningcore_stratumrequest_execution_time", "Duration of Stratum requests ms", new SummaryConfiguration
+        stratumRequestDurationSummary = Metrics.CreateSummary("miningcore_stratum_request_execution_time", "Stratum request execution time ms", new SummaryConfiguration
         {
             LabelNames = new[] { "pool", "method" }
         });
 
-        hashComputationSummary = Metrics.CreateSummary("miningcore_hash_computation_time", "Duration of RPC requests ms", new SummaryConfiguration
+        apiRequestDurationSummary = Metrics.CreateSummary("miningcore_api_request_execution_time", "API request execution time ms", new SummaryConfiguration
+        {
+            LabelNames = new[] { "request" }
+        });
+
+        hashComputationSummary = Metrics.CreateSummary("miningcore_hash_computation_time", "Hash computation time ms", new SummaryConfiguration
         {
             LabelNames = new[] { "algo" }
         });
@@ -107,6 +114,10 @@ public class MetricsPublisher : BackgroundService
 
             case TelemetryCategory.StratumRequest:
                 stratumRequestDurationSummary.WithLabels(msg.GroupId, msg.Info).Observe(msg.Elapsed.TotalMilliseconds);
+                break;
+
+            case TelemetryCategory.ApiRequest:
+                apiRequestDurationSummary.WithLabels(msg.GroupId).Observe(msg.Elapsed.TotalMilliseconds);
                 break;
 
             case TelemetryCategory.Connections:

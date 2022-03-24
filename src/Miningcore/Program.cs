@@ -227,6 +227,9 @@ public class Program : BackgroundService
                         app.UseWebSockets();
                         app.MapWebSocketManager("/notifications", app.ApplicationServices.GetService<WebSocketNotificationsRelay>());
                         app.UseMetricServer();
+
+                        app.UseMiddleware<ApiRequestMetricsMiddleware>();
+
                         app.UseMvc();
                     });
 

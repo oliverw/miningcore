@@ -31,6 +31,11 @@ public enum TelemetryCategory
     /// JsonRPC Request from miner
     /// </summary>
     StratumRequest,
+
+    /// <summary>
+    /// API request handled
+    /// </summary>
+    ApiRequest
 }
 
 public record TelemetryEvent(string GroupId, TelemetryCategory Category, TimeSpan Elapsed, bool? Success = null, string Error = null)
