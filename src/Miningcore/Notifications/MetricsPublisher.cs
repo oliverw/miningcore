@@ -1,10 +1,13 @@
+using System.Reactive;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Miningcore.Messaging;
 using Miningcore.Notifications.Messages;
+using NLog;
 using Prometheus;
+using static Miningcore.Util.ActionUtils;
 
 namespace Miningcore.Notifications;
 
@@ -17,6 +20,8 @@ public class MetricsPublisher : BackgroundService
         this.messageBus = messageBus;
     }
 
+    private static ILogger logger = LogManager.GetCurrentClassLogger();
+
     private Summary btStreamLatencySummary;
     private Counter shareCounter;
     private Summary rpcRequestDurationSummary;
@@ -25,11 +30,17 @@ public class MetricsPublisher : BackgroundService
     private Counter validShareCounter;
     private Counter invalidShareCounter;
     private Summary hashComputationSummary;
-    private Gauge poolConnectionsCounter;
+    private Gauge poolConnectionsGauge;
+    private Gauge poolHashrateGauge;
 
     private void CreateMetrics()
     {
-        poolConnectionsCounter = Metrics.CreateGauge("miningcore_pool_connections", "Number of connections per pool", new GaugeConfiguration
+        poolConnectionsGauge = Metrics.CreateGauge("miningcore_pool_connections", "Number of connections per pool", new GaugeConfiguration
+        {
+            LabelNames = new[] { "pool" }
+        });
+
+        poolHashrateGauge = Metrics.CreateGauge("miningcore_pool_hashrate", "Hashrate per pool", new GaugeConfiguration
         {
             LabelNames = new[] { "pool" }
         });
@@ -99,7 +110,7 @@ public class MetricsPublisher : BackgroundService
                 break;
 
             case TelemetryCategory.Connections:
-                poolConnectionsCounter.WithLabels(msg.GroupId).Set(msg.Total);
+                poolConnectionsGauge.WithLabels(msg.GroupId).Set(msg.Total);
                 break;
 
             case TelemetryCategory.Hash:
@@ -108,11 +119,24 @@ public class MetricsPublisher : BackgroundService
         }
     }
 
+    private void OnHashrateNotification(HashrateNotification msg)
+    {
+        poolHashrateGauge.WithLabels(msg.PoolId).Set(msg.Hashrate);
+    }
+
     protected override Task ExecuteAsync(CancellationToken ct)
     {
-        return messageBus.Listen<TelemetryEvent>()
+        var telemetryEvents = messageBus.Listen<TelemetryEvent>()
             .ObserveOn(TaskPoolScheduler.Default)
-            .Do(OnTelemetryEvent)
+            .Do(x=> Guard(()=> OnTelemetryEvent(x), ex=> logger.Error(ex.Message)))
+            .Select(_=> Unit.Default);
+
+        var hashrateNotifications = messageBus.Listen<HashrateNotification>()
+            .ObserveOn(TaskPoolScheduler.Default)
+            .Do(x=> Guard(()=> OnHashrateNotification(x), ex=> logger.Error(ex.Message)))
+            .Select(_=> Unit.Default);
+
+        return Observable.Merge(telemetryEvents, hashrateNotifications)
             .ToTask(ct);
     }
 }
