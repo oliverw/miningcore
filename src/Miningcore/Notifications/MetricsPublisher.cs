@@ -116,10 +116,6 @@ public class MetricsPublisher : BackgroundService
                 stratumRequestDurationSummary.WithLabels(msg.GroupId, msg.Info).Observe(msg.Elapsed.TotalMilliseconds);
                 break;
 
-            case TelemetryCategory.ApiRequest:
-                apiRequestDurationSummary.WithLabels(msg.GroupId).Observe(msg.Elapsed.TotalMilliseconds);
-                break;
-
             case TelemetryCategory.Connections:
                 poolConnectionsGauge.WithLabels(msg.GroupId).Set(msg.Total);
                 break;
