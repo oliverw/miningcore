@@ -11,7 +11,7 @@ trigger:
 pr: none
 
 pool:
-  name: mue1-ncrypto-int-ado-vm-ubuntu
+  name: NortonCrypto
 
 variables:
   buildConfiguration: 'Release'
