@@ -26,7 +26,7 @@ steps:
   displayName: Pull secrets
   inputs:
     azureSubscription: 'NonProd App SP'
-    KeyVaultName: 'mue1-ncrypto-dev-kv'
+    KeyVaultName: 'mue1-ncrypto-dev1-kv'
     SecretsFilter: '*'
     RunAsPreJob: false
 - task: Bash@3
