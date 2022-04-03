@@ -800,7 +800,7 @@ public class Program : BackgroundService
 
         var cf = services.GetService<IConnectionFactory>();
 
-        bool enableLegacyTimestampBehavior;
+        bool enableLegacyTimestampBehavior = false;
 
         if(!clusterConfig.Persistence.Postgres.EnableLegacyTimestamps.HasValue)
         {
@@ -810,10 +810,7 @@ public class Program : BackgroundService
             if(columnType != null)
                 enableLegacyTimestampBehavior = columnType.ToLower().Contains("without time zone");
             else
-            {
-                logger.Warn(() => "Unable to auto-detect Npgsql Legacy Timestamp Behavior");
-                return;
-            }
+                logger.Warn(() => "Unable to auto-detect Npgsql Legacy Timestamp Behavior. Please set 'EnableLegacyTimestamps' in your Miningcore Database configuration to'true' or 'false' to bypass auto-detection in case of problems");
         }
 
         else
