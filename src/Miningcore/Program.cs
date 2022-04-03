@@ -800,11 +800,26 @@ public class Program : BackgroundService
 
         var cf = services.GetService<IConnectionFactory>();
 
-        // check if 'shares.created' is legacy timestamp (without timezone)
-        var columnType = await GetPostgresColumnType(cf, "shares", "created");
-        var isLegacyTimestamps = columnType.ToLower().Contains("without time zone");
+        bool enableLegacyTimestampBehavior;
 
-        if(isLegacyTimestamps)
+        if(!clusterConfig.Persistence.Postgres.EnableLegacyTimestamps.HasValue)
+        {
+            // check if 'shares.created' is legacy timestamp (without timezone)
+            var columnType = await GetPostgresColumnType(cf, "shares", "created");
+
+            if(columnType != null)
+                enableLegacyTimestampBehavior = columnType.ToLower().Contains("without time zone");
+            else
+            {
+                logger.Warn(() => "Unable to auto-detect Npgsql Legacy Timestamp Behavior");
+                return;
+            }
+        }
+
+        else
+            enableLegacyTimestampBehavior = clusterConfig.Persistence.Postgres.EnableLegacyTimestamps.Value;
+
+        if(enableLegacyTimestampBehavior)
         {
             logger.Info(()=> "Enabling Npgsql Legacy Timestamp Behavior");
 
@@ -812,11 +827,11 @@ public class Program : BackgroundService
         }
     }
 
-    private static Task<string> GetPostgresColumnType(IConnectionFactory cf, string table, string column)
+    private static async Task<string> GetPostgresColumnType(IConnectionFactory cf, string table, string column)
     {
         const string query = "SELECT data_type FROM information_schema.columns WHERE table_name = @table AND column_name = @column";
 
-        return cf.Run(con => con.ExecuteScalarAsync<string>(query, new { table, column }));
+        return await cf.Run(async con => await con.ExecuteScalarAsync<string>(query, new { table, column }));
     }
 
     private static void ConfigurePersistence(ContainerBuilder builder)

@@ -576,6 +576,11 @@ public class PostgresConfig : DatabaseConfig
     public bool TlsNoValidate { get; set; }
 
     public int? CommandTimeout { get; set; }
+
+    /// <summary>
+    /// Enable Enabling Npgsql Legacy Timestamp Behavior
+    /// </summary>
+    public bool? EnableLegacyTimestamps { get; set; }
 }
 
 public class TcpProxyProtocolConfig
