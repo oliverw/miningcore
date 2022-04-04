@@ -106,7 +106,7 @@ void ethash_calculate_dag_item(
 	memcpy(ret, init, sizeof(node));
 	ret->words[0] ^= node_index;
 	SHA3_512(ret->bytes, ret->bytes, sizeof(node));
-#if defined(_M_X64) && ENABLE_SSE
+#if defined(_M_X64) && HAVE_SSE2
 	__m128i const fnv_prime = _mm_set1_epi32(FNV_PRIME);
 	__m128i xmm0 = ret->xmm[0];
 	__m128i xmm1 = ret->xmm[1];
@@ -118,7 +118,7 @@ void ethash_calculate_dag_item(
 		uint32_t parent_index = fnv_hash(node_index ^ i, ret->words[i % NODE_WORDS]) % num_parent_nodes;
 		node const *parent = &cache_nodes[parent_index];
 
-#if defined(_M_X64) && ENABLE_SSE
+#if defined(_M_X64) && HAVE_SSE2
 		{
 			xmm0 = _mm_mullo_epi32(xmm0, fnv_prime);
 			xmm1 = _mm_mullo_epi32(xmm1, fnv_prime);
@@ -219,7 +219,7 @@ static bool ethash_hash(
 				dag_node = &tmp_node;
 			}
 
-#if defined(_M_X64) && ENABLE_SSE
+#if defined(_M_X64) && HAVE_SSE2
 			{
 				__m128i fnv_prime = _mm_set1_epi32(FNV_PRIME);
 				__m128i xmm0 = _mm_mullo_epi32(fnv_prime, mix[n].xmm[0]);
