@@ -67,7 +67,7 @@ public class BitcoinPayoutHandler : PayoutHandlerBase,
         var jsonSerializerSettings = ctx.Resolve<JsonSerializerSettings>();
         rpcClient = new RpcClient(pc.Daemons.First(), jsonSerializerSettings, messageBus, pc.Id);
 
-        return Task.FromResult(true);
+        return Task.CompletedTask;
     }
 
     public virtual async Task<Block[]> ClassifyBlocksAsync(IMiningPool pool, Block[] blocks, CancellationToken ct)
@@ -185,7 +185,7 @@ public class BitcoinPayoutHandler : PayoutHandlerBase,
     {
         block.Effort = accumulatedBlockShareDiff / block.NetworkDifficulty;
 
-        return Task.FromResult(true);
+        return Task.CompletedTask;
     }
 
     public virtual async Task PayoutAsync(IMiningPool pool, Balance[] balances, CancellationToken ct)

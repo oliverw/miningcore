@@ -228,7 +228,7 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
     {
         block.Effort = accumulatedBlockShareDiff / block.NetworkDifficulty;
 
-        return Task.FromResult(true);
+        return Task.CompletedTask;
     }
 
     public override async Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, IMiningPool pool, Block block, CancellationToken ct)

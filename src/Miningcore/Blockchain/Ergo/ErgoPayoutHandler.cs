@@ -281,7 +281,7 @@ public class ErgoPayoutHandler : PayoutHandlerBase,
     {
         block.Effort = accumulatedBlockShareDiff * ErgoConstants.ShareMultiplier / block.NetworkDifficulty;
 
-        return Task.FromResult(true);
+        return Task.CompletedTask;
     }
 
     public override double AdjustShareDifficulty(double difficulty)

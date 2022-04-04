@@ -419,7 +419,7 @@ public class CryptonotePayoutHandler : PayoutHandlerBase,
     {
         block.Effort = accumulatedBlockShareDiff / block.NetworkDifficulty;
 
-        return Task.FromResult(true);
+        return Task.CompletedTask;
     }
 
     public override async Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx,

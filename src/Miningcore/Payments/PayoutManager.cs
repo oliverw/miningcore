@@ -217,7 +217,7 @@ public class PayoutManager : BackgroundService
     {
         messageBus.SendMessage(new PaymentNotification(pool.Id, ex.Message, balances.Sum(x => x.Amount), pool.Template.Symbol));
 
-        return Task.FromResult(true);
+        return Task.CompletedTask;
     }
 
     private async Task CalculateBlockEffortAsync(IMiningPool pool, PoolConfig config, Block block, IPayoutHandler handler, CancellationToken ct)
