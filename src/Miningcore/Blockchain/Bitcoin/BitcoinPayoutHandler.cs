@@ -181,13 +181,6 @@ public class BitcoinPayoutHandler : PayoutHandlerBase,
         return result.ToArray();
     }
 
-    public virtual Task CalculateBlockEffortAsync(IMiningPool pool, Block block, double accumulatedBlockShareDiff, CancellationToken ct)
-    {
-        block.Effort = accumulatedBlockShareDiff / block.NetworkDifficulty;
-
-        return Task.CompletedTask;
-    }
-
     public virtual async Task PayoutAsync(IMiningPool pool, Balance[] balances, CancellationToken ct)
     {
         Contract.RequiresNonNull(balances);
