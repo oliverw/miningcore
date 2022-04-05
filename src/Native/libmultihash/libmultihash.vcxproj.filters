@@ -511,9 +511,6 @@
     <ClCompile Include="x21s.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="odocrypt.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="KeccakP-800-reference.c">
       <Filter>Source Files</Filter>
     </ClCompile>

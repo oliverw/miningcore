@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Text;
 using Miningcore.Crypto.Hashing.Algorithms;
 using Miningcore.Crypto.Hashing.Equihash;
 using Miningcore.Extensions;
@@ -305,6 +306,30 @@ public class HashingTests : TestBase
         var result = hash.ToHexString();
 
         Assert.Equal("e537f42caaeadfc2f022eff26f6e4b16c78ce86f5eda63b347d4466806e07821", result);
+    }
+
+    [Fact]
+    public void Sha3_256_Hash()
+    {
+        var hasher = new Sha3_256();
+        var hash = new byte[32];
+
+        hasher.Digest(Encoding.UTF8.GetBytes("tests"), hash);
+        var result = hash.ToHexString();
+
+        Assert.Equal("a44f0ac069e85531cdeee61fe8eb6090b649c6a685d682d3ce0e9d096911a217", result);
+    }
+
+    [Fact]
+    public void Sha3_512_Hash()
+    {
+        var hasher = new Sha3_512();
+        var hash = new byte[64];
+
+        hasher.Digest(Encoding.UTF8.GetBytes("tests"), hash);
+        var result = hash.ToHexString();
+
+        Assert.Equal("7bd9b04be8de4f7cd3364e37b23bc8bcf1c16c0e10efb0b16fb4b4d59d0d1456f0412ee83c6f626b2bf4d1f409e6a80e5c2386226b0d82585d9717c7a914ce9b", result);
     }
 
     [Fact]
