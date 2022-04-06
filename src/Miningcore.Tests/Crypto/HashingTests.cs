@@ -333,6 +333,30 @@ public class HashingTests : TestBase
     }
 
     [Fact]
+    public void Sha3_256d_Hash()
+    {
+        var hasher = new Sha3_256d();
+        var hash = new byte[32];
+
+        hasher.Digest(testValue2, hash);
+        var result = hash.ToHexString();
+
+        Assert.Equal("2881d07e59a0b90d782e350584c56af32ad430aba35acdddcfa9d5e612f4e503", result);
+    }
+
+    [Fact]
+    public void Sha3_512d_Hash()
+    {
+        var hasher = new Sha3_512d();
+        var hash = new byte[64];
+
+        hasher.Digest(testValue2, hash);
+        var result = hash.ToHexString();
+
+        Assert.Equal("c83f31ebd447e3c098031f24e2ff10ec36642632cca0a19249d207253466683041ca49e2f54a827f84e857af8bc82645c67191da99917d492df11c4f06670695", result);
+    }
+
+    [Fact]
     public void Hmq17_Hash()
     {
         var hasher = new HMMQ17();
