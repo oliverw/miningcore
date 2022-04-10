@@ -97,7 +97,7 @@ public abstract class PayoutHandlerBase
             // skip transfers from pool wallet to pool wallet
             if(address != poolConfig.Address)
             {
-                logger.Info(() => $"Adding {FormatAmount(amount)} to balance of {address}");
+                logger.Info(() => $"Crediting {address} with {FormatAmount(amount)}");
                 await balanceRepo.AddAmountAsync(con, tx, poolConfig.Id, address, amount, $"Reward for block {block.BlockHeight}");
             }
         }
