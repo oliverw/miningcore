@@ -133,7 +133,8 @@
             "daemons": [
                 {
                     "host": "127.0.0.1",
-                    "port": 8501
+                    "port": 8545,
+                    "portWS": 8546
                 }
             ],
             "etherscan": {
