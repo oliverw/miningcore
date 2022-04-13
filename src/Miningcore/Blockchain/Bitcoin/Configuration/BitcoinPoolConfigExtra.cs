@@ -19,6 +19,11 @@ public class BitcoinPoolConfigExtra
     public bool? HasLegacyDaemon { get; set; }
 
     /// <summary>
+    /// Set to true to fall back to multiple sendtoaddress RPC calls for payments
+    /// </summary>
+    public bool HasBrokenSendMany { get; set; } = false;
+
+    /// <summary>
     /// Arbitrary string appended at end of coinbase tx
     /// Overrides property of same name from BitcoinTemplate
     /// </summary>
