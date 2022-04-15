@@ -2,8 +2,8 @@
     "isTestingMode": true,
     "logging": {
         "level": "info",
-        "enableConsoleLog": false,
-        "enableConsoleColors": false,
+        "enableConsoleLog": true,
+        "enableConsoleColors": true,
         "logFile": "core.log",
         "apiLogFile": "api.log",
         "logBaseDirectory": "logs/",
