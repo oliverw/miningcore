@@ -18,9 +18,9 @@ namespace Miningcore.Integration.Tests.Ethereum
             await DataHelper.AddPoolStateAsync();
             await DataHelper.AddPoolStatisticsAsync();
 
-            // Run pool for 30 secs
+            // Run pool for 120 secs
             CancellationTokenSource cts = new CancellationTokenSource();
-            var timeoutMs = 30000;
+            var timeoutMs = 120000;
             cts.CancelAfter(timeoutMs);
 
             try
