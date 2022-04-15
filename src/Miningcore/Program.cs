@@ -879,8 +879,7 @@ public class Program : BackgroundService
                 connectionString.Append($"SSL Password={pgConfig.TlsPassword};");
         }
 
-        if(pgConfig.CommandTimeout.HasValue)
-            connectionString.Append($"CommandTimeout={pgConfig.CommandTimeout.Value};");
+        connectionString.Append($"CommandTimeout={pgConfig.CommandTimeout ?? 120};");
 
         // register connection factory
         builder.RegisterInstance(new PgConnectionFactory(connectionString.ToString()))
