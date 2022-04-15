@@ -881,6 +881,8 @@ public class Program : BackgroundService
 
         connectionString.Append($"CommandTimeout={pgConfig.CommandTimeout ?? 120};");
 
+        logger.Debug(()=> $"Using postgres connection string: {connectionString}");
+
         // register connection factory
         builder.RegisterInstance(new PgConnectionFactory(connectionString.ToString()))
             .AsImplementedInterfaces();
