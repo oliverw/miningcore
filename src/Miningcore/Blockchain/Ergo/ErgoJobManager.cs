@@ -142,7 +142,7 @@ public class ErgoJobManager : JobManagerBase<ErgoJob>
                     BlockchainStats.BlockHeight = job.Height;
                     BlockchainStats.ConnectedPeers = info.PeersCount;
                     BlockchainStats.NetworkDifficulty = (double) info.Difficulty;
-                    BlockchainStats.NetworkHashrate = BlockchainStats.NetworkDifficulty / blockTimeAvg;
+                    BlockchainStats.NetworkHashrate = (BlockchainStats.NetworkDifficulty / Math.Pow(2, 32)) / blockTimeAvg;
                 }
 
                 else
