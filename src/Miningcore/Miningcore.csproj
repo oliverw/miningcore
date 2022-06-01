@@ -45,7 +45,7 @@
         <PackageReference Include="Autofac" Version="6.3.0" />
         <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="7.2.0" />
         <PackageReference Include="CircularBuffer" Version="1.2.1" />
-        <PackageReference Include="GitVersion.MsBuild" Version="5.9.0">
+        <PackageReference Include="GitVersion.MsBuild" Version="5.10.3">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
