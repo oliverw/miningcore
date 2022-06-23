@@ -73,7 +73,7 @@ public class ErgoPayoutHandler : PayoutHandlerBase,
 
         var walletPassword = extraPoolPaymentProcessingConfig.WalletPassword ?? string.Empty;
 
-        await Guard(() => ergoClient.WalletUnlockAsync(new Body4 {Pass = walletPassword}, ct), ex =>
+        await Guard(() => ergoClient.WalletUnlockAsync(new UnlockWallet {Pass = walletPassword}, ct), ex =>
         {
             if (ex is ApiException<ApiError> apiException)
             {
@@ -188,7 +188,7 @@ public class ErgoPayoutHandler : PayoutHandlerBase,
                     var fullBlock = blockTask.Result;
 
                     // only consider blocks with pow-solution pk matching ours
-                    if(fullBlock.Header.PowSolutions.Pk != minerRewardsPubKey.RewardPubKey)
+                    if(fullBlock.Header.PowSolutions.Pk != minerRewardsPubKey.RewardPubkey)
                     {
                         pkMismatchCount++;
                         continue;
@@ -208,22 +208,28 @@ public class ErgoPayoutHandler : PayoutHandlerBase,
 
                     foreach(var blockTx in fullBlock.BlockTransactions.Transactions)
                     {
-                        var walletTx = await Guard(()=> ergoClient.WalletGetTransactionAsync(blockTx.Id, ct));
-                        var coinbaseOutput = walletTx?.Outputs?.FirstOrDefault(x => x.Address == minerRewardsAddress.RewardAddress);
+                        var walletTxs = await Guard(()=> ergoClient.WalletGetTransactionAsync(blockTx.Id, ct));
 
-                        if(coinbaseOutput != null)
+                        foreach(var walletTx in walletTxs)
                         {
-                            coinbaseWalletTxFound = true;
+                            var coinbaseOutput = walletTx?.Outputs?.FirstOrDefault(x => x.Address == minerRewardsAddress.RewardAddress1);
 
-                            block.ConfirmationProgress = Math.Min(1.0d, (double) walletTx.NumConfirmations / minConfirmations);
-                            block.Reward += coinbaseOutput.Value / ErgoConstants.SmallestUnit;
-                            block.Hash = fullBlock.Header.Id;
-
-                            if(walletTx.NumConfirmations >= minConfirmations)
+                            if(coinbaseOutput != null)
                             {
-                                // matured and spendable coinbase transaction
-                                block.Status = BlockStatus.Confirmed;
-                                block.ConfirmationProgress = 1;
+                                coinbaseWalletTxFound = true;
+
+                                block.ConfirmationProgress = Math.Min(1.0d, (double) walletTx.NumConfirmations / minConfirmations);
+                                block.Reward += (coinbaseOutput.Value - coinbaseOutput.Assets.First().Amount) / ErgoConstants.SmallestUnit;
+                                block.Hash = fullBlock.Header.Id;
+
+                                if(walletTx.NumConfirmations >= minConfirmations)
+                                {
+                                    // matured and spendable coinbase transaction
+                                    block.Status = BlockStatus.Confirmed;
+                                    block.ConfirmationProgress = 1;
+                                }
+
+                                break;
                             }
                         }
                     }
