@@ -18,6 +18,8 @@
 namespace Miningcore.Blockchain.Ergo
 {
     using System = global::System;
+    using System.Numerics;
+    using Newtonsoft.Json.Linq;
 
     [System.CodeDom.Compiler.GeneratedCode("NSwag", "13.16.1.0 (NJsonSchema v10.7.2.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class ErgoClient
@@ -9923,7 +9925,7 @@ namespace Miningcore.Blockchain.Ergo
         public string N { get; set; } = default!;
 
         [Newtonsoft.Json.JsonProperty("d", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public double D { get; set; } = default!;
+        public int D { get; set; } = default!;
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
 
@@ -10642,7 +10644,7 @@ namespace Miningcore.Blockchain.Ergo
         /// Work target value
         /// </summary>
         [Newtonsoft.Json.JsonProperty("b", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public int B { get; set; } = default!;
+        public BigInteger B { get; set; } = default!;
 
         /// <summary>Block height</summary>
         [Newtonsoft.Json.JsonProperty("h", Required = Newtonsoft.Json.Required.Always)]
@@ -10978,31 +10980,31 @@ namespace Miningcore.Blockchain.Ergo
         /// </summary>
         [Newtonsoft.Json.JsonProperty("difficulty", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         [System.ComponentModel.DataAnnotations.Range(0, int.MaxValue)]
-        public int? Difficulty { get; set; } = default!;
+        public JToken Difficulty { get; set; } = default!;
 
         /// <summary>
         /// Current internal node time
         /// </summary>
         [Newtonsoft.Json.JsonProperty("currentTime", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public int CurrentTime { get; set; } = default!;
+        public long CurrentTime { get; set; } = default!;
 
         /// <summary>
         /// Time when the node was started
         /// </summary>
         [Newtonsoft.Json.JsonProperty("launchTime", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public int LaunchTime { get; set; } = default!;
+        public long LaunchTime { get; set; } = default!;
 
         /// <summary>
         /// Can be 'null' if no headers is applied since node launch. headersScore is a BigInt integer.
         /// </summary>
         [Newtonsoft.Json.JsonProperty("headersScore", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public int? HeadersScore { get; set; } = default!;
+        public string? HeadersScore { get; set; } = default!;
 
         /// <summary>
         /// Can be 'null' if no full block is applied since node launch. fullBlocksScore is a BigInt integer.
         /// </summary>
         [Newtonsoft.Json.JsonProperty("fullBlocksScore", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public int? FullBlocksScore { get; set; } = default!;
+        public string? FullBlocksScore { get; set; } = default!;
 
         /// <summary>
         /// Can be 'null' if genesis blocks is not produced yet
