@@ -39,11 +39,11 @@ Depending on your OS Version run either of these scripts:
 ```
 or
 ```console
-./build-ubuntu-20.04
+./build-ubuntu-20.04.sh
 ```
 or
 ```console
-./build-ubuntu-21.04
+./build-ubuntu-21.04.sh
 ```
 
 ## Building on Windows
