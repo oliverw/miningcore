@@ -208,15 +208,20 @@ public class ErgoPayoutHandler : PayoutHandlerBase,
 
                     foreach(var blockTx in fullBlock.BlockTransactions.Transactions)
                     {
+                        logger.Info(()=> $"**1 {blockTx?.Id}");
                         var walletTxs = await Guard(()=> ergoClient.WalletGetTransactionAsync(blockTx.Id, ct));
 
+                        logger.Info(()=> $"**2 {walletTxs?.Count}");
                         foreach(var walletTx in walletTxs)
                         {
+                            logger.Info(()=> $"**4 {walletTx?.Outputs} {minerRewardsAddress.RewardAddress1}");
                             var coinbaseOutput = walletTx?.Outputs?.FirstOrDefault(x => x.Address == minerRewardsAddress.RewardAddress1);
 
                             if(coinbaseOutput != null)
                             {
                                 coinbaseWalletTxFound = true;
+
+                                logger.Info(()=> $"**5 {coinbaseOutput.Value} {coinbaseOutput.Assets?.Count} {coinbaseOutput.Assets.FirstOrDefault()?.Amount}");
 
                                 block.ConfirmationProgress = Math.Min(1.0d, (double) walletTx.NumConfirmations / minConfirmations);
                                 block.Reward += (coinbaseOutput.Value - coinbaseOutput.Assets.First().Amount) / ErgoConstants.SmallestUnit;
