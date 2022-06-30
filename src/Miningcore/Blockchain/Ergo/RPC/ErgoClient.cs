@@ -4320,7 +4320,7 @@ namespace Miningcore.Blockchain.Ergo
         /// <param name="id">Transaction id</param>
         /// <returns>Wallet-related transaction</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<System.Collections.Generic.ICollection<WalletTransaction>> WalletGetTransactionAsync(string id)
+        public virtual System.Threading.Tasks.Task<WalletTransaction> WalletGetTransactionAsync(string id)
         {
             return WalletGetTransactionAsync(id, System.Threading.CancellationToken.None);
         }
@@ -4332,7 +4332,7 @@ namespace Miningcore.Blockchain.Ergo
         /// <param name="id">Transaction id</param>
         /// <returns>Wallet-related transaction</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<System.Collections.Generic.ICollection<WalletTransaction>> WalletGetTransactionAsync(string id, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<WalletTransaction> WalletGetTransactionAsync(string id, System.Threading.CancellationToken cancellationToken)
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -4374,7 +4374,7 @@ namespace Miningcore.Blockchain.Ergo
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.ICollection<WalletTransaction>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<WalletTransaction>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -11274,8 +11274,8 @@ namespace Miningcore.Blockchain.Ergo
         [Newtonsoft.Json.JsonProperty("balance", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public long Balance { get; set; } = default!;
 
-        [Newtonsoft.Json.JsonProperty("assets", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public System.Collections.Generic.ICollection<Asset> Assets { get; set; } = default!;
+        // [Newtonsoft.Json.JsonProperty("assets", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        // public System.Collections.Generic.ICollection<Asset> Assets { get; set; } = default!;
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
 
