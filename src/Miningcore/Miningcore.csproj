@@ -80,7 +80,7 @@
         <PackageReference Include="Portable.BouncyCastle" Version="1.9.0" />
         <PackageReference Include="prometheus-net.AspNetCore" Version="6.0.0" />
         <PackageReference Include="prometheus-net" Version="6.0.0" />
-        <PackageReference Include="protobuf-net" Version="3.1.4" />
+        <PackageReference Include="protobuf-net" Version="3.1.17" />
         <PackageReference Include="System.Diagnostics.Process" Version="4.3.0" />
         <PackageReference Include="System.Reactive" Version="5.0.0" />
     </ItemGroup>
