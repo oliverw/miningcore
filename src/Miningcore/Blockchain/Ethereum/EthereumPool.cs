@@ -151,11 +151,14 @@ public class EthereumPool : PoolBase
 
         else
         {
-            logger.Info(() => $"[{connection.ConnectionId}] Banning unauthorized worker {minerName} for {loginFailureBanTimeout.TotalSeconds} sec");
+            if(clusterConfig?.Banning?.BanOnLoginFailure is null or true)
+            {
+                logger.Info(() => $"[{connection.ConnectionId}] Banning unauthorized worker {minerName} for {loginFailureBanTimeout.TotalSeconds} sec");
 
-            banManager.Ban(connection.RemoteEndpoint.Address, loginFailureBanTimeout);
+                banManager.Ban(connection.RemoteEndpoint.Address, loginFailureBanTimeout);
 
-            Disconnect(connection);
+                Disconnect(connection);
+            }
         }
     }
 
@@ -324,11 +327,14 @@ public class EthereumPool : PoolBase
 
         else
         {
-            logger.Info(() => $"[{connection.ConnectionId}] Banning unauthorized worker {minerName} for {loginFailureBanTimeout.TotalSeconds} sec");
+            if(clusterConfig?.Banning?.BanOnLoginFailure is null or true)
+            {
+                banManager.Ban(connection.RemoteEndpoint.Address, loginFailureBanTimeout);
 
-            banManager.Ban(connection.RemoteEndpoint.Address, loginFailureBanTimeout);
+                logger.Info(() => $"[{connection.ConnectionId}] Banning unauthorized worker {minerName} for {loginFailureBanTimeout.TotalSeconds} sec");
 
-            Disconnect(connection);
+                Disconnect(connection);
+            }
         }
     }
 

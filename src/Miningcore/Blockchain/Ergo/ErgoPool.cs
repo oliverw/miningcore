@@ -142,12 +142,15 @@ public class ErgoPool : PoolBase
         {
             await connection.RespondErrorAsync(StratumError.UnauthorizedWorker, "Authorization failed", request.Id, context.IsAuthorized);
 
-            // issue short-time ban if unauthorized to prevent DDos on daemon (validateaddress RPC)
-            logger.Info(() => $"[{connection.ConnectionId}] Banning unauthorized worker {minerName} for {loginFailureBanTimeout.TotalSeconds} sec");
+            if(clusterConfig?.Banning?.BanOnLoginFailure is null or true)
+            {
+                // issue short-time ban if unauthorized to prevent DDos on daemon (validateaddress RPC)
+                logger.Info(() => $"[{connection.ConnectionId}] Banning unauthorized worker {minerName} for {loginFailureBanTimeout.TotalSeconds} sec");
 
-            banManager.Ban(connection.RemoteEndpoint.Address, loginFailureBanTimeout);
+                banManager.Ban(connection.RemoteEndpoint.Address, loginFailureBanTimeout);
 
-            Disconnect(connection);
+                Disconnect(connection);
+            }
         }
     }
 

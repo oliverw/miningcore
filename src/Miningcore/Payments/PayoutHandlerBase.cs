@@ -97,7 +97,7 @@ public abstract class PayoutHandlerBase
             // skip transfers from pool wallet to pool wallet
             if(address != poolConfig.Address)
             {
-                logger.Info(() => $"Adding {FormatAmount(amount)} to balance of {address}");
+                logger.Info(() => $"Crediting {address} with {FormatAmount(amount)}");
                 await balanceRepo.AddAmountAsync(con, tx, poolConfig.Id, address, amount, $"Reward for block {block.BlockHeight}");
             }
         }
@@ -152,12 +152,10 @@ public abstract class PayoutHandlerBase
         }
     }
 
-    protected async Task PersistPaymentsAsync(Balance[] balances, string[] transactionConfirmations)
+    protected async Task PersistPaymentsAsync(Dictionary<Balance, string> balances)
     {
         Contract.RequiresNonNull(balances);
-        Contract.RequiresNonNull(transactionConfirmations);
-        Contract.Requires<ArgumentException>(balances.Length > 0);
-        Contract.Requires<ArgumentException>(balances.Length == transactionConfirmations.Length);
+        Contract.Requires<ArgumentException>(balances.Count > 0);
 
         var coin = poolConfig.Template.As<CoinTemplate>();
 
@@ -167,10 +165,9 @@ public abstract class PayoutHandlerBase
             {
                 await cf.RunTx(async (con, tx) =>
                 {
-                    for(var i = 0; i < balances.Length; i++)
+                    foreach(var kvp in balances)
                     {
-                        var balance = balances[i];
-                        var transactionConfirmation = transactionConfirmations[i];
+                        var (balance, transactionConfirmation) = kvp;
 
                         if(!string.IsNullOrEmpty(transactionConfirmation) && poolConfig.RewardRecipients.All(x => x.Address != balance.Address))
                         {
@@ -199,7 +196,7 @@ public abstract class PayoutHandlerBase
         catch(Exception ex)
         {
             logger.Error(ex, () => $"[{LogCategory}] Failed to persist the following payments: " +
-                $"{JsonConvert.SerializeObject(balances.Where(x => x.Amount > 0).ToDictionary(x => x.Address, x => x.Amount))}");
+                $"{JsonConvert.SerializeObject(balances.Where(x => x.Key.Amount > 0).ToDictionary(x => x.Key.Address, x => x.Key.Amount))}");
             throw;
         }
     }

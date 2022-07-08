@@ -306,7 +306,6 @@
     <ClCompile Include="neoscrypt.c" />
     <ClCompile Include="exports.cpp" />
     <ClCompile Include="nist5.c" />
-    <ClCompile Include="odocrypt.cpp" />
     <ClCompile Include="phi.c" />
     <ClCompile Include="quark.c" />
     <ClCompile Include="qubit.c" />

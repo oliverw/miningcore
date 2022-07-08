@@ -13,6 +13,12 @@ public static unsafe class Multihash
     [DllImport("libmultihash", EntryPoint = "sha256csm_export", CallingConvention = CallingConvention.Cdecl)]
     public static extern void sha256csm(byte* input, void* output, uint inputLength);
 
+    [DllImport("libmultihash", EntryPoint = "sha3_256_export", CallingConvention = CallingConvention.Cdecl)]
+    public static extern void sha3_256(byte* input, void* output, uint inputLength);
+
+    [DllImport("libmultihash", EntryPoint = "sha3_512_export", CallingConvention = CallingConvention.Cdecl)]
+    public static extern void sha3_512(byte* input, void* output, uint inputLength);
+
     [DllImport("libmultihash", EntryPoint = "hmq17_export", CallingConvention = CallingConvention.Cdecl)]
     public static extern void hmq17(byte* input, void* output, uint inputLength);
 

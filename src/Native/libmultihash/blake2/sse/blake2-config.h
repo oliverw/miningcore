@@ -65,6 +65,7 @@
 #define HAVE_SSE2
 #endif
 
+
 #if !defined(HAVE_SSE2)
 #error "This code requires at least SSE2."
 #endif

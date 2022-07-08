@@ -172,6 +172,8 @@ public class RpcClient
                 // read response
                 var responseContent = await response.Content.ReadAsStringAsync(ct);
 
+                logger.Trace(() => $"Received RPC response: {responseContent}");
+
                 // deserialize response
                 using(var jreader = new JsonTextReader(new StringReader(responseContent)))
                 {
@@ -222,9 +224,11 @@ public class RpcClient
             using(var response = await httpClient.SendAsync(request, ct))
             {
                 // deserialize response
-                var jsonResponse = await response.Content.ReadAsStringAsync(ct);
+                var responseContent = await response.Content.ReadAsStringAsync(ct);
 
-                using(var jreader = new JsonTextReader(new StringReader(jsonResponse)))
+                logger.Trace(() => $"Received RPC response: {responseContent}");
+
+                using(var jreader = new JsonTextReader(new StringReader(responseContent)))
                 {
                     var result = serializer.Deserialize<JsonRpcResponse<JToken>[]>(jreader);
 

@@ -73,7 +73,7 @@ public class ErgoPayoutHandler : PayoutHandlerBase,
 
         var walletPassword = extraPoolPaymentProcessingConfig.WalletPassword ?? string.Empty;
 
-        await Guard(() => ergoClient.WalletUnlockAsync(new Body4 {Pass = walletPassword}, ct), ex =>
+        await Guard(() => ergoClient.WalletUnlockAsync(new UnlockWallet {Pass = walletPassword}, ct), ex =>
         {
             if (ex is ApiException<ApiError> apiException)
             {
@@ -188,7 +188,7 @@ public class ErgoPayoutHandler : PayoutHandlerBase,
                     var fullBlock = blockTask.Result;
 
                     // only consider blocks with pow-solution pk matching ours
-                    if(fullBlock.Header.PowSolutions.Pk != minerRewardsPubKey.RewardPubKey)
+                    if(fullBlock.Header.PowSolutions.Pk != minerRewardsPubKey.RewardPubkey)
                     {
                         pkMismatchCount++;
                         continue;
@@ -209,15 +209,17 @@ public class ErgoPayoutHandler : PayoutHandlerBase,
                     foreach(var blockTx in fullBlock.BlockTransactions.Transactions)
                     {
                         var walletTx = await Guard(()=> ergoClient.WalletGetTransactionAsync(blockTx.Id, ct));
-                        var coinbaseOutput = walletTx?.Outputs?.FirstOrDefault(x => x.Address == minerRewardsAddress.RewardAddress);
+                        var coinbaseOutput = walletTx?.Outputs.FirstOrDefault(x => x.Address == minerRewardsAddress.RewardAddress1);
 
                         if(coinbaseOutput != null)
                         {
                             coinbaseWalletTxFound = true;
 
                             block.ConfirmationProgress = Math.Min(1.0d, (double) walletTx.NumConfirmations / minConfirmations);
-                            block.Reward += coinbaseOutput.Value / ErgoConstants.SmallestUnit;
                             block.Hash = fullBlock.Header.Id;
+
+                            var assetValue = coinbaseOutput.Assets?.FirstOrDefault()?.Amount ?? 0;
+                            block.Reward += (coinbaseOutput.Value - assetValue) / ErgoConstants.SmallestUnit;
 
                             if(walletTx.NumConfirmations >= minConfirmations)
                             {
@@ -275,13 +277,6 @@ public class ErgoPayoutHandler : PayoutHandlerBase,
         }
 
         return result.ToArray();
-    }
-
-    public virtual Task CalculateBlockEffortAsync(IMiningPool pool, Block block, double accumulatedBlockShareDiff, CancellationToken ct)
-    {
-        block.Effort = accumulatedBlockShareDiff * ErgoConstants.ShareMultiplier / block.NetworkDifficulty;
-
-        return Task.FromResult(true);
     }
 
     public override double AdjustShareDifficulty(double difficulty)

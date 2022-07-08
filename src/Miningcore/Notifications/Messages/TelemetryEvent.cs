@@ -26,30 +26,26 @@ public enum TelemetryCategory
     /// Hash computation time
     /// </summary>
     Hash,
+
+    /// <summary>
+    /// JsonRPC Request from miner
+    /// </summary>
+    StratumRequest,
+
+    /// <summary>
+    /// API request handled
+    /// </summary>
+    ApiRequest
 }
 
-public record TelemetryEvent
+public record TelemetryEvent(string GroupId, TelemetryCategory Category, TimeSpan Elapsed, bool? Success = null, string Error = null)
 {
-    public TelemetryEvent(string groupId, TelemetryCategory category, TimeSpan elapsed, bool? success = null, string error = null)
-    {
-        GroupId = groupId;
-        Category = category;
-        Elapsed = elapsed;
-        Success = success;
-        Error = error;
-    }
-
     public TelemetryEvent(string groupId, TelemetryCategory category, string info, TimeSpan elapsed, bool? success = null, string error = null) :
         this(groupId, category, elapsed, success, error)
     {
         Info = info;
     }
 
-    public string GroupId { get; }
-    public TelemetryCategory Category { get; }
     public string Info { get; }
-    public TimeSpan Elapsed { get; }
-    public bool? Success { get; }
-    public string Error { get; }
     public int Total { get; set; }
 }

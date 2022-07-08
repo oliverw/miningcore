@@ -415,13 +415,6 @@ public class CryptonotePayoutHandler : PayoutHandlerBase,
         return result.ToArray();
     }
 
-    public Task CalculateBlockEffortAsync(IMiningPool pool, Block block, double accumulatedBlockShareDiff, CancellationToken ct)
-    {
-        block.Effort = accumulatedBlockShareDiff / block.NetworkDifficulty;
-
-        return Task.FromResult(true);
-    }
-
     public override async Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx,
         IMiningPool pool, Block block, CancellationToken ct)
     {

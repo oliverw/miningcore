@@ -6,11 +6,16 @@ public partial class ErgoClient
 {
     public Dictionary<string, string> RequestHeaders { get; } = new();
 
-    private Task PrepareRequestAsync(HttpClient client, HttpRequestMessage request, StringBuilder url)
+    private Task PrepareRequestAsync(HttpClient client, HttpRequestMessage request, StringBuilder url, CancellationToken ct)
     {
         foreach(var pair in RequestHeaders)
             request.Headers.Add(pair.Key, pair.Value);
 
+        return Task.CompletedTask;
+    }
+
+    private Task PrepareRequestAsync(HttpClient client, HttpRequestMessage request, String url, CancellationToken ct)
+    {
         return Task.CompletedTask;
     }
 

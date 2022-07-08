@@ -46,7 +46,7 @@ public class SOLOPaymentScheme : IPayoutScheme
 
             if(amount > 0)
             {
-                logger.Info(() => $"Adding {payoutHandler.FormatAmount(amount)} to balance of {address} for block {block.BlockHeight}");
+                logger.Info(() => $"Crediting {address} with {payoutHandler.FormatAmount(amount)} for block {block.BlockHeight}");
 
                 await balanceRepo.AddAmountAsync(con, tx, poolConfig.Id, address, amount, $"Reward for block {block.BlockHeight}");
             }

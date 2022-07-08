@@ -183,11 +183,17 @@ public partial class BitcoinTemplate : CoinTemplate
     public bool HasMasterNodes { get; set; }
 
     [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+    public bool HasBrokenSendMany { get; set; } = false;
+
+    [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
     public bool HasFounderFee { get; set; }
 
     [JsonProperty(DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
     [DefaultValue(1.0d)]
     public double ShareMultiplier { get; set; } = 1.0d;
+
+    [JsonProperty(DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
+    public double? HashrateMultiplier { get; set; }
 
     [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
     public bool CoinbaseIgnoreAuxFlags { get; set; }
@@ -580,6 +586,11 @@ public class PostgresConfig : DatabaseConfig
     public bool TlsNoValidate { get; set; }
 
     public int? CommandTimeout { get; set; }
+
+    /// <summary>
+    /// Enable Enabling Npgsql Legacy Timestamp Behavior
+    /// </summary>
+    public bool? EnableLegacyTimestamps { get; set; }
 }
 
 public class TcpProxyProtocolConfig
@@ -684,6 +695,11 @@ public class ClusterBanningConfig
     /// Ban miners for crossing invalid share threshold
     /// </summary>
     public bool? BanOnInvalidShares { get; set; }
+
+    /// <summary>
+    /// Ban clients sending invalid logins
+    /// </summary>
+    public bool? BanOnLoginFailure { get; set; }
 }
 
 public partial class PoolShareBasedBanningConfig

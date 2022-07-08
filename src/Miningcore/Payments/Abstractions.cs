@@ -10,7 +10,6 @@ public interface IPayoutHandler
     Task ConfigureAsync(ClusterConfig cc, PoolConfig pc, CancellationToken ct);
 
     Task<Block[]> ClassifyBlocksAsync(IMiningPool pool, Block[] blocks, CancellationToken ct);
-    Task CalculateBlockEffortAsync(IMiningPool pool, Block block, double accumulatedBlockShareDiff, CancellationToken ct);
     Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, IMiningPool pool, Block block, CancellationToken ct);
     Task PayoutAsync(IMiningPool pool, Balance[] balances, CancellationToken ct);
     double AdjustShareDifficulty(double difficulty);
