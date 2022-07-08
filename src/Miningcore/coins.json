@@ -223,7 +223,7 @@
         "twitter": "",
         "telegram": "",
         "discord": "",
-"coinbaseHasher": {
+        "coinbaseHasher": {
             "hash": "sha256d"
         },
         "headerHasher": {
