@@ -59,6 +59,13 @@ public abstract partial class CoinTemplate
     public string Website { get; set; }
 
     /// <summary>
+    /// Market
+    /// </summary>
+    [JsonProperty(Order = -9)]
+    public string Market { get; set; }
+
+
+    /// <summary>
     /// Family
     /// </summary>
     [JsonConverter(typeof(StringEnumConverter), true)]
