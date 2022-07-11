@@ -2,12 +2,12 @@ namespace Miningcore.Notifications.Messages;
 
 public record PaymentNotification
 {
-    public PaymentNotification(string poolId, string error, decimal amount, string symbol, int recpientsCount, string[] txIds, string[] txExplorerLinks, decimal? txFee)
+    public PaymentNotification(string poolId, string error, decimal amount, string symbol, int recipientsCount, string[] txIds, string[] txExplorerLinks, decimal? txFee)
     {
         PoolId = poolId;
         Error = error;
         Amount = amount;
-        RecpientsCount = recpientsCount;
+        RecipientsCount = recipientsCount;
         TxIds = txIds;
         TxFee = txFee;
         Symbol = symbol;
@@ -27,7 +27,7 @@ public record PaymentNotification
     public string[] TxIds { get; set; }
     public string[] TxExplorerLinks { get; set; }
     public string Symbol { get; set; }
-    public int RecpientsCount { get; set; }
+    public int RecipientsCount { get; set; }
     public decimal Amount { get; set; }
     public string Error { get; set; }
 }
