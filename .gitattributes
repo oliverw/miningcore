@@ -1,6 +1,4 @@
-# 2010
-*.txt -crlf
-
-# 2020
-*.txt text eol=lf
-
+* text=auto
+*.vcproj	text eol=crlf
+*.csproj	text eol=crlf
+*.sh		text eol=lf
