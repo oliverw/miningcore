@@ -364,11 +364,16 @@ public class ErgoJobManager : JobManagerBase<ErgoJob>
         blockVersion = info.Parameters.BlockVersion;
 
         // chain detection
-        var m = ErgoConstants.RegexChain.Match(info.Name);
-        if(!m.Success)
-            throw new PoolStartupException($"Unable to identify network type ({info.Name}", poolConfig.Id);
+        if(!string.IsNullOrEmpty(info.Network))
+            network = info.Network.ToLower();
+        else
+        {
+            var m = ErgoConstants.RegexChain.Match(info.Name);
+            if(!m.Success)
+                throw new PoolStartupException($"Unable to identify network type ({info.Name}", poolConfig.Id);
 
-        network = m.Groups[1].Value.ToLower();
+            network = m.Groups[1].Value.ToLower();
+        }
 
         // Payment-processing setup
         if(clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
