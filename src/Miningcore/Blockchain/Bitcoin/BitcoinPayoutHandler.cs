@@ -205,7 +205,7 @@ public class BitcoinPayoutHandler : PayoutHandlerBase,
 
         var comment = $"{identifier} Payment";
 
-        if(!(extraPoolConfig?.HasBrokenSendMany == true || poolConfig.Template.As<BitcoinTemplate>().HasBrokenSendMany))
+        if(!(extraPoolConfig?.HasBrokenSendMany == true || poolConfig.Template is BitcoinTemplate { HasBrokenSendMany: true }))
         {
             if(extraPoolPaymentProcessingConfig?.MinersPayTxFees == true)
             {
