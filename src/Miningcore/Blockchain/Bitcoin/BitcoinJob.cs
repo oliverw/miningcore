@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using System.Globalization;
-using System.Text;
 using Miningcore.Blockchain.Bitcoin.Configuration;
 using Miningcore.Blockchain.Bitcoin.DaemonResponses;
 using Miningcore.Configuration;
@@ -20,6 +19,10 @@ namespace Miningcore.Blockchain.Bitcoin;
 public class BitcoinJob
 {
     private const string SymbolRaptoreum = "RTM";
+    private const string SymbolThooneum = "Thoon";
+    private const string SymbolYerbas = "YERB";
+    private const string SymbolButKoin = "BUTK";
+    private const string Symbolgavecoin = "GVC";
     protected IHashAlgorithm blockHasher;
     protected IMasterClock clock;
     protected IHashAlgorithm coinbaseHasher;
@@ -570,7 +573,7 @@ public class BitcoinJob
         {
             masterNodeParameters = BlockTemplate.Extra.SafeExtensionDataAs<MasterNodeBlockTemplateExtra>();
 
-            if(coin.Symbol == SymbolRaptoreum)
+            if((coin.Symbol == SymbolRaptoreum) || (coin.Symbol == SymbolThooneum) || (coin.Symbol == Symbolgavecoin) || (coin.Symbol == SymbolButKoin) || (coin.Symbol == SymbolYerbas))
             {
                 if(masterNodeParameters.Extra?.ContainsKey("smartnode") == true)
                 {
