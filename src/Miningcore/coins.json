@@ -1753,57 +1753,5 @@
         "explorerBlockLink": "https://explorer.yerbas.org/block/$height$",
         "explorerTxLink": "https://explorer.yerbas.org/tx/{0}",
         "explorerAccountLink": "https://explorer.yerbas.org/address/{0}"
-    },
-    "butKoin": {
-        "name": "ButKoin",
-        "canonicalName": "ButKoin",
-        "symbol": "BUTK",
-        "family": "bitcoin",
-        "website": "https://yerbas.org/",
-        "twitter": "https://twitter.com/Yerbas_Endeavor",
-        "telegram": "https://t.me/raptoreum",
-        "discord": "https://discord.gg/XGEp2cKSKF",
-        "coinbaseHasher": {
-            "hash": "sha256d"
-        },
-        "headerHasher": {
-            "hash": "ghostrider"
-        },
-        "blockHasher": {
-            "hash": "reverse",
-            "args": [ { "hash": "sha256d" } ]
-        },
-        "hasFounderFee": true,
-        "hasMasterNodes": true,
-        "shareMultiplier": 65536,
-        "explorerBlockLink": "https://explorer.butkoin.com/block-height/$height$",
-        "explorerTxLink": "https://explorer.butkoin.com/tx/{0}",
-        "explorerAccountLink": "https://explorer.butkoin.com/address/{0}"
-    },
-    "gavecoin": {
-        "name": "Gavecoin",
-        "canonicalName": "Gavecoin",
-        "symbol": "GVC",
-        "family": "bitcoin",
-        "website": "https://yerbas.org/",
-        "twitter": "https://twitter.com/Yerbas_Endeavor",
-        "telegram": "https://t.me/raptoreum",
-        "discord": "https://discord.gg/XGEp2cKSKF",
-        "coinbaseHasher": {
-            "hash": "sha256d"
-        },
-        "headerHasher": {
-            "hash": "ghostrider"
-        },
-        "blockHasher": {
-            "hash": "reverse",
-            "args": [ { "hash": "sha256d" } ]
-        },
-        "hasFounderFee": true,
-        "hasMasterNodes": true,
-        "shareMultiplier": 65536,
-        "explorerBlockLink": "https://explorer.gavecoin.com/block/$height$",
-        "explorerTxLink": "https://explorer.gavecoin.com/tx/{0}",
-        "explorerAccountLink": "https://explorer.gavecoin.com/address/{0}"
     }
 }
