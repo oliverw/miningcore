@@ -1727,31 +1727,5 @@
         "explorerBlockLink": "http://rtm.timyg.org:6950/block/$height$",
         "explorerTxLink": "http://rtm.timyg.org:6950/tx/{0}",
         "explorerAccountLink": "http://rtm.timyg.org:6950/address/{0}"
-    },
-    "yerbas": {
-        "name": "Yerbas",
-        "canonicalName": "Yerbas",
-        "symbol": "YERB",
-        "family": "bitcoin",
-        "website": "https://yerbas.org/",
-        "twitter": "https://twitter.com/Yerbas_Endeavor",
-        "telegram": "https://t.me/raptoreum",
-        "discord": "https://discord.gg/XGEp2cKSKF",
-        "coinbaseHasher": {
-            "hash": "sha256d"
-        },
-        "headerHasher": {
-            "hash": "ghostrider"
-        },
-        "blockHasher": {
-            "hash": "reverse",
-            "args": [ { "hash": "sha256d" } ]
-        },
-        "hasFounderFee": true,
-        "hasMasterNodes": true,
-        "shareMultiplier": 65536,
-        "explorerBlockLink": "https://explorer.yerbas.org/block/$height$",
-        "explorerTxLink": "https://explorer.yerbas.org/tx/{0}",
-        "explorerAccountLink": "https://explorer.yerbas.org/address/{0}"
     }
 }
