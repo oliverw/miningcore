@@ -1833,6 +1833,40 @@
         "explorerTxLink": "https://openchains.info/coin/ntbc/tx/{0}",
         "explorerAccountLink": "https://openchains.info/coin/ntbc/address/{0}"
     },
+    
+    "outracoin": {
+        "name": "Outracoin",
+        "symbol": "OUTRA",
+        "family": "bitcoin",
+        "website": "https://outracoin.org",
+        "telegram": "https://t.me/outracoin",
+        "discord": "https://discord.com/invite/saDc4r8Nxv",
+        "coinbaseHasher": {
+            "hash": "sha256d"
+        },
+        "headerHasher": {
+            "hash": "scrypt",
+            "args": [ 1024, 1 ]
+        },
+        "blockHasher": {
+            "hash": "reverse",
+            "args": [ { "hash": "sha256d" } ]
+        },
+        "posBlockHasher": {
+            "hash": "reverse",
+            "args": [
+                {
+                    "hash": "scrypt",
+                    "args": [ 1024, 1 ]
+                }
+            ]
+        },
+        "shareMultiplier": 65536,
+        "coinbaseMinConfimations": 101,
+        "explorerBlockLink": "https://outrachain.org/block/$hash$",
+        "explorerTxLink": "https://outrachain.org/tx/{0}",
+        "explorerAccountLink": "https://outrachain.org/address/{0}"
+    },
 
     "opticalbitcoin": {
         "name": "Optical BTC",
