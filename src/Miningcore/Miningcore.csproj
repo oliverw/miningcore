@@ -44,7 +44,9 @@
         <PackageReference Include="AspNetCoreRateLimit" Version="4.0.2" />
         <PackageReference Include="Autofac" Version="6.4.0" />
         <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="8.0.0" />
+        <PackageReference Include="Chaos.NaCl.Standard" Version="1.0.0" />
         <PackageReference Include="CircularBuffer" Version="1.2.1" />
+        <PackageReference Include="Ed25519" Version="1.0.0" />
         <PackageReference Include="GitVersion.MsBuild" Version="5.10.3">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -52,6 +54,7 @@
         <PackageReference Include="Microsoft.IO.RecyclableMemoryStream" Version="2.2.0" />
         <PackageReference Include="Newtonsoft.Json.Schema" Version="3.0.14" />
         <PackageReference Include="Npgsql" Version="6.0.5" />
+        <PackageReference Include="NSec.Cryptography" Version="22.4.0" />
         <PackageReference Include="NSwag.AspNetCore" Version="13.16.1" />
         <PackageReference Include="NSwag.CodeGeneration.CSharp" Version="13.16.1" />
         <PackageReference Include="NSwag.MSBuild" Version="13.16.1">
