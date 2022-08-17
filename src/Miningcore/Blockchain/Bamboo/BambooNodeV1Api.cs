@@ -218,5 +218,34 @@ namespace Miningcore.Blockchain.Bamboo
                 return (false, null);
             }
         }
+
+        public async Task<(bool success, ulong hashrate)> GetNetworkHashrate()
+        {
+            try
+            {
+                var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, Url + "/getnetworkhashrate");
+
+                using (var httpResponseMessage = await HttpClient.SendAsync(httpRequestMessage))
+                {
+                    var success = httpResponseMessage.IsSuccessStatusCode;
+                    ulong hashrate = 0;
+
+                    if (success)
+                    {
+                        using (var contentStream = await httpResponseMessage.Content.ReadAsStreamAsync())
+                        {
+                            hashrate = await JsonSerializer.DeserializeAsync<ulong>(contentStream);
+                        }
+                    }
+
+                    return (success, hashrate);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+                return (false, 0);
+            }
+        }
     }
 }

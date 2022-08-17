@@ -341,7 +341,7 @@ public class BambooPool : PoolBase
     {
         await base.InitStatsAsync(ct);
 
-        //blockchainStats = manager.BlockchainStats;
+        blockchainStats = manager.BlockchainStats;
     }
 
     protected override WorkerContextBase CreateWorkerContext()

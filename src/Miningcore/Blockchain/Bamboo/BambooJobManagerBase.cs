@@ -17,6 +17,8 @@ namespace Miningcore.Blockchain.Bamboo;
 
 public abstract class BambooJobManagerBase<TJob> : JobManagerBase<TJob>
 {
+    protected IBambooNodeApi Node;
+
     protected BambooJobManagerBase(
         IComponentContext ctx,
         IMasterClock clock,
@@ -116,37 +118,11 @@ public abstract class BambooJobManagerBase<TJob> : JobManagerBase<TJob>
 
     private async Task UpdateNetworkStatsAsync(CancellationToken ct)
     {
-        /*try
-        {
-            var results = await rpc.ExecuteBatchAsync(logger, ct,
-                new RpcRequest(BitcoinCommands.GetMiningInfo),
-                new RpcRequest(BitcoinCommands.GetNetworkInfo),
-                new RpcRequest(BitcoinCommands.GetNetworkHashPS)
-            );
+        var ( _, hashrate) = await Node.GetNetworkHashrate();
 
-            if(results.Any(x => x.Error != null))
-            {
-                var errors = results.Where(x => x.Error != null).ToArray();
+        BlockchainStats.NetworkHashrate = hashrate;
+        BlockchainStats.ConnectedPeers = 1;
 
-                if(errors.Any())
-                    logger.Warn(() => $"Error(s) refreshing network stats: {string.Join(", ", errors.Select(y => y.Error.Message))}");
-            }
-
-            var miningInfoResponse = results[0].Response.ToObject<MiningInfo>();
-            var networkInfoResponse = results[1].Response.ToObject<NetworkInfo>();
-
-            BlockchainStats.NetworkHashrate = miningInfoResponse.NetworkHashps;
-            BlockchainStats.ConnectedPeers = networkInfoResponse.Connections;
-
-            // Fall back to alternative RPC if coin does not report Network HPS (Digibyte)
-            if(BlockchainStats.NetworkHashrate == 0 && results[2].Error == null)
-                BlockchainStats.NetworkHashrate = results[2].Response.Value<double>();
-        }
-
-        catch(Exception e)
-        {
-            logger.Error(e);
-        }*/
         await Task.CompletedTask;
     }
 
@@ -184,24 +160,16 @@ public abstract class BambooJobManagerBase<TJob> : JobManagerBase<TJob>
         return new SubmitResult(result, share.TransactionConfirmationData);
     }
 
-    protected async Task<bool> AreDaemonsHealthyLegacyAsync(CancellationToken ct)
-    {
-        //var response = await rpc.ExecuteAsync<DaemonInfo>(logger, BitcoinCommands.GetInfo, ct);
-
-        //return response.Error == null;
-        await Task.CompletedTask;
-        return true;
-    }
-
     protected virtual void PostChainIdentifyConfigure()
     {
     }
 
     protected override void ConfigureDaemons()
     {
-        /*var jsonSerializerSettings = ctx.Resolve<JsonSerializerSettings>();
-
-        rpc = new RpcClient(poolConfig.Daemons.First(), jsonSerializerSettings, messageBus, poolConfig.Id);*/
+        // TODO: implement failover??
+        var daemon = poolConfig.Daemons.First();
+        var httpClient = new HttpClient();
+        Node = new BambooNodeV1Api(httpClient, string.Join(":", daemon.Host, daemon.Port));
     }
 
     protected override async Task<bool> AreDaemonsHealthyAsync(CancellationToken ct)
@@ -218,14 +186,8 @@ public abstract class BambooJobManagerBase<TJob> : JobManagerBase<TJob>
 
     protected override async Task<bool> AreDaemonsConnectedAsync(CancellationToken ct)
     {
-        /*if(hasLegacyDaemon)
-            return await AreDaemonsConnectedLegacyAsync(ct);
-
-        var response = await rpc.ExecuteAsync<NetworkInfo>(logger, BitcoinCommands.GetNetworkInfo, ct);
-
-        return response.Error == null && response.Response?.Connections > 0;*/
-        await Task.CompletedTask;
-        return true;
+        var (success, _) = await Node.GetBlock();
+        return success;
     }
 
     protected override async Task EnsureDaemonsSynchedAsync(CancellationToken ct)

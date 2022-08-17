@@ -79,7 +79,7 @@ namespace Miningcore.Blockchain.Bamboo
             var diffInt = ((int)Math.Floor(stratumDifficulty));
             var diffFrac = stratumDifficulty - diffInt;
 
-            var stratumTarget = (ulong.MaxValue >> diffInt) + ((ulong.MaxValue >> diffInt) * diffFrac);
+            var stratumTarget = (ulong.MaxValue >> diffInt) - ((ulong.MaxValue >> (diffInt + 1)) * diffFrac);
             var blockTargetValue = ulong.MaxValue >> ChallengeSize;
 
             using (SHA256 sha256 = SHA256.Create())
@@ -103,7 +103,7 @@ namespace Miningcore.Blockchain.Bamboo
                         var prevDiffInt = ((int)Math.Floor(context.PreviousDifficulty.Value));
                         var prevDiffFrac = context.PreviousDifficulty.Value - prevDiffInt;
 
-                        var prevDifficulty = (ulong.MaxValue >> prevDiffInt) + ((ulong.MaxValue >> prevDiffInt) * prevDiffFrac);
+                        var prevDifficulty = (ulong.MaxValue >> prevDiffInt) - ((ulong.MaxValue >> (prevDiffInt + 1)) * prevDiffFrac);
                         
                         valid = shareDiff <= prevDifficulty;
 

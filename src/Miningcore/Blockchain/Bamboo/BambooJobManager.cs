@@ -12,8 +12,6 @@ namespace Miningcore.Blockchain.Bamboo;
 
 public class BambooJobManager : BambooJobManagerBase<BambooJob>
 {
-    private IBambooNodeApi Node;
-
     public BambooJobManager(
         IComponentContext ctx,
         IMasterClock clock,
@@ -177,11 +175,6 @@ public class BambooJobManager : BambooJobManagerBase<BambooJob>
     {
         coin = pc.Template.As<BambooCoinTemplate>();
         base.Configure(pc, cc);
-
-        // TODO: implement failover??
-        var daemon = poolConfig.Daemons.First();
-        var httpClient = new HttpClient();
-        Node = new BambooNodeV1Api(httpClient, string.Join(":", daemon.Host, daemon.Port));
     }
 
     public virtual object[] GetSubscriberData(StratumConnection worker)
