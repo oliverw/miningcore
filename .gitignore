@@ -22,7 +22,6 @@ build/
 *.meta
 *.obj
 *.o
-*.so
 *.pch
 *.pdb
 *.pgc
