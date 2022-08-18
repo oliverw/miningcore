@@ -141,4 +141,19 @@
             <ContentWithTargetPath Include="@(Libs->'%(FullPath)')" RelativePath="%(Libs.Identity)" TargetPath="%(Libs.Filename)%(Libs.Extension)" CopyToPublishDirectory="PreserveNewest" />
         </ItemGroup>
     </Target>
+
+    <ItemGroup>
+        <Content Include="Blockchain/Bamboo/pufferfish2.dll">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </Content>
+        <Content Include="Blockchain/Bamboo/pufferfish2.so">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </Content>
+        <Content Include="Blockchain/Bamboo/sign.dll">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </Content>
+        <Content Include="Blockchain/Bamboo/sign.so">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
 </Project>

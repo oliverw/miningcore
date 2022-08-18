@@ -54,7 +54,6 @@ public static class VarDiffManager
                 
                 if (context is BambooWorkerContext) {
                     newDiff = Math.Log2((1 << Convert.ToInt32(difficulty)) * options.TargetTime / avg);
-                    Console.WriteLine("newdiff = {0} = difficulty = {1} * retarget = {2} / avg = {3}", newDiff, difficulty, options.TargetTime, avg);
                 } else {
                     newDiff = difficulty * options.TargetTime / avg;
                 }
@@ -119,7 +118,6 @@ public static class VarDiffManager
 
             if (context is BambooWorkerContext) {
                 newDiff = Math.Log2((1 << Convert.ToInt32(difficulty)) * options.TargetTime / avg);
-                Console.WriteLine("newdiff = {0} = difficulty = {1} * retarget = {2} / avg = {3}", newDiff, difficulty, options.TargetTime, avg);
             } else {
                 newDiff = difficulty * options.TargetTime / avg;
             }
