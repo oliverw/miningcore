@@ -13,5 +13,6 @@ namespace Miningcore.Blockchain.Bamboo
         Task<(bool success, Dictionary<string, string> data)> VerifyTransactions(string[] txs);
         Task<(bool success, List<TransactionStatus> data)> SubmitTransactions(List<Transaction> transactions);
         Task<(bool success, ulong hashrate)> GetNetworkHashrate();
+        Task<(bool success, List<string> peers)> GetPeers();
     }
 }

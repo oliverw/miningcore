@@ -119,9 +119,10 @@ public abstract class BambooJobManagerBase<TJob> : JobManagerBase<TJob>
     private async Task UpdateNetworkStatsAsync(CancellationToken ct)
     {
         var ( _, hashrate) = await Node.GetNetworkHashrate();
+        var ( _, peers) = await Node.GetPeers();
 
         BlockchainStats.NetworkHashrate = hashrate;
-        BlockchainStats.ConnectedPeers = 1;
+        BlockchainStats.ConnectedPeers = Math.Max(0, peers.Count - 1);
 
         await Task.CompletedTask;
     }

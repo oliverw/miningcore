@@ -247,5 +247,37 @@ namespace Miningcore.Blockchain.Bamboo
                 return (false, 0);
             }
         }
+
+        public async Task<(bool success, List<string> peers)> GetPeers()
+        {
+            try
+            {
+                var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, Url + "/peers");
+
+                using (var httpResponseMessage = await HttpClient.SendAsync(httpRequestMessage))
+                {
+                    var success = httpResponseMessage.IsSuccessStatusCode;
+
+                    if (!success) {
+                        return (false, new List<string>());
+                    }
+
+                    var data = new List<string>();
+
+                    var contentStream = await httpResponseMessage.Content.ReadAsStreamAsync();
+
+                    await foreach (var peer in JsonSerializer.DeserializeAsyncEnumerable<string>(contentStream)) {
+                        data.Add(peer);
+                    }
+
+                    return (true, data);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+                return (false, new List<string>());
+            }
+        }
     }
 }
