@@ -338,7 +338,7 @@ public class StatsRepository : IStatsRepository
             )
             SELECT t.miner, t.hashrate, t.sharespersecond
             FROM tmp t
-            WHERE t.rk = 1
+            WHERE t.rk = 1 and t.hashrate > 0
             ORDER by t.hashrate desc
             OFFSET @offset FETCH NEXT @pageSize ROWS ONLY";
 
