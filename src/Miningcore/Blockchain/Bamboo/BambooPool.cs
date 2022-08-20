@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
@@ -6,7 +5,6 @@ using Autofac;
 using AutoMapper;
 using Microsoft.IO;
 using Miningcore.Configuration;
-using Miningcore.Extensions;
 using Miningcore.JsonRpc;
 using Miningcore.Messaging;
 using Miningcore.Mining;
@@ -17,8 +15,6 @@ using Miningcore.Persistence.Repositories;
 using Miningcore.Stratum;
 using Miningcore.Time;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using NLog;
 using static Miningcore.Util.ActionUtils;
 
 namespace Miningcore.Blockchain.Bamboo;
@@ -29,6 +25,7 @@ public class BambooPool : PoolBase
     public BambooPool(IComponentContext ctx,
         JsonSerializerSettings serializerSettings,
         IConnectionFactory cf,
+        IMinerRepository minerRepository,
         IStatsRepository statsRepo,
         IMapper mapper,
         IMasterClock clock,
@@ -37,11 +34,18 @@ public class BambooPool : PoolBase
         NicehashService nicehashService) :
         base(ctx, serializerSettings, cf, statsRepo, mapper, clock, messageBus, rmsm, nicehashService)
     {
+        if(minerRepository is null)
+        {
+            throw new ArgumentNullException(nameof(minerRepository));
+        }
+        MinerRepository = minerRepository;
     }
 
     protected object currentJobParams;
     protected BambooJobManager manager;
     private BambooCoinTemplate coin;
+
+    public IMinerRepository MinerRepository { get; }
 
     protected virtual async Task OnSubscribeAsync(StratumConnection connection, Timestamped<JsonRpcRequest> tsRequest)
     {
@@ -132,6 +136,24 @@ public class BambooPool : PoolBase
 
                 await connection.NotifyAsync(BambooStratumMethods.SetDifficulty, new object[] { context.Difficulty });
             }
+
+            /* NOT SECURE
+            var minPayout = GetMinPayoutFromPassparts(passParts);
+
+            await cf.RunTx(async (con, tx) => {
+                var minerSettings = new MinerSettings()
+                {
+                    PoolId = Config.Id,
+                    Address = context.Miner,
+                    PaymentThreshold = minPayout ?? 0
+                };
+
+                await MinerRepository.UpdateSettingsAsync(con, tx, minerSettings);
+            });
+
+            if (minPayout.HasValue && minPayout > Config.PaymentProcessing.MinimumPayment) {
+                logger.Info(() => $"[{connection.ConnectionId}] Setting minimum payout to {minPayout} BMB");
+            }*/
         }
 
         else

@@ -18,9 +18,4 @@ public class BambooWorkerContext : WorkerContextBase
     /// Unique value assigned per worker
     /// </summary>
     public string ExtraNonce1 { get; set; }
-
-    /// <summary>
-    /// Mask for version-rolling (Overt ASIC-Boost)
-    /// </summary>
-    public uint? VersionRollingMask { get; internal set; }
 }
