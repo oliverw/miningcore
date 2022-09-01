@@ -4047,5 +4047,28 @@
         "explorerBlockLink": "https://explorer.ergoplatform.com/en/blocks/$hash$",
         "explorerTxLink": "https://explorer.ergoplatform.com/en/transactions/{0}",
         "explorerAccountLink": "https://explorer.ergoplatform.com/en/addresses/{0}"
-    }
+    },
+	"xRhodium": {
+		"name": "xRhodium",
+		"symbol": "XRC",
+		"family": "bitcoin",
+		"website": "https://www.xrhodium.org/",
+        "market": "",
+        "twitter": "https://twitter.com/xrhodium_xrc",
+        "telegram": "https://t.me/xrhodium_xrc",
+        "discord": "https://discord.gg/WmxceSm",
+		"coinbaseHasher": {
+			"hash": "sha256d"
+		},
+		"headerHasher": {
+			"hash": "x11"
+		},
+		"blockHasher": {
+			"hash": "reverse",
+			"args": [{ "hash": "sha256d" }]
+		},
+		"explorerBlockLink": "https://explorer.xrhodium.org/xrc/blockbyheight/$height$",
+		"explorerTxLink": "https://explorer.xrhodium.org/xrc/tx/{0}",
+		"explorerAccountLink": "https://explorer.xrhodium.org/xrc/address/{0}"
+	}
 }
