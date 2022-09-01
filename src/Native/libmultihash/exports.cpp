@@ -29,6 +29,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "geek.h"
 #include "qubit.h"
 #include "s3.h"
+#include "verthash/tiny_sha3/sha3.h"
 #include "hefty1.h"
 #include "shavite3.h"
 #include "x13.h"
@@ -79,6 +80,16 @@ extern "C" MODULE_API void quark_export(const char* input, char* output, uint32_
 extern "C" MODULE_API void sha256csm_export(const char* input, char* output, uint32_t input_len)
 {
     sha256csm_hash(input, output, input_len);
+}
+
+extern "C" MODULE_API void sha3_256_export(const char* input, char* output, uint32_t input_len)
+{
+    sha3(input, input_len, output, 32);
+}
+
+extern "C" MODULE_API void sha3_512_export(const char* input, char* output, uint32_t input_len)
+{
+    sha3(input, input_len, output, 64);
 }
 
 extern "C" MODULE_API void hmq17_export(const char* input, char* output, uint32_t input_len)

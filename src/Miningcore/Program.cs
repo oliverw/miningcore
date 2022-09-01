@@ -227,6 +227,9 @@ public class Program : BackgroundService
                         app.UseWebSockets();
                         app.MapWebSocketManager("/notifications", app.ApplicationServices.GetService<WebSocketNotificationsRelay>());
                         app.UseMetricServer();
+
+                        app.UseMiddleware<ApiRequestMetricsMiddleware>();
+
                         app.UseMvc();
                     });
 
@@ -797,11 +800,23 @@ public class Program : BackgroundService
 
         var cf = services.GetService<IConnectionFactory>();
 
-        // check if 'shares.created' is legacy timestamp (without timezone)
-        var columnType = await GetPostgresColumnType(cf, "shares", "created");
-        var isLegacyTimestamps = columnType.ToLower().Contains("without time zone");
+        bool enableLegacyTimestampBehavior = false;
 
-        if(isLegacyTimestamps)
+        if(!clusterConfig.Persistence.Postgres.EnableLegacyTimestamps.HasValue)
+        {
+            // check if 'shares.created' is legacy timestamp (without timezone)
+            var columnType = await GetPostgresColumnType(cf, "shares", "created");
+
+            if(columnType != null)
+                enableLegacyTimestampBehavior = columnType.ToLower().Contains("without time zone");
+            else
+                logger.Warn(() => "Unable to auto-detect Npgsql Legacy Timestamp Behavior. Please set 'EnableLegacyTimestamps' in your Miningcore Database configuration to'true' or 'false' to bypass auto-detection in case of problems");
+        }
+
+        else
+            enableLegacyTimestampBehavior = clusterConfig.Persistence.Postgres.EnableLegacyTimestamps.Value;
+
+        if(enableLegacyTimestampBehavior)
         {
             logger.Info(()=> "Enabling Npgsql Legacy Timestamp Behavior");
 
@@ -809,11 +824,11 @@ public class Program : BackgroundService
         }
     }
 
-    private static Task<string> GetPostgresColumnType(IConnectionFactory cf, string table, string column)
+    private static async Task<string> GetPostgresColumnType(IConnectionFactory cf, string table, string column)
     {
         const string query = "SELECT data_type FROM information_schema.columns WHERE table_name = @table AND column_name = @column";
 
-        return cf.Run(con => con.ExecuteScalarAsync<string>(query, new { table, column }));
+        return await cf.Run(async con => await con.ExecuteScalarAsync<string>(query, new { table, column }));
     }
 
     private static void ConfigurePersistence(ContainerBuilder builder)
@@ -864,8 +879,9 @@ public class Program : BackgroundService
                 connectionString.Append($"SSL Password={pgConfig.TlsPassword};");
         }
 
-        if(pgConfig.CommandTimeout.HasValue)
-            connectionString.Append($"CommandTimeout={pgConfig.CommandTimeout.Value};");
+        connectionString.Append($"CommandTimeout={pgConfig.CommandTimeout ?? 120};");
+
+        logger.Debug(()=> $"Using postgres connection string: {connectionString}");
 
         // register connection factory
         builder.RegisterInstance(new PgConnectionFactory(connectionString.ToString()))

@@ -1,6 +1,6 @@
 INC_DIRS = -I. -Ixmrig/3rdparty/argon2/include -Ixmrig/3rdparty/argon2/lib -Ixmrig -Ixmrig-override
-CFLAGS = -D__AES__ -DCPU_INTEL -maes -msse2 -mavx -mavx2 -g -std=gnu11 -fPIC -DNDEBUG -Ofast -fno-fast-math -w $(INC_DIRS)
-CXXFLAGS = -D__AES__ -DCPU_INTEL -maes -msse2 -mavx -mavx2 -g -std=gnu++11 -s -fPIC -DNDEBUG -Ofast -fno-fast-math -fexceptions -fno-rtti -Wno-class-memaccess -w $(INC_DIRS)
+CFLAGS = -DCPU_INTEL -g -std=gnu11 -fPIC -DNDEBUG -Ofast -fno-fast-math -w $(CPU_FLAGS) $(HAVE_FEATURE) $(INC_DIRS)
+CXXFLAGS = -DCPU_INTEL -g -std=gnu++11 -s -fPIC -DNDEBUG -Ofast -fno-fast-math -fexceptions -fno-rtti -Wno-class-memaccess -w $(CPU_FLAGS) $(HAVE_FEATURE) $(INC_DIRS)
 LDFLAGS = -shared
 TARGET  = libcryptonight.so
 

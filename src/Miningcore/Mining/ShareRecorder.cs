@@ -116,7 +116,7 @@ public class ShareRecorder : BackgroundService
     private Task OnPolicyFallbackAsync(Exception ex, Context context)
     {
         logger.Warn(() => $"Fallback due to {ex.Source}: {ex.GetType().Name} ({ex.Message})");
-        return Task.FromResult(true);
+        return Task.CompletedTask;
     }
 
     private async Task OnExecutePolicyFallbackAsync(Context context, CancellationToken ct)
@@ -312,7 +312,7 @@ public class ShareRecorder : BackgroundService
 
         var fallbackOnBrokenCircuit = Policy
             .Handle<BrokenCircuitException>()
-            .FallbackAsync(OnExecutePolicyFallbackAsync, (ex, context) => Task.FromResult(true));
+            .FallbackAsync(OnExecutePolicyFallbackAsync, (ex, context) => Task.CompletedTask);
 
         faultPolicy = Policy.WrapAsync(
             fallbackOnBrokenCircuit,

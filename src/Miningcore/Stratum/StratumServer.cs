@@ -11,12 +11,10 @@ using System.Text;
 using Autofac;
 using Microsoft.IO;
 using Miningcore.Banning;
-using Miningcore.Blockchain.Ethereum;
 using Miningcore.Configuration;
 using Miningcore.Extensions;
 using Miningcore.JsonRpc;
 using Miningcore.Messaging;
-using Miningcore.Mining;
 using Miningcore.Notifications.Messages;
 using Miningcore.Time;
 using Miningcore.Util;
@@ -197,7 +195,11 @@ public abstract class StratumServer
 
         logger.Debug(() => $"[{connection.ConnectionId}] Dispatching request '{request.Method}' [{request.Id}]");
 
-        await OnRequestAsync(connection, new Timestamped<JsonRpcRequest>(request, clock.Now), ct);
+        var tsRequest = new Timestamped<JsonRpcRequest>(request, clock.Now);
+
+        await OnRequestAsync(connection, tsRequest, ct);
+
+        PublishTelemetry(TelemetryCategory.StratumRequest, request.Method, clock.Now - tsRequest.Timestamp);
     }
 
     protected void OnConnectionError(StratumConnection connection, Exception ex)
@@ -328,6 +330,11 @@ public abstract class StratumServer
     protected void PublishTelemetry(TelemetryCategory cat, TimeSpan elapsed, bool? success = null, int? total = null)
     {
         messageBus.SendTelemetry(poolConfig.Id, cat, elapsed, success, null, total);
+    }
+
+    protected void PublishTelemetry(TelemetryCategory cat, string info, TimeSpan elapsed, bool? success = null, int? total = null)
+    {
+        messageBus.SendTelemetry(poolConfig.Id, cat, info, elapsed, success, null, total);
     }
 
     protected abstract Task OnRequestAsync(StratumConnection connection, Timestamped<JsonRpcRequest> request, CancellationToken ct);
