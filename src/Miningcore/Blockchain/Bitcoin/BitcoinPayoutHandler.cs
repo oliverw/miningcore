@@ -327,6 +327,8 @@ public class BitcoinPayoutHandler : PayoutHandlerBase,
                 CancellationToken = ct
             };
 
+            var didUnlockWallet = false;
+
             await Parallel.ForEachAsync(amounts, parallelOptions, async (x, _ct) =>
             {
                 var (address, amount) = x;
@@ -335,8 +337,6 @@ public class BitcoinPayoutHandler : PayoutHandlerBase,
                 {
                     // use a common id for all log entries related to this transfer
                     var transferId = CorrelationIdGenerator.GetNextId();
-
-                    var didUnlockWallet = false;
 
                     // send command
                     trySingleTransfer:
