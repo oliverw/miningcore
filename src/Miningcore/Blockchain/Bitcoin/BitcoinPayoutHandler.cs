@@ -336,6 +336,10 @@ public class BitcoinPayoutHandler : PayoutHandlerBase,
                     // use a common id for all log entries related to this transfer
                     var transferId = CorrelationIdGenerator.GetNextId();
 
+                    var didUnlockWallet = false;
+
+                    // send command
+                    trySingleTransfer:
                     logger.Info(()=> $"[{LogCategory}] [{transferId}] Sending {FormatAmount(amount)} to {address}");
 
                     var result = await rpcClient.ExecuteAsync<string>(logger, BitcoinCommands.SendToAddress, ct, new object[]
@@ -348,7 +352,34 @@ public class BitcoinPayoutHandler : PayoutHandlerBase,
                     var txId = result.Response;
 
                     if(result.Error != null)
+                    {
+                        if(result.Error.Code == (int) BitcoinRPCErrorCode.RPC_WALLET_UNLOCK_NEEDED && !didUnlockWallet)
+                        {
+                            if(!string.IsNullOrEmpty(extraPoolPaymentProcessingConfig?.WalletPassword))
+                            {
+                                logger.Info(() => $"[{LogCategory}] Unlocking wallet");
+
+                                var unlockResult = await rpcClient.ExecuteAsync<JToken>(logger, BitcoinCommands.WalletPassphrase, ct, new[]
+                                {
+                                    extraPoolPaymentProcessingConfig.WalletPassword,
+                                    (object) 5 // unlock for N seconds
+                                });
+
+                                if(unlockResult.Error == null)
+                                {
+                                    didUnlockWallet = true;
+                                    goto trySingleTransfer;
+                                }
+
+                                else
+                                    logger.Error(() => $"[{LogCategory}] {BitcoinCommands.WalletPassphrase} returned error: {result.Error.Message} code {result.Error.Code}");
+                            }
+                            else
+                                logger.Error(() => $"[{LogCategory}] Wallet is locked but walletPassword was not configured. Unable to send funds.");
+                        }
+
                         throw new Exception($"[{transferId}] {BitcoinCommands.SendToAddress} returned error: {result.Error.Message} code {result.Error.Code}");
+                    }
 
                     if(string.IsNullOrEmpty(txId))
                         throw new Exception($"[{transferId}] {BitcoinCommands.SendToAddress} did not return a transaction id!");
