@@ -329,13 +329,21 @@ public abstract class BambooJobManagerBase<TJob> : JobManagerBase<TJob>
 
     public virtual async Task<bool> ValidateAddressAsync(string address, CancellationToken ct)
     {
-        if(string.IsNullOrEmpty(address))
+        if (string.IsNullOrEmpty(address))
             return false;
 
             await Task.CompletedTask;
 
-        // TODO: better validation required
-        return address.Length == 50;
+        if (address.Length != 50) {
+            return false;
+        }
+
+        try {
+            address.ToByteArray();
+            return true;
+        } catch {
+            return false;
+        }
     }
 
     #endregion // API-Surface
