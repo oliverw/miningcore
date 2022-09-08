@@ -12,4 +12,6 @@ sudo apt-get update; \
 (cd src/Miningcore && \
 BUILDIR=${1:-../../build} && \
 echo "Building into $BUILDIR" && \
+mkdir -p bin/Release/net6.0/ && \
+./build-libs-linux.sh bin/Release/net6.0/ && \
 dotnet publish -c Release --framework net6.0 -o $BUILDIR)
