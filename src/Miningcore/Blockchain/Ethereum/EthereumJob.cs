@@ -66,7 +66,7 @@ public class EthereumJob
             throw new StratumException(StratumError.MinusOne, "bad nonce " + fullNonceHex);
 
         // get dag for block
-        var dag = await ethash.GetDagAsync(BlockTemplate.Height, logger, ct);
+        var dag = await ethash.GetDagAsync(BlockTemplate.Height, logger, CancellationToken.None);
 
         // compute
         if(!dag.Compute(logger, BlockTemplate.Header.HexToByteArray(), fullNonce, out var mixDigest, out var resultBytes))
