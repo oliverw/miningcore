@@ -533,11 +533,13 @@ public class EthereumPool : PoolBase
 
         var context = connection.ContextAs<EthereumWorkerContext>();
 
-        if(context.ApplyPendingDifficulty())
+        if(context.HasPendingDifficulty)
         {
             switch(context.ProtocolVersion)
             {
                 case 1:
+                    context.ApplyPendingDifficulty();
+
                     await SendWork(context, connection, 0);
                     break;
 
