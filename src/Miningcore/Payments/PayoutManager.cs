@@ -239,6 +239,9 @@ public class PayoutManager : BackgroundService
 
         block.Effort = await cf.Run(con =>
             shareRepo.GetEffectiveAccumulatedShareDifficultyBetweenAsync(con, pool.Config.Id, from, to, ct));
+
+        if(block.Effort.HasValue)
+            block.Effort = handler.AdjustBlockEffort(block.Effort.Value);
     }
 
     protected override async Task ExecuteAsync(CancellationToken ct)

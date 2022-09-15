@@ -269,6 +269,11 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
             NotifyPayoutSuccess(poolConfig.Id, balances, txHashes.ToArray(), null);
     }
 
+    public double AdjustBlockEffort(double effort)
+    {
+        return effort;
+    }
+
     #endregion // IPayoutHandler
 
     private async Task<DaemonResponses.Block[]> FetchBlocks(Dictionary<long, DaemonResponses.Block> blockCache, CancellationToken ct, params long[] blockHeights)

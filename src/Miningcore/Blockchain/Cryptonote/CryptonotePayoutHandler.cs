@@ -553,5 +553,10 @@ public class CryptonotePayoutHandler : PayoutHandlerBase,
         await rpcClientWallet.ExecuteAsync<JToken>(logger, CryptonoteWalletCommands.Store, ct);
     }
 
+    public double AdjustBlockEffort(double effort)
+    {
+        return effort;
+    }
+
     #endregion // IPayoutHandler
 }
