@@ -286,7 +286,7 @@ public class ErgoPayoutHandler : PayoutHandlerBase,
 
     public double AdjustBlockEffort(double effort)
     {
-        return effort / ErgoConstants.ShareMultiplier;
+        return effort * ErgoConstants.ShareMultiplier;
     }
 
     public virtual async Task PayoutAsync(IMiningPool pool, Balance[] balances, CancellationToken ct)
