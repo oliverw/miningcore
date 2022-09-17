@@ -50,7 +50,7 @@ public class PoolApiController : ApiControllerBase
     #region Actions
 
     [HttpGet]
-    public async Task<GetPoolsResponse> Get(CancellationToken ct)
+    public async Task<GetPoolsResponse> Get(CancellationToken ct, [FromQuery] uint topMinersRange = 24)
     {
         var response = new GetPoolsResponse
         {
@@ -70,7 +70,7 @@ public class PoolApiController : ApiControllerBase
                 result.TotalBlocks = await cf.Run(con => blocksRepo.GetPoolBlockCountAsync(con, config.Id, ct));
                 result.LastPoolBlockTime = await cf.Run(con => blocksRepo.GetLastPoolBlockTimeAsync(con, config.Id));
 
-                var from = clock.Now.AddDays(-1);
+                var from = clock.Now.AddHours(-topMinersRange);
 
                 var minersByHashrate = await cf.Run(con => statsRepo.PagePoolMinersByHashrateAsync(con, config.Id, from, 0, 15, ct));
 
@@ -110,7 +110,7 @@ public class PoolApiController : ApiControllerBase
     }
 
     [HttpGet("{poolId}")]
-    public async Task<GetPoolResponse> GetPoolInfoAsync(string poolId, CancellationToken ct)
+    public async Task<GetPoolResponse> GetPoolInfoAsync(string poolId, CancellationToken ct, [FromQuery] uint topMinersRange = 24)
     {
         var pool = GetPool(poolId);
 
@@ -130,7 +130,7 @@ public class PoolApiController : ApiControllerBase
         response.Pool.TotalBlocks = await cf.Run(con => blocksRepo.GetPoolBlockCountAsync(con, pool.Id, ct));
         response.Pool.LastPoolBlockTime = await cf.Run(con => blocksRepo.GetLastPoolBlockTimeAsync(con, pool.Id));
 
-        var from = clock.Now.AddDays(-1);
+        var from = clock.Now.AddHours(-topMinersRange);
 
         response.Pool.TopMiners = (await cf.Run(con => statsRepo.PagePoolMinersByHashrateAsync(con, pool.Id, from, 0, 15, ct)))
             .Select(mapper.Map<MinerPerformanceStats>)
@@ -177,14 +177,14 @@ public class PoolApiController : ApiControllerBase
 
     [HttpGet("{poolId}/miners")]
     public async Task<MinerPerformanceStats[]> PagePoolMinersAsync(
-        string poolId, [FromQuery] int page, [FromQuery] int pageSize = 15)
+        string poolId, [FromQuery] int page, [FromQuery] int pageSize = 15, [FromQuery] uint topMinersRange = 24)
     {
         var pool = GetPool(poolId);
         var ct = HttpContext.RequestAborted;
 
         // set range
         var end = clock.Now;
-        var start = end.AddDays(-1);
+        var start = end.AddHours(-topMinersRange);
 
         var miners = (await cf.Run(con => statsRepo.PagePoolMinersByHashrateAsync(con, pool.Id, start, page, pageSize, ct)))
             .Select(mapper.Map<MinerPerformanceStats>)
