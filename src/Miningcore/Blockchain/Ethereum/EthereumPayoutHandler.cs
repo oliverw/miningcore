@@ -180,32 +180,30 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
                             .Select(x => x.Response.ToObject<DaemonResponses.Block>())
                             .FirstOrDefault(x => string.Equals(x.Miner, poolConfig.Address, StringComparison.OrdinalIgnoreCase));
 
-                        if(uncle != null)
-                        {
-                            // mature?
-                            if(latestBlockHeight - uncle.Height.Value >= EthereumConstants.MinConfimations)
+                            if(uncle != null)
                             {
-                                var blockHashUncleResponse = await rpcClient.ExecuteAsync<DaemonResponses.Block>(logger, EC.GetBlockByNumber, ct,
-                                    new[] { (object) uncle.Height.Value.ToStringHexWithPrefix(), true });
-                                var blockHashUncle = blockHashUncleResponse.Response.Hash;
+                                // mature?
+                                if(block.Reward == 0)
+                                    block.Reward = GetUncleReward(chainType, uncle.Height.Value, blockInfo2.Height.Value);
 
-                                block.Hash = blockHashUncle;
-                                block.Status = BlockStatus.Confirmed;
-                                block.ConfirmationProgress = 1;
-                                block.Reward = GetUncleReward(chainType, uncle.Height.Value, blockInfo2.Height.Value);
-                                block.BlockHeight = uncle.Height.Value;
-                                block.Type = EthereumConstants.BlockTypeUncle;
+                                if(latestBlockHeight - uncle.Height.Value >= EthereumConstants.MinConfimations)
+                                {
+                                    block.Reward = GetUncleReward(chainType, uncle.Height.Value, blockInfo2.Height.Value);
+                                    block.Status = BlockStatus.Confirmed;
+                                    block.ConfirmationProgress = 1;
+                                    block.BlockHeight = uncle.Height.Value;
+                                    block.Type = EthereumConstants.BlockTypeUncle;
 
-                                logger.Info(() => $"[{LogCategory}] Unlocked uncle for block {blockInfo2.Height.Value} at height {uncle.Height.Value} worth {FormatAmount(block.Reward)}");
+                                    logger.Info(() => $"[{LogCategory}] Unlocked uncle for block {blockInfo2.Height.Value} at height {uncle.Height.Value} worth {FormatAmount(block.Reward)}");
 
-                                messageBus.NotifyBlockUnlocked(poolConfig.Id, block, coin);
+                                    messageBus.NotifyBlockUnlocked(poolConfig.Id, block, coin);
+                                }
+
+                                else
+                                    logger.Info(() => $"[{LogCategory}] Got immature matching uncle for block {blockInfo2.Height.Value}. Will try again.");
+
+                                break;
                             }
-
-                            else
-                                logger.Info(() => $"[{LogCategory}] Got immature matching uncle for block {blockInfo2.Height.Value}. Will try again.");
-
-                            break;
-                        }
                     }
                 }
 
@@ -239,7 +237,7 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
         // ensure we have peers
         var infoResponse = await rpcClient.ExecuteAsync<string>(logger, EC.GetPeerCount, ct);
 
-        if(networkType == EthereumNetworkType.Mainnet &&
+        if((networkType == EthereumNetworkType.Main || networkType == EthereumNetworkType.MainPow) &&
            (infoResponse.Error != null || string.IsNullOrEmpty(infoResponse.Response) ||
                infoResponse.Response.IntegralFromHex<int>() < EthereumConstants.MinPayoutPeerCount))
         {
@@ -308,10 +306,10 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
     {
         switch(chainType)
         {
-            case GethChainType.Ethereum:
+            case GethChainType.Main:
+            case GethChainType.MainPow:
                 if(height >= EthereumConstants.ConstantinopleHardForkHeight)
                     return EthereumConstants.ConstantinopleReward;
-
                 if(height >= EthereumConstants.ByzantiumHardForkHeight)
                     return EthereumConstants.ByzantiumBlockReward;
 

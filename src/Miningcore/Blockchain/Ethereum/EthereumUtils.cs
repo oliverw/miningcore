@@ -23,8 +23,8 @@ public static class EthereumUtils
             chainType = GethChainType.Unknown;
         }
 
-        if(chainType == GethChainType.Ethereum)
-            chainType = GethChainType.Ethereum;
+        if(chainType == GethChainType.Main)
+            chainType = GethChainType.Main;
 
         if(chainType == GethChainType.Callisto)
             chainType = GethChainType.Callisto;
