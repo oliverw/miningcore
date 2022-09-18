@@ -11,85 +11,67 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="crypto\crypto.h">
+    <ClCompile Include="stdafx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="exports.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="cryptonote_core/cryptonote_format_utils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="offshore/pricing_record.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="crypto/tree-hash.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="crypto/crypto.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="crypto/crypto-ops.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="crypto/crypto-ops-data.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="crypto/hash.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="crypto/keccak.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="common/base58.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Makefile" />
+    <None Include="Makefile.MSys2" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="serialization\binary_archive.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="crypto\c_blake256.h">
+    <ClInclude Include="serialization\binary_utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="crypto\c_groestl.h">
+    <ClInclude Include="serialization\crypto.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="crypto\c_jh.h">
+    <ClInclude Include="serialization\pricing_record.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="crypto\c_keccak.h">
+    <ClInclude Include="serialization\serialization.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="crypto\c_skein.h">
+    <ClInclude Include="serialization\string.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="crypto\groestl_tables.h">
+    <ClInclude Include="serialization\variant.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="crypto\hash-ops.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="crypto\hash.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="crypto\int-util.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="crypto\oaes_config.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="crypto\oaes_lib.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="crypto\skein_port.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="crypto\wild_keccak.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="crypto\blake256.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="crypto\crypto-ops.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="crypto\groestl.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="crypto\initializer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="crypto\jh.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="crypto\keccak.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="crypto\random.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="crypto\skein.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="stdafx.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="cryptonote_config.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="targetver.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="crypto\generic-ops.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="cryptonote_basic\cryptonote_format_utils.h">
+    <ClInclude Include="serialization\vector.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="common\base58.h">
@@ -101,104 +83,47 @@
     <ClInclude Include="common\pod-class.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="common\util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="common\varint.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="serialization\binary_utils.h">
+    <ClInclude Include="cryptonote_core\cryptonote_basic.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="serialization\binary_archive.h">
+    <ClInclude Include="cryptonote_core\cryptonote_basic_impl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="crypto\chacha.h">
+    <ClInclude Include="cryptonote_core\cryptonote_format_utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="cryptonote_basic\cryptonote_basic_impl.h">
+    <ClInclude Include="cryptonote_core\difficulty.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="stdafx.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="dllmain.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="crypto\blake256.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="crypto\crypto-ops-data.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="crypto\crypto-ops.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="crypto\crypto.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="crypto\groestl.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="crypto\hash-extra-blake.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="crypto\hash-extra-groestl.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="crypto\hash-extra-jh.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="crypto\hash-extra-skein.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="crypto\jh.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="crypto\keccak.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="crypto\random.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="crypto\skein.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="cryptonote_basic\cryptonote_format_utils.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="exports.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="crypto\hash.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="crypto\tree-hash.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="crypto\aesb.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="crypto\oaes_lib.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="common\base58.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="contrib\epee\src\hex.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="crypto\chacha.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="contrib\epee\src\memwipe.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="crypto\slow-hash.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Makefile" />
-    <None Include="Makefile.MSys2" />
+    <ClInclude Include="cryptonote_core\miner.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="cryptonote_core\tx_extra.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="cryptonote_protocol\blobdatatype.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="cryptonote_protocol\cryptonote_protocol_defs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="p2p\p2p_protocol_defs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ringct\rctTypes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="offshore\asset_types.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="offshore\pricing_record.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

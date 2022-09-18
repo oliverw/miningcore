@@ -33,8 +33,16 @@
 #include <boost/mpl/vector.hpp>
 #include <boost/mpl/contains_fwd.hpp>
 
+#undef MONERO_DEFAULT_LOG_CATEGORY
+#define MONERO_DEFAULT_LOG_CATEGORY "serialization"
+
 namespace epee
 {
+  namespace
+  {
+    template<class C> void hint_resize(C &container, size_t size) {}
+    template<class C> void hint_resize(std::vector<C> &container, size_t size) { container.reserve(size); }
+  }
   namespace serialization
   {
 
@@ -156,8 +164,9 @@ namespace epee
         typename stl_container::value_type* pelem =  (typename stl_container::value_type*)buff.data();
         CHECK_AND_ASSERT_MES(!(loaded_size%sizeof(typename stl_container::value_type)), 
           false, 
-          "size in blob " << loaded_size << " not have not zero modulo for sizeof(value_type) = " << sizeof(typename stl_container::value_type));
+          "size in blob " << loaded_size << " not have not zero modulo for sizeof(value_type) = " << sizeof(typename stl_container::value_type) << ", type " << typeid(typename stl_container::value_type).name());
         size_t count = (loaded_size/sizeof(typename stl_container::value_type));
+        hint_resize(container, count);
         for(size_t i = 0; i < count; i++)
           container.insert(container.end(), *(pelem++));
       }

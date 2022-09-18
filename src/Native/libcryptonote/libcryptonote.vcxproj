@@ -71,19 +71,9 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LinkIncremental>true</LinkIncremental>
-    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(NETFXKitsDir)Lib\um\x86;$(SolutionDir)\..\..\..\..\boost_1_62_0\lib32-msvc-14.0</LibraryPath>
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(IncludePath);$(SolutionDir)\..\..\..\..\boost_1_62_0</IncludePath>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64;$(SolutionDir)\..\..\..\..\boost_1_62_0\lib64-msvc-14.0</LibraryPath>
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(IncludePath);$(SolutionDir)\..\..\..\..\boost_1_62_0</IncludePath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <LinkIncremental>false</LinkIncremental>
-    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(NETFXKitsDir)Lib\um\x86;$(SolutionDir)\..\..\..\..\boost_1_62_0\lib32-msvc-14.0</LibraryPath>
     <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(IncludePath);$(SolutionDir)\..\..\..\..\boost_1_62_0</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -91,23 +81,6 @@
     <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64;$(SolutionDir)\..\..\..\..\boost_1_62_0\lib64-msvc-14.0</LibraryPath>
     <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(IncludePath);$(SolutionDir)\..\..\..\..\boost_1_62_0</IncludePath>
   </PropertyGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <ClCompile>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
-      <WarningLevel>Level3</WarningLevel>
-      <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;netmultihashnative_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions);NEOSCRYPT_SHA256;NEOSCRYPT_BLAKE256;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGSWIN32_LEAN_AND_MEAN;WIN32_LEAN_AND_MEAN;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
-      <SDLCheck>true</SDLCheck>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)contrib\epee\include;;$(ProjectDir)contrib\easylogging;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <RuntimeTypeInfo>true</RuntimeTypeInfo>
-    </ClCompile>
-    <Link>
-      <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-    </Link>
-  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <PrecompiledHeader>
@@ -117,32 +90,11 @@
       <PreprocessorDefinitions>_DEBUG;netmultihashnative_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions);NEOSCRYPT_SHA256;NEOSCRYPT_BLAKE256;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGSWIN32_LEAN_AND_MEAN;WIN32_LEAN_AND_MEAN;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)contrib\epee\include;;$(ProjectDir)contrib\easylogging;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)contrib\epee\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-    </Link>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <ClCompile>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
-      <WarningLevel>Level3</WarningLevel>
-      <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;netmultihashnative_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions);NEOSCRYPT_SHA256;NEOSCRYPT_BLAKE256;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGSWIN32_LEAN_AND_MEAN;WIN32_LEAN_AND_MEAN;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
-      <SDLCheck>true</SDLCheck>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)contrib\epee\include;;$(ProjectDir)contrib\easylogging;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <RuntimeTypeInfo>true</RuntimeTypeInfo>
-    </ClCompile>
-    <Link>
-      <SubSystem>Windows</SubSystem>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
@@ -157,8 +109,9 @@
       <PreprocessorDefinitions>NDEBUG;netmultihashnative_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions);NEOSCRYPT_SHA256;NEOSCRYPT_BLAKE256;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGSWIN32_LEAN_AND_MEAN;WIN32_LEAN_AND_MEAN;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)contrib\epee\include;;$(ProjectDir)contrib\easylogging;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)contrib\epee\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <LanguageStandard_C>stdc11</LanguageStandard_C>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -167,68 +120,48 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <LanguageStandard_C>stdc11</LanguageStandard_C>
+    </ClCompile>
+  </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="common\base58.h" />
     <ClInclude Include="common\int-util.h" />
     <ClInclude Include="common\pod-class.h" />
+    <ClInclude Include="common\util.h" />
     <ClInclude Include="common\varint.h" />
-    <ClInclude Include="cryptonote_basic\cryptonote_basic_impl.h" />
-    <ClInclude Include="cryptonote_basic\cryptonote_format_utils.h" />
-    <ClInclude Include="cryptonote_config.h" />
-    <ClInclude Include="crypto\blake256.h" />
-    <ClInclude Include="crypto\chacha.h" />
-    <ClInclude Include="crypto\crypto-ops.h" />
-    <ClInclude Include="crypto\generic-ops.h" />
-    <ClInclude Include="crypto\groestl.h" />
-    <ClInclude Include="crypto\initializer.h" />
-    <ClInclude Include="crypto\jh.h" />
-    <ClInclude Include="crypto\keccak.h" />
-    <ClInclude Include="crypto\random.h" />
-    <ClInclude Include="crypto\skein.h" />
-    <ClInclude Include="crypto\crypto.h" />
-    <ClInclude Include="crypto\c_blake256.h" />
-    <ClInclude Include="crypto\c_groestl.h" />
-    <ClInclude Include="crypto\c_jh.h" />
-    <ClInclude Include="crypto\c_keccak.h" />
-    <ClInclude Include="crypto\c_skein.h" />
-    <ClInclude Include="crypto\groestl_tables.h" />
-    <ClInclude Include="crypto\hash-ops.h" />
-    <ClInclude Include="crypto\hash.h" />
-    <ClInclude Include="crypto\int-util.h" />
-    <ClInclude Include="crypto\oaes_config.h" />
-    <ClInclude Include="crypto\oaes_lib.h" />
-    <ClInclude Include="crypto\skein_port.h" />
-    <ClInclude Include="crypto\wild_keccak.h" />
+    <ClInclude Include="cryptonote_core\cryptonote_basic.h" />
+    <ClInclude Include="cryptonote_core\cryptonote_basic_impl.h" />
+    <ClInclude Include="cryptonote_core\cryptonote_format_utils.h" />
+    <ClInclude Include="cryptonote_core\difficulty.h" />
+    <ClInclude Include="cryptonote_core\miner.h" />
+    <ClInclude Include="cryptonote_core\tx_extra.h" />
+    <ClInclude Include="cryptonote_protocol\blobdatatype.h" />
+    <ClInclude Include="cryptonote_protocol\cryptonote_protocol_defs.h" />
+    <ClInclude Include="offshore\asset_types.h" />
+    <ClInclude Include="offshore\pricing_record.h" />
+    <ClInclude Include="p2p\p2p_protocol_defs.h" />
+    <ClInclude Include="ringct\rctTypes.h" />
     <ClInclude Include="serialization\binary_archive.h" />
     <ClInclude Include="serialization\binary_utils.h" />
-    <ClInclude Include="stdafx.h" />
-    <ClInclude Include="targetver.h" />
+    <ClInclude Include="serialization\crypto.h" />
+    <ClInclude Include="serialization\pricing_record.h" />
+    <ClInclude Include="serialization\serialization.h" />
+    <ClInclude Include="serialization\string.h" />
+    <ClInclude Include="serialization\variant.h" />
+    <ClInclude Include="serialization\vector.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="common\base58.cpp" />
-    <ClCompile Include="contrib\epee\src\hex.cpp" />
-    <ClCompile Include="contrib\epee\src\memwipe.c" />
-    <ClCompile Include="crypto\aesb.c" />
-    <ClCompile Include="crypto\blake256.c" />
-    <ClCompile Include="crypto\chacha.c" />
-    <ClCompile Include="crypto\crypto-ops-data.c" />
-    <ClCompile Include="crypto\crypto-ops.c" />
-    <ClCompile Include="crypto\crypto.cpp" />
-    <ClCompile Include="crypto\groestl.c" />
-    <ClCompile Include="crypto\hash-extra-blake.c" />
-    <ClCompile Include="crypto\hash-extra-groestl.c" />
-    <ClCompile Include="crypto\hash-extra-jh.c" />
-    <ClCompile Include="crypto\hash-extra-skein.c" />
-    <ClCompile Include="crypto\hash.c" />
-    <ClCompile Include="crypto\jh.c" />
-    <ClCompile Include="crypto\keccak.c" />
-    <ClCompile Include="crypto\oaes_lib.c" />
-    <ClCompile Include="crypto\random.c" />
-    <ClCompile Include="crypto\skein.c" />
-    <ClCompile Include="crypto\slow-hash.c" />
-    <ClCompile Include="crypto\tree-hash.c" />
-    <ClCompile Include="dllmain.cpp" />
-    <ClCompile Include="cryptonote_basic\cryptonote_format_utils.cpp" />
+    <ClCompile Include="cryptonote_core/cryptonote_format_utils.cpp" />
+    <ClCompile Include="offshore/pricing_record.cpp" />
+    <ClCompile Include="crypto/tree-hash.c" />
+    <ClCompile Include="crypto/crypto.cpp" />
+    <ClCompile Include="crypto/crypto-ops.c" />
+    <ClCompile Include="crypto/crypto-ops-data.c" />
+    <ClCompile Include="crypto/hash.c" />
+    <ClCompile Include="crypto/keccak.c" />
+    <ClCompile Include="common/base58.cpp" />
     <ClCompile Include="exports.cpp" />
     <ClCompile Include="stdafx.cpp" />
   </ItemGroup>

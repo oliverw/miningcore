@@ -28,47 +28,27 @@
 #ifndef _MISC_LOG_EX_H_
 #define _MISC_LOG_EX_H_
 
-#include "static_initializer.h"
-#include "string_tools.h"
-#include "time_helper.h"
-#include "misc_os_dependent.h"
-
-#include "syncobj.h"
-
-#include <iostream>
-#include <sstream>
-#include <iomanip>
-#include <fstream>
-#include <algorithm>
-#include <list>
-#include <map>
 #include <string>
-#include <time.h>
-#include <boost/cstdint.hpp>
-#include <boost/thread.hpp>
-#include <boost/filesystem.hpp>
-#include <boost/algorithm/string.hpp>
 
-// OW: #include "easylogging++.h"
+//#include "easylogging++.h"
 
+#undef MONERO_DEFAULT_LOG_CATEGORY
 #define MONERO_DEFAULT_LOG_CATEGORY "default"
 
-// OW:
-//#define MCFATAL(cat,x) CLOG(FATAL,cat) << x
-//#define MCERROR(cat,x) CLOG(ERROR,cat) << x
-//#define MCWARNING(cat,x) CLOG(WARNING,cat) << x
-//#define MCINFO(cat,x) CLOG(INFO,cat) << x
-//#define MCDEBUG(cat,x) CLOG(DEBUG,cat) << x
-//#define MCTRACE(cat,x) CLOG(TRACE,cat) << x
-//#define MCLOG(level,cat,x) ELPP_WRITE_LOG(el::base::Writer, level, el::base::DispatchAction::NormalLog, cat) << x
+#define MAX_LOG_FILE_SIZE 104850000 // 100 MB - 7600 bytes
+#define MAX_LOG_FILES 50
 
-#define MCFATAL(cat,x) 
-#define MCERROR(cat,x) 
-#define MCWARNING(cat,x) 
-#define MCINFO(cat,x) 
-#define MCDEBUG(cat,x) 
-#define MCTRACE(cat,x) 
-#define MCLOG(level,cat,x) 
+#define MCLOG_TYPE(level, cat, type, x)
+
+#define MCLOG(level, cat, x) MCLOG_TYPE(level, cat, el::base::DispatchAction::NormalLog, x)
+#define MCLOG_FILE(level, cat, x) MCLOG_TYPE(level, cat, el::base::DispatchAction::FileOnlyLog, x)
+
+#define MCFATAL(cat,x) MCLOG(el::Level::Fatal,cat, x)
+#define MCERROR(cat,x) MCLOG(el::Level::Error,cat, x)
+#define MCWARNING(cat,x) MCLOG(el::Level::Warning,cat, x)
+#define MCINFO(cat,x) MCLOG(el::Level::Info,cat, x)
+#define MCDEBUG(cat,x) MCLOG(el::Level::Debug,cat, x)
+#define MCTRACE(cat,x) MCLOG(el::Level::Trace,cat, x)
 
 #define MCLOG_COLOR(level,cat,color,x) MCLOG(level,cat,"\033[1;" color "m" << x << "\033[0m")
 #define MCLOG_RED(level,cat,x) MCLOG_COLOR(level,cat,"31",x)
@@ -101,6 +81,16 @@
 #define MGINFO_MAGENTA(x) MCLOG_MAGENTA(el::Level::Info, "global",x)
 #define MGINFO_CYAN(x) MCLOG_CYAN(el::Level::Info, "global",x)
 
+#define IFLOG(level, cat, type, init, x) \
+  do { \
+    if (ELPP->vRegistry()->allowed(level, cat)) { \
+      init; \
+      el::base::Writer(level, __FILE__, __LINE__, ELPP_FUNC, type).construct(cat) << x; \
+    } \
+  } while(0)
+#define MIDEBUG(init, x) IFLOG(el::Level::Debug, MONERO_DEFAULT_LOG_CATEGORY, el::base::DispatchAction::NormalLog, init, x)
+
+
 #define LOG_ERROR(x) MERROR(x)
 #define LOG_PRINT_L0(x) MWARNING(x)
 #define LOG_PRINT_L1(x) MINFO(x)
@@ -112,9 +102,9 @@
 #define _dbg2(x) MDEBUG(x)
 #define _dbg1(x) MDEBUG(x)
 #define _info(x) MINFO(x)
-#define _note(x) MINFO(x)
-#define _fact(x) MINFO(x)
-#define _mark(x) MINFO(x)
+#define _note(x) MDEBUG(x)
+#define _fact(x) MDEBUG(x)
+#define _mark(x) MDEBUG(x)
 #define _warn(x) MWARNING(x)
 #define _erro(x) MERROR(x)
 
@@ -131,8 +121,9 @@
 #endif
 
 std::string mlog_get_default_log_path(const char *default_filename);
-void mlog_configure(const std::string &filename_base, bool console);
+void mlog_configure(const std::string &filename_base, bool console, const std::size_t max_log_file_size = MAX_LOG_FILE_SIZE, const std::size_t max_log_files = MAX_LOG_FILES);
 void mlog_set_categories(const char *categories);
+std::string mlog_get_categories();
 void mlog_set_log_level(int level);
 void mlog_set_log(const char *log);
 
@@ -175,7 +166,7 @@ namespace debug
 
 
 #define ASSERT_MES_AND_THROW(message) {LOG_ERROR(message); std::stringstream ss; ss << message; throw std::runtime_error(ss.str());}
-#define CHECK_AND_ASSERT_THROW_MES(expr, message) {if(!(expr)) ASSERT_MES_AND_THROW(message);}
+#define CHECK_AND_ASSERT_THROW_MES(expr, message) do {if(!(expr)) ASSERT_MES_AND_THROW(message);} while(0)
 
 
 #ifndef CHECK_AND_ASSERT
