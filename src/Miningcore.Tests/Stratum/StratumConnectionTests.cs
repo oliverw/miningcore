@@ -31,7 +31,7 @@ public class StratumConnectionTests : TestBase
     public async Task ProcessRequest_Handle_Valid_Request()
     {
         var connection = new StratumConnection(logger, rmsm, clock, CorrelationIdGenerator.GetNextId());
-        var privCon = new PrivateObject(connection);
+        var wrapper = new PrivateObject(connection);
 
         Task onRequestAsync(StratumConnection _con, JsonRpcRequest request, CancellationToken ct)
         {
@@ -46,7 +46,7 @@ public class StratumConnectionTests : TestBase
             return Task.CompletedTask;
         }
 
-        await (Task) privCon.Invoke("ProcessRequestAsync",
+        await (Task) wrapper.Invoke("ProcessRequestAsync",
             CancellationToken.None,
             onRequestAsync,
             new ReadOnlySequence<byte>(Encoding.UTF8.GetBytes(requestString)));
@@ -58,7 +58,7 @@ public class StratumConnectionTests : TestBase
         const string invalidRequestString = "foo bar\\n";
 
         var connection = new StratumConnection(logger, rmsm, clock, CorrelationIdGenerator.GetNextId());
-        var privCon = new PrivateObject(connection);
+        var wrapper = new PrivateObject(connection);
         var callCount = 0;
 
         Task onRequestAsync(StratumConnection _con, JsonRpcRequest request, CancellationToken ct)
@@ -67,7 +67,7 @@ public class StratumConnectionTests : TestBase
             return Task.CompletedTask;
         }
 
-        await Assert.ThrowsAnyAsync<JsonException>(()=> (Task) privCon.Invoke("ProcessRequestAsync",
+        await Assert.ThrowsAnyAsync<JsonException>(()=> (Task) wrapper.Invoke("ProcessRequestAsync",
             CancellationToken.None,
             onRequestAsync,
             new ReadOnlySequence<byte>(Encoding.UTF8.GetBytes(invalidRequestString))));
@@ -79,7 +79,7 @@ public class StratumConnectionTests : TestBase
     public async Task ProcessRequest_Honor_CancellationToken()
     {
         var connection = new StratumConnection(logger, rmsm, clock, CorrelationIdGenerator.GetNextId());
-        var privCon = new PrivateObject(connection);
+        var wrapper = new PrivateObject(connection);
 
         async Task onRequestAsync(StratumConnection _con, JsonRpcRequest request, CancellationToken ct)
         {
@@ -88,7 +88,7 @@ public class StratumConnectionTests : TestBase
 
         using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
 
-        await Assert.ThrowsAnyAsync<TaskCanceledException>(()=> (Task) privCon.Invoke("ProcessRequestAsync",
+        await Assert.ThrowsAnyAsync<TaskCanceledException>(()=> (Task) wrapper.Invoke("ProcessRequestAsync",
             cts.Token,
             onRequestAsync,
             new ReadOnlySequence<byte>(Encoding.UTF8.GetBytes(requestString))));
