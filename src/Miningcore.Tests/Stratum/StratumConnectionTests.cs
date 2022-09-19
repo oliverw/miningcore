@@ -20,8 +20,8 @@ namespace Miningcore.Tests.Stratum;
 public class StratumConnectionTests : TestBase
 {
     private const string JsonRpcVersion = "2.0";
-
     private const string requestString = "{\"params\": [\"slush.miner1\", \"password\"], \"id\": 42, \"method\": \"mining.authorize\"}\\n";
+    private const string ProcessRequestAsyncMethod = "ProcessRequestAsync";
 
     private static readonly RecyclableMemoryStreamManager rmsm = ModuleInitializer.Container.Resolve<RecyclableMemoryStreamManager>();
     private static readonly IMasterClock clock = ModuleInitializer.Container.Resolve<IMasterClock>();
@@ -46,7 +46,7 @@ public class StratumConnectionTests : TestBase
             return Task.CompletedTask;
         }
 
-        await (Task) wrapper.Invoke("ProcessRequestAsync",
+        await (Task) wrapper.Invoke(ProcessRequestAsyncMethod,
             CancellationToken.None,
             onRequestAsync,
             new ReadOnlySequence<byte>(Encoding.UTF8.GetBytes(requestString)));
@@ -67,7 +67,7 @@ public class StratumConnectionTests : TestBase
             return Task.CompletedTask;
         }
 
-        await Assert.ThrowsAnyAsync<JsonException>(()=> (Task) wrapper.Invoke("ProcessRequestAsync",
+        await Assert.ThrowsAnyAsync<JsonException>(()=> (Task) wrapper.Invoke(ProcessRequestAsyncMethod,
             CancellationToken.None,
             onRequestAsync,
             new ReadOnlySequence<byte>(Encoding.UTF8.GetBytes(invalidRequestString))));
@@ -88,7 +88,7 @@ public class StratumConnectionTests : TestBase
 
         using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
 
-        await Assert.ThrowsAnyAsync<TaskCanceledException>(()=> (Task) wrapper.Invoke("ProcessRequestAsync",
+        await Assert.ThrowsAnyAsync<TaskCanceledException>(()=> (Task) wrapper.Invoke(ProcessRequestAsyncMethod,
             cts.Token,
             onRequestAsync,
             new ReadOnlySequence<byte>(Encoding.UTF8.GetBytes(requestString))));
