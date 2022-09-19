@@ -1,7 +1,5 @@
 using System;
 using System.Buffers;
-using System.Diagnostics;
-using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -23,14 +21,15 @@ public class StratumConnectionTests : TestBase
 {
     private const string JsonRpcVersion = "2.0";
 
+    private const string requestString = "{\"params\": [\"slush.miner1\", \"password\"], \"id\": 42, \"method\": \"mining.authorize\"}\\n";
+
+    private static readonly RecyclableMemoryStreamManager rmsm = ModuleInitializer.Container.Resolve<RecyclableMemoryStreamManager>();
+    private static readonly IMasterClock clock = ModuleInitializer.Container.Resolve<IMasterClock>();
+    private static readonly ILogger logger = new NullLogger(LogManager.LogFactory);
+
     [Fact]
     public async Task ProcessRequest_Handle_Valid_Request()
     {
-        const string requestString = "{\"params\": [\"slush.miner1\", \"password\"], \"id\": 42, \"method\": \"mining.authorize\"}\\n";
-
-        var rmsm = ModuleInitializer.Container.Resolve<RecyclableMemoryStreamManager>();
-        var clock = ModuleInitializer.Container.Resolve<IMasterClock>();
-        var logger = new NullLogger(LogManager.LogFactory);
         var connection = new StratumConnection(logger, rmsm, clock, CorrelationIdGenerator.GetNextId());
         var privCon = new PrivateObject(connection);
 
@@ -56,11 +55,8 @@ public class StratumConnectionTests : TestBase
     [Fact]
     public async Task ProcessRequest_Throw_On_Unparseable_Request()
     {
-        const string requestString = "foo bar\\n";
+        const string invalidRequestString = "foo bar\\n";
 
-        var rmsm = ModuleInitializer.Container.Resolve<RecyclableMemoryStreamManager>();
-        var clock = ModuleInitializer.Container.Resolve<IMasterClock>();
-        var logger = new NullLogger(LogManager.LogFactory);
         var connection = new StratumConnection(logger, rmsm, clock, CorrelationIdGenerator.GetNextId());
         var privCon = new PrivateObject(connection);
         var callCount = 0;
@@ -74,7 +70,7 @@ public class StratumConnectionTests : TestBase
         await Assert.ThrowsAnyAsync<JsonException>(()=> (Task) privCon.Invoke("ProcessRequestAsync",
             CancellationToken.None,
             onRequestAsync,
-            new ReadOnlySequence<byte>(Encoding.UTF8.GetBytes(requestString))));
+            new ReadOnlySequence<byte>(Encoding.UTF8.GetBytes(invalidRequestString))));
 
         Assert.Equal(callCount, 0);
     }
@@ -82,11 +78,6 @@ public class StratumConnectionTests : TestBase
     [Fact]
     public async Task ProcessRequest_Honor_CancellationToken()
     {
-        const string requestString = "{\"params\": [\"slush.miner1\", \"password\"], \"id\": 42, \"method\": \"mining.authorize\"}\\n";
-
-        var rmsm = ModuleInitializer.Container.Resolve<RecyclableMemoryStreamManager>();
-        var clock = ModuleInitializer.Container.Resolve<IMasterClock>();
-        var logger = new NullLogger(LogManager.LogFactory);
         var connection = new StratumConnection(logger, rmsm, clock, CorrelationIdGenerator.GetNextId());
         var privCon = new PrivateObject(connection);
 
