@@ -75,7 +75,9 @@ public static unsafe class CryptonoteBindings
     {
         Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(address));
 
-        var data = Encoding.UTF8.GetBytes(address);
+        var cb = Encoding.UTF8.GetByteCount(address);
+        Span<byte> data = stackalloc byte[cb];
+        Encoding.UTF8.GetBytes(address, data);
 
         fixed (byte* input = data)
         {
@@ -87,7 +89,9 @@ public static unsafe class CryptonoteBindings
     {
         Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(address));
 
-        var data = Encoding.UTF8.GetBytes(address);
+        var cb = Encoding.UTF8.GetByteCount(address);
+        Span<byte> data = stackalloc byte[cb];
+        Encoding.UTF8.GetBytes(address, data);
 
         fixed (byte* input = data)
         {
