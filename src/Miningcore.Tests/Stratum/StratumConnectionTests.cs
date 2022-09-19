@@ -33,7 +33,7 @@ public class StratumConnectionTests : TestBase
         var connection = new StratumConnection(logger, rmsm, clock, CorrelationIdGenerator.GetNextId());
         var wrapper = new PrivateObject(connection);
 
-        Task onRequestAsync(StratumConnection _con, JsonRpcRequest request, CancellationToken ct)
+        Task handler(StratumConnection _con, JsonRpcRequest request, CancellationToken ct)
         {
             Assert.Equal(request.JsonRpc, JsonRpcVersion);
             Assert.Equal((long) request.Id, 42);
@@ -48,7 +48,7 @@ public class StratumConnectionTests : TestBase
 
         await (Task) wrapper.Invoke(ProcessRequestAsyncMethod,
             CancellationToken.None,
-            onRequestAsync,
+            handler,
             new ReadOnlySequence<byte>(Encoding.UTF8.GetBytes(requestString)));
     }
 
@@ -61,7 +61,7 @@ public class StratumConnectionTests : TestBase
         var wrapper = new PrivateObject(connection);
         var callCount = 0;
 
-        Task onRequestAsync(StratumConnection _con, JsonRpcRequest request, CancellationToken ct)
+        Task handler(StratumConnection _con, JsonRpcRequest request, CancellationToken ct)
         {
             callCount++;
             return Task.CompletedTask;
@@ -69,7 +69,7 @@ public class StratumConnectionTests : TestBase
 
         await Assert.ThrowsAnyAsync<JsonException>(()=> (Task) wrapper.Invoke(ProcessRequestAsyncMethod,
             CancellationToken.None,
-            onRequestAsync,
+            handler,
             new ReadOnlySequence<byte>(Encoding.UTF8.GetBytes(invalidRequestString))));
 
         Assert.Equal(callCount, 0);
@@ -81,7 +81,7 @@ public class StratumConnectionTests : TestBase
         var connection = new StratumConnection(logger, rmsm, clock, CorrelationIdGenerator.GetNextId());
         var wrapper = new PrivateObject(connection);
 
-        async Task onRequestAsync(StratumConnection _con, JsonRpcRequest request, CancellationToken ct)
+        async Task handler(StratumConnection _con, JsonRpcRequest request, CancellationToken ct)
         {
             await Task.Delay(TimeSpan.FromSeconds(10), ct);
         }
@@ -90,7 +90,7 @@ public class StratumConnectionTests : TestBase
 
         await Assert.ThrowsAnyAsync<TaskCanceledException>(()=> (Task) wrapper.Invoke(ProcessRequestAsyncMethod,
             cts.Token,
-            onRequestAsync,
+            handler,
             new ReadOnlySequence<byte>(Encoding.UTF8.GetBytes(requestString))));
     }
 }
