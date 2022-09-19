@@ -1,13 +1,6 @@
 #!/bin/bash
 
-# install install-dependencies
-sudo apt-get update; \
-  sudo apt-get -y install wget
-
-# add dotnet repo
-wget https://packages.microsoft.com/config/ubuntu/21.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
-sudo dpkg -i packages-microsoft-prod.deb
-rm packages-microsoft-prod.deb
+# dotnet 6 or higher is included in Ubuntu 22.04 and up
 
 # install dev-dependencies
 sudo apt-get update; \
