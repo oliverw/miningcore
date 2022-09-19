@@ -9,7 +9,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Miningcore.JsonRpc;
 using Miningcore.Stratum;
 using Miningcore.Time;
-using Miningcore.Util;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NLog;
@@ -20,6 +19,7 @@ namespace Miningcore.Tests.Stratum;
 public class StratumConnectionTests : TestBase
 {
     private const string JsonRpcVersion = "2.0";
+    private const string ConnectionId = "foo";
     private const string requestString = "{\"params\": [\"slush.miner1\", \"password\"], \"id\": 42, \"method\": \"mining.authorize\"}\\n";
     private const string ProcessRequestAsyncMethod = "ProcessRequestAsync";
 
@@ -30,10 +30,10 @@ public class StratumConnectionTests : TestBase
     [Fact]
     public async Task ProcessRequest_Handle_Valid_Request()
     {
-        var connection = new StratumConnection(logger, rmsm, clock, CorrelationIdGenerator.GetNextId());
+        var connection = new StratumConnection(logger, rmsm, clock, ConnectionId);
         var wrapper = new PrivateObject(connection);
 
-        Task handler(StratumConnection _con, JsonRpcRequest request, CancellationToken ct)
+        Task handler(StratumConnection con, JsonRpcRequest request, CancellationToken ct)
         {
             Assert.Equal(request.JsonRpc, JsonRpcVersion);
             Assert.Equal((long) request.Id, 42);
@@ -57,11 +57,11 @@ public class StratumConnectionTests : TestBase
     {
         const string invalidRequestString = "foo bar\\n";
 
-        var connection = new StratumConnection(logger, rmsm, clock, CorrelationIdGenerator.GetNextId());
+        var connection = new StratumConnection(logger, rmsm, clock, ConnectionId);
         var wrapper = new PrivateObject(connection);
         var callCount = 0;
 
-        Task handler(StratumConnection _con, JsonRpcRequest request, CancellationToken ct)
+        Task handler(StratumConnection con, JsonRpcRequest request, CancellationToken ct)
         {
             callCount++;
             return Task.CompletedTask;
@@ -78,10 +78,10 @@ public class StratumConnectionTests : TestBase
     [Fact]
     public async Task ProcessRequest_Honor_CancellationToken()
     {
-        var connection = new StratumConnection(logger, rmsm, clock, CorrelationIdGenerator.GetNextId());
+        var connection = new StratumConnection(logger, rmsm, clock, ConnectionId);
         var wrapper = new PrivateObject(connection);
 
-        async Task handler(StratumConnection _con, JsonRpcRequest request, CancellationToken ct)
+        async Task handler(StratumConnection con, JsonRpcRequest request, CancellationToken ct)
         {
             await Task.Delay(TimeSpan.FromSeconds(10), ct);
         }
