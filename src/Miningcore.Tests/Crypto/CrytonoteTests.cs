@@ -40,4 +40,15 @@ public class CrytonoteTests : TestBase
 
         Assert.Equal(19ul, result);
     }
+
+    [Fact]
+    public void Cryptonote_CryptonightHashFast()
+    {
+        var value = "8519e039172b0d70e5ca7b3383d6b3167315a422747b73f019cf9528f0fde341fd0f2a63030ba6450525cf6de31837669af6f1df8131faf50aaab8d3a7405589".HexToByteArray();
+        var hash = new byte[32];
+        CryptonoteBindings.CryptonightHashFast(value, hash);
+
+        var result = hash.ToHexString();
+        Assert.Equal("daedcec20429ffd440ab70a0a3a549fbc89745581f539fd2ac945388698e2db2", result);
+    }
 }
