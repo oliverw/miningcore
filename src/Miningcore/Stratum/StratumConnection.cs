@@ -365,18 +365,15 @@ public class StratumConnection
         Func<StratumConnection, JsonRpcRequest, CancellationToken, Task> onRequestAsync,
         ReadOnlySequence<byte> lineBuffer)
     {
-        // await using var stream = rmsm.GetStream(nameof(StratumConnection), lineBuffer.ToSpan()) as RecyclableMemoryStream;
+        await using var stream = rmsm.GetStream(nameof(StratumConnection), lineBuffer.ToSpan()) as RecyclableMemoryStream;
+        using var reader = new JsonTextReader(new StreamReader(stream!, StratumConstants.Encoding));
 
-        using(var reader = new JsonTextReader(new StreamReader(new MemoryStream(lineBuffer.ToArray()), StratumConstants.Encoding)))
-        {
-            var request = serializer.Deserialize<JsonRpcRequest>(reader);
+        var request = serializer.Deserialize<JsonRpcRequest>(reader);
 
-            if(request == null)
-                throw new JsonException("Unable to deserialize request");
+        if(request == null)
+            throw new JsonException("Unable to deserialize request");
 
-            // Dispatch
-            await onRequestAsync(this, request, ct);
-        }
+        await onRequestAsync(this, request, ct);
     }
 
     /// <summary>
