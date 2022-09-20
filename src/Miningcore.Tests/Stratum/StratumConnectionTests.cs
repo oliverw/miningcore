@@ -1,5 +1,6 @@
 using System;
 using System.Buffers;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,7 +13,10 @@ using Miningcore.Time;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NLog;
+using NSubstitute;
 using Xunit;
+
+#pragma warning disable 8974
 
 namespace Miningcore.Tests.Stratum;
 
@@ -83,14 +87,38 @@ public class StratumConnectionTests : TestBase
 
         async Task handler(StratumConnection con, JsonRpcRequest request, CancellationToken ct)
         {
-            await Task.Delay(TimeSpan.FromSeconds(10), ct);
+            await Task.Delay(TimeSpan.FromSeconds(1), ct);
         }
 
-        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
+        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(20));
 
         await Assert.ThrowsAnyAsync<TaskCanceledException>(()=> (Task) wrapper.Invoke(ProcessRequestAsyncMethod,
             cts.Token,
             handler,
             new ReadOnlySequence<byte>(Encoding.UTF8.GetBytes(requestString))));
     }
+
+    // [Fact]
+    // public async Task DetectSslHandshake_Positive()
+    // {
+    //     const string MethodName = "DetectSslHandshake";
+    //
+    //     var connection = new StratumConnection(logger, rmsm, clock, ConnectionId);
+    //     var wrapper = new PrivateObject(connection);
+    //
+    //     var socket = Substitute.For<Socket>(SocketType.Stream, ProtocolType.Tcp);
+    //     var buf = new byte[1];
+    //
+    //     socket.ReceiveAsync(buf, SocketFlags.Peek, CancellationToken.None).ReturnsForAnyArgs(ValueTask.FromResult(1)).AndDoes(info =>
+    //     {
+    //         var _buf = info.ArgAt<Memory<byte>>(0);
+    //         _buf.Span[0] = 0x16;
+    //     });
+    //
+    //     var result = await (Task<bool>) wrapper.Invoke(MethodName,
+    //         socket,
+    //         CancellationToken.None);
+    //
+    //     Assert.True(result);
+    // }
 }
