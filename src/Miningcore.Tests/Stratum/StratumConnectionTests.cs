@@ -84,9 +84,12 @@ public class StratumConnectionTests : TestBase
     {
         var connection = new StratumConnection(logger, rmsm, clock, ConnectionId);
         var wrapper = new PrivateObject(connection);
+        var callCount = 0;
 
         async Task handler(StratumConnection con, JsonRpcRequest request, CancellationToken ct)
         {
+            callCount++;
+
             await Task.Delay(TimeSpan.FromSeconds(1), ct);
         }
 
@@ -96,6 +99,8 @@ public class StratumConnectionTests : TestBase
             cts.Token,
             handler,
             new ReadOnlySequence<byte>(Encoding.UTF8.GetBytes(requestString))));
+
+        Assert.Equal(callCount, 1);
     }
 
     // [Fact]
