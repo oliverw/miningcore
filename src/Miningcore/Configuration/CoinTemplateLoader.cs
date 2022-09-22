@@ -13,39 +13,38 @@ public static class CoinTemplateLoader
 
     private static IEnumerable<KeyValuePair<string, CoinTemplate>> LoadTemplates(string filename, JsonSerializer serializer, IComponentContext ctx)
     {
-        using(var jreader = new JsonTextReader(File.OpenText(filename)))
+        using var jreader = new JsonTextReader(File.OpenText(filename));
+        
+        var jo = serializer.Deserialize<JObject>(jreader);
+
+        foreach(var o in jo)
         {
-            var jo = serializer.Deserialize<JObject>(jreader);
+            if(o.Value.Type != JTokenType.Object)
+                throw new PoolStartupException("Invalid coin-template file: dictionary of coin-templates expected");
 
-            foreach(var o in jo)
+            var value = o.Value[nameof(CoinTemplate.Family).ToLower()];
+            if(value == null)
+                throw new PoolStartupException($"Invalid coin-template '{o.Key}': missing 'family' property");
+
+            var family = value.ToObject<CoinFamily>();
+            var result = (CoinTemplate) o.Value.ToObject(CoinTemplate.Families[family]);
+
+            ctx.InjectProperties(result);
+
+            // Patch explorer links
+            if((result.ExplorerBlockLinks == null || result.ExplorerBlockLinks.Count == 0) &&
+               !string.IsNullOrEmpty(result.ExplorerBlockLink))
             {
-                if(o.Value.Type != JTokenType.Object)
-                    throw new PoolStartupException("Invalid coin-template file: dictionary of coin-templates expected");
-
-                var value = o.Value[nameof(CoinTemplate.Family).ToLower()];
-                if(value == null)
-                    throw new PoolStartupException($"Invalid coin-template '{o.Key}': missing 'family' property");
-
-                var family = value.ToObject<CoinFamily>();
-                var result = (CoinTemplate) o.Value.ToObject(CoinTemplate.Families[family]);
-
-                ctx.InjectProperties(result);
-
-                // Patch explorer links
-                if((result.ExplorerBlockLinks == null || result.ExplorerBlockLinks.Count == 0) &&
-                   !string.IsNullOrEmpty(result.ExplorerBlockLink))
+                result.ExplorerBlockLinks = new Dictionary<string, string>
                 {
-                    result.ExplorerBlockLinks = new Dictionary<string, string>
-                    {
-                        {"block", result.ExplorerBlockLink}
-                    };
-                }
-
-                // Record the source of the template
-                result.Source = filename;
-
-                yield return KeyValuePair.Create(o.Key, result);
+                    {"block", result.ExplorerBlockLink}
+                };
             }
+
+            // Record the source of the template
+            result.Source = filename;
+
+            yield return KeyValuePair.Create(o.Key, result);
         }
     }
 

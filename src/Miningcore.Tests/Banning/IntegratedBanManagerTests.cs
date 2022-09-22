@@ -27,7 +27,7 @@ public class IntegratedBanManagerTests : TestBase
     }
 
     [Fact]
-    public void Ban_Invalid_Duration()
+    public void Throw_Invalid_Duration()
     {
         var manager = ModuleInitializer.Container.ResolveKeyed<IBanManager>(BanManagerKind.Integrated);
 
@@ -35,7 +35,7 @@ public class IntegratedBanManagerTests : TestBase
     }
 
     [Fact]
-    public void Ban_Dont_Ban_Loopback()
+    public void Dont_Ban_Loopback()
     {
         var manager = ModuleInitializer.Container.ResolveKeyed<IBanManager>(BanManagerKind.Integrated);
 
