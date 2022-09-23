@@ -5,7 +5,6 @@ using BenchmarkDotNet.Running;
 using Miningcore.Tests.Benchmarks.Stratum;
 using Xunit;
 using Xunit.Abstractions;
-#pragma warning disable 8974
 
 namespace Miningcore.Tests.Benchmarks;
 
