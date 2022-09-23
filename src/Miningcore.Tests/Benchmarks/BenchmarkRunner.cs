@@ -9,7 +9,6 @@ using Xunit.Abstractions;
 
 namespace Miningcore.Tests.Benchmarks;
 
-
 public class Benchmarks
 {
     private readonly ITestOutputHelper output;
@@ -19,7 +18,7 @@ public class Benchmarks
         this.output = output;
     }
 
-    [Fact(Skip = "uncomment me to run")]
+    [Fact(Skip = "** Uncomment me to run benchmarks **")]
     public void Run_Benchmarks()
     {
         var logger = new AccumulationLogger();
