@@ -38,6 +38,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "x15.h"
 #include "x17.h"
 #include "x22i.h"
+#include "x25x.h"
 #include "fresh.h"
 #include "dcrypt.h"
 #include "jh.h"
@@ -267,6 +268,11 @@ extern "C" MODULE_API void x21s_export(const char* input, char* output, uint32_t
 extern "C" MODULE_API void x22i_export(const char* input, char* output, uint32_t input_len)
 {
     x22i_hash(input, output, input_len);
+}
+
+extern "C" MODULE_API void x25x_export(const char* input, char* output, uint32_t input_len)
+{
+    x25x_hash(input, output, input_len);
 }
 
 extern "C" MODULE_API int verthash_init_export(const char* filename, int createIfMissing)
