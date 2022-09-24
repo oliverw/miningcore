@@ -260,6 +260,9 @@
     <ClInclude Include="sha3\sph_panama.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="x22.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="x22i.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -521,6 +524,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="sha3\panama.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="x22.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="x22i.c">
