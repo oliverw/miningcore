@@ -121,12 +121,6 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
                         var blockHashResponse = await rpcClient.ExecuteAsync<DaemonResponses.Block>(logger, EC.GetBlockByNumber, ct,
                             new[] { (object) block.BlockHeight.ToStringHexWithPrefix(), true });
                         var blockHash = blockHashResponse.Response.Hash;
-                        var baseGas = blockHashResponse.Response.BaseFeePerGas;
-                        var gasUsed = blockHashResponse.Response.GasUsed;
-
-                        var burnedFee = (decimal) 0;
-                        if(extraPoolConfig?.ChainTypeOverride == "Ethereum")
-                            burnedFee = (baseGas * gasUsed / EthereumConstants.Wei);
 
                         block.Hash = blockHash;
                         block.Status = BlockStatus.Confirmed;
@@ -139,7 +133,7 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
                             block.Reward += blockInfo.Uncles.Length * (block.Reward / 32); // uncle rewards
 
                         if(extraConfig?.KeepTransactionFees == false && blockInfo.Transactions?.Length > 0)
-                            block.Reward += await GetTxRewardAsync(blockInfo, ct) - burnedFee;
+                            block.Reward += await GetTxRewardAsync(blockInfo, ct);
 
                         logger.Info(() => $"[{LogCategory}] Unlocked block {block.BlockHeight} worth {FormatAmount(block.Reward)}");
 
@@ -392,14 +386,6 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
             To = balance.Address,
             Value = amount.ToString("x").TrimStart('0'),
         };
-
-        if(extraPoolConfig?.ChainTypeOverride == "Ethereum")
-        {
-            var maxPriorityFeePerGas = await rpcClient.ExecuteAsync<string>(logger, EC.MaxPriorityFeePerGas, ct);
-            request.Gas = extraConfig.Gas;
-            request.MaxPriorityFeePerGas = maxPriorityFeePerGas.Response.IntegralFromHex<ulong>();
-            request.MaxFeePerGas = extraConfig.MaxFeePerGas;
-        }
 
         var response = await rpcClient.ExecuteAsync<string>(logger, EC.SendTx, ct, new[] { request });
 
