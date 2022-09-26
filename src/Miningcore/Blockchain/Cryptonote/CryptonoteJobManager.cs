@@ -330,18 +330,21 @@ public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
         {
             case CryptonoteNetworkType.Main:
                 if(addressPrefix != coin.AddressPrefix &&
+                   addressPrefix != coin.SubAddressPrefix &&
                    addressIntegratedPrefix != coin.AddressPrefixIntegrated)
                     return false;
                 break;
 
             case CryptonoteNetworkType.Test:
                 if(addressPrefix != coin.AddressPrefixTestnet &&
+                   addressPrefix != coin.SubAddressPrefixTestnet &&
                    addressIntegratedPrefix != coin.AddressPrefixIntegratedTestnet)
                     return false;
                 break;
 
             case CryptonoteNetworkType.Stage:
                 if(addressPrefix != coin.AddressPrefixStagenet &&
+                   addressPrefix != coin.SubAddressPrefixStagenet &&
                    addressIntegratedPrefix != coin.AddressPrefixIntegratedStagenet)
                     return false;
                 break;

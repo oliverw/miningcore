@@ -26,6 +26,15 @@ public class CrytonoteTests : TestBase
     }
 
     [Fact]
+    public void Crytonote_DecodeSubAddress()
+    {
+        var address = "84k5FLcuZeQ9vUmTfRJkpxCxdppVF5wWdPpxhU4SdTZmAD1i1YH81rPf8XRAsbpc7Na4GG7A8xscjQbqMETLZCXZ7Cdfb7X";
+        var result = CryptonoteBindings.DecodeAddress(address);
+
+        Assert.Equal(42ul, result);
+    }
+
+    [Fact]
     public void Cryptonote_DecodeAddress_Should_Throw_On_Null_Or_Empty_Argument()
     {
         Assert.Throws<ArgumentException>(() => CryptonoteBindings.DecodeAddress(null));
