@@ -1,18 +1,26 @@
+# Makefile for MSYS2 MINGW64 (Windows)
+# pacman -S mingw-w64-x86_64-boost mingw-w64-x86_64-libsodium mingw-w64-x86_64-openssl
+
 CC = gcc
-INC_DIRS = -I. -Icontrib/epee/include
-CFLAGS = -Wall -c -fPIC -maes -O2 $(INC_DIRS)
-CXXFLAGS = -Wall -fPIC -fpermissive -std=c++0x -fexceptions -frtti -O2 $(INC_DIRS)
-LDFLAGS = -shared -static-libgcc -static-libstdc++ -static
-LDLIBS = -lboost_system-mt -lboost_date_time-mt
+INC_DIRS = -I. -Icontrib/epee/include -I/mingw64/include
+LIBRARY_DIRS = -L/mingw64/lib
+CFLAGS = $(CPU_FLAGS) $(INC_DIRS) -fno-exceptions -std=gnu11 -march=native -fPIC -DNDEBUG -Ofast -funroll-loops -fvariable-expansion-in-unroller -ftree-loop-if-convert-stores -fmerge-all-constants -fbranch-target-load-optimize2
+CXXFLAGS = $(CPU_FLAGS) $(INC_DIRS) -fexceptions -frtti -std=gnu++11 -march=native -fPIC -DNDEBUG -Ofast -s -funroll-loops -fvariable-expansion-in-unroller -ftree-loop-if-convert-stores -fmerge-all-constants -fbranch-target-load-optimize2
+LDFLAGS = -shared -static-libgcc -static-libstdc++ -static $(LIBRARY_DIRS)
+LDLIBS = -lboost_system-mt -lboost_date_time-mt -lssl -lsodium -lcrypto -lws2_32
 TARGET  = libcryptonote.dll
 
-OBJECTS = contrib/epee/src/hex.o \
-		common/base58.o crypto/aesb.o crypto/blake256.o crypto/chacha.o \
-        contrib/epee/src/memwipe.o \
-		crypto/crypto-ops-data.o crypto/crypto-ops.o crypto/crypto.o crypto/groestl.o crypto/hash-extra-blake.o \
-		crypto/hash-extra-groestl.o crypto/hash-extra-jh.o crypto/hash-extra-skein.o crypto/hash.o crypto/jh.o \
-		crypto/keccak.o crypto/oaes_lib.o crypto/random.o crypto/skein.o crypto/tree-hash.o \
-		crypto/slow-hash-lite.o cryptonote_basic/cryptonote_format_utils.o exports.o
+OBJECTS = exports.o \
+	cryptonote_core/cryptonote_format_utils.o \
+	offshore/pricing_record.o \
+	crypto/tree-hash.o \
+	crypto/crypto.o \
+	crypto/crypto-ops.o \
+	crypto/crypto-ops-data.o \
+	crypto/hash.o \
+	crypto/keccak.o \
+	common/base58.o \
+	mingw_stubs.o
 
 all: $(TARGET)
 

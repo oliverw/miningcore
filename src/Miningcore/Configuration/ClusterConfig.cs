@@ -435,16 +435,34 @@ public partial class CryptonoteCoinTemplate : CoinTemplate
     public ulong AddressPrefix { get; set; }
 
     /// <summary>
+    /// Sub Prefix of a valid sub address
+    /// See: namespace config -> CRYPTONOTE_PUBLIC_SUBADDRESS_BASE58_PREFIX in src/cryptonote_config.h
+    /// </summary>
+    public ulong SubAddressPrefix { get; set; }
+
+    /// <summary>
     /// Prefix of a valid testnet-address
     /// See: namespace config -> CRYPTONOTE_PUBLIC_ADDRESS_BASE58_PREFIX in src/cryptonote_config.h
     /// </summary>
     public ulong AddressPrefixTestnet { get; set; }
 
     /// <summary>
+    /// Sub Prefix of a valid testnet-address
+    /// See: namespace config -> CRYPTONOTE_PUBLIC_SUBADDRESS_BASE58_PREFIX in src/cryptonote_config.h
+    /// </summary>
+    public ulong SubAddressPrefixTestnet { get; set; }
+
+    /// <summary>
     /// Prefix of a valid stagenet-address
     /// See: namespace config -> CRYPTONOTE_PUBLIC_ADDRESS_BASE58_PREFIX in src/cryptonote_config.h
     /// </summary>
     public ulong AddressPrefixStagenet { get; set; }
+
+    /// <summary>
+    /// Sub Prefix of a valid stagenet-address
+    /// See: namespace config -> CRYPTONOTE_PUBLIC_SUBADDRESS_BASE58_PREFIX in src/cryptonote_config.h
+    /// </summary>
+    public ulong SubAddressPrefixStagenet { get; set; }
 
     /// <summary>
     /// Prefix of a valid integrated address

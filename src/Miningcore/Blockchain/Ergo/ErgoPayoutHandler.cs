@@ -284,6 +284,11 @@ public class ErgoPayoutHandler : PayoutHandlerBase,
         return difficulty * ErgoConstants.ShareMultiplier;
     }
 
+    public double AdjustBlockEffort(double effort)
+    {
+        return effort * ErgoConstants.ShareMultiplier;
+    }
+
     public virtual async Task PayoutAsync(IMiningPool pool, Balance[] balances, CancellationToken ct)
     {
         Contract.RequiresNonNull(balances);

@@ -51,18 +51,20 @@ public class CallistoConstants
 
 public enum EthereumNetworkType
 {
-    Mainnet = 1,
+    Main = 1,
     Ropsten = 3,
     Callisto = 820,
+    MainPow = 10001,
 
     Unknown = -1,
 }
 
 public enum GethChainType
 {
-    Ethereum,
+    Main,
     Ropsten,
     Callisto,
+    MainPow = 10001,
 
     Unknown = -1,
 }

@@ -1,17 +1,20 @@
 INC_DIRS = -I. -Icontrib/epee/include
-CFLAGS = -g -Wall -c -fPIC -O2 $(CPU_FLAGS) $(INC_DIRS) -Wno-strict-aliasing
-CXXFLAGS = -Wall -Wno-unused-function -fPIC -fpermissive -std=c++0x -fexceptions -frtti -O2 -g $(CPU_FLAGS) $(INC_DIRS)
+CFLAGS = $(CPU_FLAGS) $(INC_DIRS) -fno-exceptions -std=gnu11 -march=native -fPIC -DNDEBUG -Ofast -funroll-loops -fvariable-expansion-in-unroller -ftree-loop-if-convert-stores -fmerge-all-constants -fbranch-target-load-optimize2
+CXXFLAGS = $(CPU_FLAGS) $(INC_DIRS) -fexceptions -frtti -std=gnu++11 -march=native -fPIC -DNDEBUG -Ofast -s -funroll-loops -fvariable-expansion-in-unroller -ftree-loop-if-convert-stores -fmerge-all-constants -fbranch-target-load-optimize2
 LDFLAGS = -shared
 LDLIBS = -lboost_system -lboost_date_time
 TARGET  = libcryptonote.so
 
-OBJECTS = contrib/epee/src/hex.o \
-	common/base58.o crypto/aesb.o crypto/blake256.o crypto/chacha.o \
-	contrib/epee/src/memwipe.o \
-	crypto/crypto-ops-data.o crypto/crypto-ops.o crypto/crypto.o crypto/groestl.o crypto/hash-extra-blake.o \
-	crypto/hash-extra-groestl.o crypto/hash-extra-jh.o crypto/hash-extra-skein.o crypto/hash.o crypto/jh.o \
-	crypto/keccak.o crypto/oaes_lib.o crypto/random.o crypto/skein.o crypto/tree-hash.o \
-	crypto/slow-hash-lite.o cryptonote_basic/cryptonote_format_utils.o exports.o
+OBJECTS = exports.o \
+	cryptonote_core/cryptonote_format_utils.o \
+	offshore/pricing_record.o \
+	crypto/tree-hash.o \
+	crypto/crypto.o \
+	crypto/crypto-ops.o \
+	crypto/crypto-ops-data.o \
+	crypto/hash.o \
+	crypto/keccak.o \
+	common/base58.o
 
 all: $(TARGET)
 

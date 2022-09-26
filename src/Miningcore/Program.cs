@@ -879,7 +879,7 @@ public class Program : BackgroundService
                 connectionString.Append($"SSL Password={pgConfig.TlsPassword};");
         }
 
-        connectionString.Append($"CommandTimeout={pgConfig.CommandTimeout ?? 120};");
+        connectionString.Append($"CommandTimeout={pgConfig.CommandTimeout ?? 300};");
 
         logger.Debug(()=> $"Using postgres connection string: {connectionString}");
 

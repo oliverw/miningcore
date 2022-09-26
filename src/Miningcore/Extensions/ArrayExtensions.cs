@@ -45,46 +45,9 @@ public static class ArrayExtensions
         return ToHexString(value, null, null, withPrefix);
     }
 
-    public static string ToHexString(this ReadOnlySpan<byte> value, bool withPrefix = false)
-    {
-        return ToHexString(value, null, null, withPrefix);
-    }
     public static string ToByteArrayBase64(this string value)
     {
         return Convert.ToBase64String(Encoding.UTF8.GetBytes(value));
-    }
-
-    public static string ToHexString(this ReadOnlySpan<byte> value, int? off, int? len, bool withPrefix = false)
-    {
-        if(value == null || value.Length == 0)
-            return string.Empty;
-
-        var length = len ?? value.Length;
-        var bufferSize = length * 2;
-
-        if(withPrefix)
-            bufferSize += 2;
-
-        Span<char> buffer = stackalloc char[bufferSize];
-
-        var offset = 0;
-
-        if(withPrefix)
-        {
-            buffer[offset++] = '0';
-            buffer[offset++] = 'x';
-        }
-
-        var start = off ?? 0;
-
-        for(var i = start; i < length; i++)
-        {
-            var hex = HexStringTable[value[i]];
-            buffer[offset + i * 2 + 0] = hex[0];
-            buffer[offset + i * 2 + 1] = hex[1];
-        }
-
-        return new string(buffer);
     }
 
     public static string ToHexString(this Span<byte> value, int? off, int? len, bool withPrefix = false)
@@ -120,11 +83,6 @@ public static class ArrayExtensions
         return new string(buffer);
     }
 
-
-    public static string ToHexString(this Memory<byte> value, bool withPrefix = false)
-    {
-        return ToHexString(value.Span, null, null, withPrefix);
-    }
 
     public static byte[] ReverseByteOrder(this byte[] bytes)
     {

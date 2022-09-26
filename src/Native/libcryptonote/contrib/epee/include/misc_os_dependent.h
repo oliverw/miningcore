@@ -24,7 +24,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 #ifdef _WIN32
-#include <Winsock2.h>
+#include <winsock2.h>
 #endif
 
 #ifdef WIN32
@@ -91,37 +91,21 @@ namespace misc_utils
         }
 
 
-        inline int call_sys_cmd(const std::string& cmd)
-	{      
-                std::cout << "# " << cmd << std::endl;
-
-		FILE * fp ;
-		//char tstCommand[] ="ls *";
-		char path[1000] = {0};
-#if !defined(__GNUC__) 
-		fp = _popen(cmd.c_str(), "r");
-#else
-		fp = popen(cmd.c_str(), "r");
-#endif
-		while ( fgets( path, 1000, fp ) != NULL )
-			std::cout << path;
-
-#if !defined(__GNUC__) 
-		_pclose(fp);
-#else
-		pclose(fp);
-#endif
-		return 0;
-
-	}
-
-
 	inline std::string get_thread_string_id()
 	{
 #if defined(_WIN32)
 		return boost::lexical_cast<std::string>(GetCurrentThreadId());
 #elif defined(__GNUC__)  
 		return boost::lexical_cast<std::string>(pthread_self());
+#endif
+	}
+
+	inline bool get_gmt_time(time_t t, struct tm &tm)
+	{
+#ifdef _WIN32
+		return gmtime_s(&tm, &t);
+#else
+		return gmtime_r(&t, &tm);
 #endif
 	}
 }

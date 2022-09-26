@@ -82,7 +82,9 @@ public class EthashFull : IDisposable
             result.LastUsed = DateTime.Now;
         }
 
+        // get/generate current one
         await result.GenerateAsync(dagDir, logger, ct);
+
         return result;
     }
 }
