@@ -25,6 +25,10 @@ Commercial support directly by the maintainer is available through [miningcore.p
 
 For general questions visit the [Discussions Area](https://github.com/oliverw/miningcore/discussions).
 
+## Contributions
+
+Code contributions are very welcome and should be submitted as standard [pull requests](https://docs.github.com/en/pull-requests) (PR) based on the [`dev` branch](https://github.com/oliverw/miningcore/tree/dev).
+
 ## Building on Debian/Ubuntu
 
 ```console
@@ -93,6 +97,12 @@ docker system prune -af
 ```
 
 ## Running Miningcore
+
+### Production OS
+
+Windows is **not** a supported production environment. Only Linux is. Please do not file issues related to running a pool on Windows. Windows topics should be posted under [discussions](https://github.com/oliverw/miningcore/discussions).
+
+Running and developing Miningcore on Windows is of course supported.
 
 ### Database setup
 
@@ -181,6 +191,8 @@ Miningcore comes with an integrated REST API. Please refer to this page for inst
 ## Running a production pool
 
 A public production pool requires a web-frontend for your users to check their hashrate, earnings etc. Miningcore does not include such frontend but there are several community projects that can be used as starting point.
+
+Once again, do not run a production pool on Windows! This is not a supported configuration.
 
 ## Donations
 
