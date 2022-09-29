@@ -16,6 +16,9 @@ public static class SerializationExtensions
 
     public static T SafeExtensionDataAs<T>(this IDictionary<string, object> extra, params string[] wrappers)
     {
+        if(extra == null)
+            return default;
+
         try
         {
             object o = extra;
