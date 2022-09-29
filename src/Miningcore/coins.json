@@ -4037,7 +4037,7 @@
         "explorerAccountLink": "https://etherscan.io/address/{0}"
     },
 
-    "ethereumpow": {
+    "ethereum-pow": {
         "name": "EthereumPoW",
         "canonicalName": "EthereumPoW",
         "symbol": "ETHW",
