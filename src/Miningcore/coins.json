@@ -4024,17 +4024,35 @@
         "canonicalName": "Ethereum",
         "symbol": "ETH",
         "family": "ethereum",
-        "website": "",
+        "website": "https://ethereum.org/",
         "market": "",
-        "twitter": "",
+        "twitter": "https://twitter.com/ethdotorg",
         "telegram": "",
-        "discord": "",
+        "discord": "https://discord.com/invite/CetY6Y4",
         "explorerBlockLinks": {
             "block": "https://etherscan.io/block/$height$",
             "uncle": "https://etherscan.io/uncle/$height$"
         },
         "explorerTxLink": "https://etherscan.io/tx/{0}",
         "explorerAccountLink": "https://etherscan.io/address/{0}"
+    },
+
+    "ethereumpow": {
+        "name": "EthereumPoW",
+        "canonicalName": "EthereumPoW",
+        "symbol": "ETHW",
+        "family": "ethereum",
+        "website": "https://ethereumpow.org/",
+        "market": "",
+        "twitter": "https://twitter.com/EthereumPoW",
+        "telegram": "https://t.me/ethereumpow_official",
+        "discord": "https://discord.gg/apcxzJdZaU",
+        "explorerBlockLinks": {
+            "block": "https://www.oklink.com/en/ethw/block/$height$",
+            "uncle": "https://www.oklink.com/en/ethw/uncle/$height$"
+        },
+        "explorerTxLink": "https://www.oklink.com/en/ethw/tx/{0}",
+        "explorerAccountLink": "https://www.oklink.com/en/ethw/address/{0}"
     },
 
     "ergo": {
