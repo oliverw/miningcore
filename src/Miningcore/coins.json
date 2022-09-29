@@ -908,11 +908,11 @@
         "canonicalName": "eCash",
         "symbol": "XEC",
         "family": "bitcoin",
-        "website": "",
+        "website": "https://e.cash/",
         "market": "",
-        "twitter": "",
-        "telegram": "",
-        "discord": "",
+        "twitter": "https://twitter.com/ecashofficial",
+        "telegram": "https://t.me/ecash_official",
+        "discord": "https://discord.com/invite/d5EHW3PgTy",
         "coinbaseHasher": {
             "hash": "sha256d"
         },
@@ -925,7 +925,8 @@
         },
         "explorerBlockLink": "https://blockchair.com/ecash/block/$height$",
         "explorerTxLink": "https://blockchair.com/ecash/transaction/{0}",
-        "explorerAccountLink": "https://blockchair.com/ecash/address/{0}"
+        "explorerAccountLink": "https://blockchair.com/ecash/address/{0}",
+        "hasMinerFund": true
     },
 
     "elicoin": {
