@@ -14,21 +14,30 @@ public static class SerializationExtensions
         }
     };
 
-    public static T SafeExtensionDataAs<T>(this IDictionary<string, object> extra, string outerWrapper = null)
+    public static T SafeExtensionDataAs<T>(this IDictionary<string, object> extra, params string[] wrappers)
     {
-        if(extra != null)
+        try
         {
-            try
-            {
-                var o = !string.IsNullOrEmpty(outerWrapper) ? extra[outerWrapper] : extra;
+            object o = extra;
 
-                return JToken.FromObject(o).ToObject<T>(serializer);
+            foreach (var key in wrappers)
+            {
+                if(o is IDictionary<string, object> dict)
+                    o = dict[key];
+
+                else if(o is JObject jo)
+                    o = jo[key];
+
+                else
+                    throw new NotSupportedException("Unsupported child element type");
             }
 
-            catch
-            {
-                // ignored
-            }
+            return JToken.FromObject(o).ToObject<T>(serializer);
+        }
+
+        catch
+        {
+            // ignored
         }
 
         return default;
