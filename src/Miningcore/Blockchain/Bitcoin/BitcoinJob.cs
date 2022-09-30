@@ -527,14 +527,15 @@ public class BitcoinJob
 
     protected virtual Money CreateMinerFundOutputs(Transaction tx, Money reward)
     {
-        if (!string.IsNullOrEmpty(minerFundParameters.Addresses?.First()))
+        var payeeReward = minerFundParameters.MinimumValue;
+
+        if (!string.IsNullOrEmpty(minerFundParameters.Addresses?.FirstOrDefault()))
         {
             var payeeAddress = BitcoinUtils.AddressToDestination(minerFundParameters.Addresses[0], network);
-            var payeeReward = minerFundParameters.MinimumValue;
-
             tx.Outputs.Add(payeeReward, payeeAddress);
-            reward -= payeeReward;
         }
+
+        reward -= payeeReward;
 
         return reward;
     }
