@@ -945,7 +945,7 @@ public class Program : BackgroundService
 
             logger.Info(() => $"API Access to {string.Join(",", locations)} restricted to {string.Join(",", ipList.Select(x => x.ToString()))}");
 
-            app.UseMiddleware<IPAccessWhitelistMiddleware>(locations, ipList.ToArray());
+            app.UseMiddleware<IPAccessWhitelistMiddleware>(locations, ipList.ToArray(), clusterConfig.Logging.GPDRCompliant);
         }
     }
 

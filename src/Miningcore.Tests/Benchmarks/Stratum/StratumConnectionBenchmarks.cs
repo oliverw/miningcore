@@ -39,7 +39,7 @@ public class StratumConnectionBenchmarks : TestBase
         clock = ModuleInitializer.Container.Resolve<IMasterClock>();
         logger = new NullLogger(LogManager.LogFactory);
 
-        connection = new(logger, rmsm, clock, ConnectionId);
+        connection = new(logger, rmsm, clock, ConnectionId, false);
         wrapper = new(connection);
     }
 

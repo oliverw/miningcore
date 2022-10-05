@@ -531,6 +531,7 @@ public partial class ClusterLoggingConfig
     public string ApiLogFile { get; set; }
     public bool PerPoolLogFile { get; set; }
     public string LogBaseDirectory { get; set; }
+    public bool GPDRCompliant { get; set; }
 }
 
 public partial class NetworkEndpointConfig

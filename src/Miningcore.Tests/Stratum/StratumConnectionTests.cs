@@ -34,7 +34,7 @@ public class StratumConnectionTests : TestBase
     [Fact]
     public async Task ProcessRequest_Handle_Valid_Request()
     {
-        var connection = new StratumConnection(logger, rmsm, clock, ConnectionId);
+        var connection = new StratumConnection(logger, rmsm, clock, ConnectionId, false);
         var wrapper = new PrivateObject(connection);
 
         Task handler(StratumConnection con, JsonRpcRequest request, CancellationToken ct)
@@ -61,7 +61,7 @@ public class StratumConnectionTests : TestBase
     {
         const string invalidRequestString = "foo bar\\n";
 
-        var connection = new StratumConnection(logger, rmsm, clock, ConnectionId);
+        var connection = new StratumConnection(logger, rmsm, clock, ConnectionId, false);
         var wrapper = new PrivateObject(connection);
         var callCount = 0;
 
@@ -82,7 +82,7 @@ public class StratumConnectionTests : TestBase
     [Fact]
     public async Task ProcessRequest_Honor_CancellationToken()
     {
-        var connection = new StratumConnection(logger, rmsm, clock, ConnectionId);
+        var connection = new StratumConnection(logger, rmsm, clock, ConnectionId, false);
         var wrapper = new PrivateObject(connection);
         var callCount = 0;
 
