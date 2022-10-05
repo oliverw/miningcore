@@ -27,7 +27,7 @@ namespace Miningcore.Stratum;
 
 public class StratumConnection
 {
-    public StratumConnection(ILogger logger, RecyclableMemoryStreamManager rmsm, IMasterClock clock, string connectionId)
+    public StratumConnection(ILogger logger, RecyclableMemoryStreamManager rmsm, IMasterClock clock, string connectionId, bool gpdrCompliantLogging)
     {
         this.logger = logger;
         this.rmsm = rmsm;
@@ -42,6 +42,7 @@ public class StratumConnection
         this.clock = clock;
         ConnectionId = connectionId;
         IsAlive = true;
+        this.gpdrCompliantLogging = gpdrCompliantLogging;
     }
 
     private readonly ILogger logger;
@@ -56,6 +57,7 @@ public class StratumConnection
     private WorkerContextBase context;
     private readonly Subject<Unit> terminated = new();
     private bool expectingProxyHeader;
+    private bool gpdrCompliantLogging;
 
     private static readonly JsonSerializer serializer = new()
     {
@@ -113,11 +115,10 @@ public class StratumConnection
 
                     networkStream = sslStream;
 
-                    logger.Info(() => $"[{ConnectionId}] {sslStream.SslProtocol.ToString().ToUpper()}-{sslStream.CipherAlgorithm.ToString().ToUpper()} Connection from {RemoteEndpoint.Address}:{RemoteEndpoint.Port} accepted on port {endpoint.IPEndPoint.Port}");
+                    logger.Info(() => $"[{ConnectionId}] {sslStream.SslProtocol.ToString().ToUpper()}-{sslStream.CipherAlgorithm.ToString().ToUpper()} Connection from {RemoteEndpoint.Address.CensorOrReturn(gpdrCompliantLogging)}:{RemoteEndpoint.Port} accepted on port {endpoint.IPEndPoint.Port}");
                 }
-
                 else
-                    logger.Info(() => $"[{ConnectionId}] Connection from {RemoteEndpoint.Address}:{RemoteEndpoint.Port} accepted on port {endpoint.IPEndPoint.Port}");
+                    logger.Info(() => $"[{ConnectionId}] Connection from {RemoteEndpoint.Address.CensorOrReturn(gpdrCompliantLogging)}:{RemoteEndpoint.Port} accepted on port {endpoint.IPEndPoint.Port}");
 
                 // Async I/O loop(s)
                 var tasks = new[]
@@ -403,7 +404,7 @@ public class StratumConnection
 
                 // Update client
                 RemoteEndpoint = new IPEndPoint(IPAddress.Parse(remoteAddress), int.Parse(remotePort));
-                logger.Info(() => $"Real-IP via Proxy-Protocol: {RemoteEndpoint.Address}");
+                logger.Info(() => $"Real-IP via Proxy-Protocol: {RemoteEndpoint.Address.CensorOrReturn(gpdrCompliantLogging)}");
             }
 
             else
