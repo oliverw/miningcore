@@ -908,11 +908,11 @@
         "canonicalName": "eCash",
         "symbol": "XEC",
         "family": "bitcoin",
-        "website": "",
+        "website": "https://e.cash/",
         "market": "",
-        "twitter": "",
-        "telegram": "",
-        "discord": "",
+        "twitter": "https://twitter.com/ecashofficial",
+        "telegram": "https://t.me/ecash_official",
+        "discord": "https://discord.com/invite/d5EHW3PgTy",
         "coinbaseHasher": {
             "hash": "sha256d"
         },
@@ -925,7 +925,8 @@
         },
         "explorerBlockLink": "https://blockchair.com/ecash/block/$height$",
         "explorerTxLink": "https://blockchair.com/ecash/transaction/{0}",
-        "explorerAccountLink": "https://blockchair.com/ecash/address/{0}"
+        "explorerAccountLink": "https://blockchair.com/ecash/address/{0}",
+        "hasMinerFund": true
     },
 
     "elicoin": {
@@ -4064,17 +4065,35 @@
         "canonicalName": "Ethereum",
         "symbol": "ETH",
         "family": "ethereum",
-        "website": "",
+        "website": "https://ethereum.org/",
         "market": "",
-        "twitter": "",
+        "twitter": "https://twitter.com/ethdotorg",
         "telegram": "",
-        "discord": "",
+        "discord": "https://discord.com/invite/CetY6Y4",
         "explorerBlockLinks": {
             "block": "https://etherscan.io/block/$height$",
             "uncle": "https://etherscan.io/uncle/$height$"
         },
         "explorerTxLink": "https://etherscan.io/tx/{0}",
         "explorerAccountLink": "https://etherscan.io/address/{0}"
+    },
+
+    "ethereum-pow": {
+        "name": "EthereumPoW",
+        "canonicalName": "EthereumPoW",
+        "symbol": "ETHW",
+        "family": "ethereum",
+        "website": "https://ethereumpow.org/",
+        "market": "",
+        "twitter": "https://twitter.com/EthereumPoW",
+        "telegram": "https://t.me/ethereumpow_official",
+        "discord": "https://discord.gg/apcxzJdZaU",
+        "explorerBlockLinks": {
+            "block": "https://www.oklink.com/en/ethw/block/$height$",
+            "uncle": "https://www.oklink.com/en/ethw/uncle/$height$"
+        },
+        "explorerTxLink": "https://www.oklink.com/en/ethw/tx/{0}",
+        "explorerAccountLink": "https://www.oklink.com/en/ethw/address/{0}"
     },
 
     "ergo": {
