@@ -85,6 +85,31 @@ For macOS:
 docker run --rm -v $(pwd):/app -w /app mcr.microsoft.com/dotnet/sdk:6.0 /bin/bash -c 'apt update && apt install libssl-dev pkg-config libboost-all-dev libsodium-dev build-essential cmake -y --no-install-recommends && cd src/Miningcore && dotnet publish -c Release --framework net6.0 -o /app/build/ -r osx-x64 --self-contained false'
 ```
 
+### Building and Running Miningcore from a container
+
+**note** - The build scripts optimize  the build for the hardware platform the container is built on ( does it have avx for example).  If you run this container on a platform that does NOT have the same architecture you could have unexplained crashes.  YOU SHOULD BUILD THIS CONTAINER ON THE HOST YOU ARE GOING TO RUN THIS CONTAINER ON.
+
+Commands to build container: `docker build -t <your_dockerhubid>/miningcore:v73-foo .`
+
+The docker build assumes you are going to mount your  config file  in a volume mount.  for example:
+
+```sh
+
+docker run -d \
+    -p 4000:4000 \
+    -p 4066:4066 \
+    -p 4067:4067 \
+    --name mc    \
+    -v `pwd`/config_prod.json:/app/config.json \
+    --restart=unless-stopped \
+    <your_dockerhubid>/miningcore:v73-foo
+
+```
+
+
+
+
+
 For Windows using Linux container:
 
 ```console
