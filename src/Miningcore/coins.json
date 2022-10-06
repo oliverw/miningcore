@@ -3257,10 +3257,7 @@
             "args": [ { "hash": "sha256d" } ]
         },
         "hasFounderFee": true,
-        "hasMasterNodes": true,
-        "foundersRewardAddress": [
-        "yaDfcdCupB1T5YoVRjYr8fXCvB8U5AuNX8"
-        ],
+        "hasMasterNodes": true,        
         "shareMultiplier": 65536,
         "explorerBlockLink": "https://explorer.yerbas.org/block/$height$",
         "explorerTxLink": "https://explorer.yerbas.org/tx/{0}",
