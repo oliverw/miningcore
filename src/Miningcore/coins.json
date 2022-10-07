@@ -2143,12 +2143,46 @@
         },
         "hasFounderFee": true,
         "hasMasterNodes": true,
+        "foundersRewardAddress": [
+        "RTtyQU6DoSuNWetT4WUem5qXP5jNYGpwat"
+        ],
         "shareMultiplier": 65536,
         "explorerBlockLink": "https://explorer.raptoreum.com/block-height/$height$",
         "explorerTxLink": "https://explorer.raptoreum.com/tx/{0}",
         "explorerAccountLink": "https://explorer.raptoreum.com/address/{0}"
     },
+    
+    "bitoreum": {
+    "name": "Bitoreum",
+    "canonicalName": "Bitoreum",
+    "symbol": "BTRM",
+    "family": "bitcoin",
+    "website": "https://bitoreum.org/",
+    "market": "https://www.coingecko.com/en/coins/bitoreum",
+    "twitter": "https://twitter.com/bitoreum",    
+    "discord": "https://discord.gg/E3E9Ef3kZT",    
+    "coinbaseHasher": {
+      "hash": "sha256d"
+    },
+    "headerHasher": {
+      "hash": "ghostrider"
+    },
+    "blockHasher": {
+      "hash": "reverse",
+      "args": [ { "hash": "sha256d" } ]
+    },
+    "hasFounderFee": true,
+    "hasMasterNodes": true,
+    "foundersRewardAddress": [
+    "BanxgMPcMpXnuWQ2ogfQqEkwwVtjhAhXBR"
+    ],
+    "shareMultiplier": 65536,
+    "explorerBlockLink": "https://explorer.bitoreum.org/block/$hash$",
+    "explorerTxLink": "https://explorer.bitoreum.org/tx/{0}",
+    "explorerAccountLink": "https://explorer.bitoreum.org/address/{0}"
 
+    },
+    
     "reacoin": {
         "name": "Reacoin",
         "canonicalName": "Reacoin",
@@ -2639,7 +2673,7 @@
             "args": [ { "hash": "sha256d" } ]
         },
         "hasFounderFee": true,
-        "hasMasterNodes": true,
+        "hasMasterNodes": true,       
         "shareMultiplier": 65536,
         "explorerBlockLink": "http://rtm.timyg.org:6950/block/$height$",
         "explorerTxLink": "http://rtm.timyg.org:6950/tx/{0}",
@@ -3223,7 +3257,7 @@
             "args": [ { "hash": "sha256d" } ]
         },
         "hasFounderFee": true,
-        "hasMasterNodes": true,
+        "hasMasterNodes": true,        
         "shareMultiplier": 65536,
         "explorerBlockLink": "https://explorer.yerbas.org/block/$height$",
         "explorerTxLink": "https://explorer.yerbas.org/tx/{0}",
