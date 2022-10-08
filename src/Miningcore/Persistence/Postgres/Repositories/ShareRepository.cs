@@ -77,7 +77,7 @@ public class ShareRepository : IShareRepository
 
     public Task<double?> GetEffortBetweenCreatedAsync(IDbConnection con, string poolId, double shareConst, DateTime start, DateTime end)
     {
-        const string query = "SELECT SUM((difficulty*@shareConst)/(networkdifficulty)) FROM shares WHERE poolid = @poolId AND created > @start AND created < @end";
+        const string query = "SELECT SUM((difficulty * @shareConst) / networkdifficulty) FROM shares WHERE poolid = @poolId AND created > @start AND created < @end";
 
         return con.QuerySingleAsync<double?>(query, new { poolId, shareConst, start, end });
     }
@@ -144,4 +144,3 @@ public class ShareRepository : IShareRepository
             .ToArray();
     }
 }
-
