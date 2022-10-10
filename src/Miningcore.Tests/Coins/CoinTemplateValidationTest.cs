@@ -27,7 +27,7 @@ public class CoinTemplateValidationTest : TestBase
         {
             var t = template.Value;
 
-            output.WriteLine($"** Testing coin '{t.Name ?? t.Symbol ?? t.CanonicalName}' **");
+            output.WriteLine($"* {t.Name ?? t.Symbol ?? t.CanonicalName}");
 
             Assert.NotEmpty(t.Name);
             Assert.NotEmpty(t.Symbol);
