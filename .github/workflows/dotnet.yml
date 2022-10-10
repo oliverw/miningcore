@@ -27,4 +27,4 @@ jobs:
     - name: Build
       run: dotnet build --no-restore src
     - name: Test
-      run: dotnet test -l "console;verbosity=detailed" -c Release --no-build src
+      run: dotnet test --no-build --verbosity detailed src
