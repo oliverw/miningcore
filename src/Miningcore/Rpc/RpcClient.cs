@@ -49,7 +49,7 @@ public class RpcClient
 
     private static readonly HttpClient httpClient = new(new HttpClientHandler
     {
-        AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip,
+        AutomaticDecompression = DecompressionMethods.All,
 
         ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true,
     });
