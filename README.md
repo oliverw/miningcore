@@ -225,7 +225,6 @@ To support this project you can become a [sponsor](https://github.com/sponsors/o
 
 * ETH:  `miningcore.eth (ENS Address)`
 * BTC:  `miningcore.eth (ENS Address)`
-* BCH:  `qrf6uhhapq7fgkjv2ce2hcjqpk8ec2zc25et4xsphv`
 * LTC:  `miningcore.eth (ENS Address)`
 * DOGE: `DGDuKRhBewGP1kbUz4hszNd2p6dDzWYy9Q`
 * ETC:  `0xF8cCE9CE143C68d3d4A7e6bf47006f21Cfcf93c0`
