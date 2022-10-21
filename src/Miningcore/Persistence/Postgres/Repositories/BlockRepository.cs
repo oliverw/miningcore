@@ -51,12 +51,12 @@ public class BlockRepository : IBlockRepository
             ORDER BY created DESC OFFSET @offset FETCH NEXT @pageSize ROWS ONLY";
 
         return (await con.QueryAsync<Entities.Block>(new CommandDefinition(query, new
-            {
-                poolId,
-                status = status.Select(x => x.ToString().ToLower()).ToArray(),
-                offset = page * pageSize,
-                pageSize
-            }, cancellationToken: ct)))
+        {
+            poolId,
+            status = status.Select(x => x.ToString().ToLower()).ToArray(),
+            offset = page * pageSize,
+            pageSize
+        }, cancellationToken: ct)))
             .Select(mapper.Map<Block>)
             .ToArray();
     }
@@ -67,11 +67,11 @@ public class BlockRepository : IBlockRepository
             ORDER BY created DESC OFFSET @offset FETCH NEXT @pageSize ROWS ONLY";
 
         return (await con.QueryAsync<Entities.Block>(new CommandDefinition(query, new
-            {
-                status = status.Select(x => x.ToString().ToLower()).ToArray(),
-                offset = page * pageSize,
-                pageSize
-            }, cancellationToken: ct)))
+        {
+            status = status.Select(x => x.ToString().ToLower()).ToArray(),
+            offset = page * pageSize,
+            pageSize
+        }, cancellationToken: ct)))
             .Select(mapper.Map<Block>)
             .ToArray();
     }
@@ -91,11 +91,11 @@ public class BlockRepository : IBlockRepository
             ORDER BY created DESC FETCH NEXT 1 ROWS ONLY";
 
         return (await con.QueryAsync<Entities.Block>(query, new
-            {
-                poolId,
-                before,
-                status = status.Select(x => x.ToString().ToLower()).ToArray()
-            }))
+        {
+            poolId,
+            before,
+            status = status.Select(x => x.ToString().ToLower()).ToArray()
+        }))
             .Select(mapper.Map<Block>)
             .FirstOrDefault();
     }
@@ -112,5 +112,14 @@ public class BlockRepository : IBlockRepository
         const string query = @"SELECT created FROM blocks WHERE poolid = @poolId ORDER BY created DESC LIMIT 1";
 
         return con.ExecuteScalarAsync<DateTime?>(query, new { poolId });
+    }
+
+    public async Task<Block> GetBlockByHeightAsync(IDbConnection con, string poolId, long height)
+    {
+        const string query = @"SELECT * FROM blocks WHERE poolid = @poolId AND blockheight = @height";
+
+        var entity = await con.QuerySingleOrDefaultAsync<Entities.Block>(new CommandDefinition(query, new { poolId, height }));
+
+        return entity == null ? null : mapper.Map<Block>(entity);
     }
 }

@@ -15,4 +15,5 @@ public interface IBlockRepository
     Task<Block> GetBlockBeforeAsync(IDbConnection con, string poolId, BlockStatus[] status, DateTime before);
     Task<uint> GetPoolBlockCountAsync(IDbConnection con, string poolId, CancellationToken ct);
     Task<DateTime?> GetLastPoolBlockTimeAsync(IDbConnection con, string poolId);
+    Task<Block> GetBlockByHeightAsync(IDbConnection con, string poolId, long height);
 }
