@@ -4253,7 +4253,7 @@
             "uncle": "https://pinkscan.org/uncle/$height$"
         },
         "explorerTxLink": "https://pinkscan.org/transactions/{0}",
-        "explorerAccountLink": "https://pinkscan.org/contracts/{0}"
+        "explorerAccountLink": "https://.pinkscan.org/contracts/{0}"
     },
     "ergo": {
         "name": "Ergo",
