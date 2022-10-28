@@ -314,10 +314,10 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
                     return EthereumConstants.ByzantiumBlockReward;
 
                 return EthereumConstants.HomesteadBlockReward;
-                
+
             case GethChainType.EtherOne:
                 return EthOneConstants.BaseRewardInitial;
-            
+
             case GethChainType.Pink:
                return PinkConstants.BaseRewardInitial;
 
@@ -392,7 +392,7 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
 
         var amount = (BigInteger) Math.Floor(balance.Amount * EthereumConstants.Wei);
 
-        var request = new SendTransactionRequest
+        SendTransactionRequest request = new SendTransactionRequest
         {
             From = poolConfig.Address,
             To = balance.Address,
@@ -407,24 +407,20 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
             request.MaxFeePerGas = extraConfig.MaxFeePerGas;
         }
 
+        RpcResponse<string> response;
         if(extraPoolConfig?.ChainTypeOverride == "Pink")
         {
-            request.Gas = extraConfig.Gas;
+            var requestPink = new SendTransactionRequestPink
+            {
+                From = poolConfig.Address,
+                To = balance.Address,
+                Value = amount.ToString("x").TrimStart('0'),
+                Gas = extraConfig.Gas
+            };
+            response = await rpcClient.ExecuteAsync<string>(logger, EC.SendTx, ct, new[] { request });
         }
-
-        var response;
-        if(extraPoolConfig?.ChainTypeOverride == "Pink")
-        {
-               response = await rpcClient.ExecuteAsync<string>(logger, EC.SendTx, ct, new[] {{
-        From = request.From,
-        To = request.Address,
-        Value = request.Value,
-        Gas = extraConfig.Gas,
-        }});
-        }
-
         else {
-        response = await rpcClient.ExecuteAsync<string>(logger, EC.SendTx, ct, new[] { request });
+            response = await rpcClient.ExecuteAsync<string>(logger, EC.SendTx, ct, new[] { request });
         }
 
         if(response.Error != null)
