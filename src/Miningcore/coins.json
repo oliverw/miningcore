@@ -2176,6 +2176,42 @@
         "explorerBlockLink": "https://explorer.raptoreum.com/block-height/$height$",
         "explorerTxLink": "https://explorer.raptoreum.com/tx/{0}",
         "explorerAccountLink": "https://explorer.raptoreum.com/address/{0}"
+    },   
+    "radiant": {
+        "name": "Radiant",
+        "symbol": "RXD",
+        "family": "bitcoin",
+        "coinbaseHasher": {
+            "hash": "sha256d"
+        },
+        "headerHasher": {
+            "hash": "sha512/256d"
+        },
+        "blockHasher": {
+            "hash": "reverse",
+            "args": [ { "hash": "sha512/256d" } ]
+        },
+        "explorerBlockLink": "https://explorer.radiantblockchain.org/block-height/$height$",
+        "explorerTxLink": "https://explorer.radiantblockchain.org/tx/{0}",
+        "explorerAccountLink": "https://explorer.radiantblockchain.org/address/{0}"
+    },
+    "novo": {
+      "name": "Novo",
+      "symbol": "NOVO",
+      "family": "bitcoin",
+      "coinbaseHasher": {
+        "hash": "sha256d"
+      },
+      "headerHasher": {
+        "hash": "sha256dt"
+      },
+      "blockHasher": {
+        "hash": "reverse",
+        "args": [ { "hash": "sha256dt" } ]
+      },
+      "explorerBlockLink": "https://explorer.novochain.ovh/block/$height$",
+      "explorerTxLink": "https://explorer.novochain.ovh/tx/{0}",
+      "explorerAccountLink": "https://explorer.novochain.ovh/address/{0}"
     },
     "bitoreum": {
         "name": "Bitoreum",
@@ -4236,7 +4272,7 @@
             "uncle": "https://www.oklink.com/en/ethw/uncle/$height$"
         },
         "explorerTxLink": "https://explorer2.etherone.one/transactions/{0}",
-        "explorerAccountLink": "https://explorer2.etherone.one/contracts/{0}"
+        "explorerAccountLink": "https://explorer2.etherone.one/accounts/{0}"
     },
     "pinkchain": {
         "name": "PinkChain",

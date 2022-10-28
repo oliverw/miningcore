@@ -98,6 +98,9 @@
     <ClInclude Include="sha256.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="sha256t.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="sha3\sph_blake.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -291,6 +294,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="heavyhash\keccak_tiny.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="sha512_256.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="sha256dt.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -563,6 +572,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="heavyhash\keccak_tiny.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sha512_256.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sha256dt.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

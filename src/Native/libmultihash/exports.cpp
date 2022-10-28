@@ -54,6 +54,8 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "verthash/h2.h"
 #include "equi/equihashverify.h"
 #include "heavyhash/heavyhash.h"
+#include "sha512_256.h"
+#include "sha256dt.h"
 
 #ifdef _WIN32
 #include "blake2/ref/blake2.h"
@@ -320,4 +322,14 @@ extern "C" MODULE_API bool equihash_verify_96_5_export(const char* header, int h
     const std::vector<unsigned char> vecSolution(solution, solution + solution_length);
 
     return verifyEH_96_5(header, vecSolution, personalization);
+}
+
+extern "C" MODULE_API void sha512_256_export(const unsigned char* input, unsigned char* output, uint32_t input_len)
+{
+    sha512_256(input, input_len, output);
+}
+
+extern "C" MODULE_API void sha256dt_export(const char* input, char* output)
+{
+    sha256dt_hash(input, output);
 }

@@ -21,7 +21,7 @@ OBJECTS = bcrypt.o blake.o c11.o dcrypt.o fresh.o lane.o \
 	equi/uint256.o equi/arith_uint256.o equi/crypto/hmac_sha512.o \
 	equi/crypto/sha1.o equi/crypto/sha512.o equi/crypto/sha256.o \
 	equi/crypto/hmac_sha256.o equi/crypto/equihash.o equi/crypto/ripemd160.o \
-	equi/equihashverify.o
+	equi/equihashverify.o sha512_256.o sha256dt.o
 
 all: $(TARGET)
 
