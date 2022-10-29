@@ -4288,8 +4288,8 @@
             "block": "https://pinkscan.org/block/$height$",
             "uncle": "https://pinkscan.org/uncle/$height$"
         },
-        "explorerTxLink": "https://pinkscan.org/transactions/{0}",
-        "explorerAccountLink": "https://.pinkscan.org/contracts/{0}"
+        "explorerTxLink": "https://pinkscan.org/tx/{0}",
+        "explorerAccountLink": "https://pinkscan.org/address/{0}"
     },
     "ergo": {
         "name": "Ergo",
