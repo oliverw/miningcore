@@ -177,6 +177,17 @@ public class HashingTests : TestBase
     }
 
     [Fact]
+    public void Sha256DT_Hash()
+    {
+        var hasher = new Sha256DT();
+        var hash = new byte[32];
+        hasher.Digest(testValue, hash);
+        var result = hash.ToHexString();
+
+        Assert.Equal("", result);
+    }
+
+    [Fact]
     public void Sha256S_Hash()
     {
         var hasher = new Sha256S();
@@ -185,6 +196,17 @@ public class HashingTests : TestBase
         var result = hash.ToHexString();
 
         Assert.Equal("bd75a82b9957d6d043076dea52262635042693f1fe23bcadadaecc908e1e5cc6", result);
+    }
+
+    [Fact]
+    public void Sha512256D_Hash()
+    {
+        var hasher = new Sha512256D();
+        var hash = new byte[32];
+        hasher.Digest(testValue, hash);
+        var result = hash.ToHexString();
+
+        Assert.Equal("", result);
     }
 
     [Fact]

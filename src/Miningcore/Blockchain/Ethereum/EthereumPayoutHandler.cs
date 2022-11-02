@@ -392,7 +392,7 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
 
         var amount = (BigInteger) Math.Floor(balance.Amount * EthereumConstants.Wei);
 
-        SendTransactionRequest request = new SendTransactionRequest
+        var request = new SendTransactionRequest
         {
             From = poolConfig.Address,
             To = balance.Address,
