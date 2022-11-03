@@ -206,7 +206,7 @@ public class HashingTests : TestBase
         hasher.Digest(testValue, hash);
         var result = hash.ToHexString();
 
-        Assert.Equal("", result);
+        Assert.Equal("6b86ce4bf945d8e935d51db4e32589acf6dbcda58ca1cef7568d52f704c46d7f", result);
     }
 
     [Fact]
