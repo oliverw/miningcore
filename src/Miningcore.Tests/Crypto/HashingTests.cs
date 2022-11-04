@@ -183,7 +183,8 @@ public class HashingTests : TestBase
         var hash = new byte[32];
         hasher.Digest(testValue, hash);
         var result = hash.ToHexString();
-        Assert.Equal("890541c5a3d7e482d76e6b0053b1bfbe7e0c2e000b5e0126e4f03a2b8bc5d3c3", result);
+        Console.WriteLine(result);
+        Assert.Equal("", result);
     }
 
     [Fact]
