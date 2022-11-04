@@ -181,7 +181,7 @@ public class HashingTests : TestBase
     {
         var hasher = new Sha256DT();
         var hash = new byte[32];
-        hasher.Digest(testValue, hash);
+        hasher.Digest(testValue2, hash);
         var result = hash.ToHexString();
         Assert.Equal("37b09f83da42efdfc80cfdceb35fe307d8c8007cea0313feda96a22dfc4a7c37", result);
     }
