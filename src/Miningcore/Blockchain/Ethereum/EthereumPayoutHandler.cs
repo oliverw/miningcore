@@ -124,7 +124,7 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
                         var gasUsed = blockHashResponse.Response.GasUsed;
 
                         var burnedFee = (decimal) 0;
-                        if(extraPoolConfig?.ChainTypeOverride == "Ethereum" || extraPoolConfig?.ChainTypeOverride == "MainPow")
+                        if(extraPoolConfig?.ChainTypeOverride == "Ethereum" || extraPoolConfig?.ChainTypeOverride == "Main" || extraPoolConfig?.ChainTypeOverride == "MainPow" || extraPoolConfig?.ChainTypeOverride == "EtherOne" || extraPoolConfig?.ChainTypeOverride == "Pink")
                             burnedFee = (baseGas * gasUsed / EthereumConstants.Wei);
 
                         block.Hash = blockHash;
@@ -250,7 +250,7 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
         // ensure we have peers
         var infoResponse = await rpcClient.ExecuteAsync<string>(logger, EC.GetPeerCount, ct);
 
-        if((networkType == EthereumNetworkType.Main || networkType == EthereumNetworkType.MainPow) &&
+        if((networkType == EthereumNetworkType.Main || networkType == EthereumNetworkType.MainPow || extraPoolConfig?.ChainTypeOverride == "EtherOne" || extraPoolConfig?.ChainTypeOverride == "Pink") &&
            (infoResponse.Error != null || string.IsNullOrEmpty(infoResponse.Response) ||
                infoResponse.Response.IntegralFromHex<int>() < EthereumConstants.MinPayoutPeerCount))
         {
@@ -327,6 +327,12 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
                     return EthereumConstants.ByzantiumBlockReward;
 
                 return EthereumConstants.HomesteadBlockReward;
+
+            case GethChainType.EtherOne:
+                return EthOneConstants.BaseRewardInitial;
+
+            case GethChainType.Pink:
+               return PinkConstants.BaseRewardInitial;
 
             case GethChainType.Callisto:
                 return CallistoConstants.BaseRewardInitial * (CallistoConstants.TreasuryPercent / 100);
@@ -406,7 +412,7 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
             Value = amount.ToString("x").TrimStart('0'),
         };
 
-        if(extraPoolConfig?.ChainTypeOverride == "Ethereum" || extraPoolConfig?.ChainTypeOverride == "MainPow")
+        if(extraPoolConfig?.ChainTypeOverride == "Ethereum" || extraPoolConfig?.ChainTypeOverride == "Main" || extraPoolConfig?.ChainTypeOverride == "MainPow" || extraPoolConfig?.ChainTypeOverride == "EtherOne" )
         {
             var maxPriorityFeePerGas = await rpcClient.ExecuteAsync<string>(logger, EC.MaxPriorityFeePerGas, ct);
             request.Gas = extraConfig.Gas;
@@ -414,7 +420,21 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
             request.MaxFeePerGas = extraConfig.MaxFeePerGas;
         }
 
-        var response = await rpcClient.ExecuteAsync<string>(logger, EC.SendTx, ct, new[] { request });
+        RpcResponse<string> response;
+        if(extraPoolConfig?.ChainTypeOverride == "Pink")
+        {
+            var requestPink = new SendTransactionRequestPink
+            {
+                From = poolConfig.Address,
+                To = balance.Address,
+                Value = amount.ToString("x").TrimStart('0'),
+                Gas = extraConfig.Gas
+            };
+            response = await rpcClient.ExecuteAsync<string>(logger, EC.SendTx, ct, new[] { requestPink });
+        }
+        else {
+            response = await rpcClient.ExecuteAsync<string>(logger, EC.SendTx, ct, new[] { request });
+        }
 
         if(response.Error != null)
             throw new Exception($"{EC.SendTx} returned error: {response.Error.Message} code {response.Error.Code}");

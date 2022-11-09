@@ -2176,6 +2176,42 @@
         "explorerBlockLink": "https://explorer.raptoreum.com/block-height/$height$",
         "explorerTxLink": "https://explorer.raptoreum.com/tx/{0}",
         "explorerAccountLink": "https://explorer.raptoreum.com/address/{0}"
+    },   
+    "radiant": {
+        "name": "Radiant",
+        "symbol": "RXD",
+        "family": "bitcoin",
+        "coinbaseHasher": {
+            "hash": "sha256d"
+        },
+        "headerHasher": {
+            "hash": "sha512/256d"
+        },
+        "blockHasher": {
+            "hash": "reverse",
+            "args": [ { "hash": "sha512/256d" } ]
+        },
+        "explorerBlockLink": "https://explorer.radiantblockchain.org/block-height/$height$",
+        "explorerTxLink": "https://explorer.radiantblockchain.org/tx/{0}",
+        "explorerAccountLink": "https://explorer.radiantblockchain.org/address/{0}"
+    },
+    "novo": {
+      "name": "Novo",
+      "symbol": "NOVO",
+      "family": "bitcoin",
+      "coinbaseHasher": {
+        "hash": "sha256d"
+      },
+      "headerHasher": {
+        "hash": "sha256dt"
+      },
+      "blockHasher": {
+        "hash": "reverse",
+        "args": [ { "hash": "sha256dt" } ]
+      },
+      "explorerBlockLink": "https://explorer.novochain.ovh/block/$height$",
+      "explorerTxLink": "https://explorer.novochain.ovh/tx/{0}",
+      "explorerAccountLink": "https://explorer.novochain.ovh/address/{0}"
     },
     "bitoreum": {
         "name": "Bitoreum",
@@ -4220,6 +4256,40 @@
         },
         "explorerTxLink": "https://www.oklink.com/en/ethw/tx/{0}",
         "explorerAccountLink": "https://www.oklink.com/en/ethw/address/{0}"
+    },
+    "etherone": {
+        "name": "EtherOne",
+        "canonicalName": "EtherOne",
+        "symbol": "ETHONE",
+        "family": "ethereum",
+        "website": "https://etherone.one/",
+        "market": "",
+        "twitter": "https://twitter.com/EtherOneChain",
+        "telegram": "https://t.me/ether_one_blockchain",
+        "discord": "https://discord.com/invite/vF2SDb6Yz9",
+        "explorerBlockLinks": {
+            "block": "https://www.oklink.com/en/ethw/block/$height$",
+            "uncle": "https://www.oklink.com/en/ethw/uncle/$height$"
+        },
+        "explorerTxLink": "https://explorer2.etherone.one/transactions/{0}",
+        "explorerAccountLink": "https://explorer2.etherone.one/accounts/{0}"
+    },
+    "pinkchain": {
+        "name": "PinkChain",
+        "canonicalName": "PinkChain",
+        "symbol": "PINK",
+        "family": "ethereum",
+        "website": "https://pinkchain.net/",
+        "market": "",
+        "twitter": "https://twitter.com/PinkchainNet",
+        "telegram": "https://t.me/PinkSmartChain",
+        "discord": "https://discord.gg/jzxrn5H4eQ",
+        "explorerBlockLinks": {
+            "block": "https://pinkscan.org/block/$height$",
+            "uncle": "https://pinkscan.org/uncle/$height$"
+        },
+        "explorerTxLink": "https://pinkscan.org/tx/{0}",
+        "explorerAccountLink": "https://pinkscan.org/address/{0}"
     },
     "ergo": {
         "name": "Ergo",

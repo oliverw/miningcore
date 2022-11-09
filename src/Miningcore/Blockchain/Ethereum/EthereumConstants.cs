@@ -47,12 +47,24 @@ public class CallistoConstants
     public const decimal TreasuryPercent = 50m;
 }
 
+public class EthOneConstants
+{
+    public const decimal BaseRewardInitial = 2.0m;
+}
+
+public class PinkConstants
+{
+    public const decimal BaseRewardInitial = 1.0m;
+}
+
 public enum EthereumNetworkType
 {
     Main = 1,
     Ropsten = 3,
     Callisto = 820,
     MainPow = 10001,
+    EtherOne = 4949,
+    Pink = 10100,
 
     Unknown = -1,
 }
@@ -63,7 +75,9 @@ public enum GethChainType
     Ropsten,
     Callisto,
     MainPow = 10001,
-
+    EtherOne = 4949,
+    Pink = 10100,
+    
     Unknown = -1,
 }
 
