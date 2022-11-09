@@ -50,7 +50,6 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
     private RpcClient rpcClient;
     private EthereumNetworkType networkType;
     private GethChainType chainType;
-    private const int BlockSearchOffset = 50;
     private EthereumPoolConfigExtra extraPoolConfig;
     private EthereumPoolPaymentProcessingConfigExtra extraConfig;
 
@@ -133,7 +132,7 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
                         block.ConfirmationProgress = 1;
                         block.BlockHeight = (ulong) blockInfo.Height;
                         block.Reward = GetBaseBlockReward(chainType, block.BlockHeight); // base reward
-                        block.Type = "block";
+                        block.Type = EthereumConstants.BlockTypeBlock;
 
                         if(extraConfig?.KeepUncles == false)
                             block.Reward += blockInfo.Uncles.Length * (block.Reward / 32); // uncle rewards
@@ -150,8 +149,8 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
                 }
 
                 // search for a block containing our block as an uncle by checking N blocks in either direction
-                var heightMin = block.BlockHeight - BlockSearchOffset;
-                var heightMax = Math.Min(block.BlockHeight + BlockSearchOffset, latestBlockHeight);
+                var heightMin = block.BlockHeight - extraConfig.BlockSearchOffset;
+                var heightMax = Math.Min(block.BlockHeight + extraConfig.BlockSearchOffset, latestBlockHeight);
                 var range = new List<long>();
 
                 for(var k = heightMin; k < heightMax; k++)
@@ -180,30 +179,44 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
                             .Select(x => x.Response.ToObject<DaemonResponses.Block>())
                             .FirstOrDefault(x => string.Equals(x.Miner, poolConfig.Address, StringComparison.OrdinalIgnoreCase));
 
-                            if(uncle != null)
+                        if(uncle != null)
+                        {
+                            // mature?
+                            if(block.Reward == 0)
+                                block.Reward = GetUncleReward(chainType, uncle.Height.Value, blockInfo2.Height.Value);
+
+                            if(latestBlockHeight - uncle.Height.Value >= EthereumConstants.MinConfimations)
                             {
-                                // mature?
-                                if(block.Reward == 0)
-                                    block.Reward = GetUncleReward(chainType, uncle.Height.Value, blockInfo2.Height.Value);
 
-                                if(latestBlockHeight - uncle.Height.Value >= EthereumConstants.MinConfimations)
+                                // make sure there is no other uncle from that block stored in the DB already.
+                                // when there is more than 1 uncle mined by us within the BlockSearchOffset 
+                                // range, the pool automatically assumes the first found block is the correct one. 
+                                // This is not always the case, so we need to check the DB for any other 
+                                // uncles from that block and continue searching if there any others.
+                                // Otherwise the payouter will crash and no further blocks will be unlocked.
+                                var duplBlock = await cf.Run(con => blockRepo.GetBlockByHeightAsync(con, poolConfig.Id, Convert.ToInt64(uncle.Height.Value)));
+                                if(duplBlock != null && duplBlock.Type == EthereumConstants.BlockTypeUncle)
                                 {
-                                    block.Reward = GetUncleReward(chainType, uncle.Height.Value, blockInfo2.Height.Value);
-                                    block.Status = BlockStatus.Confirmed;
-                                    block.ConfirmationProgress = 1;
-                                    block.BlockHeight = uncle.Height.Value;
-                                    block.Type = EthereumConstants.BlockTypeUncle;
-
-                                    logger.Info(() => $"[{LogCategory}] Unlocked uncle for block {blockInfo2.Height.Value} at height {uncle.Height.Value} worth {FormatAmount(block.Reward)}");
-
-                                    messageBus.NotifyBlockUnlocked(poolConfig.Id, block, coin);
+                                    logger.Info(() => $"[{LogCategory}] Found another uncle from block {uncle.Height.Value} in the DB. Continuing search for uncle.");
+                                    continue;
                                 }
 
-                                else
-                                    logger.Info(() => $"[{LogCategory}] Got immature matching uncle for block {blockInfo2.Height.Value}. Will try again.");
+                                block.Reward = GetUncleReward(chainType, uncle.Height.Value, blockInfo2.Height.Value);
+                                block.Status = BlockStatus.Confirmed;
+                                block.ConfirmationProgress = 1;
+                                block.BlockHeight = uncle.Height.Value;
+                                block.Type = EthereumConstants.BlockTypeUncle;
 
-                                break;
+                                logger.Info(() => $"[{LogCategory}] Unlocked uncle for block {blockInfo2.Height.Value} at height {uncle.Height.Value} worth {FormatAmount(block.Reward)}");
+
+                                messageBus.NotifyBlockUnlocked(poolConfig.Id, block, coin);
                             }
+
+                            else
+                                logger.Info(() => $"[{LogCategory}] Got immature matching uncle for block {blockInfo2.Height.Value}. Will try again.");
+
+                            break;
+                        }
                     }
                 }
 

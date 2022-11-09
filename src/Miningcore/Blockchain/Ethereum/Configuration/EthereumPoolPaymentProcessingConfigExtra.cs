@@ -21,4 +21,9 @@ public class EthereumPoolPaymentProcessingConfigExtra
     /// maximum amount you’re willing to pay
     /// </summary>
     public ulong MaxFeePerGas { get; set; }
+
+    /// <summary>
+    /// Search offset to start looking for uncles
+    /// </summary>
+    public uint BlockSearchOffset { get; set; } = 50;
 }

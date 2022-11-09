@@ -17,6 +17,7 @@ public class EthereumConstants
     public const string EthereumStratumVersion = "EthereumStratum/1.0.0";
     public const decimal StaticTransactionFeeReserve = 0.0025m; // in ETH
     public const string BlockTypeUncle = "uncle";
+    public const string BlockTypeBlock = "block";
 
 #if !DEBUG
     public const int MinPayoutPeerCount = 1;
