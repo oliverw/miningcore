@@ -313,7 +313,7 @@
     <ClCompile Include="s3.c" />
     <ClCompile Include="scryptn.c" />
     <ClCompile Include="sha256csm.c" />
-    <ClInclude Include="sha256dt.c" />
+    <ClCompile Include="sha256dt.c" />
     <ClCompile Include="sha3\aes_helper.c" />
     <ClCompile Include="sha3\extra.c" />
     <ClCompile Include="sha3\gost_streebog.c" />
@@ -358,7 +358,7 @@
     <ClCompile Include="x22i.c">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|x64'">MaxSpeed</Optimization>
     </ClCompile>
-    <ClInclude Include="sha512_256.c" />
+    <ClCompile Include="sha512_256.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="equi\crypto\equihash.tcc" />
