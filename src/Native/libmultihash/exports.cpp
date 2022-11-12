@@ -49,13 +49,13 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "x16rv2.h"
 #include "x21s.h"
 #include "sha256csm.h"
+#include "sha512_256.h"
+#include "sha256dt.h"
 #include "hmq17.h"
 #include "phi.h"
 #include "verthash/h2.h"
 #include "equi/equihashverify.h"
 #include "heavyhash/heavyhash.h"
-#include "sha512_256.h"
-#include "sha256dt.h"
 
 #ifdef _WIN32
 #include "blake2/ref/blake2.h"
@@ -271,6 +271,16 @@ extern "C" MODULE_API void x22i_export(const char* input, char* output, uint32_t
     x22i_hash(input, output, input_len);
 }
 
+extern "C" MODULE_API void sha512_256_export(const unsigned char* input, unsigned char* output, uint32_t input_len)
+{
+    sha512_256(input, input_len, output);
+}
+
+extern "C" MODULE_API void sha256dt_export(const char* input, char* output)
+{
+    sha256dt_hash(input, output);
+}
+
 extern "C" MODULE_API int verthash_init_export(const char* filename, int createIfMissing)
 {
     return verthash_init(filename, createIfMissing);
@@ -322,14 +332,4 @@ extern "C" MODULE_API bool equihash_verify_96_5_export(const char* header, int h
     const std::vector<unsigned char> vecSolution(solution, solution + solution_length);
 
     return verifyEH_96_5(header, vecSolution, personalization);
-}
-
-extern "C" MODULE_API void sha512_256_export(const unsigned char* input, unsigned char* output, uint32_t input_len)
-{
-    sha512_256(input, input_len, output);
-}
-
-extern "C" MODULE_API void sha256dt_export(const char* input, char* output)
-{
-    sha256dt_hash(input, output);
 }

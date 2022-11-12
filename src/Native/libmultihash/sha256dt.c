@@ -21,4 +21,3 @@ void sha256dt_hash(const char* input, char* output)
     SHA256_Update(&ctx, &temp, 32);
     SHA256_Final((unsigned char*) output, &ctx);
 }
-

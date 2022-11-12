@@ -45,7 +45,7 @@
         <PackageReference Include="Autofac" Version="6.4.0" />
         <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="8.0.0" />
         <PackageReference Include="CircularBuffer" Version="1.3.0" />
-        <PackageReference Include="GitVersion.MsBuild" Version="5.10.3">
+        <PackageReference Include="GitVersion.MsBuild" Version="5.11.1">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
@@ -58,29 +58,29 @@
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="NLog.Extensions.Hosting" Version="5.0.4" />
+        <PackageReference Include="NLog.Extensions.Hosting" Version="5.1.0" />
         <PackageReference Include="AutoMapper" Version="12.0.0" />
         <PackageReference Include="Dapper" Version="2.0.123" />
         <PackageReference Include="FluentValidation" Version="11.2.2" />
         <PackageReference Include="FluentValidation.AspNetCore" Version="11.2.2" />
         <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.2.2" />
-        <PackageReference Include="JetBrains.Annotations" Version="2022.1.0" />
-        <PackageReference Include="MailKit" Version="3.4.1" />
+        <PackageReference Include="JetBrains.Annotations" Version="2022.3.1" />
+        <PackageReference Include="MailKit" Version="3.4.2" />
         <PackageReference Include="McMaster.Extensions.CommandLineUtils" Version="4.0.1" />
         <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="6.0.1" />
         <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="6.0.0" />
         <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="6.0.0" />
-        <PackageReference Include="NBitcoin" Version="7.0.11" />
-        <PackageReference Include="NBitcoin.Altcoins" Version="3.0.15" />
+        <PackageReference Include="NBitcoin" Version="7.0.17" />
+        <PackageReference Include="NBitcoin.Altcoins" Version="3.0.17" />
         <PackageReference Include="NBitcoin.Zcash" Version="3.0.0" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-        <PackageReference Include="NLog" Version="5.0.4" />
-        <PackageReference Include="NLog.Extensions.Logging" Version="5.0.4" />
+        <PackageReference Include="NLog" Version="5.0.5" />
+        <PackageReference Include="NLog.Extensions.Logging" Version="5.1.0" />
         <PackageReference Include="Polly" Version="7.2.3" />
         <PackageReference Include="Portable.BouncyCastle" Version="1.9.0" />
-        <PackageReference Include="prometheus-net.AspNetCore" Version="6.0.0" />
-        <PackageReference Include="prometheus-net" Version="6.0.0" />
-        <PackageReference Include="protobuf-net" Version="3.1.22" />
+        <PackageReference Include="prometheus-net.AspNetCore" Version="7.0.0" />
+        <PackageReference Include="prometheus-net" Version="7.0.0" />
+        <PackageReference Include="protobuf-net" Version="3.1.25" />
         <PackageReference Include="System.Diagnostics.Process" Version="4.3.0" />
         <PackageReference Include="System.Reactive" Version="5.0.0" />
     </ItemGroup>
