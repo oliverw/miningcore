@@ -2183,6 +2183,7 @@
         "symbol": "GSPC",
         "family": "bitcoin",
         "website": "https://coin.globalsocialpost.com/",
+        "market": "https://www.bitoreum.exchange/trading/gspcusdt",
         "twitter": "https://twitter.com/gspcoin",
         "discord": "https://discord.gg/Anh2sr4txV",
         "coinbaseHasher": {
