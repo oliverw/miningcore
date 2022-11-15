@@ -4302,8 +4302,8 @@
         "telegram": "https://t.me/ether_one_blockchain",
         "discord": "https://discord.com/invite/vF2SDb6Yz9",
         "explorerBlockLinks": {
-            "block": "https://www.oklink.com/en/ethw/block/$height$",
-            "uncle": "https://www.oklink.com/en/ethw/uncle/$height$"
+            "block": "https://explorer2.etherone.one/blocks/$height$",
+            "uncle": "https://explorer2.etherone.one/uncle/$height$"
         },
         "explorerTxLink": "https://explorer2.etherone.one/transactions/{0}",
         "explorerAccountLink": "https://explorer2.etherone.one/accounts/{0}"
