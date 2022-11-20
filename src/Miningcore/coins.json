@@ -4302,11 +4302,11 @@
         "telegram": "https://t.me/ether_one_blockchain",
         "discord": "https://discord.com/invite/vF2SDb6Yz9",
         "explorerBlockLinks": {
-            "block": "https://explorer2.etherone.one/blocks/$height$",
-            "uncle": "https://explorer2.etherone.one/uncle/$height$"
+            "block": "https://blockscout.etherone.one/block/$height$",
+            "uncle": "https://blockscout.etherone.one/uncles/$height$"
         },
-        "explorerTxLink": "https://explorer2.etherone.one/transactions/{0}",
-        "explorerAccountLink": "https://explorer2.etherone.one/accounts/{0}"
+        "explorerTxLink": "https://blockscout.etherone.one/tx/{0}",
+        "explorerAccountLink": "https://blockscout.etherone.one/address/{0}"
     },
     "pinkchain": {
         "name": "PinkChain",
