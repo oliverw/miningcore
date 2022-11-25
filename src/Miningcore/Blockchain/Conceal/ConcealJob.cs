@@ -1,4 +1,4 @@
-using Miningcore.Blockchain.Cryptonote.DaemonResponses;
+using Miningcore.Blockchain.Conceal.DaemonResponses;
 using Miningcore.Configuration;
 using Miningcore.Extensions;
 using Miningcore.Native;
@@ -8,12 +8,12 @@ using Org.BouncyCastle.Math;
 using static Miningcore.Native.Cryptonight.Algorithm;
 using Contract = Miningcore.Contracts.Contract;
 
-namespace Miningcore.Blockchain.Cryptonote;
+namespace Miningcore.Blockchain.Conceal;
 
-public class CryptonoteJob
+public class ConcealJob
 {
-    public CryptonoteJob(GetBlockTemplateResponse blockTemplate, byte[] instanceId, string jobId,
-        CryptonoteCoinTemplate coin, PoolConfig poolConfig, ClusterConfig clusterConfig, string prevHash, string randomXRealm)
+    public ConcealJob(GetBlockTemplateResponse blockTemplate, byte[] instanceId, string jobId,
+        ConcealCoinTemplate coin, PoolConfig poolConfig, ClusterConfig clusterConfig, string prevHash)
     {
         Contract.RequiresNonNull(blockTemplate);
         Contract.RequiresNonNull(poolConfig);
@@ -24,40 +24,16 @@ public class CryptonoteJob
         BlockTemplate = blockTemplate;
         PrepareBlobTemplate(instanceId);
         PrevHash = prevHash;
-        RandomXRealm = randomXRealm;
 
         hashFunc = hashFuncs[coin.Hash];
     }
 
-    protected delegate void HashFunc(string realm, string seedHex, ReadOnlySpan<byte> data, Span<byte> result, ulong height);
+    protected delegate void HashFunc(ReadOnlySpan<byte> data, Span<byte> result, ulong height);
 
     protected static readonly Dictionary<CryptonightHashType, HashFunc> hashFuncs = new()
     {
-        { CryptonightHashType.RandomX, (realm, seedHex, data, result, _) => RandomX.CalculateHash(realm, seedHex, data, result) },
-        { CryptonightHashType.RandomARQ, (realm, seedHex, data, result, _) => RandomARQ.CalculateHash(realm, seedHex, data, result) },
-        { CryptonightHashType.Cryptonight0, (_, _, data, result, height) => Cryptonight.CryptonightHash(data, result, CN_0, height) },
-        { CryptonightHashType.Cryptonight1, (_, _, data, result, height) => Cryptonight.CryptonightHash(data, result, CN_1, height) },
-        { CryptonightHashType.Cryptonight2, (_, _, data, result, height) => Cryptonight.CryptonightHash(data, result, CN_2, height) },
-        { CryptonightHashType.CryptonightHalf, (_, _, data, result, height) => Cryptonight.CryptonightHash(data, result, CN_HALF, height) },
-        { CryptonightHashType.CryptonightDouble, (_, _, data, result, height) => Cryptonight.CryptonightHash(data, result, CN_DOUBLE, height) },
-        { CryptonightHashType.CryptonightR, (_, _, data, result, height) => Cryptonight.CryptonightHash(data, result, CN_R, height) },
-        { CryptonightHashType.CryptonightRTO, (_, _, data, result, height) => Cryptonight.CryptonightHash(data, result, CN_RTO, height) },
-        { CryptonightHashType.CryptonightRWZ, (_, _, data, result, height) => Cryptonight.CryptonightHash(data, result, CN_RWZ, height) },
-        { CryptonightHashType.CryptonightZLS, (_, _, data, result, height) => Cryptonight.CryptonightHash(data, result, CN_ZLS, height) },
-        { CryptonightHashType.CryptonightCCX, (_, _, data, result, height) => Cryptonight.CryptonightHash(data, result, CN_CCX, height) },
-        { CryptonightHashType.CryptonightGPU, (_, _, data, result, height) => Cryptonight.CryptonightHash(data, result, CN_GPU, height) },
-        { CryptonightHashType.CryptonightFast, (_, _, data, result, height) => Cryptonight.CryptonightHash(data, result, CN_FAST, height) },
-        { CryptonightHashType.CryptonightXAO, (_, _, data, result, height) => Cryptonight.CryptonightHash(data, result, CN_XAO, height) },
-        { CryptonightHashType.Ghostrider, (_, _, data, result, height) => Cryptonight.CryptonightHash(data, result, GHOSTRIDER_RTM, height) },
-        { CryptonightHashType.CryptonightLite0, (_, _, data, result, height) => Cryptonight.CryptonightHash(data, result, CN_LITE_0, height) },
-        { CryptonightHashType.CryptonightLite1, (_, _, data, result, height) => Cryptonight.CryptonightHash(data, result, CN_LITE_1, height) },
-        { CryptonightHashType.CryptonightHeavy, (_, _, data, result, height) => Cryptonight.CryptonightHash(data, result, CN_HEAVY_0, height) },
-        { CryptonightHashType.CryptonightHeavyXHV, (_, _, data, result, height) => Cryptonight.CryptonightHash(data, result, CN_HEAVY_XHV, height) },
-        { CryptonightHashType.CryptonightHeavyTube, (_, _, data, result, height) => Cryptonight.CryptonightHash(data, result, CN_HEAVY_TUBE, height) },
-        { CryptonightHashType.CryptonightPico, (_, _, data, result, height) => Cryptonight.CryptonightHash(data, result, CN_PICO_0, height) },
-        { CryptonightHashType.ArgonCHUKWA, (_, _, data, result, height) => Cryptonight.CryptonightHash(data, result, AR2_CHUKWA, height) },
-        { CryptonightHashType.ArgonCHUKWAV2, (_, _, data, result, height) => Cryptonight.CryptonightHash(data, result, AR2_CHUKWA_V2, height) },
-        { CryptonightHashType.ArgonWRKZ, (_, _, data, result, height) => Cryptonight.CryptonightHash(data, result, AR2_WRKZ, height) },
+        { CryptonightHashType.CryptonightCCX, (data, result, height) => Cryptonight.CryptonightHash(data, result, CN_CCX, height) },
+        { CryptonightHashType.CryptonightGPU, (data, result, height) => Cryptonight.CryptonightHash(data, result, CN_GPU, height) },
     };
 
     private byte[] blobTemplate;
@@ -69,7 +45,7 @@ public class CryptonoteJob
         blobTemplate = BlockTemplate.Blob.HexToByteArray();
 
         // inject instanceId
-        instanceId.CopyTo(blobTemplate, BlockTemplate.ReservedOffset + CryptonoteConstants.ExtraNonceSize);
+        instanceId.CopyTo(blobTemplate, BlockTemplate.ReservedOffset + ConcealConstants.ExtraNonceSize);
     }
 
     private string EncodeBlob(uint workerExtraNonce)
@@ -87,7 +63,7 @@ public class CryptonoteJob
     private string EncodeTarget(double difficulty, int size = 4)
     {
         var diff = BigInteger.ValueOf((long) (difficulty * 255d));
-        var quotient = CryptonoteConstants.Diff1.Divide(diff).Multiply(BigInteger.ValueOf(255));
+        var quotient = ConcealConstants.Diff1.Divide(diff).Multiply(BigInteger.ValueOf(255));
         var bytes = quotient.ToByteArray().AsSpan();
         Span<byte> padded = stackalloc byte[32];
 
@@ -116,13 +92,11 @@ public class CryptonoteJob
 
     public string PrevHash { get; }
     public GetBlockTemplateResponse BlockTemplate { get; }
-    public string RandomXRealm { get; set; }
 
-    public void PrepareWorkerJob(CryptonoteWorkerJob workerJob, out string blob, out string target)
+    public void PrepareWorkerJob(ConcealWorkerJob workerJob, out string blob, out string target)
     {
         workerJob.Height = BlockTemplate.Height;
         workerJob.ExtraNonce = (uint) Interlocked.Increment(ref extraNonce);
-        workerJob.SeedHash = BlockTemplate.SeedHash;
 
         if(extraNonce < 0)
             extraNonce = 0;
@@ -137,10 +111,10 @@ public class CryptonoteJob
         Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(workerHash));
         Contract.Requires<ArgumentException>(workerExtraNonce != 0);
 
-        var context = worker.ContextAs<CryptonoteWorkerContext>();
+        var context = worker.ContextAs<ConcealWorkerContext>();
 
         // validate nonce
-        if(!CryptonoteConstants.RegexValidNonce.IsMatch(nonce))
+        if(!ConcealConstants.RegexValidNonce.IsMatch(nonce))
             throw new StratumException(StratumError.MinusOne, "malformed nonce");
 
         // clone template
@@ -153,7 +127,7 @@ public class CryptonoteJob
 
         // inject nonce
         bytes = nonce.HexToByteArray();
-        bytes.CopyTo(blob[CryptonoteConstants.BlobNonceOffset..]);
+        bytes.CopyTo(blob[ConcealConstants.BlobNonceOffset..]);
 
         // convert
         var blobConverted = CryptonoteBindings.ConvertBlob(blob, blobTemplate.Length);
@@ -162,7 +136,7 @@ public class CryptonoteJob
 
         // hash it
         Span<byte> headerHash = stackalloc byte[32];
-        hashFunc(RandomXRealm, BlockTemplate.SeedHash, blobConverted, headerHash, BlockTemplate.Height);
+        hashFunc(blobConverted, headerHash, BlockTemplate.Height);
 
         var headerHashString = headerHash.ToHexString();
         if(headerHashString != workerHash)
@@ -170,7 +144,7 @@ public class CryptonoteJob
 
         // check difficulty
         var headerValue = headerHash.ToBigInteger();
-        var shareDiff = (double) new BigRational(CryptonoteConstants.Diff1b, headerValue);
+        var shareDiff = (double) new BigRational(ConcealConstants.Diff1b, headerValue);
         var stratumDifficulty = context.Difficulty;
         var ratio = shareDiff / stratumDifficulty;
         var isBlockCandidate = shareDiff >= BlockTemplate.Difficulty;

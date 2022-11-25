@@ -146,6 +146,24 @@ public partial class EquihashCoinTemplate
     #endregion
 }
 
+public partial class ConcealCoinTemplate
+{
+    #region Overrides of CoinTemplate
+
+    public override string GetAlgorithmName()
+    {
+//        switch(Hash)
+//        {
+//            case CryptonightHashType.RandomX:
+//                return "RandomX";
+//        }
+
+        return Hash.ToString();
+    }
+
+    #endregion
+}
+
 public partial class CryptonoteCoinTemplate
 {
     #region Overrides of CoinTemplate

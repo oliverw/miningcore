@@ -4206,6 +4206,27 @@
         "explorerBlockLink": "https://www.exploremonero.com/block/$height$",
         "explorerTxLink": "https://www.exploremonero.com/transaction/{0}"
     },
+     "conceal": {
+        "name": "Conceal",
+        "canonicalName": "Conceal",
+        "symbol": "CCX",
+        "family": "conceal",
+        "website": "https://conceal.network/",
+        "market": "",
+        "twitter": "https://twitter.com/ConcealNetwork",
+        "telegram": "https://t.me/concealnetworkusers",
+        "discord": "http://discord.conceal.network/",
+        "hash": "cn-gpu",
+        "hashVariant": 0,
+        "difficultyTarget": 120,
+        "smallestUnit": 1000000,
+        "addressPrefix": 31444,
+        "addressPrefixTestnet": 31444,
+        "addressPrefixIntegrated": 31444,
+        "addressPrefixIntegratedTestnet": 31444,
+        "explorerBlockLink": "https://explorer.conceal.network/index.html?hash=$hash$#blockchain_block",
+        "explorerTxLink": "https://explorer.conceal.network/index.html?hash={0}#blockchain_transaction"
+    },
     "callisto": {
         "name": "Callisto Network",
         "canonicalName": "Callisto-Network",
