@@ -884,11 +884,15 @@ inline void cryptonight_single_hash_gpu(const uint8_t *__restrict__ input, size_
     fesetround(FE_TONEAREST);
 #   endif
 
+#if true  // OW: always use ssse3 to circumvent build problems with CN-GPU AVX impl on some linux systems without AVX2 support
+    cn_gpu_inner_ssse3<props.iterations(), props.mask()>(ctx[0]->state, ctx[0]->memory);
+#else
     if (xmrig::Cpu::info()->hasAVX2()) {
         cn_gpu_inner_avx<props.iterations(), props.mask()>(ctx[0]->state, ctx[0]->memory);
     } else {
         cn_gpu_inner_ssse3<props.iterations(), props.mask()>(ctx[0]->state, ctx[0]->memory);
     }
+#endif
 
     cn_implode_scratchpad<ALGO, SOFT_AES, 0>(ctx[0]);
     keccakf(reinterpret_cast<uint64_t*>(ctx[0]->state), 24);

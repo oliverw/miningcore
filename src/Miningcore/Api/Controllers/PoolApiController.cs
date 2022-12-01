@@ -68,7 +68,15 @@ public class PoolApiController : ApiControllerBase
                 // enrich
                 result.TotalPaid = await cf.Run(con => statsRepo.GetTotalPoolPaymentsAsync(con, config.Id, ct));
                 result.TotalBlocks = await cf.Run(con => blocksRepo.GetPoolBlockCountAsync(con, config.Id, ct));
-                result.LastPoolBlockTime = await cf.Run(con => blocksRepo.GetLastPoolBlockTimeAsync(con, config.Id));
+                var lastBlockTime = await cf.Run(con => blocksRepo.GetLastPoolBlockTimeAsync(con, config.Id));
+                result.LastPoolBlockTime = lastBlockTime;
+
+                if(lastBlockTime.HasValue)
+                {
+                    DateTime startTime = lastBlockTime.Value;
+                    var poolEffort = await cf.Run(con => shareRepo.GetEffortBetweenCreatedAsync(con, config.Id, pool.ShareMultiplier, startTime, clock.Now));
+                    result.PoolEffort = poolEffort.Value;
+                }
 
                 var from = clock.Now.AddHours(-topMinersRange);
 
@@ -128,7 +136,15 @@ public class PoolApiController : ApiControllerBase
         // enrich
         response.Pool.TotalPaid = await cf.Run(con => statsRepo.GetTotalPoolPaymentsAsync(con, pool.Id, ct));
         response.Pool.TotalBlocks = await cf.Run(con => blocksRepo.GetPoolBlockCountAsync(con, pool.Id, ct));
-        response.Pool.LastPoolBlockTime = await cf.Run(con => blocksRepo.GetLastPoolBlockTimeAsync(con, pool.Id));
+        var lastBlockTime = await cf.Run(con => blocksRepo.GetLastPoolBlockTimeAsync(con, pool.Id));
+        response.Pool.LastPoolBlockTime = lastBlockTime;
+
+        if(lastBlockTime.HasValue)
+        {
+            DateTime startTime = lastBlockTime.Value;
+            var poolEffort = await cf.Run(con => shareRepo.GetEffortBetweenCreatedAsync(con, pool.Id, poolInstance.ShareMultiplier, startTime, clock.Now));
+            response.Pool.PoolEffort = poolEffort.Value;
+        }
 
         var from = clock.Now.AddHours(-topMinersRange);
 

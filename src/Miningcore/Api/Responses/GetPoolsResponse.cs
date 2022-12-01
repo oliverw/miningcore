@@ -72,6 +72,7 @@ public partial class PoolInfo
     public decimal TotalPaid { get; set; }
     public uint TotalBlocks { get; set; }
     public DateTime? LastPoolBlockTime { get; set; }
+    public double PoolEffort { get; set; }
 }
 
 public class GetPoolsResponse

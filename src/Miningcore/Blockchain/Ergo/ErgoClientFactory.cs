@@ -24,7 +24,7 @@ public static class ErgoClientFactory
 
         var result = new ErgoClient(baseUrl.ToString(), new HttpClient(new HttpClientHandler
         {
-            AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip,
+            AutomaticDecompression = DecompressionMethods.All,
 
             ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true,
         }));

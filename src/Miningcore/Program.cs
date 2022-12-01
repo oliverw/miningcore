@@ -365,12 +365,15 @@ public class Program : BackgroundService
         var coinTemplates = LoadCoinTemplates();
         logger.Info($"{coinTemplates.Keys.Count} coins loaded from '{string.Join(", ", clusterConfig.CoinTemplates)}'");
 
-        await Guard(()=> Task.WhenAll(clusterConfig.Pools
+        var tasks = clusterConfig.Pools
             .Where(config => config.Enabled)
-            .Select(config => RunPool(config, coinTemplates, ct))),
-            ex =>
+            .Select(config => RunPool(config, coinTemplates, ct));
+
+        await Guard(()=> Task.WhenAll(tasks), ex =>
+        {
+            switch(ex)
             {
-                if(ex is PoolStartupException pse)
+                case PoolStartupException pse:
                 {
                     var _logger = pse.PoolId != null ? LogUtil.GetPoolScopedLogger(GetType(), pse.PoolId) : logger;
                     _logger.Error(() => $"{pse.Message}");
@@ -378,11 +381,13 @@ public class Program : BackgroundService
                     logger.Error(() => "Cluster cannot start. Good Bye!");
 
                     hal.StopApplication();
+                    break;
                 }
 
-                else
+                default:
                     throw ex;
-            });
+            }
+        });
     }
 
     private async Task RunPool(PoolConfig poolConfig, Dictionary<string, CoinTemplate> coinTemplates, CancellationToken ct)
@@ -618,12 +623,12 @@ public class Program : BackgroundService
 ");
         Console.WriteLine(" https://github.com/oliverw/miningcore\n");
         Console.WriteLine(" Donate to one of these addresses to support the project:\n");
-        Console.WriteLine(" BTC  - 17QnVor1B6oK1rWnVVBrdX9gFzVkZZbhDm");
-        Console.WriteLine(" LTC  - LTK6CWastkmBzGxgQhTTtCUjkjDA14kxzC");
+        Console.WriteLine(" ETH  - miningcore.eth (ENS Address)");
+        Console.WriteLine(" BTC  - miningcore.eth (ENS Address)");
+        Console.WriteLine(" LTC  - miningcore.eth (ENS Address)");
         Console.WriteLine(" DASH - XqpBAV9QCaoLnz42uF5frSSfrJTrqHoxjp");
         Console.WriteLine(" ZEC  - t1YHZHz2DGVMJiggD2P4fBQ2TAPgtLSUwZ7");
         Console.WriteLine(" ZCL  - t1MFU1vD3YKgsK6Uh8hW7UTY8mKAV2xVqBr");
-        Console.WriteLine(" ETH  - 0xcb55abBfe361B12323eb952110cE33d5F28BeeE1");
         Console.WriteLine(" ETC  - 0xF8cCE9CE143C68d3d4A7e6bf47006f21Cfcf93c0");
         Console.WriteLine(" XMR  - 475YVJbPHPedudkhrcNp1wDcLMTGYusGPF5fqE7XjnragVLPdqbCHBdZg3dF4dN9hXMjjvGbykS6a77dTAQvGrpiQqHp2eH");
         Console.WriteLine();
@@ -945,7 +950,7 @@ public class Program : BackgroundService
 
             logger.Info(() => $"API Access to {string.Join(",", locations)} restricted to {string.Join(",", ipList.Select(x => x.ToString()))}");
 
-            app.UseMiddleware<IPAccessWhitelistMiddleware>(locations, ipList.ToArray());
+            app.UseMiddleware<IPAccessWhitelistMiddleware>(locations, ipList.ToArray(), clusterConfig.Logging.GPDRCompliant);
         }
     }
 
