@@ -316,9 +316,9 @@
             ]
         },
         "coinbaseIgnoreAuxFlags": true,
-        "explorerBlockLink": "https://btc.tokenview.com/block/$height$",
-        "explorerTxLink": "https://btc.tokenview.com/tx/{0}",
-        "explorerAccountLink": "https://btc.tokenview.com/address/{0}"
+        "explorerBlockLink": "https://www.blockchain.com/btc/block/$hash$",
+        "explorerTxLink": "https://www.blockchain.com/btc/tx/{0}",
+        "explorerAccountLink": "https://www.blockchain.com/btc/address/{0}"
     },
     "bitcoin-cash": {
         "name": "Bitcoin Cash",
@@ -2209,7 +2209,7 @@
         "explorerBlockLink": "https://explorer.globalsocialpost.com/block/$height$",
         "explorerTxLink": "https://explorer.globalsocialpost.com/tx/{0}",
         "explorerAccountLink": "https://explorer.globalsocialpost.com/address/{0}"
-    },      
+    },
     "radiant": {
         "name": "Radiant",
         "symbol": "RXD",
@@ -2279,7 +2279,7 @@
         "explorerTxLink": "https://explorer.bitoreum.org/tx/{0}",
         "explorerAccountLink": "https://explorer.bitoreum.org/address/{0}"
     },
-    
+
     "rosecoin": {
         "name": "Rosecoin",
         "symbol": "ROC",
