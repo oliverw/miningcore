@@ -344,9 +344,9 @@
                 }
             ]
         },
-        "explorerBlockLink": "https://bch.tokenview.com/block/$height$",
-        "explorerTxLink": "https://bch.tokenview.com/tx/{0}",
-        "explorerAccountLink": "https://bch.tokenview.com/address/{0}"
+        "explorerBlockLink": "https://bchblockexplorer.com/block/$height$",
+        "explorerTxLink": "https://bchblockexplorer.com/tx/{0}",
+        "explorerAccountLink": "https://bchblockexplorer.com/address/{0}"
     },
     "bitcoin-diamond": {
         "name": "Bitcoin Diamond",
