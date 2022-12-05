@@ -249,7 +249,7 @@ public class CryptonotePool : PoolBase
             await connection.RespondAsync(new CryptonoteResponseBase(), request.Id);
 
             // publish
-            messageBus.SendMessage(new StratumShare(connection, share));
+            messageBus.SendMessage(share);
 
             // telemetry
             PublishTelemetry(TelemetryCategory.Share, clock.Now - tsRequest.Timestamp.UtcDateTime, true);

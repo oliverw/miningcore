@@ -323,10 +323,10 @@ public class ShareRecorder : BackgroundService
     {
         logger.Info(() => "Online");
 
-        return messageBus.Listen<StratumShare>()
+        return messageBus.Listen<Share>()
             .ObserveOn(TaskPoolScheduler.Default)
-            .Where(x => x.Share != null)
-            .Select(x => x.Share)
+            .Where(x => x != null)
+            .Select(x => x)
             .Buffer(TimeSpan.FromSeconds(5), 250)
             .Where(shares => shares.Any())
             .Select(shares => Observable.FromAsync(() =>
