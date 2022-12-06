@@ -50,7 +50,7 @@ public class PoolApiController : ApiControllerBase
     #region Actions
 
     [HttpGet]
-    public async Task<GetPoolsResponse> Get(CancellationToken ct, [FromQuery] uint? topMinersRange)
+    public async Task<GetPoolsResponse> Get(CancellationToken ct, [FromQuery] uint topMinersRange = 24)
     {
         var response = new GetPoolsResponse
         {
@@ -73,12 +73,12 @@ public class PoolApiController : ApiControllerBase
 
                 if(lastBlockTime.HasValue)
                 {
-                    var startTime = lastBlockTime.Value;
+                    DateTime startTime = lastBlockTime.Value;
                     var poolEffort = await cf.Run(con => shareRepo.GetEffortBetweenCreatedAsync(con, config.Id, pool.ShareMultiplier, startTime, clock.Now));
                     result.PoolEffort = poolEffort.Value;
                 }
 
-                var from = topMinersRange.HasValue ? clock.Now.AddHours(-topMinersRange.Value) : clock.Now;
+                var from = clock.Now.AddHours(-topMinersRange);
 
                 var minersByHashrate = await cf.Run(con => statsRepo.PagePoolMinersByHashrateAsync(con, config.Id, from, 0, 15, ct));
 
