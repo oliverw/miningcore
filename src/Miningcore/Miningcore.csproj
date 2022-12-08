@@ -73,7 +73,7 @@
         <PackageReference Include="NBitcoin" Version="7.0.17" />
         <PackageReference Include="NBitcoin.Altcoins" Version="3.0.17" />
         <PackageReference Include="NBitcoin.Zcash" Version="3.0.0" />
-        <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
         <PackageReference Include="NLog" Version="5.0.5" />
         <PackageReference Include="NLog.Extensions.Logging" Version="5.1.0" />
         <PackageReference Include="Polly" Version="7.2.3" />
