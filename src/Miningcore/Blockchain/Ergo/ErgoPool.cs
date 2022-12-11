@@ -189,7 +189,7 @@ public class ErgoPool : PoolBase
             await connection.RespondAsync(true, request.Id);
 
             // publish
-            messageBus.SendMessage(new StratumShare(connection, share));
+            messageBus.SendMessage(share);
 
             // telemetry
             PublishTelemetry(TelemetryCategory.Share, clock.Now - tsRequest.Timestamp.UtcDateTime, true);
