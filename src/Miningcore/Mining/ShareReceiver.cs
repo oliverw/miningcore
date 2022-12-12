@@ -283,7 +283,7 @@ public class ShareReceiver : BackgroundService
         // store
         share.PoolId = topic;
         share.Created = clock.Now;
-        messageBus.SendMessage(new StratumShare(null, share));
+        messageBus.SendMessage(share);
 
         // update poolstats from shares
         if(poolContext != null)
