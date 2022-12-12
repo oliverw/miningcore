@@ -248,7 +248,7 @@ public class ConcealPool : PoolBase
             await connection.RespondAsync(new ConcealResponseBase(), request.Id);
 
             // publish
-            messageBus.SendMessage(new StratumShare(connection, share));
+            messageBus.SendMessage(share);
 
             // telemetry
             PublishTelemetry(TelemetryCategory.Share, clock.Now - tsRequest.Timestamp.UtcDateTime, true);
