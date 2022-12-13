@@ -2180,7 +2180,7 @@
     "geckocoin": {
         "name": "Geckocoin",
         "canonicalName": "Geckocoin",
-        "symbol": "RTM",
+        "symbol": "GECKO",
         "family": "bitcoin",
         "website": "https://gecko.mn/",
         "market": "https://www.coingecko.com/en/coins/geckocoin",
@@ -2210,6 +2210,40 @@
         "explorerBlockLink": "https://block.gecko.mn/block-height/$height$",
         "explorerTxLink": "https://block.gecko.mn/tx/{0}",
         "explorerAccountLink": "https://block.gecko.mn/address/{0}"
+    },
+    "babacoin": {
+        "name": "Babacoin",
+        "canonicalName": "Babacoin",
+        "symbol": "BABA",
+        "family": "bitcoin",
+        "website": "https://www.babacoin.network/",
+        "market": "https://www.coingecko.com/en/coins/babacoin",
+        "twitter": "https://twitter.com/babacoinbbc",
+        "telegram": "",
+        "discord": "https://discord.gg/U4Z8znMV",
+        "coinbaseHasher": {
+            "hash": "sha256d"
+        },
+        "headerHasher": {
+            "hash": "ghostrider"
+        },
+        "blockHasher": {
+            "hash": "reverse",
+            "args": [
+                {
+                    "hash": "sha256d"
+                }
+                    ]
+        },
+        "hasFounderFee": true,
+        "hasMasterNodes": true,
+        "foundersRewardAddress": [
+            "BLbWwABzjJGsSeibe6oJvTK5aEq8Sx7rU9"
+        ],
+        "shareMultiplier": 65536,
+        "explorerBlockLink": "https://explorer.babacoin.network/block/$height$",
+        "explorerTxLink": "https://explorer.babacoin.network/tx/{0}",
+        "explorerAccountLink": "https://explorer.babacoin.network/address/{0}"
     },
     "gspcoin": {
         "name": "Gsp Coin",
