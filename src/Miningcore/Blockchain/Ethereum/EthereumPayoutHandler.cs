@@ -158,6 +158,7 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
 
                 // execute batch
                 var blockInfo2s = await FetchBlocks(blockCache, ct, range.ToArray());
+                var matchUncle = false;
 
                 foreach(var blockInfo2 in blockInfo2s)
                 {
@@ -212,13 +213,19 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
                                 messageBus.NotifyBlockUnlocked(poolConfig.Id, block, coin);
                             }
 
-                            else
+                            else {
+                                matchUncle = false;
                                 logger.Info(() => $"[{LogCategory}] Got immature matching uncle for block {blockInfo2.Height.Value}. Will try again.");
+                            }
 
                             break;
                         }
                     }
                 }
+                
+                if (matchUncle)
+                    continue;
+                
 
                 if(block.Status == BlockStatus.Pending && block.ConfirmationProgress > 0.75)
                 {
