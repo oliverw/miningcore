@@ -2180,7 +2180,7 @@
     "geckocoin": {
         "name": "Geckocoin",
         "canonicalName": "Geckocoin",
-        "symbol": "GECKO",
+        "symbol": "GEC",
         "family": "bitcoin",
         "website": "https://gecko.mn/",
         "market": "https://www.coingecko.com/en/coins/geckocoin",
@@ -2214,7 +2214,7 @@
     "babacoin": {
         "name": "Babacoin",
         "canonicalName": "Babacoin",
-        "symbol": "BABA",
+        "symbol": "BBC",
         "family": "bitcoin",
         "website": "https://www.babacoin.network/",
         "market": "https://www.coingecko.com/en/coins/babacoin",
