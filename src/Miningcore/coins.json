@@ -2207,7 +2207,7 @@
             "Gg4bypdnAPRoMuhfquePZBWegLn5vRUZJw"
         ],
         "shareMultiplier": 65536,
-        "explorerBlockLink": "https://block.gecko.mn/block-height/$height$",
+        "explorerBlockLink": "https://block.gecko.mn/block/$height$",
         "explorerTxLink": "https://block.gecko.mn/tx/{0}",
         "explorerAccountLink": "https://block.gecko.mn/address/{0}"
     },
