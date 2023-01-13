@@ -214,7 +214,7 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
                             }
 
                             else {
-                                matchUncle = false;
+                                matchUncle = true;
                                 logger.Info(() => $"[{LogCategory}] Got immature matching uncle for block {blockInfo2.Height.Value}. Will try again.");
                             }
 
