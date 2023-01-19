@@ -113,13 +113,43 @@ public class BlockRepository : IBlockRepository
 
         return con.ExecuteScalarAsync<DateTime?>(query, new { poolId });
     }
-
-    public async Task<Block> GetBlockByHeightAsync(IDbConnection con, string poolId, long height)
+    
+    public async Task<Block> GetBlockByPoolHeightAndTypeAsync(IDbConnection con, string poolId, long height, string type)
     {
-        const string query = @"SELECT * FROM blocks WHERE poolid = @poolId AND blockheight = @height";
+        const string query = @"SELECT * FROM blocks WHERE poolid = @poolId AND blockheight = @height AND type = @type";
 
-        var entity = await con.QuerySingleOrDefaultAsync<Entities.Block>(new CommandDefinition(query, new { poolId, height }));
-
-        return entity == null ? null : mapper.Map<Block>(entity);
+        return (await con.QueryAsync<Entities.Block>(query, new
+        { 
+            poolId,
+            height,
+            type
+        }))
+            .Select(mapper.Map<Block>)
+            .FirstOrDefault();
+    }
+    
+    public async Task<uint> GetPoolDuplicateBlockCountByPoolHeightNoTypeAndStatusAsync(IDbConnection con, string poolId, long height, BlockStatus[] status)
+    {
+        const string query = @"SELECT COUNT(id) FROM blocks WHERE poolid = @poolId AND blockheight = @height AND status = ANY(@status)";
+        
+        return await con.ExecuteScalarAsync<uint>(new CommandDefinition(query, new
+        {
+            poolId,
+            height,
+            status = status.Select(x => x.ToString().ToLower()).ToArray()
+        }));
+    }
+    
+    public async Task<uint> GetPoolDuplicateBlockBeforeCountByPoolHeightNoTypeAndStatusAsync(IDbConnection con, string poolId, long height, BlockStatus[] status, DateTime before)
+    {
+        const string query = @"SELECT COUNT(id) FROM blocks WHERE poolid = @poolId AND blockheight = @height AND status = ANY(@status) AND created < @before";
+        
+        return await con.ExecuteScalarAsync<uint>(new CommandDefinition(query, new
+        {
+            poolId,
+            height,
+            status = status.Select(x => x.ToString().ToLower()).ToArray(),
+            before
+        }));
     }
 }

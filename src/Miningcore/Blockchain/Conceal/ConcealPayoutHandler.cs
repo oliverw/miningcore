@@ -232,9 +232,9 @@ public class ConcealPayoutHandler : PayoutHandlerBase,
         extraConfig = pc.PaymentProcessing.Extra.SafeExtensionDataAs<ConcealPoolPaymentProcessingConfigExtra>();
         extraPoolConfig = pc.Extra.SafeExtensionDataAs<ConcealPoolConfigExtra>();
         
-        var NetworkTypeSpecified = !string.IsNullOrEmpty(extraPoolConfig.NetworkTypeSpecified) ? extraPoolConfig.NetworkTypeSpecified : "testnet";
+        var NetworkTypeOverride = !string.IsNullOrEmpty(extraPoolConfig.NetworkTypeOverride) ? extraPoolConfig.NetworkTypeOverride : "testnet";
         
-        switch(NetworkTypeSpecified.ToLower())
+        switch(NetworkTypeOverride.ToLower())
         {
             case "mainnet":
                 networkType = ConcealNetworkType.Main;
@@ -243,7 +243,7 @@ public class ConcealPayoutHandler : PayoutHandlerBase,
                 networkType = ConcealNetworkType.Test;
                 break;
             default:
-                throw new PoolStartupException($"Unsupport net type '{NetworkTypeSpecified}'", poolConfig.Id);
+                throw new PoolStartupException($"Unsupport net type '{NetworkTypeOverride}'", poolConfig.Id);
         }
 
         logger = LogUtil.GetPoolScopedLogger(typeof(ConcealPayoutHandler), pc);

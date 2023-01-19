@@ -1,0 +1,126 @@
+﻿{
+    "logging": {
+        "level": "info",
+        "enableConsoleLog": true,
+        "enableConsoleColors": true,
+        "logFile": "",
+        "apiLogFile": "",
+        "logBaseDirectory": "",
+        "perPoolLogFile": false
+    },
+    "banning": {
+        "manager": "Integrated",
+        "banOnJunkReceive": false,
+        "banOnInvalidShares": false
+    },
+    "notifications": {
+        "enabled": false,
+        "email": {
+            "host": "smtp.example.com",
+            "port": 587,
+            "user": "user",
+            "password": "password",
+            "fromAddress": "info@yourpool.org",
+            "fromName": "pool support"
+        },
+        "admin": {
+            "enabled": false,
+            "emailAddress": "user@example.com",
+            "notifyBlockFound": true
+        }
+    },
+    "persistence": {
+        "postgres": {
+            "host": "127.0.0.1",
+            "port": 5432,
+            "user": "miningcore",
+            "password": "password",
+            "database": "miningcore"
+        }
+    },
+    "paymentProcessing": {
+        "enabled": true,
+        "interval": 100,
+        "shareRecoveryFile": "recovered-shares.txt"
+    },
+    "api": {
+        "enabled": true,
+        "listenAddress": "*",
+        "port": 4000,
+        "metricsIpWhitelist": [],
+        "rateLimiting": {
+            "disabled": true,
+            "rules": [
+                {
+                    "Endpoint": "*",
+                    "Period": "1s",
+                    "Limit": 5
+                }
+            ],
+            "ipWhitelist": [
+                ""
+            ]
+        }
+    },
+    "clusterName": "eu1",
+    "pools": [
+      {
+        "id": "ubq1",
+        "enabled": true,
+        "coin": "ubiq",
+        "address": "0x6101Ee22AB2cd3907E5CA0b70EF12A2afE842A56",
+        "rewardRecipients": [
+          {
+            "type": "op",
+            "address": "0x6101Ee22AB2cd3907E5CA0b70EF12A2afE842A56",
+            "percentage": 1.0
+          }
+        ],
+        "blockRefreshInterval": 120,
+        "clientConnectionTimeout": 600,
+        "banning": {
+          "enabled": true,
+          "time": 600,
+          "invalidPercent": 50,
+          "checkThreshold": 50
+        },
+        "ports": {
+          "4073": {
+            "name": "GPU-SMALL",
+            "listenAddress": "*",
+            "difficulty": 0.1,
+            "varDiff": {
+              "minDiff": 0.1,
+              "maxDiff": null,
+              "targetTime": 15,
+              "retargetTime": 90,
+              "variancePercent": 30
+            }
+          }
+        },
+        "chainTypeOverride": "Ubiq",
+        "dagDir": "<Your directory for the dag file>",
+        "daemons": [
+          {
+            "host": "127.0.0.1",
+            "port": 8588,
+            "user": "",
+            "password": ""
+          }
+        ],
+        "paymentProcessing": {
+            "enabled": true,
+            "minimumPayment": 0.5,
+            "payoutScheme": "PPLNS",
+            "payoutSchemeConfig": {
+                "factor": 0.5
+            },
+            "gas": 21000,
+            "maxFeePerGas": 80000000000,
+            "BlockSearchOffset": 100,
+            "keepUncles": false,
+            "keepTransactionFees": false
+        }
+      }
+    ]
+}

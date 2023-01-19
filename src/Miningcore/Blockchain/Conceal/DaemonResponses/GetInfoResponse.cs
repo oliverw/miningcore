@@ -35,10 +35,10 @@ public record GetInfoResponse
     public ulong Difficulty { get; set; }
     
     /// <summary>
-    /// Address dedicated to smartnode rewards
+    /// (Optional) Address dedicated to smartnode rewards
     /// </summary>
     [JsonPropertyName("fee_address")]
-    public string FeeAddress { get; set; }
+    public string FeeAddress { get; set; } = null;
     
     /// <summary>
     /// Total amount deposit
