@@ -13,7 +13,11 @@ public class ApiCoinConfig
     public string Name { get; set; }
 
     public string CanonicalName { get; set; }
+    [System.Text.Json.Serialization.JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string Family { get; set; }
 
+    [System.Text.Json.Serialization.JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string Algorithm { get; set; }
 
     [System.Text.Json.Serialization.JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string Website { get; set; }
