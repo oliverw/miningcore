@@ -1,0 +1,428 @@
+{
+    "clusterName": "KriptoKyng.com",
+    "logging": {
+        "level": "info",
+        "enableConsoleLog": true,
+        "enableConsoleColors": true,
+        "logFile": "core.log",
+        "apiLogFile": "api.log",
+        "logBaseDirectory": "/home/kriptokyng/logs",
+        "perPoolLogFile": true
+    },
+    "notifications": {
+        "enabled": true,
+        "email": {
+            "host": "smtp.privateemail.com",
+            "port": 587,
+            "user": "support@kriptokyng.com",
+            "password": "66Cadilac",
+            "fromAddress": "support@kriptokyng.com",
+            "fromName": "Pool Support"
+        },
+        "admin": {
+            "enabled": true,
+            "emailAddress": "kriptokyng@gmail.com",
+            "notifyBlockFound": false,
+            "notifyPayoutSuccess": false,
+            "notifyPaymentSuccess": false,
+            "notifyPayoutFailure": true
+
+        }
+    },
+        "persistence": {
+        "postgres": {
+            "host": "127.0.0.1",
+            "port": 5432,
+            "user": "miningcore",
+            "password": "LcQw6PMJUxYSFunptKcXGGG",
+            "database": "miningcore"
+        }
+    },
+        "paymentProcessing": {
+        "enabled": true,
+        "interval": 600,
+        "shareRecoveryFile": "recovered-shares.txt"
+    },
+        "api": {
+        "enabled": true,
+        "listenAddress": "127.0.0.1",
+        "port": 4000
+    },
+    "pools": [
+        {
+            "id": "aursha256",
+            "enabled": true,
+            "coin": "auroracoin-sha256",
+            "address": "ANuwxwFnybNCBT893VgACquzBshXKrn2Wc",
+            "rewardRecipients": [
+                {
+                    "address": "ANuwxwFnybNCBT893VgACquzBshXKrn2Wc",
+                    "percentage": 0.8
+                }
+            ],
+            "blockRefreshInterval": 500,
+            "jobRebroadcastTimeout": 10,
+            "clientConnectionTimeout": 600,
+            "banning": {
+                "enabled": true,
+                "time": 600,
+                "invalidPercent": 50,
+                "checkThreshold": 50
+            },
+            "ports": {
+                "6675": {
+                    "listenAddress": "192.168.1.61",
+                    "name": "ASIC Mining",
+                    "difficulty": 4096,
+                    "tls": false,
+                    "tlsPfxFile": null,
+                    "varDiff": {
+                        "minDiff": 4096,
+                        "maxDiff": null,
+                        "targetTime": 15,
+                        "retargetTime": 90,
+                        "variancePercent": 30,
+                        "maxDelta": null
+                    }
+                },
+                "6682": {
+                    "listenAddress": "192.168.1.61",
+                    "name": "High Diff (Nicehash)",
+                    "difficulty": 500000,
+                    "tls": false,
+                    "tlsPfxFile": null,
+                    "varDiff": {
+                        "minDiff": 500000,
+                        "maxDiff": null,
+                        "targetTime": 15,
+                        "retargetTime": 90,
+                        "variancePercent": 30,
+                        "maxDelta": null
+                    }
+                }
+            },
+            "daemons": [
+                {
+                    "host": "192.168.1.62",
+                    "port": 2341,
+                    "user": "mcorerpc",
+                    "password": "g3zWazcPAA1dE8gHTMesyyg814QmiohrXe59i7wp6FHhcyB60pcj9UWkWCvANA7xA8rRyuaCifqPHxP4BWdq6iFXCDAQjynxefFN"
+            	},
+                {
+                    "host": "192.168.1.63",
+                    "port": 2341,
+                    "user": "mcorerpc",
+                    "password": "g3zWazcPAA1dE8gHTMesyyg814QmiohrXe59i7wp6FHhcyB60pcj9UWkWCvANA7xA8rRyuaCifqPHxP4BWdq6iFXCDAQjynxefFN"
+            	}
+            ],
+            "paymentProcessing": {
+                "enabled": true,
+                "minimumPayment": 0.001,
+                "payoutScheme": "PROP",
+                "payoutSchemeConfig": {
+                    "factor": 2.0
+                }
+            }
+        },
+        {
+            "id": "aurscrypt",
+            "enabled": true,
+            "coin": "auroracoin-scrypt",
+            "address": "ANuwxwFnybNCBT893VgACquzBshXKrn2Wc",
+            "rewardRecipients": [
+                {
+                    "address": "ANuwxwFnybNCBT893VgACquzBshXKrn2Wc",
+                    "percentage": 0.8
+                }
+            ],
+            "blockRefreshInterval": 500,
+            "jobRebroadcastTimeout": 10,
+            "clientConnectionTimeout": 600,
+            "banning": {
+                "enabled": true,
+                "time": 600,
+                "invalidPercent": 50,
+                "checkThreshold": 50
+            },
+            "ports": {
+                "6677": {
+                    "listenAddress": "192.168.1.61",
+                    "name": "ASIC Mining",
+                    "difficulty": 1024,
+                    "tls": false,
+                    "tlsPfxFile": null,
+                    "varDiff": {
+                        "minDiff": 1024,
+                        "maxDiff": null,
+                        "targetTime": 15,
+                        "retargetTime": 90,
+                        "variancePercent": 30,
+                        "maxDelta": null
+                    }
+                }
+            },
+            "daemons": [
+                {
+                    "host": "192.168.1.62",
+                    "port": 2341,
+                    "user": "mcorerpc",
+                    "password": "g3zWazcPAA1dE8gHTMesyyg814QmiohrXe59i7wp6FHhcyB60pcj9UWkWCvANA7xA8rRyuaCifqPHxP4BWdq6iFXCDAQjynxefFN"
+            	},
+                {
+                    "host": "192.168.1.63",
+                    "port": 2341,
+                    "user": "mcorerpc",
+                    "password": "g3zWazcPAA1dE8gHTMesyyg814QmiohrXe59i7wp6FHhcyB60pcj9UWkWCvANA7xA8rRyuaCifqPHxP4BWdq6iFXCDAQjynxefFN"
+            	}
+            ],
+            "paymentProcessing": {
+                "enabled": true,
+                "minimumPayment": 0.001,
+                "payoutScheme": "PROP",
+                "payoutSchemeConfig": {
+                    "factor": 2.0
+                }
+            }
+        },
+        {
+            "id": "aurskein",
+            "enabled": true,
+            "coin": "auroracoin-skein",
+            "address": "ANuwxwFnybNCBT893VgACquzBshXKrn2Wc",
+            "rewardRecipients": [
+                {
+                    "address": "ANuwxwFnybNCBT893VgACquzBshXKrn2Wc",
+                    "percentage": 0.8
+                }
+            ],
+            "blockRefreshInterval": 500,
+            "jobRebroadcastTimeout": 10,
+            "clientConnectionTimeout": 600,
+            "banning": {
+                "enabled": true,
+                "time": 600,
+                "invalidPercent": 50,
+                "checkThreshold": 50
+            },
+            "ports": {
+                "6679": {
+                    "listenAddress": "192.168.1.61",
+                    "name": "ASIC Mining",
+                    "difficulty": 12,
+                    "tls": false,
+                    "tlsPfxFile": null,
+                    "varDiff": {
+                        "minDiff": 12,
+                        "maxDiff": null,
+                        "targetTime": 15,
+                        "retargetTime": 90,
+                        "variancePercent": 30,
+                        "maxDelta": null
+                    }
+                }
+            },
+            "daemons": [
+                {
+                    "host": "192.168.1.62",
+                    "port": 2341,
+                    "user": "mcorerpc",
+                    "password": "g3zWazcPAA1dE8gHTMesyyg814QmiohrXe59i7wp6FHhcyB60pcj9UWkWCvANA7xA8rRyuaCifqPHxP4BWdq6iFXCDAQjynxefFN"
+            	},
+                {
+                    "host": "192.168.1.63",
+                    "port": 2341,
+                    "user": "mcorerpc",
+                    "password": "g3zWazcPAA1dE8gHTMesyyg814QmiohrXe59i7wp6FHhcyB60pcj9UWkWCvANA7xA8rRyuaCifqPHxP4BWdq6iFXCDAQjynxefFN"
+            	}
+            ],
+            "paymentProcessing": {
+                "enabled": true,
+                "minimumPayment": 0.001,
+                "payoutScheme": "PROP",
+                "payoutSchemeConfig": {
+                    "factor": 2.0
+                }
+            }
+        },
+        {
+            "id": "aurqubit",
+            "enabled": true,
+            "coin": "auroracoin-qubit",
+            "address": "ANuwxwFnybNCBT893VgACquzBshXKrn2Wc",
+            "rewardRecipients": [
+                {
+                    "address": "ANuwxwFnybNCBT893VgACquzBshXKrn2Wc",
+                    "percentage": 0.8
+                }
+            ],
+            "blockRefreshInterval": 500,
+            "jobRebroadcastTimeout": 10,
+            "clientConnectionTimeout": 600,
+            "banning": {
+                "enabled": true,
+                "time": 600,
+                "invalidPercent": 50,
+                "checkThreshold": 50
+            },
+            "ports": {
+                "6680": {
+                    "listenAddress": "192.168.1.61",
+                    "name": "ASIC Mining",
+                    "difficulty": 210,
+                    "tls": false,
+                    "tlsPfxFile": null,
+                    "varDiff": {
+                        "minDiff": 210,
+                        "maxDiff": null,
+                        "targetTime": 15,
+                        "retargetTime": 90,
+                        "variancePercent": 30,
+                        "maxDelta": null
+                    }
+                }
+            },
+            "daemons": [
+                {
+                    "host": "192.168.1.62",
+                    "port": 2341,
+                    "user": "mcorerpc",
+                    "password": "g3zWazcPAA1dE8gHTMesyyg814QmiohrXe59i7wp6FHhcyB60pcj9UWkWCvANA7xA8rRyuaCifqPHxP4BWdq6iFXCDAQjynxefFN"
+            	},
+                {
+                    "host": "192.168.1.63",
+                    "port": 2341,
+                    "user": "mcorerpc",
+                    "password": "g3zWazcPAA1dE8gHTMesyyg814QmiohrXe59i7wp6FHhcyB60pcj9UWkWCvANA7xA8rRyuaCifqPHxP4BWdq6iFXCDAQjynxefFN"
+            	}
+            ],
+            "paymentProcessing": {
+                "enabled": true,
+                "minimumPayment": 0.001,
+                "payoutScheme": "PROP",
+                "payoutSchemeConfig": {
+                    "factor": 2.0
+                }
+            }
+        },
+        {
+            "id": "aurgroestl",
+            "enabled": true,
+            "coin": "auroracoin-groestl",
+            "address": "ANuwxwFnybNCBT893VgACquzBshXKrn2Wc",
+            "rewardRecipients": [
+                {
+                    "address": "ANuwxwFnybNCBT893VgACquzBshXKrn2Wc",
+                    "percentage": 0.8
+                }
+            ],
+            "blockRefreshInterval": 500,
+            "jobRebroadcastTimeout": 10,
+            "clientConnectionTimeout": 600,
+            "banning": {
+                "enabled": true,
+                "time": 600,
+                "invalidPercent": 50,
+                "checkThreshold": 50
+            },
+            "ports": {
+                "6683": {
+                    "listenAddress": "192.168.1.61",
+                    "name": "ASIC Mining",
+                    "difficulty": 210,
+                    "tls": false,
+                    "tlsPfxFile": null,
+                    "varDiff": {
+                        "minDiff": 210,
+                        "maxDiff": null,
+                        "targetTime": 15,
+                        "retargetTime": 90,
+                        "variancePercent": 30,
+                        "maxDelta": null
+                    }
+                }
+            },
+            "daemons": [
+                {
+                    "host": "192.168.1.62",
+                    "port": 2341,
+                    "user": "mcorerpc",
+                    "password": "g3zWazcPAA1dE8gHTMesyyg814QmiohrXe59i7wp6FHhcyB60pcj9UWkWCvANA7xA8rRyuaCifqPHxP4BWdq6iFXCDAQjynxefFN"
+            	},
+                {
+                    "host": "192.168.1.63",
+                    "port": 2341,
+                    "user": "mcorerpc",
+                    "password": "g3zWazcPAA1dE8gHTMesyyg814QmiohrXe59i7wp6FHhcyB60pcj9UWkWCvANA7xA8rRyuaCifqPHxP4BWdq6iFXCDAQjynxefFN"
+            	}
+            ],
+            "paymentProcessing": {
+                "enabled": true,
+                "minimumPayment": 0.001,
+                "payoutScheme": "PROP",
+                "payoutSchemeConfig": {
+                    "factor": 2.0
+                }
+            }
+        },
+        {
+            "id": "aus",
+            "enabled": true,
+            "coin": "australia-cash",
+            "address": "Aa4kyh3Qs49EqCd3p8P6ZfpqrMdzhYUNpx",
+            "rewardRecipients": [
+                {
+                    "address": "Aa4kyh3Qs49EqCd3p8P6ZfpqrMdzhYUNpx",
+                    "percentage": 0.8
+                }
+            ],
+            "blockRefreshInterval": 500,
+            "jobRebroadcastTimeout": 10,
+            "clientConnectionTimeout": 600,
+            "banning": {
+                "enabled": true,
+                "time": 600,
+                "invalidPercent": 50,
+                "checkThreshold": 50
+            },
+            "ports": {
+                "6745": {
+                    "listenAddress": "192.168.1.61",
+                    "name": "ASIC Mining",
+                    "difficulty": 1024,
+                    "tls": false,
+                    "tlsPfxFile": null,
+                    "varDiff": {
+                        "minDiff": 1024,
+                        "maxDiff": null,
+                        "targetTime": 15,
+                        "retargetTime": 90,
+                        "variancePercent": 30,
+                        "maxDelta": null
+                    }
+                }
+            },
+            "daemons": [
+                {
+                    "host": "192.168.1.62",
+                    "port": 1986,
+                    "user": "mcorerpc",
+                    "password": "xmxUxrfM4Jv1s2FZ4fGjVUFNyAUvt1XzLoMHXmzRvT074Gqex94awvbhUcvJpBBGzgsf80NGjNgQeGnq5CsznCGfdJQVddwL8jHW"
+            	},
+                {
+                    "host": "192.168.1.62",
+                    "port": 1986,
+                    "user": "mcorerpc",
+                    "password": "xmxUxrfM4Jv1s2FZ4fGjVUFNyAUvt1XzLoMHXmzRvT074Gqex94awvbhUcvJpBBGzgsf80NGjNgQeGnq5CsznCGfdJQVddwL8jHW"
+            	}
+            ],
+            "paymentProcessing": {
+                "enabled": true,
+                "minimumPayment": 0.001,
+                "payoutScheme": "PROP",
+                "payoutSchemeConfig": {
+                    "factor": 2.0
+                }
+            }
+        }
+	]
+}

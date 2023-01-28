@@ -9,11 +9,11 @@ namespace Miningcore.Api.Responses;
 public class ApiCoinConfig
 {
     public string Type { get; set; }
+    public string Symbol { get; set; }
     public string Name { get; set; }
 
     public string CanonicalName { get; set; }
 
-    public string Symbol { get; set; }
 
     [System.Text.Json.Serialization.JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string Website { get; set; }
