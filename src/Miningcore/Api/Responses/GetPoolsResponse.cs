@@ -9,20 +9,21 @@ namespace Miningcore.Api.Responses;
 public class ApiCoinConfig
 {
     public string Type { get; set; }
-    public string Name { get; set; }
     public string Symbol { get; set; }
+    public string Name { get; set; }
+
+    public string CanonicalName { get; set; }
+    [System.Text.Json.Serialization.JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string Family { get; set; }
+
+    [System.Text.Json.Serialization.JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string Algorithm { get; set; }
 
     [System.Text.Json.Serialization.JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string Website { get; set; }
 
     [System.Text.Json.Serialization.JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string Market { get; set; }
-
-    [System.Text.Json.Serialization.JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string Family { get; set; }
-
-    [System.Text.Json.Serialization.JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string Algorithm { get; set; }
 
     [System.Text.Json.Serialization.JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string Twitter { get; set; }
@@ -33,8 +34,6 @@ public class ApiCoinConfig
     [System.Text.Json.Serialization.JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string Telegram { get; set; }
 
-    [System.Text.Json.Serialization.JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string CanonicalName { get; set; }
 }
 
 public class ApiPoolPaymentProcessingConfig
