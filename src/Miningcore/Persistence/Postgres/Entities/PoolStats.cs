@@ -11,6 +11,7 @@ public class PoolStats
     public double NetworkDifficulty { get; set; }
     public DateTime? LastNetworkBlockTime { get; set; }
     public long BlockHeight { get; set; }
+    public long BlockReward { get; set; }
     public int ConnectedPeers { get; set; }
     public int SharesPerSecond { get; set; }
 
