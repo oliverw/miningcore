@@ -9,6 +9,7 @@ public class BlockchainStats
     public string NextNetworkBits { get; set; }
     public DateTime? LastNetworkBlockTime { get; set; }
     public ulong BlockHeight { get; set; }
+    public double BlockReward { get; set; }
     public int ConnectedPeers { get; set; }
     public string RewardType { get; set; }
 }
