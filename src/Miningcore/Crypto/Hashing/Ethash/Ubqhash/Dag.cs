@@ -8,11 +8,12 @@ using Miningcore.Native;
 using Miningcore.Notifications.Messages;
 using NLog;
 
-namespace Miningcore.Crypto.Hashing.Etchash;
+namespace Miningcore.Crypto.Hashing.Ethash.Ubqhash;
 
-public class DagEtchash : IDisposable
+[Identifier("ubqhash")]
+public class Dag : IEthashDag
 {
-    public DagEtchash(ulong epoch)
+    public Dag(ulong epoch)
     {
         Epoch = epoch;
     }
@@ -26,39 +27,20 @@ public class DagEtchash : IDisposable
 
     public DateTime LastUsed { get; set; }
 
-    public static unsafe string GetDefaultDagDirectory()
-    {
-        var chars = new byte[512];
-
-        fixed (byte* data = chars)
-        {
-            if(EtcHash.ethash_get_default_dirname(data, chars.Length))
-            {
-                int length;
-                for(length = 0; length < chars.Length; length++)
-                {
-                    if(data[length] == 0)
-                        break;
-                }
-
-                return Encoding.UTF8.GetString(data, length);
-            }
-        }
-
-        return null;
-    }
-
     public void Dispose()
     {
         if(handle != IntPtr.Zero)
         {
-            EtcHash.ethash_full_delete(handle);
+            UbqHash.ethash_full_delete(handle);
             handle = IntPtr.Zero;
         }
     }
 
     public async Task GenerateAsync(string dagDir, ulong dagEpochLength, ILogger logger, CancellationToken ct)
     {
+        // note that dagEpochLength is not used here
+        // it is only used in the etchash implementation
+
         Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(dagDir));
 
         if(handle == IntPtr.Zero)
@@ -76,17 +58,15 @@ public class DagEtchash : IDisposable
                     logger.Info(() => $"Generating DAG for epoch {Epoch}");
 
                     var started = DateTime.Now;
-                    var block = Epoch * dagEpochLength;
-                    
-                    logger.Debug(() => $"Epoch length used: {dagEpochLength}");
+                    var block = Epoch * EthereumConstants.EpochLength;
 
                     // Generate a temporary cache
-                    var light = EtcHash.ethash_light_new(block);
+                    var light = UbqHash.ethash_light_new(block);
 
                     try
                     {
                         // Generate the actual DAG
-                        handle = EtcHash.ethash_full_new(dagDir, light, progress =>
+                        handle = UbqHash.ethash_full_new(dagDir, light, progress =>
                         {
                             logger.Info(() => $"Generating DAG for epoch {Epoch}: {progress}%");
 
@@ -102,7 +82,7 @@ public class DagEtchash : IDisposable
                     finally
                     {
                         if(light != IntPtr.Zero)
-                            EtcHash.ethash_light_delete(light);
+                            UbqHash.ethash_light_delete(light);
                     }
                 }
 
@@ -123,11 +103,11 @@ public class DagEtchash : IDisposable
         mixDigest = null;
         result = null;
 
-        var value = new EtcHash.ethash_return_value();
+        var value = new UbqHash.ethash_return_value();
 
-        fixed (byte* input = hash)
+        fixed(byte* input = hash)
         {
-            EtcHash.ethash_full_compute(handle, input, nonce, ref value);
+            UbqHash.ethash_full_compute(handle, input, nonce, ref value);
         }
 
         if(value.success)
@@ -136,7 +116,7 @@ public class DagEtchash : IDisposable
             result = value.result.value;
         }
 
-        messageBus?.SendTelemetry("Etchash", TelemetryCategory.Hash, sw.Elapsed, value.success);
+        messageBus?.SendTelemetry("Ubqhash", TelemetryCategory.Hash, sw.Elapsed, value.success);
 
         return value.success;
     }
