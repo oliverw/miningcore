@@ -88,7 +88,7 @@ bool ethash_file_size(FILE* f, size_t* ret_size)
 
 bool ethash_get_default_dirname(char* strbuf, size_t buffsize)
 {
-	static const char dir_suffix[] = ".ethash/";
+	static const char dir_suffix[] = ".etchash/";
 	strbuf[0] = '\0';
 	char* home_dir = getenv("HOME");
 	if (!home_dir || strlen(home_dir) == 0)
