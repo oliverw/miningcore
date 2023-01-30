@@ -79,7 +79,7 @@ public class UbqhashFull : IEthashFull
                 future = new Dag(epoch + 1);
 
 #pragma warning disable 4014
-                future.GenerateAsync(dagDir, 0, logger, ct);
+                future.GenerateAsync(dagDir, logger, ct);
 #pragma warning restore 4014
             }
 
@@ -87,7 +87,7 @@ public class UbqhashFull : IEthashFull
         }
 
         // get/generate current one
-        await result.GenerateAsync(dagDir, 0, logger, ct);
+        await result.GenerateAsync(dagDir, logger, ct);
 
         return result;
     }

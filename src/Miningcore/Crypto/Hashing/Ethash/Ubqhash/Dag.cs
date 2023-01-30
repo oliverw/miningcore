@@ -36,11 +36,8 @@ public class Dag : IEthashDag
         }
     }
 
-    public async Task GenerateAsync(string dagDir, ulong dagEpochLength, ILogger logger, CancellationToken ct)
+    public async Task GenerateAsync(string dagDir, ILogger logger, CancellationToken ct)
     {
-        // note that dagEpochLength is not used here
-        // it is only used in the etchash implementation
-
         Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(dagDir));
 
         if(handle == IntPtr.Zero)
