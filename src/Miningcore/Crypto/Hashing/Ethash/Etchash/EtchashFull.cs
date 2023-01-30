@@ -1,15 +1,20 @@
+using System.Text;
 using Miningcore.Blockchain.Ethereum;
 using Miningcore.Contracts;
+using Miningcore.Native;
 using NLog;
 
-namespace Miningcore.Crypto.Hashing.Etchash;
 
-public class EtchashFull : IDisposable
+namespace Miningcore.Crypto.Hashing.Ethash.Etchash;
+
+[Identifier("etchash")]
+public class EtchashFull : IEthashFull
 {
-    public EtchashFull(int numCaches, string dagDir, ulong hardForkBlock)
+    public void Setup(int numCaches, string dagDir, ulong hardForkBlock)
     {
+
         Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(dagDir));
-        
+
         this.numCaches = numCaches;
         this.dagDir = dagDir;
         this.hardForkBlock = hardForkBlock;
@@ -17,10 +22,11 @@ public class EtchashFull : IDisposable
 
     private int numCaches; // Maximum number of caches to keep before eviction (only init, don't modify)
     private readonly object cacheLock = new();
-    private readonly Dictionary<ulong, DagEtchash> caches = new();
-    private DagEtchash future;
-    private readonly string dagDir;
-    private readonly ulong hardForkBlock;
+    private readonly Dictionary<ulong, Dag> caches = new();
+    private Dag future;
+    private string dagDir;
+    private ulong hardForkBlock;
+    public string AlgoName { get; } = "Etchash";
 
     public void Dispose()
     {
@@ -28,12 +34,12 @@ public class EtchashFull : IDisposable
             value.Dispose();
     }
 
-    public async Task<DagEtchash> GetDagAsync(ulong block, ILogger logger, CancellationToken ct)
+    public async Task<IEthashDag> GetDagAsync(ulong block, ILogger logger, CancellationToken ct)
     {
         var dagEpochLength = block >= hardForkBlock ? EthereumClassicConstants.EpochLength : EthereumConstants.EpochLength;
         logger.Debug(() => $"Epoch length used: {dagEpochLength}");
         var epoch = block / dagEpochLength;
-        DagEtchash result;
+        Dag result;
 
         lock(cacheLock)
         {
@@ -66,7 +72,7 @@ public class EtchashFull : IDisposable
                 else
                 {
                     logger.Info(() => $"No pre-generated DAG available, creating new for epoch {epoch}");
-                    result = new DagEtchash(epoch);
+                    result = new Dag(epoch);
                 }
 
                 caches[epoch] = result;
@@ -76,7 +82,7 @@ public class EtchashFull : IDisposable
             else if(future == null || future.Epoch <= epoch)
             {
                 logger.Info(() => $"Pre-generating DAG for epoch {epoch + 1}");
-                future = new DagEtchash(epoch + 1);
+                future = new Dag(epoch + 1);
 
 #pragma warning disable 4014
                 future.GenerateAsync(dagDir, dagEpochLength, logger, ct);
@@ -90,5 +96,27 @@ public class EtchashFull : IDisposable
         await result.GenerateAsync(dagDir, dagEpochLength, logger, ct);
 
         return result;
+    }
+
+    public unsafe string GetDefaultDagDirectory()
+    {
+        var chars = new byte[512];
+
+        fixed(byte* data = chars)
+        {
+            if(EtcHash.ethash_get_default_dirname(data, chars.Length))
+            {
+                int length;
+                for(length = 0; length < chars.Length; length++)
+                {
+                    if(data[length] == 0)
+                        break;
+                }
+
+                return Encoding.UTF8.GetString(data, length);
+            }
+        }
+
+        return null;
     }
 }

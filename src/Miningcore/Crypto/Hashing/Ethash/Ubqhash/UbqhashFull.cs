@@ -1,12 +1,15 @@
+using System.Text;
 using Miningcore.Blockchain.Ethereum;
 using Miningcore.Contracts;
+using Miningcore.Native;
 using NLog;
 
-namespace Miningcore.Crypto.Hashing.Ethash;
+namespace Miningcore.Crypto.Hashing.Ethash.Ubqhash;
 
-public class EthashFull : IDisposable
+[Identifier("ubqhash")]
+public class UbqhashFull : IEthashFull
 {
-    public EthashFull(int numCaches, string dagDir)
+    public void Setup(int numCaches, string dagDir, ulong hardForkBlock)
     {
         Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(dagDir));
 
@@ -18,7 +21,8 @@ public class EthashFull : IDisposable
     private readonly object cacheLock = new();
     private readonly Dictionary<ulong, Dag> caches = new();
     private Dag future;
-    private readonly string dagDir;
+    private string dagDir;
+    public string AlgoName { get; } = "Ubqhash";
 
     public void Dispose()
     {
@@ -26,7 +30,7 @@ public class EthashFull : IDisposable
             value.Dispose();
     }
 
-    public async Task<Dag> GetDagAsync(ulong block, ILogger logger, CancellationToken ct)
+    public async Task<IEthashDag> GetDagAsync(ulong block, ILogger logger, CancellationToken ct)
     {
         var epoch = block / EthereumConstants.EpochLength;
         Dag result;
@@ -75,7 +79,7 @@ public class EthashFull : IDisposable
                 future = new Dag(epoch + 1);
 
 #pragma warning disable 4014
-                future.GenerateAsync(dagDir, logger, ct);
+                future.GenerateAsync(dagDir, 0, logger, ct);
 #pragma warning restore 4014
             }
 
@@ -83,8 +87,30 @@ public class EthashFull : IDisposable
         }
 
         // get/generate current one
-        await result.GenerateAsync(dagDir, logger, ct);
+        await result.GenerateAsync(dagDir, 0, logger, ct);
 
         return result;
+    }
+
+    public unsafe string GetDefaultDagDirectory()
+    {
+        var chars = new byte[512];
+
+        fixed(byte* data = chars)
+        {
+            if(UbqHash.ethash_get_default_dirname(data, chars.Length))
+            {
+                int length;
+                for(length = 0; length < chars.Length; length++)
+                {
+                    if(data[length] == 0)
+                        break;
+                }
+
+                return Encoding.UTF8.GetString(data, length);
+            }
+        }
+
+        return null;
     }
 }

@@ -1,12 +1,15 @@
+using System.Text;
 using Miningcore.Blockchain.Ethereum;
 using Miningcore.Contracts;
+using Miningcore.Native;
 using NLog;
 
-namespace Miningcore.Crypto.Hashing.Ubqhash;
+namespace Miningcore.Crypto.Hashing.Ethash.Ethash;
 
-public class UbqhashFull : IDisposable
+[Identifier("ethash")]
+public class EthashFull : IEthashFull
 {
-    public UbqhashFull(int numCaches, string dagDir)
+    public void Setup(int numCaches, string dagDir, ulong hardForkBlock)
     {
         Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(dagDir));
 
@@ -16,9 +19,10 @@ public class UbqhashFull : IDisposable
 
     private int numCaches; // Maximum number of caches to keep before eviction (only init, don't modify)
     private readonly object cacheLock = new();
-    private readonly Dictionary<ulong, DagUbqhash> caches = new();
-    private DagUbqhash future;
-    private readonly string dagDir;
+    private readonly Dictionary<ulong, Dag> caches = new();
+    private Dag future;
+    private string dagDir;
+    public string AlgoName { get; } = "Ethash";
 
     public void Dispose()
     {
@@ -26,10 +30,10 @@ public class UbqhashFull : IDisposable
             value.Dispose();
     }
 
-    public async Task<DagUbqhash> GetDagAsync(ulong block, ILogger logger, CancellationToken ct)
+    public async Task<IEthashDag> GetDagAsync(ulong block, ILogger logger, CancellationToken ct)
     {
         var epoch = block / EthereumConstants.EpochLength;
-        DagUbqhash result;
+        Dag result;
 
         lock(cacheLock)
         {
@@ -62,7 +66,7 @@ public class UbqhashFull : IDisposable
                 else
                 {
                     logger.Info(() => $"No pre-generated DAG available, creating new for epoch {epoch}");
-                    result = new DagUbqhash(epoch);
+                    result = new Dag(epoch);
                 }
 
                 caches[epoch] = result;
@@ -72,10 +76,10 @@ public class UbqhashFull : IDisposable
             else if(future == null || future.Epoch <= epoch)
             {
                 logger.Info(() => $"Pre-generating DAG for epoch {epoch + 1}");
-                future = new DagUbqhash(epoch + 1);
+                future = new Dag(epoch + 1);
 
 #pragma warning disable 4014
-                future.GenerateAsync(dagDir, logger, ct);
+                future.GenerateAsync(dagDir, 0, logger, ct);
 #pragma warning restore 4014
             }
 
@@ -83,8 +87,30 @@ public class UbqhashFull : IDisposable
         }
 
         // get/generate current one
-        await result.GenerateAsync(dagDir, logger, ct);
+        await result.GenerateAsync(dagDir, 0, logger, ct);
 
         return result;
+    }
+
+    public unsafe string GetDefaultDagDirectory()
+    {
+        var chars = new byte[512];
+
+        fixed(byte* data = chars)
+        {
+            if(EthHash.ethash_get_default_dirname(data, chars.Length))
+            {
+                int length;
+                for(length = 0; length < chars.Length; length++)
+                {
+                    if(data[length] == 0)
+                        break;
+                }
+
+                return Encoding.UTF8.GetString(data, length);
+            }
+        }
+
+        return null;
     }
 }
