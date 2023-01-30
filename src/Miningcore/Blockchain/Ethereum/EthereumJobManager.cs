@@ -349,15 +349,34 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
 
         if(pc.EnableInternalStratum == true)
         {
+            var coin = pc.Template.As<EthereumCoinTemplate>();
+            
             // ensure dag location is configured
-            var dagDir = !string.IsNullOrEmpty(extraPoolConfig?.DagDir) ?
-                Environment.ExpandEnvironmentVariables(extraPoolConfig.DagDir) :
-                Dag.GetDefaultDagDirectory();
+            string dagDir = null;
+            
+            if(!string.IsNullOrEmpty(extraPoolConfig?.DagDir))
+            {
+                dagDir = Environment.ExpandEnvironmentVariables(extraPoolConfig.DagDir);
+            }
+            else
+            {
+                // Default DAG folder
+                switch(coin.Symbol)
+                {
+                    case "ETC":
+                        dagDir = DagEtchash.GetDefaultDagDirectory();
+                        break;
+                    case "UBIQ":
+                        dagDir = DagUbqhash.GetDefaultDagDirectory();
+                        break;
+                    default:
+                        dagDir = Dag.GetDefaultDagDirectory();
+                        break;
+                }
+            }
 
             // create it if necessary
             Directory.CreateDirectory(dagDir);
-            
-            var coin = pc.Template.As<EthereumCoinTemplate>();
 
             // setup ethash
             switch(coin.Symbol)
