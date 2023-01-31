@@ -2169,6 +2169,7 @@
         },
         "hasFounderFee": true,
         "hasMasterNodes": true,
+        "hasSmartNodes": true,
         "foundersRewardAddress": [
             "RTtyQU6DoSuNWetT4WUem5qXP5jNYGpwat"
         ],
@@ -2271,6 +2272,7 @@
         },
         "hasFounderFee": true,
         "hasMasterNodes": true,
+        "hasSmartNodes": true,
         "foundersRewardAddress": [
             "BanxgMPcMpXnuWQ2ogfQqEkwwVtjhAhXBR"
         ],
@@ -2768,6 +2770,7 @@
         },
         "hasFounderFee": true,
         "hasMasterNodes": true,
+        "hasSmartNodes": true,
         "shareMultiplier": 65536,
         "explorerBlockLink": "http://rtm.timyg.org:6950/block/$height$",
         "explorerTxLink": "http://rtm.timyg.org:6950/tx/{0}",
@@ -3356,6 +3359,7 @@
         },
         "hasFounderFee": true,
         "hasMasterNodes": true,
+        "hasSmartNodes": true,
         "shareMultiplier": 65536,
         "explorerBlockLink": "https://explorer.yerbas.org/block/$height$",
         "explorerTxLink": "https://explorer.yerbas.org/tx/{0}",
