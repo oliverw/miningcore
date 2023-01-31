@@ -476,13 +476,19 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
     protected override async Task<bool> AreDaemonsHealthyAsync(CancellationToken ct)
     {
         var response = await rpc.ExecuteAsync<Block>(logger, EC.GetBlockByNumber, ct, new[] { (object) "latest", true });
-
-        return response.Error == null;
+        if(response.Error != null)
+        {
+            logger.Error(() => $"Daemon reports: {response.Error.Message}");
+            return false;
+        }
+        return true;
     }
 
     protected override async Task<bool> AreDaemonsConnectedAsync(CancellationToken ct)
     {
         var response = await rpc.ExecuteAsync<string>(logger, EC.GetPeerCount, ct);
+        if(response.Error != null)
+            logger.Error(() => $"Daemon reports: {response.Error.Message}");
 
         return response.Error == null && response.Response.IntegralFromHex<uint>() > 0;
     }
