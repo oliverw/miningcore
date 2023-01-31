@@ -15,5 +15,7 @@ public interface IBlockRepository
     Task<Block> GetBlockBeforeAsync(IDbConnection con, string poolId, BlockStatus[] status, DateTime before);
     Task<uint> GetPoolBlockCountAsync(IDbConnection con, string poolId, CancellationToken ct);
     Task<DateTime?> GetLastPoolBlockTimeAsync(IDbConnection con, string poolId);
-    Task<Block> GetBlockByHeightAsync(IDbConnection con, string poolId, long height);
+    Task<Block> GetBlockByPoolHeightAndTypeAsync(IDbConnection con, string poolId, long height, string type);
+    Task<uint> GetPoolDuplicateBlockCountByPoolHeightNoTypeAndStatusAsync(IDbConnection con, string poolId, long height, BlockStatus[] status);
+    Task<uint> GetPoolDuplicateBlockBeforeCountByPoolHeightNoTypeAndStatusAsync(IDbConnection con, string poolId, long height, BlockStatus[] status, DateTime before);
 }

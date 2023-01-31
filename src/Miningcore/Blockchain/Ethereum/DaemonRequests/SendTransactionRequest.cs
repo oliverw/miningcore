@@ -42,16 +42,18 @@ public class SendTransactionRequest
     public string Data { get; set; }
 
     /// <summary>
-    /// Maximum fee per gas the sender is willing to pay to miners in wei.
+    /// (Optional) Maximum fee per gas the sender is willing to pay to miners in wei / Only available if LONDON Fork is active on the network
     /// </summary>
     [JsonConverter(typeof(HexToIntegralTypeJsonConverter<ulong>))]
-    public ulong MaxPriorityFeePerGas { get; set; }
+    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+    public ulong? MaxPriorityFeePerGas { get; set; }
 
     /// <summary>
-    /// The maximum total fee per gas the sender is willing to pay(includes the network / base fee and miner / priority fee) in wei
+    /// (Optional) The maximum total fee per gas the sender is willing to pay(includes the network / base fee and miner / priority fee) in wei / Only available if LONDON Fork is active on the network
     /// </summary>
     [JsonConverter(typeof(HexToIntegralTypeJsonConverter<ulong>))]
-    public ulong MaxFeePerGas { get; set; }
+    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+    public ulong? MaxFeePerGas { get; set; }
 }
 
 

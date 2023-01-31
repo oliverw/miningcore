@@ -1,0 +1,143 @@
+{
+    "logging": {
+        "level": "info",
+        "enableConsoleLog": true,
+        "enableConsoleColors": true,
+        "logFile": "",
+        "apiLogFile": "",
+        "logBaseDirectory": "",
+        "perPoolLogFile": false
+    },
+    "banning": {
+        "manager": "Integrated",
+        "banOnJunkReceive": true,
+        "banOnInvalidShares": false
+    },
+    "notifications": {
+        "enabled": false,
+        "email": {
+            "host": "smtp.example.com",
+            "port": 587,
+            "user": "user",
+            "password": "password",
+            "fromAddress": "info@yourpool.org",
+            "fromName": "pool support"
+        },
+        "admin": {
+            "enabled": false,
+            "emailAddress": "user@example.com",
+            "notifyBlockFound": true
+        }
+    },
+    "persistence": {
+        "postgres": {
+            "host": "127.0.0.1",
+            "port": 5432,
+            "user": "miningcore",
+            "password": "password",
+            "database": "miningcore"
+        }
+    },
+    "paymentProcessing": {
+        "enabled": true,
+        "interval": 600,
+        "shareRecoveryFile": "recovered-shares.txt"
+    },
+    "api": {
+        "enabled": true,
+        "listenAddress": "*",
+        "port": 4000,
+        "metricsIpWhitelist": [],
+        "rateLimiting": {
+            "disabled": true,
+            "rules": [
+                {
+                    "Endpoint": "*",
+                    "Period": "1s",
+                    "Limit": 5
+                }
+            ],
+            "ipWhitelist": [
+                ""
+            ]
+        }
+    },
+    "pools": [
+        {
+            "id": "ccx1",
+            "enabled": true,
+            "coin": "conceal",
+            "networkTypeOverride": "mainnet",
+            "cryptonightMaxThreads": 1,
+            "address": "ccx7BRXk4eubahkPNe4mmZ1PYwigPmqGT5ciBWib39aQQjWctY6vzA7RuBBkcoSKxEVBQArdvJi5YhEHRY29sSpS9EiD5c2nW5",
+            "rewardRecipients": [
+                {
+                    "type": "op",
+                    "address": "ccx7BRXk4eubahkPNe4mmZ1PYwigPmqGT5ciBWib39aQQjWctY6vzA7RuBBkcoSKxEVBQArdvJi5YhEHRY29sSpS9EiD5c2nW5",
+                    "percentage": 0.1
+                }
+            ],
+            "blockRefreshInterval": 250,
+            "jobRebroadcastTimeout": 3,
+            "clientConnectionTimeout": 600,
+            "banning": {
+                "enabled": true,
+                "time": 600,
+                "invalidPercent": 50,
+                "checkThreshold": 50
+            },
+            "ports": {
+                "3364": {
+                    "listenAddress": "0.0.0.0",
+                    "difficulty": 5000,
+                    "varDiff": {
+                        "minDiff": 2500,
+                        "maxDiff": null,
+                        "targetTime": 15,
+                        "retargetTime": 90,
+                        "variancePercent": 30,
+                        "maxDelta": 500
+                    }
+                },
+                "3365": {
+                    "listenAddress": "0.0.0.0",
+                    "difficulty": 5000,
+                    "tls": true,
+                    "tlsPfxFile": "<Your directory for the pfx file>",
+                    "tlsPfxPassword": "password",
+                    "varDiff": {
+                        "minDiff": 2500,
+                        "maxDiff": null,
+                        "targetTime": 15,
+                        "retargetTime": 90,
+                        "variancePercent": 30,
+                        "maxDelta": 500
+                    }
+                }
+            },
+            "daemons": [
+                {
+                    "host": "127.0.0.1",
+                    "port": 16600,
+                    "user": null,
+                    "password": null
+                },
+                {
+                    "host": "127.0.0.1",
+                    "port": 8770,
+                    "user": null,
+                    "password": null,
+                    "category": "wallet"
+                }
+            ],
+            "paymentProcessing": {
+                "enabled": true,
+                "minimumPayment": 0.1,
+                "payoutScheme": "PPLNS",
+                "payoutSchemeConfig": {
+                    "factor": 0.5
+                }
+            }
+        }
+    ]
+}

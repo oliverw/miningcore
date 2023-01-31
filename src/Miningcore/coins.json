@@ -4240,6 +4240,27 @@
         "explorerBlockLink": "https://www.exploremonero.com/block/$height$",
         "explorerTxLink": "https://www.exploremonero.com/transaction/{0}"
     },
+     "conceal": {
+        "name": "Conceal",
+        "canonicalName": "Conceal",
+        "symbol": "CCX",
+        "family": "conceal",
+        "website": "https://conceal.network/",
+        "market": "",
+        "twitter": "https://twitter.com/ConcealNetwork",
+        "telegram": "https://t.me/concealnetworkusers",
+        "discord": "http://discord.conceal.network/",
+        "hash": "cn-gpu",
+        "hashVariant": 0,
+        "difficultyTarget": 120,
+        "smallestUnit": 1000000,
+        "addressPrefix": 31444,
+        "addressPrefixTestnet": 31444,
+        "addressPrefixIntegrated": 31444,
+        "addressPrefixIntegratedTestnet": 31444,
+        "explorerBlockLink": "https://explorer.conceal.network/index.html?hash=$hash$#blockchain_block",
+        "explorerTxLink": "https://explorer.conceal.network/index.html?hash={0}#blockchain_transaction"
+    },
     "callisto": {
         "name": "Callisto Network",
         "canonicalName": "Callisto-Network",
@@ -4273,6 +4294,23 @@
         },
         "explorerTxLink": "https://etherscan.io/tx/{0}",
         "explorerAccountLink": "https://etherscan.io/address/{0}"
+    },
+    "ethereumclassic": {
+        "name": "Ethereum Classic",
+        "canonicalName": "Ethereum Classic",
+        "symbol": "ETC",
+        "family": "ethereum",
+        "website": "https://ethereumclassic.org/",
+        "market": "",
+        "twitter": "https://twitter.com/eth_classic",
+        "telegram": "",
+        "discord": "https://ethereumclassic.org/discord",
+        "explorerBlockLinks": {
+            "block": "https://blockscout.com/etc/mainnet/block/$height$",
+            "uncle": "https://blockscout.com/etc/mainnet/block/$height$"
+        },
+        "explorerTxLink": "https://blockscout.com/etc/mainnet/tx/{0}",
+        "explorerAccountLink": "https://blockscout.com/etc/mainnet/address/{0}"
     },
     "ethereum-pow": {
         "name": "EthereumPoW",
@@ -4324,6 +4362,23 @@
         },
         "explorerTxLink": "https://pinkscan.org/tx/{0}",
         "explorerAccountLink": "https://pinkscan.org/address/{0}"
+    },
+    "ubiq": {
+        "name": "Ubiq",
+        "canonicalName": "Ubiq",
+        "symbol": "UBIQ",
+        "family": "ethereum",
+        "website": "https://ubiqsmart.com/",
+        "market": "",
+        "twitter": "https://twitter.com/ubiqsmart",
+        "telegram": "",
+        "discord": "https://discord.gg/ubiq",
+        "explorerBlockLinks": {
+            "block": "https://ubiqscan.io/block/$height$",
+            "uncle": "https://ubiqscan.io/uncle/$height$"
+        },
+        "explorerTxLink": "https://ubiqscan.io/tx/{0}",
+        "explorerAccountLink": "https://ubiqscan.io/address/{0}"
     },
     "ergo": {
         "name": "Ergo",

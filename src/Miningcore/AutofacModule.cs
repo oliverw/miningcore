@@ -3,6 +3,7 @@ using Autofac;
 using Miningcore.Api;
 using Miningcore.Banning;
 using Miningcore.Blockchain.Bitcoin;
+using Miningcore.Blockchain.Conceal;
 using Miningcore.Blockchain.Cryptonote;
 using Miningcore.Blockchain.Equihash;
 using Miningcore.Blockchain.Ethereum;
@@ -147,7 +148,12 @@ public class AutofacModule : Module
         // Bitcoin and family
 
         builder.RegisterType<BitcoinJobManager>();
+        
+        //////////////////////
+        // Conceal
 
+        builder.RegisterType<ConcealJobManager>();
+        
         //////////////////////
         // Cryptonote
 

@@ -39,6 +39,19 @@ public class EthereumConstants
     public const string RpcRequestWorkerPropertyName = "worker";
 }
 
+// ETC block reward distribution - ECIP 1017
+// https://ecips.ethereumclassic.org/ECIPs/ecip-1017
+public class EthereumClassicConstants
+{
+    public const ulong HardForkBlockMainnet = 11700000;
+    public const ulong HardForkBlockMordor = 2520000;
+    public const ulong EpochLength = 60000;
+    public const ulong EraLength = 5000001;
+    public const double DisinflationRateQuotient = 4.0;
+    public const double DisinflationRateDivisor = 5.0;
+    public const decimal BaseRewardInitial = 5.0m;
+}
+
 // Callisto Monetary Policy
 // https://github.com/EthereumCommonwealth/Roadmap/issues/56
 public class CallistoConstants
@@ -57,10 +70,30 @@ public class PinkConstants
     public const decimal BaseRewardInitial = 1.0m;
 }
 
+// UBIQ block reward distribution - 
+// https://github.com/ubiq/UIPs/issues/16 - https://ubiqsmart.com/en/monetary-policy
+public class UbiqConstants
+{
+    public const ulong YearOneHeight = 358363;
+    public const decimal YearOneBlockReward = 7.0m;
+    public const ulong YearTwoHeight = 716727;
+    public const decimal YearTwoBlockReward = 6.0m;
+    public const ulong YearThreeHeight = 1075090;
+    public const decimal YearThreeBlockReward = 5.0m;
+    public const ulong YearFourHeight = 1433454;
+    public const decimal YearFourBlockReward = 4.0m;
+    public const ulong OrionHardForkHeight = 1791793;
+    public const decimal OrionBlockReward = 1.5m;
+    public const decimal BaseRewardInitial = 8.0m;
+}
+
 public enum EthereumNetworkType
 {
     Main = 1,
     Ropsten = 3,
+    Ubiq = 8,
+    Classic = 1,
+    Mordor = 7,
     Callisto = 820,
     MainPow = 10001,
     EtherOne = 4949,
@@ -73,6 +106,9 @@ public enum GethChainType
 {
     Main,
     Ropsten,
+    Ubiq,
+    Classic,
+    Mordor,
     Callisto,
     MainPow = 10001,
     EtherOne = 4949,
