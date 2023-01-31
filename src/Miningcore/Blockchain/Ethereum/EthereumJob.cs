@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Numerics;
 using Miningcore.Crypto.Hashing.Ethash;
+using Miningcore.Crypto.Hashing.Ethash.Etchash;
 using Miningcore.Extensions;
 using Miningcore.Stratum;
 using NBitcoin;
@@ -68,11 +69,20 @@ public class EthereumJob
             throw new StratumException(StratumError.MinusOne, "bad nonce " + fullNonceHex);
 
         // get dag for block
-        var dag = await ethashFull.GetDagAsync(BlockTemplate.Height, logger, CancellationToken.None);
+        /* var dag = await ethashFull.GetDagAsync(BlockTemplate.Height, logger, CancellationToken.None);
 
         // compute
         if(!dag.Compute(logger, BlockTemplate.Header.HexToByteArray(), fullNonce, out var mixDigest, out var resultBytes))
+            throw new StratumException(StratumError.MinusOne, "bad hash"); */
+
+        var block = BlockTemplate.Height;
+        var dagEpochLength = block >= EthereumClassicConstants.HardForkBlockMordor ? EthereumClassicConstants.EpochLength : EthereumConstants.EpochLength;
+        var epoch = block / dagEpochLength;
+        var cache = new Miningcore.Crypto.Hashing.Ethash.Etchash.Cache(epoch, EthereumClassicConstants.HardForkBlockMordor);
+        await cache.GenerateAsync(logger, dagEpochLength);
+        if(!cache.Compute(logger, BlockTemplate.Header.HexToByteArray(), fullNonce, out var mixDigest, out var resultBytes))
             throw new StratumException(StratumError.MinusOne, "bad hash");
+
 
         // test if share meets at least workers current difficulty
         resultBytes.ReverseInPlace();
