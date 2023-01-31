@@ -85,7 +85,7 @@ public class EtchashFull : IEthashFull
                 future = new Dag(epoch + 1);
 
 #pragma warning disable 4014
-                future.GenerateAsync(dagDir, dagEpochLength, logger, ct);
+                future.GenerateAsync(dagDir, dagEpochLength, hardForkBlock, logger, ct);
 #pragma warning restore 4014
             }
 
@@ -93,7 +93,7 @@ public class EtchashFull : IEthashFull
         }
 
         // get/generate current one
-        await result.GenerateAsync(dagDir, dagEpochLength, logger, ct);
+        await result.GenerateAsync(dagDir, dagEpochLength, hardForkBlock, logger, ct);
 
         return result;
     }

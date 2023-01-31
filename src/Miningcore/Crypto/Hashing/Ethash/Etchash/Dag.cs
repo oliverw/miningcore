@@ -37,7 +37,7 @@ public class Dag : IEthashDag
         }
     }
 
-    public async Task GenerateAsync(string dagDir, ulong dagEpochLength, ILogger logger, CancellationToken ct)
+    public async Task GenerateAsync(string dagDir, ulong dagEpochLength, ulong hardForkBlock, ILogger logger, CancellationToken ct)
     {
         Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(dagDir));
 
@@ -61,12 +61,12 @@ public class Dag : IEthashDag
                     logger.Debug(() => $"Epoch length used: {dagEpochLength}");
 
                     // Generate a temporary cache
-                    var light = EtcHash.ethash_light_new(block);
+                    var light = EtcHash.ethash_light_new(block, hardForkBlock);
 
                     try
                     {
                         // Generate the actual DAG
-                        handle = EtcHash.ethash_full_new(dagDir, light, progress =>
+                        handle = EtcHash.ethash_full_new(dagDir, light, hardForkBlock, progress =>
                         {
                             logger.Info(() => $"Generating DAG for epoch {Epoch}: {progress}%");
 
