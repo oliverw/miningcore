@@ -1,3 +1,4 @@
+using System;
 using Autofac;
 using Newtonsoft.Json;
 
@@ -15,4 +16,6 @@ public abstract class TestBase
 
     protected readonly IContainer container;
     protected readonly JsonSerializerSettings jsonSerializerSettings;
+
+    protected bool IsGithubActionRunner => Environment.GetEnvironmentVariable("GITHUB_ACTION") != null;
 }
