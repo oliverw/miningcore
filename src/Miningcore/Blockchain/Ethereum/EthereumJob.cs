@@ -1,7 +1,6 @@
 using System.Globalization;
 using System.Numerics;
 using Miningcore.Crypto.Hashing.Ethash;
-using Miningcore.Crypto.Hashing.Ethash.Etchash;
 using Miningcore.Extensions;
 using Miningcore.Stratum;
 using NBitcoin;
