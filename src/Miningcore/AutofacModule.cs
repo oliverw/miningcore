@@ -84,15 +84,9 @@ public class AutofacModule : Module
 
         builder.RegisterAssemblyTypes(ThisAssembly)
                     .Where(t => t.GetCustomAttributes<IdentifierAttribute>().Any() &&
-                        t.GetInterfaces().Any(i => i.IsAssignableFrom(typeof(IEthashFull))))
-                    .Named<IEthashFull>(t => t.GetCustomAttributes<IdentifierAttribute>().First().Name)
+                        t.GetInterfaces().Any(i => i.IsAssignableFrom(typeof(IEthashLight))))
+                    .Named<IEthashLight>(t => t.GetCustomAttributes<IdentifierAttribute>().First().Name)
                     .PropertiesAutowired();
-
-        builder.RegisterAssemblyTypes(ThisAssembly)
-            .Where(t => t.GetCustomAttributes<IdentifierAttribute>().Any() &&
-                t.GetInterfaces().Any(i => i.IsAssignableFrom(typeof(IEthashDag))))
-            .Named<IEthashDag>(t => t.GetCustomAttributes<IdentifierAttribute>().First().Name)
-            .PropertiesAutowired();
 
         builder.RegisterAssemblyTypes(ThisAssembly)
             .Where(t => t.IsAssignableTo<EquihashSolver>())

@@ -102,7 +102,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
                 var jobId = NextJobId("x8");
 
                 // update template
-                job = new EthereumJob(jobId, blockTemplate, logger, coin.EthashFull);
+                job = new EthereumJob(jobId, blockTemplate, logger, coin.Ethash);
 
                 lock(jobLock)
                 {
@@ -348,18 +348,11 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
         {
             var coin = pc.Template.As<EthereumCoinTemplate>();
 
-            // ensure dag location is configured
-            var dagDir = !string.IsNullOrEmpty(extraPoolConfig?.DagDir) ?
-                Environment.ExpandEnvironmentVariables(extraPoolConfig.DagDir) :
-                coin.EthashFull.GetDefaultDagDirectory();
-
-            // create it if necessary
-            Directory.CreateDirectory(dagDir);
-
             logger.Info(() => $"Ethasher is: {coin.Ethasher}");
 
             var hardForkBlock = extraPoolConfig?.ChainTypeOverride == "Classic" ? EthereumClassicConstants.HardForkBlockMainnet : EthereumClassicConstants.HardForkBlockMordor;
-            coin.EthashFull.Setup(3, dagDir, hardForkBlock);
+            // TODO: improve this
+            coin.Ethash.Setup(3, hardForkBlock);
         }
     }
 
@@ -566,7 +559,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
 
         if(poolConfig.EnableInternalStratum == true)
         {
-            // make sure we have a current DAG
+            // make sure we have a current light cache
             using var timer = new PeriodicTimer(TimeSpan.FromSeconds(5));
 
             do
@@ -575,11 +568,11 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
 
                 if(blockTemplate != null)
                 {
-                    logger.Info(() => "Loading current DAG ...");
+                    logger.Info(() => "Loading current light cache ...");
 
-                    await coin.EthashFull.GetDagAsync(blockTemplate.Height, logger, ct);
+                    await coin.Ethash.GetCacheAsync(logger, blockTemplate.Height);
 
-                    logger.Info(() => "Loaded current DAG");
+                    logger.Info(() => "Loaded current light cache");
                     break;
                 }
 

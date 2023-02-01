@@ -5,9 +5,9 @@ namespace Miningcore.Crypto.Hashing.Ethash;
 
 public static class EthashFactory
 {
-    private static readonly ConcurrentDictionary<string, IEthashFull> cacheFull = new();
+    private static readonly ConcurrentDictionary<string, IEthashLight> cacheFull = new();
 
-    public static IEthashFull GetEthashFull(IComponentContext ctx, string name)
+    public static IEthashLight GetEthash(IComponentContext ctx, string name)
     {
         if(name == "")
             return null;
@@ -16,7 +16,7 @@ public static class EthashFactory
         if(cacheFull.TryGetValue(name, out var result))
             return result;
 
-        result = ctx.ResolveNamed<IEthashFull>(name);
+        result = ctx.ResolveNamed<IEthashLight>(name);
 
         cacheFull.TryAdd(name, result);
 

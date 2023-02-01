@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Miningcore.Blockchain.Ethereum;
 using Miningcore.Contracts;
 using Miningcore.Extensions;
 using Miningcore.Messaging;
@@ -6,9 +7,9 @@ using Miningcore.Native;
 using Miningcore.Notifications.Messages;
 using NLog;
 
-namespace Miningcore.Crypto.Hashing.Ethash.Etchash;
+namespace Miningcore.Crypto.Hashing.Ethash.Ethash;
 
-[Identifier("etchash")]
+[Identifier("ethash")]
 public class Cache : IEthashCache
 {
     public Cache(ulong epoch)
@@ -21,8 +22,6 @@ public class Cache : IEthashCache
     private bool isGenerated = false;
     private readonly object genLock = new();
     internal static IMessageBus messageBus;
-    private ulong hardForkBlock;
-
     public ulong Epoch { get; }
     public DateTime LastUsed { get; set; }
 
@@ -30,12 +29,12 @@ public class Cache : IEthashCache
     {
         if(handle != IntPtr.Zero)
         {
-            EtcHash.ethash_light_delete(handle);
+            EthHash.ethash_light_delete(handle);
             handle = IntPtr.Zero;
         }
     }
 
-    public async Task GenerateAsync(ILogger logger, ulong epochLength, ulong hardForkBlock)
+    public async Task GenerateAsync(ILogger logger)
     {
         await Task.Run(() =>
         {
@@ -43,13 +42,12 @@ public class Cache : IEthashCache
             {
                 if(!isGenerated)
                 {
-                    this.hardForkBlock = hardForkBlock;
 
                     var started = DateTime.Now;
                     logger.Debug(() => $"Generating cache for epoch {Epoch}");
 
-                    var block = Epoch * epochLength;
-                    handle = EtcHash.ethash_light_new(block, hardForkBlock);
+                    var block = Epoch * EthereumConstants.EpochLength;
+                    handle = EthHash.ethash_light_new(block);
 
                     logger.Debug(() => $"Done generating cache for epoch {Epoch} after {DateTime.Now - started}");
                     isGenerated = true;
@@ -67,11 +65,11 @@ public class Cache : IEthashCache
         mixDigest = null;
         result = null;
 
-        var value = new EtcHash.ethash_return_value();
+        var value = new EthHash.ethash_return_value();
 
         fixed(byte* input = hash)
         {
-            EtcHash.ethash_light_compute(handle, input, nonce, this.hardForkBlock, ref value);
+            EthHash.ethash_light_compute(handle, input, nonce, ref value);
         }
 
         if(value.success)
@@ -80,7 +78,7 @@ public class Cache : IEthashCache
             result = value.result.value;
         }
 
-        messageBus?.SendTelemetry("Etchash", TelemetryCategory.Hash, sw.Elapsed, value.success);
+        messageBus?.SendTelemetry("Ethash", TelemetryCategory.Hash, sw.Elapsed, value.success);
 
         return value.success;
     }

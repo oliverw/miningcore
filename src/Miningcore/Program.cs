@@ -782,13 +782,13 @@ public class Program : BackgroundService
         EquihashSolver.MaxThreads = clusterConfig.EquihashMaxThreads ?? 1;
 
         // Configure Ethash
-        Miningcore.Crypto.Hashing.Ethash.Ethash.Dag.messageBus = messageBus;
+        Miningcore.Crypto.Hashing.Ethash.Ethash.Cache.messageBus = messageBus;
 
         // Configure Etchash
-        Miningcore.Crypto.Hashing.Ethash.Etchash.Dag.messageBus = messageBus;
+        Miningcore.Crypto.Hashing.Ethash.Etchash.Cache.messageBus = messageBus;
 
         // Configure Ubqhash
-        Miningcore.Crypto.Hashing.Ethash.Ubqhash.Dag.messageBus = messageBus;
+        Miningcore.Crypto.Hashing.Ethash.Ubqhash.Cache.messageBus = messageBus;
 
         // Configure Verthash
         Verthash.messageBus = messageBus;

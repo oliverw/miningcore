@@ -100,7 +100,6 @@
           }
         },
         "chainTypeOverride": "Ethereum",
-        "dagDir": "<Your directory for the dag file>",
         "daemons": [
           {
             "host": "127.0.0.1",

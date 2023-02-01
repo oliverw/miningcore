@@ -2,15 +2,14 @@ using NLog;
 
 namespace Miningcore.Crypto.Hashing.Ethash;
 
-public interface IEthashDag : IDisposable
+public interface IEthashLight : IDisposable
 {
-    bool Compute(ILogger logger, byte[] hash, ulong nonce, out byte[] mixDigest, out byte[] result);
+    void Setup(int numCaches, ulong hardForkBlock);
+    Task<IEthashCache> GetCacheAsync(ILogger logger, ulong block);
+    string AlgoName { get; }
 }
 
-public interface IEthashFull : IDisposable
+public interface IEthashCache : IDisposable
 {
-    string GetDefaultDagDirectory();
-    void Setup(int numCaches, string dagDir, ulong hardForkBlock);
-    Task<IEthashDag> GetDagAsync(ulong block, ILogger logger, CancellationToken ct);
-    string AlgoName { get; }
+    bool Compute(ILogger logger, byte[] hash, ulong nonce, out byte[] mixDigest, out byte[] result);
 }

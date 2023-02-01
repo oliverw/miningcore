@@ -11,12 +11,12 @@ namespace Miningcore.Blockchain.Ethereum;
 
 public class EthereumJob
 {
-    public EthereumJob(string id, EthereumBlockTemplate blockTemplate, ILogger logger, IEthashFull ethashFull)
+    public EthereumJob(string id, EthereumBlockTemplate blockTemplate, ILogger logger, IEthashLight ethash)
     {
         Id = id;
         BlockTemplate = blockTemplate;
         this.logger = logger;
-        this.ethashFull = ethashFull;
+        this.ethash = ethash;
 
         var target = blockTemplate.Target;
         if(target.StartsWith("0x"))
@@ -31,7 +31,7 @@ public class EthereumJob
     public EthereumBlockTemplate BlockTemplate { get; }
     private readonly uint256 blockTarget;
     private readonly ILogger logger;
-    private readonly IEthashFull ethashFull;
+    private readonly IEthashLight ethash;
 
     public record SubmitResult(Share Share, string FullNonceHex = null, string HeaderHash = null, string MixHash = null);
 
@@ -68,18 +68,10 @@ public class EthereumJob
         if(!ulong.TryParse(fullNonceHex, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var fullNonce))
             throw new StratumException(StratumError.MinusOne, "bad nonce " + fullNonceHex);
 
-        // get dag for block
-        /* var dag = await ethashFull.GetDagAsync(BlockTemplate.Height, logger, CancellationToken.None);
+        // get light cache for block
+        var cache = await ethash.GetCacheAsync(logger, BlockTemplate.Height);
 
         // compute
-        if(!dag.Compute(logger, BlockTemplate.Header.HexToByteArray(), fullNonce, out var mixDigest, out var resultBytes))
-            throw new StratumException(StratumError.MinusOne, "bad hash"); */
-
-        var block = BlockTemplate.Height;
-        var dagEpochLength = block >= EthereumClassicConstants.HardForkBlockMordor ? EthereumClassicConstants.EpochLength : EthereumConstants.EpochLength;
-        var epoch = block / dagEpochLength;
-        var cache = new Miningcore.Crypto.Hashing.Ethash.Etchash.Cache(epoch, EthereumClassicConstants.HardForkBlockMordor);
-        await cache.GenerateAsync(logger, dagEpochLength);
         if(!cache.Compute(logger, BlockTemplate.Header.HexToByteArray(), fullNonce, out var mixDigest, out var resultBytes))
             throw new StratumException(StratumError.MinusOne, "bad hash");
 

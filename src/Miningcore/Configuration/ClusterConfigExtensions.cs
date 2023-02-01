@@ -189,19 +189,19 @@ public partial class EthereumCoinTemplate
 
     public EthereumCoinTemplate()
     {
-        ethashFullValue = new Lazy<IEthashFull>(() =>
-            EthashFactory.GetEthashFull(ComponentContext, Ethasher));
+        ethashLightValue = new Lazy<IEthashLight>(() =>
+            EthashFactory.GetEthash(ComponentContext, Ethasher));
     }
 
-    private readonly Lazy<IEthashFull> ethashFullValue;
+    private readonly Lazy<IEthashLight> ethashLightValue;
 
     public IComponentContext ComponentContext { get; [UsedImplicitly] init; }
 
-    public IEthashFull EthashFull => ethashFullValue.Value;
+    public IEthashLight Ethash => ethashLightValue.Value;
 
     public override string GetAlgorithmName()
     {
-        return EthashFull.AlgoName;
+        return Ethash.AlgoName;
     }
 
     #endregion
