@@ -33,12 +33,17 @@ public class BitcoinJobManager : BitcoinJobManagerBase<BitcoinJob>
     {
         var result = base.GetBlockTemplateParams();
 
+        if(coin.HasMWEB)
+        {
+            result = result.Concat(new object[] { "mweb" }).ToArray();
+        }
+
         if(coin.BlockTemplateRpcExtraParams != null)
         {
             if(coin.BlockTemplateRpcExtraParams.Type == JTokenType.Array)
                 result = result.Concat(coin.BlockTemplateRpcExtraParams.ToObject<object[]>() ?? Array.Empty<object>()).ToArray();
             else
-                result = result.Concat(new []{ coin.BlockTemplateRpcExtraParams.ToObject<object>()}).ToArray();
+                result = result.Concat(new[] { coin.BlockTemplateRpcExtraParams.ToObject<object>() }).ToArray();
         }
 
         return result;
@@ -71,7 +76,7 @@ public class BitcoinJobManager : BitcoinJobManagerBase<BitcoinJob>
         if(poolConfig.EnableInternalStratum == true && coin.HeaderHasherValue is IHashAlgorithmInit hashInit)
         {
             if(!hashInit.DigestInit(poolConfig))
-                logger.Error(()=> $"{hashInit.GetType().Name} initialization failed");
+                logger.Error(() => $"{hashInit.GetType().Name} initialization failed");
         }
     }
 
@@ -253,6 +258,14 @@ public class BitcoinJobManager : BitcoinJobManagerBase<BitcoinJob>
         if(share.IsBlockCandidate)
         {
             logger.Info(() => $"Submitting block {share.BlockHeight} [{share.BlockHash}]");
+
+            // if pool supports MWEB, we have to adjust the block hex
+            // https://github.com/litecoin-project/litecoin/blob/0.21/doc/mweb/mining-changes.md
+            if(coin.HasMWEB)
+            {
+                var mweb = job.BlockTemplate.Extra.SafeExtensionDataAs<MwebBlockTemplateExtra>();
+                blockHex = blockHex + "1" + mweb.Mweb;
+            }
 
             var acceptResponse = await SubmitBlockAsync(share, blockHex, ct);
 

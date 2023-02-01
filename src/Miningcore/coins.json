@@ -1464,7 +1464,7 @@
                 }
             ]
         },
-        "blockTemplateRpcExtraParams": ["mweb"],
+        "hasMWEB": true,
         "shareMultiplier": 65536,
         "explorerBlockLink": "https://chainz.cryptoid.info/ltc/block.dws?$height$.htm",
         "explorerTxLink": "https://chainz.cryptoid.info/ltc/tx.dws?{0}.htm",
