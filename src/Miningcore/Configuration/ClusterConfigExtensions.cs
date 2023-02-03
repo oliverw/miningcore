@@ -4,6 +4,7 @@ using Autofac;
 using JetBrains.Annotations;
 using Miningcore.Crypto;
 using Miningcore.Crypto.Hashing.Algorithms;
+using Miningcore.Crypto.Hashing.Kawpow;
 using NBitcoin;
 using Newtonsoft.Json;
 
@@ -84,6 +85,15 @@ public partial class BitcoinTemplate
     #endregion
 }
 
+public partial class RavencoinTemplate
+{
+    public RavencoinTemplate() : base()
+    {
+        KawpowHasher = new EthashLight();
+    }
+}
+
+
 public partial class EquihashCoinTemplate
 {
     public partial class EquihashNetworkParams
@@ -152,11 +162,11 @@ public partial class ConcealCoinTemplate
 
     public override string GetAlgorithmName()
     {
-//        switch(Hash)
-//        {
-//            case CryptonightHashType.RandomX:
-//                return "RandomX";
-//        }
+        //        switch(Hash)
+        //        {
+        //            case CryptonightHashType.RandomX:
+        //                return "RandomX";
+        //        }
 
         return Hash.ToString();
     }
@@ -170,11 +180,11 @@ public partial class CryptonoteCoinTemplate
 
     public override string GetAlgorithmName()
     {
-//        switch(Hash)
-//        {
-//            case CryptonightHashType.RandomX:
-//                return "RandomX";
-//        }
+        //        switch(Hash)
+        //        {
+        //            case CryptonightHashType.RandomX:
+        //                return "RandomX";
+        //        }
 
         return Hash.ToString();
     }

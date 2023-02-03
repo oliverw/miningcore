@@ -15,13 +15,13 @@ using Miningcore.Time;
 using Miningcore.Util;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using static Miningcore.Util.ActionUtils;
 using Block = Miningcore.Persistence.Model.Block;
 using Contract = Miningcore.Contracts.Contract;
-using static Miningcore.Util.ActionUtils;
 
 namespace Miningcore.Blockchain.Bitcoin;
 
-[CoinFamily(CoinFamily.Bitcoin)]
+[CoinFamily(CoinFamily.Bitcoin, CoinFamily.Ravencoin)]
 public class BitcoinPayoutHandler : PayoutHandlerBase,
     IPayoutHandler
 {
@@ -250,8 +250,8 @@ public class BitcoinPayoutHandler : PayoutHandlerBase,
 
             var didUnlockWallet = false;
 
-            // send command
-            tryTransfer:
+        // send command
+        tryTransfer:
             var result = await rpcClient.ExecuteAsync<string>(logger, BitcoinCommands.SendMany, ct, args);
 
             if(result.Error == null)
@@ -336,7 +336,7 @@ public class BitcoinPayoutHandler : PayoutHandlerBase,
                     // use a common id for all log entries related to this transfer
                     var transferId = CorrelationIdGenerator.GetNextId();
 
-                    logger.Info(()=> $"[{LogCategory}] [{transferId}] Sending {FormatAmount(amount)} to {address}");
+                    logger.Info(() => $"[{LogCategory}] [{transferId}] Sending {FormatAmount(amount)} to {address}");
 
                     var result = await rpcClient.ExecuteAsync<string>(logger, BitcoinCommands.SendToAddress, ct, new object[]
                     {
@@ -376,10 +376,10 @@ public class BitcoinPayoutHandler : PayoutHandlerBase,
 
             if(txFailures.Any())
             {
-                var failureBalances = txFailures.Select(x=> new Balance { Amount = x.Item1.Value }).ToArray();
+                var failureBalances = txFailures.Select(x => new Balance { Amount = x.Item1.Value }).ToArray();
                 var error = string.Join(", ", txFailures.Select(x => $"{x.Item1.Key} {FormatAmount(x.Item1.Value)}: {x.Item2.Message}"));
 
-                logger.Error(()=> $"[{LogCategory}] Failed to transfer the following balances: {error}");
+                logger.Error(() => $"[{LogCategory}] Failed to transfer the following balances: {error}");
 
                 NotifyPayoutFailure(poolConfig.Id, failureBalances, error, null);
             }
