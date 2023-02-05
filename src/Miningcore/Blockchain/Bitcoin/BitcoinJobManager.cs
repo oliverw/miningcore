@@ -304,7 +304,7 @@ public class BitcoinJobManager : BitcoinJobManagerBase<BitcoinJob>
             if(coin.HasMWEB)
             {
                 var mweb = job.BlockTemplate.Extra.SafeExtensionDataAs<MwebBlockTemplateExtra>();
-                blockHex = blockHex + "1" + mweb.Mweb;
+                blockHex = blockHex + "01" + mweb.Mweb;
             }
 
             var acceptResponse = await SubmitBlockAsync(share, blockHex, ct);
