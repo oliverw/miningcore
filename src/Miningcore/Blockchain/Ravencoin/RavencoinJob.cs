@@ -51,7 +51,7 @@ public class RavencoinJob : BitcoinJob
         return blockHeader.ToBytes();
     }
 
-    protected virtual (Share Share, string BlockHex) ProcessShareInternal(ILogger logger,
+    public virtual (Share Share, string BlockHex) ProcessShareInternal(ILogger logger,
         StratumConnection worker, ulong nonce, string inputHeaderHash, string mixHash)
     {
         var context = worker.ContextAs<RavencoinWorkerContext>();
@@ -72,12 +72,13 @@ public class RavencoinJob : BitcoinJob
         var headerHashHex = headerHash.ToHexString();
 
         if(headerHashHex != inputHeaderHash)
-        {
-            throw new StratumException(StratumError.MinusOne, "bad header-hash");
-        }
+            throw new StratumException(StratumError.MinusOne, $"bad header-hash");
 
         if(!kawpowHasher.Compute(logger, (int) BlockTemplate.Height, headerHash.ToArray(), nonce, out var mixHashOut, out var resultBytes))
             throw new StratumException(StratumError.MinusOne, "bad hash");
+
+        if(mixHash != mixHashOut.ToHexString())
+            throw new StratumException(StratumError.MinusOne, $"bad mix-hash");
 
         resultBytes.ReverseInPlace();
         mixHashOut.ReverseInPlace();
@@ -247,7 +248,7 @@ public class RavencoinJob : BitcoinJob
         var coinbaseHasher = coin.CoinbaseHasherValue;
         var extraNonce1 = workerJob.ExtraNonce1;
 
-        var coinbase = SerializeCoinbase(workerJob.ExtraNonce1);
+        var coinbase = SerializeCoinbase(extraNonce1);
         Span<byte> coinbaseHash = stackalloc byte[32];
         coinbaseHasher.Digest(coinbase, coinbaseHash);
 
@@ -259,29 +260,6 @@ public class RavencoinJob : BitcoinJob
         return headerHash.ToHexString();
     }
 
-    public virtual (Share Share, string BlockHex) ProcessShare(ILogger logger, StratumConnection worker, string nonce, string headerHash, string mixHash)
-    {
-        Contract.RequiresNonNull(worker);
-        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(nonce));
-
-        var context = worker.ContextAs<RavencoinWorkerContext>();
-
-        // mixHash
-        if(mixHash.Length != 64)
-            throw new StratumException(StratumError.Other, $"incorrect size of mixHash: {mixHash}");
-
-        // validate nonce
-        if(nonce.Length != 16)
-            throw new StratumException(StratumError.Other, $"incorrect size of nonce: {nonce}");
-
-        // check if nonce is within range
-        if(nonce.IndexOf(context.ExtraNonce1.Substring(0, 4)) != 0)
-            throw new StratumException(StratumError.Other, $"nonce out of range: {nonce}");
-
-        var nonceLong = ulong.Parse(nonce, NumberStyles.HexNumber);
-
-        return ProcessShareInternal(logger, worker, nonceLong, headerHash, mixHash);
-    }
 
     #endregion // API-Surface
 }

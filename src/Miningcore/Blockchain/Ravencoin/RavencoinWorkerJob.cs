@@ -1,5 +1,9 @@
 using System.Collections.Concurrent;
+using System.Globalization;
 using System.Text;
+using Miningcore.Stratum;
+using NLog;
+using Contract = Miningcore.Contracts.Contract;
 
 namespace Miningcore.Blockchain.Ravencoin;
 
@@ -20,15 +24,42 @@ public class RavencoinWorkerJob
 
     public readonly ConcurrentDictionary<string, bool> Submissions = new(StringComparer.OrdinalIgnoreCase);
 
-    public bool RegisterSubmit(string extraNonce1, string nonce, string headerHash, string mixHash)
+    private bool RegisterSubmit(string nonce, string headerHash, string mixHash)
     {
         var key = new StringBuilder()
-            .Append(extraNonce1)
             .Append(nonce) // lowercase as we don't want to accept case-sensitive values as valid.
             .Append(headerHash)
             .Append(mixHash)
             .ToString();
 
         return Submissions.TryAdd(key, true);
+    }
+
+    public virtual (Share Share, string BlockHex) ProcessShare(ILogger logger, StratumConnection worker, string nonce, string headerHash, string mixHash)
+    {
+        Contract.RequiresNonNull(worker);
+        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(nonce));
+
+        var context = worker.ContextAs<RavencoinWorkerContext>();
+
+        // mixHash
+        if(mixHash.Length != 64)
+            throw new StratumException(StratumError.Other, $"incorrect size of mixHash: {mixHash}");
+
+        // validate nonce
+        if(nonce.Length != 16)
+            throw new StratumException(StratumError.Other, $"incorrect size of nonce: {nonce}");
+
+        // check if nonce is within range
+        if(nonce.IndexOf(context.ExtraNonce1.Substring(0, 4)) != 0)
+            throw new StratumException(StratumError.Other, $"nonce out of range: {nonce}");
+
+        // dupe check
+        if(!RegisterSubmit(nonce, headerHash, mixHash))
+            throw new StratumException(StratumError.DuplicateShare, "duplicate share");
+
+        var nonceLong = ulong.Parse(nonce, NumberStyles.HexNumber);
+
+        return Job.ProcessShareInternal(logger, worker, nonceLong, headerHash, mixHash);
     }
 }

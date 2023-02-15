@@ -263,12 +263,9 @@ public class RavencoinJobManager : BitcoinJobManagerBase<RavencoinJob>
         if(job == null)
             throw new StratumException(StratumError.JobNotFound, "job not found");
 
-        // dupe check
-        if(!job.RegisterSubmit(context.ExtraNonce1, nonce, headerHash, mixHash))
-            throw new StratumException(StratumError.DuplicateShare, "duplicate share");
 
         // validate & process
-        var (share, blockHex) = job.Job.ProcessShare(logger, worker, nonce, headerHash, mixHash);
+        var (share, blockHex) = job.ProcessShare(logger, worker, nonce, headerHash, mixHash);
 
         // enrich share with common data
         share.PoolId = poolConfig.Id;
