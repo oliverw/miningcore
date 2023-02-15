@@ -1,5 +1,3 @@
-using Newtonsoft.Json;
-
 namespace Miningcore.Blockchain.Bitcoin.DaemonResponses;
 
 public class MwebBlockTemplateExtra

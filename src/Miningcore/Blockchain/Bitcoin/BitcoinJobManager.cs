@@ -299,14 +299,6 @@ public class BitcoinJobManager : BitcoinJobManagerBase<BitcoinJob>
         {
             logger.Info(() => $"Submitting block {share.BlockHeight} [{share.BlockHash}]");
 
-            // if pool supports MWEB, we have to adjust the block hex
-            // https://github.com/litecoin-project/litecoin/blob/0.21/doc/mweb/mining-changes.md
-            if(coin.HasMWEB)
-            {
-                var mweb = job.BlockTemplate.Extra.SafeExtensionDataAs<MwebBlockTemplateExtra>();
-                blockHex = blockHex + "01" + mweb.Mweb;
-            }
-
             var acceptResponse = await SubmitBlockAsync(share, blockHex, ct);
 
             // is it still a block candidate?
