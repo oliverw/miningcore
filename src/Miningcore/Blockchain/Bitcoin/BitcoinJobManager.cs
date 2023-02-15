@@ -13,6 +13,7 @@ using Miningcore.Time;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NLog;
+using Org.BouncyCastle.Crypto.Parameters;
 
 namespace Miningcore.Blockchain.Bitcoin;
 
@@ -33,15 +34,59 @@ public class BitcoinJobManager : BitcoinJobManagerBase<BitcoinJob>
     {
         var result = base.GetBlockTemplateParams();
 
+        if(coin.HasMWEB)
+        {
+            result = new object[]
+            {
+                new
+                {
+                    rules = new[] {"segwit", "mweb"},
+                }
+            };
+        }
+
         if(coin.BlockTemplateRpcExtraParams != null)
         {
             if(coin.BlockTemplateRpcExtraParams.Type == JTokenType.Array)
                 result = result.Concat(coin.BlockTemplateRpcExtraParams.ToObject<object[]>() ?? Array.Empty<object>()).ToArray();
             else
-                result = result.Concat(new []{ coin.BlockTemplateRpcExtraParams.ToObject<object>()}).ToArray();
+                result = result.Concat(new[] { coin.BlockTemplateRpcExtraParams.ToObject<object>() }).ToArray();
         }
 
         return result;
+    }
+
+    protected override async Task EnsureDaemonsSynchedAsync(CancellationToken ct)
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(5));
+
+        var syncPendingNotificationShown = false;
+
+        do
+        {
+            var response = await rpc.ExecuteAsync<BlockTemplate>(logger,
+                BitcoinCommands.GetBlockTemplate, ct, GetBlockTemplateParams());
+
+            var isSynched = response.Error == null;
+
+            if(isSynched)
+            {
+                logger.Info(() => "All daemons synched with blockchain");
+                break;
+            }
+            else
+            {
+                logger.Debug(() => $"Daemon reports error: {response.Error?.Message}");
+            }
+
+            if(!syncPendingNotificationShown)
+            {
+                logger.Info(() => "Daemon is still syncing with network. Manager will be started once synced.");
+                syncPendingNotificationShown = true;
+            }
+
+            await ShowDaemonSyncProgressAsync(ct);
+        } while(await timer.WaitForNextTickAsync(ct));
     }
 
     protected async Task<RpcResponse<BlockTemplate>> GetBlockTemplateAsync(CancellationToken ct)
@@ -71,7 +116,7 @@ public class BitcoinJobManager : BitcoinJobManagerBase<BitcoinJob>
         if(poolConfig.EnableInternalStratum == true && coin.HeaderHasherValue is IHashAlgorithmInit hashInit)
         {
             if(!hashInit.DigestInit(poolConfig))
-                logger.Error(()=> $"{hashInit.GetType().Name} initialization failed");
+                logger.Error(() => $"{hashInit.GetType().Name} initialization failed");
         }
     }
 
