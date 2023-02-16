@@ -19,18 +19,18 @@ public class RavencoinWorkerContext : WorkerContextBase
     /// </summary>
     public string ExtraNonce1 { get; set; }
 
-    private List<RavencoinWorkerJob> validJobs { get; } = new();
+    private List<RavencoinWorkerJob> ValidJobs { get; } = new();
 
     public void AddJob(RavencoinWorkerJob job)
     {
-        validJobs.Insert(0, job);
+        ValidJobs.Insert(0, job);
 
-        while(validJobs.Count > 4)
-            validJobs.RemoveAt(validJobs.Count - 1);
+        while(ValidJobs.Count > 4)
+            ValidJobs.RemoveAt(ValidJobs.Count - 1);
     }
 
     public RavencoinWorkerJob FindJob(string jobId)
     {
-        return validJobs.FirstOrDefault(x => x.Id == jobId);
+        return ValidJobs.FirstOrDefault(x => x.Id == jobId);
     }
 }

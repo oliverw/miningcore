@@ -37,9 +37,9 @@ public class RavencoinPool : PoolBase
     {
     }
 
-    protected RavencoinJobParams currentJobParams;
+    private RavencoinJobParams currentJobParams;
     private long currentJobId;
-    protected RavencoinJobManager manager;
+    private RavencoinJobManager manager;
     private RavencoinTemplate coin;
 
     protected virtual async Task OnSubscribeAsync(StratumConnection connection, Timestamped<JsonRpcRequest> tsRequest)
@@ -80,7 +80,7 @@ public class RavencoinPool : PoolBase
             context.SetDifficulty(nicehashDiff.Value);
         }
 
-        var minerJobParams = CreateWorkerJob(connection, (int) currentJobParams.Height, currentJobParams.CleanJobs);
+        var minerJobParams = CreateWorkerJob(connection, currentJobParams.CleanJobs);
         // send intial update
         await connection.NotifyAsync(RavencoinStratumMethods.SetDifficulty, new object[] { RavencoinUtils.EncodeTarget(context.Difficulty) });
         await connection.NotifyAsync(RavencoinStratumMethods.MiningNotify, minerJobParams);
@@ -150,7 +150,7 @@ public class RavencoinPool : PoolBase
         }
     }
 
-    private object CreateWorkerJob(StratumConnection connection, int block, bool update)
+    private object CreateWorkerJob(StratumConnection connection, bool update)
     {
         var context = connection.ContextAs<RavencoinWorkerContext>();
         var job = new RavencoinWorkerJob(NextJobId(), context.ExtraNonce1);
@@ -256,11 +256,11 @@ public class RavencoinPool : PoolBase
 
         currentJobParams = job as RavencoinJobParams;
 
-        await Guard(() => ForEachMinerAsync(async (connection, ct) =>
+        await Guard(() => ForEachMinerAsync(async (connection, _) =>
         {
             var context = connection.ContextAs<RavencoinWorkerContext>();
 
-            var minerJobParams = CreateWorkerJob(connection, (int) currentJobParams.Height, currentJobParams.CleanJobs);
+            var minerJobParams = CreateWorkerJob(connection, currentJobParams.CleanJobs);
 
             if(context.ApplyPendingDifficulty())
                 await connection.NotifyAsync(RavencoinStratumMethods.SetDifficulty, new object[] { RavencoinUtils.EncodeTarget(context.Difficulty) });
@@ -385,9 +385,7 @@ public class RavencoinPool : PoolBase
 
         if(connection.Context.ApplyPendingDifficulty())
         {
-            var context = connection.ContextAs<RavencoinWorkerContext>();
-            var minerJobParams = CreateWorkerJob(connection, (int) currentJobParams.Height, currentJobParams.CleanJobs);
-
+            var minerJobParams = CreateWorkerJob(connection, currentJobParams.CleanJobs);
             await connection.NotifyAsync(RavencoinStratumMethods.SetDifficulty, new object[] { RavencoinUtils.EncodeTarget(connection.Context.Difficulty) });
             await connection.NotifyAsync(RavencoinStratumMethods.MiningNotify, minerJobParams);
         }

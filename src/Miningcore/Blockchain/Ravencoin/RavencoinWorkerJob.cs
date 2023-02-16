@@ -22,7 +22,7 @@ public class RavencoinWorkerJob
     public string Bits { get; set; }
     public string SeedHash { get; set; }
 
-    public readonly ConcurrentDictionary<string, bool> Submissions = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, bool> submissions = new(StringComparer.OrdinalIgnoreCase);
 
     private bool RegisterSubmit(string nonce, string headerHash, string mixHash)
     {
@@ -32,10 +32,10 @@ public class RavencoinWorkerJob
             .Append(mixHash)
             .ToString();
 
-        return Submissions.TryAdd(key, true);
+        return submissions.TryAdd(key, true);
     }
 
-    public virtual (Share Share, string BlockHex) ProcessShare(ILogger logger, StratumConnection worker, string nonce, string headerHash, string mixHash)
+    public (Share Share, string BlockHex) ProcessShare(ILogger logger, StratumConnection worker, string nonce, string headerHash, string mixHash)
     {
         Contract.RequiresNonNull(worker);
         Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(nonce));
@@ -51,7 +51,7 @@ public class RavencoinWorkerJob
             throw new StratumException(StratumError.Other, $"incorrect size of nonce: {nonce}");
 
         // check if nonce is within range
-        if(nonce.IndexOf(context.ExtraNonce1.Substring(0, 4)) != 0)
+        if(nonce.IndexOf(context.ExtraNonce1[0..4], StringComparison.OrdinalIgnoreCase) != 0)
             throw new StratumException(StratumError.Other, $"nonce out of range: {nonce}");
 
         // dupe check

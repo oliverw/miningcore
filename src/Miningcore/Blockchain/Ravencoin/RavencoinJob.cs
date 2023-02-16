@@ -19,16 +19,16 @@ namespace Miningcore.Blockchain.Ravencoin;
 
 public class RavencoinJobParams
 {
-    public ulong Height { get; set; }
+    public ulong Height { get; init; }
     public bool CleanJobs { get; set; }
 }
 
 public class RavencoinJob : BitcoinJob
 {
-    protected Cache kawpowHasher;
-    protected new RavencoinJobParams jobParams;
+    private Cache kawpowHasher;
+    private new RavencoinJobParams jobParams;
 
-    protected byte[] SerializeHeader(Span<byte> coinbaseHash)
+    private byte[] SerializeHeader(Span<byte> coinbaseHash)
     {
         // build merkle-root
         var merkleRoot = mt.WithFirst(coinbaseHash.ToArray());
@@ -51,7 +51,7 @@ public class RavencoinJob : BitcoinJob
         return blockHeader.ToBytes();
     }
 
-    public virtual (Share Share, string BlockHex) ProcessShareInternal(ILogger logger,
+    public (Share Share, string BlockHex) ProcessShareInternal(ILogger logger,
         StratumConnection worker, ulong nonce, string inputHeaderHash, string mixHash)
     {
         var context = worker.ContextAs<RavencoinWorkerContext>();
@@ -68,7 +68,6 @@ public class RavencoinJob : BitcoinJob
         headerHasher.Digest(headerBytes, headerHash);
         headerHash.Reverse();
 
-        var headerValue = new uint256(headerHash);
         var headerHashHex = headerHash.ToHexString();
 
         if(headerHashHex != inputHeaderHash)
@@ -119,25 +118,25 @@ public class RavencoinJob : BitcoinJob
             Difficulty = stratumDifficulty / shareMultiplier,
         };
 
-        if(isBlockCandidate)
+        if(!isBlockCandidate)
         {
-            result.IsBlockCandidate = true;
-            result.BlockHash = resultBytes.ReverseInPlace().ToHexString();
-
-            var blockBytes = SerializeBlock(headerBytes, coinbase, nonce, mixHashOut);
-            var blockHex = blockBytes.ToHexString();
-
-            return (result, blockHex);
+            return (result, null);
         }
 
-        return (result, null);
+        result.IsBlockCandidate = true;
+        result.BlockHash = resultBytes.ReverseInPlace().ToHexString();
+
+        var blockBytes = SerializeBlock(headerBytes, coinbase, nonce, mixHashOut);
+        var blockHex = blockBytes.ToHexString();
+
+        return (result, blockHex);
     }
 
-    protected virtual byte[] SerializeCoinbase(string extraNonce1)
+    private byte[] SerializeCoinbase(string extraNonce1)
     {
         var extraNonce1Bytes = extraNonce1.HexToByteArray();
 
-        using(var stream = new MemoryStream())
+        using var stream = new MemoryStream();
         {
             stream.Write(coinbaseInitial);
             stream.Write(extraNonce1Bytes);
@@ -147,12 +146,12 @@ public class RavencoinJob : BitcoinJob
         }
     }
 
-    protected virtual byte[] SerializeBlock(byte[] header, byte[] coinbase, ulong nonce, byte[] mixHash)
+    private byte[] SerializeBlock(byte[] header, byte[] coinbase, ulong nonce, byte[] mixHash)
     {
         var rawTransactionBuffer = BuildRawTransactionBuffer();
         var transactionCount = (uint) BlockTemplate.Transactions.Length + 1; // +1 for prepended coinbase tx
 
-        using(var stream = new MemoryStream())
+        using var stream = new MemoryStream();
         {
             var bs = new BitcoinStream(stream, true);
 
@@ -198,7 +197,8 @@ public class RavencoinJob : BitcoinJob
         var coinbaseString = !string.IsNullOrEmpty(cc.PaymentProcessing?.CoinbaseString) ?
             cc.PaymentProcessing?.CoinbaseString.Trim() : "Miningcore";
 
-        this.scriptSigFinalBytes = new Script(Op.GetPushOp(Encoding.UTF8.GetBytes(coinbaseString))).ToBytes();
+        if(!string.IsNullOrEmpty(coinbaseString))
+            this.scriptSigFinalBytes = new Script(Op.GetPushOp(Encoding.UTF8.GetBytes(coinbaseString))).ToBytes();
 
         this.Difficulty = new Target(System.Numerics.BigInteger.Parse(BlockTemplate.Target, NumberStyles.HexNumber)).Difficulty;
 
@@ -233,7 +233,7 @@ public class RavencoinJob : BitcoinJob
         return jobParams;
     }
 
-    public virtual void PrepareWorkerJob(RavencoinWorkerJob workerJob, out string headerHash)
+    public void PrepareWorkerJob(RavencoinWorkerJob workerJob, out string headerHash)
     {
         workerJob.Job = this;
         workerJob.Height = BlockTemplate.Height;
@@ -242,7 +242,7 @@ public class RavencoinJob : BitcoinJob
         headerHash = CreateHeaderHash(workerJob);
     }
 
-    protected virtual string CreateHeaderHash(RavencoinWorkerJob workerJob)
+    private string CreateHeaderHash(RavencoinWorkerJob workerJob)
     {
         var headerHasher = coin.HeaderHasherValue;
         var coinbaseHasher = coin.CoinbaseHasherValue;

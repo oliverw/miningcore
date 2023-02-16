@@ -9,7 +9,7 @@
         "telegram": "https://t.me/VGC_5GCASH",
         "discord": "https://discord.gg/uXHvyBT",
         "coinbaseHasher": {
-            "hash": "sha256d"
+            "hash": "sha256d",
         },
         "headerHasher": {
             "hash": "x16r-v2"
