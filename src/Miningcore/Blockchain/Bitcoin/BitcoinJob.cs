@@ -243,10 +243,10 @@ public class BitcoinJob
         if(coin.HasMasterNodes)
             rewardToPool = CreateMasternodeOutputs(tx, rewardToPool);
 
-        if (coin.HasFounderFee)
+        if(coin.HasFounderFee)
             rewardToPool = CreateFounderOutputs(tx, rewardToPool);
 
-        if (coin.HasMinerFund)
+        if(coin.HasMinerFund)
             rewardToPool = CreateMinerFundOutputs(tx, rewardToPool);
 
         // Remaining amount goes to pool
@@ -492,10 +492,10 @@ public class BitcoinJob
 
     protected virtual Money CreateFounderOutputs(Transaction tx, Money reward)
     {
-        if (founderParameters.Founder != null)
+        if(founderParameters.Founder != null)
         {
             Founder[] founders;
-            if (founderParameters.Founder.Type == JTokenType.Array)
+            if(founderParameters.Founder.Type == JTokenType.Array)
                 founders = founderParameters.Founder.ToObject<Founder[]>();
             else
                 founders = new[] { founderParameters.Founder.ToObject<Founder>() };
@@ -529,7 +529,7 @@ public class BitcoinJob
     {
         var payeeReward = minerFundParameters.MinimumValue;
 
-        if (!string.IsNullOrEmpty(minerFundParameters.Addresses?.FirstOrDefault()))
+        if(!string.IsNullOrEmpty(minerFundParameters.Addresses?.FirstOrDefault()))
         {
             var payeeAddress = BitcoinUtils.AddressToDestination(minerFundParameters.Addresses[0], network);
             tx.Outputs.Add(payeeReward, payeeAddress);
@@ -612,10 +612,10 @@ public class BitcoinJob
         if(coin.HasPayee)
             payeeParameters = BlockTemplate.Extra.SafeExtensionDataAs<PayeeBlockTemplateExtra>();
 
-        if (coin.HasFounderFee)
+        if(coin.HasFounderFee)
             founderParameters = BlockTemplate.Extra.SafeExtensionDataAs<FounderBlockTemplateExtra>();
 
-        if (coin.HasMinerFund)
+        if(coin.HasMinerFund)
             minerFundParameters = BlockTemplate.Extra.SafeExtensionDataAs<MinerFundTemplateExtra>("coinbasetxn", "minerfund");
 
         this.coinbaseHasher = coinbaseHasher;

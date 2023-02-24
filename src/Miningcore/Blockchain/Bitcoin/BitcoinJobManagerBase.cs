@@ -262,7 +262,7 @@ public abstract class BitcoinJobManagerBase<TJob> : JobManagerBase<TJob>
             ? new RpcRequest(BitcoinCommands.SubmitBlock, new[] { blockHex })
             : new RpcRequest(BitcoinCommands.GetBlockTemplate, new { mode = "submit", data = blockHex });
 
-        var batch = new []
+        var batch = new[]
         {
             submitBlockRequest,
             new RpcRequest(BitcoinCommands.GetBlock, new[] { share.BlockHash })
@@ -466,17 +466,17 @@ public abstract class BitcoinJobManagerBase<TJob> : JobManagerBase<TJob>
         PostChainIdentifyConfigure();
 
         // ensure pool owns wallet
-        if(validateAddressResponse is not {IsValid: true})
+        if(validateAddressResponse is not { IsValid: true })
             throw new PoolStartupException($"Daemon reports pool-address '{poolConfig.Address}' as invalid", poolConfig.Id);
 
-        isPoS = poolConfig.Template is BitcoinTemplate {IsPseudoPoS: true} ||
+        isPoS = poolConfig.Template is BitcoinTemplate { IsPseudoPoS: true } ||
             (difficultyResponse.Values().Any(x => x.Path == "proof-of-stake" && !difficultyResponse.Values().Any(x => x.Path == "proof-of-work")));
 
         // Create pool address script from response
         if(!isPoS)
         {
             if(extraPoolConfig != null && extraPoolConfig.AddressType != BitcoinAddressType.Legacy)
-                logger.Info(()=> $"Interpreting pool address {poolConfig.Address} as type {extraPoolConfig?.AddressType.ToString()}");
+                logger.Info(() => $"Interpreting pool address {poolConfig.Address} as type {extraPoolConfig?.AddressType.ToString()}");
 
             poolAddressDestination = AddressToDestination(poolConfig.Address, extraPoolConfig?.AddressType);
         }
@@ -488,8 +488,8 @@ public abstract class BitcoinJobManagerBase<TJob> : JobManagerBase<TJob>
         if(clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
         {
             // ensure pool owns wallet
-            if(validateAddressResponse is {IsMine: false} && addressInfoResponse is {IsMine: false})
-                logger.Warn(()=> $"Daemon does not own pool-address '{poolConfig.Address}'");
+            if(validateAddressResponse is { IsMine: false } && addressInfoResponse is { IsMine: false })
+                logger.Warn(() => $"Daemon does not own pool-address '{poolConfig.Address}'");
         }
 
         // update stats
@@ -512,7 +512,7 @@ public abstract class BitcoinJobManagerBase<TJob> : JobManagerBase<TJob>
         // Periodically update network stats
         Observable.Interval(TimeSpan.FromMinutes(10))
             .Select(_ => Observable.FromAsync(() =>
-                Guard(()=> !hasLegacyDaemon ? UpdateNetworkStatsAsync(ct) : UpdateNetworkStatsLegacyAsync(ct),
+                Guard(() => !hasLegacyDaemon ? UpdateNetworkStatsAsync(ct) : UpdateNetworkStatsLegacyAsync(ct),
                     ex => logger.Error(ex))))
             .Concat()
             .Subscribe();
@@ -573,7 +573,7 @@ public abstract class BitcoinJobManagerBase<TJob> : JobManagerBase<TJob>
 
         var result = await rpc.ExecuteAsync<ValidateAddressResponse>(logger, BitcoinCommands.ValidateAddress, ct, new[] { address });
 
-        return result.Response is {IsValid: true};
+        return result.Response is { IsValid: true };
     }
 
     #endregion // API-Surface

@@ -1,0 +1,117 @@
+{
+    "logging": {
+      "level": "info",
+      "enableConsoleLog": true,
+      "enableConsoleColors": true,
+      "logFile": "",
+      "apiLogFile": "",
+      "logBaseDirectory": "",
+      "perPoolLogFile": true
+    },
+    "banning": {
+      "manager": "Integrated",
+      "banOnJunkReceive": true,
+      "banOnInvalidShares": true,
+      "banOnLoginFailure": true
+    },
+    "notifications": {
+      "enabled": false,
+      "email": {
+        "host": "smtp.example.com",
+        "port": 465,
+        "user": "user",
+        "password": "password",
+        "fromAddress": "info@yourpool.org",
+        "fromName": "pool support"
+      },
+      "admin": {
+        "enabled": true,
+        "emailAddress": "admin@yourpool.org",
+        "notifyBlockFound": false
+      }
+    },
+    "persistence": {
+      "postgres": {
+        "host": "localhost",
+        "port": 5432,
+        "user": "miningcore",
+        "password": "miningcore",
+        "database": "miningcore"
+      }
+    },
+    "paymentProcessing": {
+      "enabled": true,
+      "interval": 100
+    },
+    "shareRecoveryFile": "/app/recovered-shares.txt",
+    "api": {
+      "enabled": true,
+      "listenAddress": "0.0.0.0",
+      "port": 5000,
+      "metricsIpWhitelist": ["127.0.0.1"],
+      "adminIpWhitelist": ["127.0.0.1"],
+      "rateLimiting": {
+        "disabled": false,
+        "rules": [
+          {
+            "Endpoint": "*",
+            "Period": "1s",
+            "Limit": 500
+          }
+        ],
+        "ipWhitelist": ["127.0.0.1"]
+      }
+    },
+    "nicehashClusterConfig": {
+      "enableAutoDiff": true
+    },
+    "clusterName": "devel_1",
+    "pools": [
+      {
+        "id": "rvn1",
+        "enabled": true,
+        "coin": "ravencoin",
+        "address": "mxR4ic4Q32giqfcYqQGxDteGhzkjgA2eX6",
+        "rewardRecipients": [
+          {
+            "type": "op",
+            "address": "mwQo1fhe1sAYtywSPEXEp7vGxFS46qzsnB",
+            "percentage": 1
+          }
+        ],
+        "blockRefreshInterval": 120,
+        "clientConnectionTimeout": 600,
+        "banning": {
+          "enabled": true,
+          "time": 600,
+          "invalidPercent": 50,
+          "checkThreshold": 50
+        },
+        "ports": {
+          "4600": {
+            "name": "test",
+            "listenAddress": "*",
+            "difficulty": 1,
+            "varDiff": null
+          }
+        },
+        "daemons": [
+          {
+            "host": "127.0.0.1",
+            "port": 8766,
+            "user": "user",
+            "password": "passwd"
+          }
+        ],
+        "paymentProcessing": {
+          "enabled": true,
+          "minimumPayment": 10000,
+          "payoutScheme": "PPLNS",
+          "payoutSchemeConfig": {
+            "factor": 0.5
+          }
+        }
+      }
+    ]
+  }
+  
