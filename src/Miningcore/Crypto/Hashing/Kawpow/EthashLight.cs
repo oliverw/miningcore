@@ -14,7 +14,7 @@ public class EthashLight : IDisposable
     private readonly object cacheLock = new();
     private readonly Dictionary<int, Cache> caches = new();
     private Cache future;
-    public string AlgoName { get; } = "Kawpow";
+    public string AlgoName { get; } = "KawPow";
 
     public void Dispose()
     {

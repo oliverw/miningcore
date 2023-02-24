@@ -4,7 +4,6 @@ using Autofac;
 using JetBrains.Annotations;
 using Miningcore.Crypto;
 using Miningcore.Crypto.Hashing.Algorithms;
-using Miningcore.Crypto.Hashing.Kawpow;
 using NBitcoin;
 using Newtonsoft.Json;
 
@@ -89,8 +88,17 @@ public partial class RavencoinTemplate
 {
     public RavencoinTemplate() : base()
     {
-        KawpowHasher = new EthashLight();
+        KawpowHasher = new Crypto.Hashing.Kawpow.EthashLight();
     }
+
+    #region Overrides of CoinTemplate
+
+    public override string GetAlgorithmName()
+    {
+        return KawpowHasher.AlgoName;
+    }
+
+    #endregion
 }
 
 
