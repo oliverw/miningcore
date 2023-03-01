@@ -61,7 +61,7 @@
         <PackageReference Include="NLog.Extensions.Hosting" Version="5.2.1" />
         <PackageReference Include="AutoMapper" Version="12.0.1" />
         <PackageReference Include="Dapper" Version="2.0.123" />
-        <PackageReference Include="FluentValidation" Version="11.4.0" />
+        <PackageReference Include="FluentValidation" Version="11.5.1" />
         <PackageReference Include="FluentValidation.AspNetCore" Version="11.2.2" />
         <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.4.0" />
         <PackageReference Include="JetBrains.Annotations" Version="2022.3.1" />
