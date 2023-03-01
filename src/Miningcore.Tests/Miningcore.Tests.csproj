@@ -77,4 +77,14 @@
 
     <Copy SourceFiles="@(Libs)" DestinationFolder="$(OutDir)" />
   </Target>
+  <ItemGroup>
+  <None Include="$(OutDir)\**\*">
+  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+  <Link>%(RecursiveDir)\%(Filename)%(Extension)</Link>
+  <Visible>False</Visible>
+</None>
+</ItemGroup>
+
 </Project>
+
+

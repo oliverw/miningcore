@@ -29,7 +29,7 @@ public static unsafe class EtcHash
     /// <param name="block_number">The block number for which to create the handler</param>
     /// <returns>Newly allocated ethash_light handler or NULL</returns>
     [DllImport("libetchash", EntryPoint = "ethash_light_new_export", CallingConvention = CallingConvention.Cdecl)]
-    public static extern IntPtr ethash_light_new(ulong block_number);
+    public static extern IntPtr ethash_light_new(ulong block_number, ulong fork_block);
 
     /// <summary>
     /// Frees a previously allocated ethash_light handler
@@ -46,7 +46,7 @@ public static unsafe class EtcHash
     /// <param name="nonce">The nonce to pack into the mix</param>
     /// <returns>an object of ethash_return_value_t holding the return values</returns>
     [DllImport("libetchash", EntryPoint = "ethash_light_compute_export", CallingConvention = CallingConvention.Cdecl)]
-    public static extern void ethash_light_compute(IntPtr handle, byte* header_hash, ulong nonce, ref ethash_return_value result);
+    public static extern void ethash_light_compute(IntPtr handle, byte* header_hash, ulong nonce, ulong fork_block, ref ethash_return_value result);
 
     /// <summary>
     /// Allocate and initialize a new ethash_full handler
@@ -64,7 +64,7 @@ public static unsafe class EtcHash
     /// </param>
     /// <returns></returns>
     [DllImport("libetchash", EntryPoint = "ethash_full_new_export", CallingConvention = CallingConvention.Cdecl)]
-    public static extern IntPtr ethash_full_new(string dagDir, IntPtr light, ethash_callback_t callback);
+    public static extern IntPtr ethash_full_new(string dagDir, IntPtr light, ulong fork_block, ethash_callback_t callback);
 
     /// <summary>
     /// Frees a previously allocated ethash_full handler

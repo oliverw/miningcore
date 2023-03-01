@@ -1,26 +1,27 @@
+using System.Text;
 using Miningcore.Blockchain.Ethereum;
 using Miningcore.Contracts;
+using Miningcore.Native;
 using NLog;
 
-namespace Miningcore.Crypto.Hashing.Etchash;
 
-public class EtchashFull : IDisposable
+namespace Miningcore.Crypto.Hashing.Ethash.Etchash;
+
+[Identifier("etchash")]
+public class EtchashLight : IEthashLight
 {
-    public EtchashFull(int numCaches, string dagDir, ulong hardForkBlock)
+    public void Setup(int numCaches, ulong hardForkBlock)
     {
-        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(dagDir));
-        
         this.numCaches = numCaches;
-        this.dagDir = dagDir;
         this.hardForkBlock = hardForkBlock;
     }
 
     private int numCaches; // Maximum number of caches to keep before eviction (only init, don't modify)
     private readonly object cacheLock = new();
-    private readonly Dictionary<ulong, DagEtchash> caches = new();
-    private DagEtchash future;
-    private readonly string dagDir;
-    private readonly ulong hardForkBlock;
+    private readonly Dictionary<ulong, Cache> caches = new();
+    private Cache future;
+    private ulong hardForkBlock;
+    public string AlgoName { get; } = "Etchash";
 
     public void Dispose()
     {
@@ -28,12 +29,12 @@ public class EtchashFull : IDisposable
             value.Dispose();
     }
 
-    public async Task<DagEtchash> GetDagAsync(ulong block, ILogger logger, CancellationToken ct)
+    public async Task<IEthashCache> GetCacheAsync(ILogger logger, ulong block)
     {
-        var dagEpochLength = block >= hardForkBlock ? EthereumClassicConstants.EpochLength : EthereumConstants.EpochLength;
-        logger.Debug(() => $"Epoch length used: {dagEpochLength}");
-        var epoch = block / dagEpochLength;
-        DagEtchash result;
+        var epochLength = block >= this.hardForkBlock ? EthereumClassicConstants.EpochLength : EthereumConstants.EpochLength;
+        logger.Debug(() => $"Epoch length used: {epochLength}");
+        var epoch = block / epochLength;
+        Cache result;
 
         lock(cacheLock)
         {
@@ -42,22 +43,22 @@ public class EtchashFull : IDisposable
 
             if(!caches.TryGetValue(epoch, out result))
             {
-                // No cached DAG, evict the oldest if the cache limit was reached
+                // No cached cache, evict the oldest if the cache limit was reached
                 while(caches.Count >= numCaches)
                 {
                     var toEvict = caches.Values.OrderBy(x => x.LastUsed).First();
                     var key = caches.First(pair => pair.Value == toEvict).Key;
                     var epochToEvict = toEvict.Epoch;
 
-                    logger.Info(() => $"Evicting DAG for epoch {epochToEvict} in favour of epoch {epoch}");
+                    logger.Info(() => $"Evicting cache for epoch {epochToEvict} in favour of epoch {epoch}");
                     toEvict.Dispose();
                     caches.Remove(key);
                 }
 
-                // If we have the new DAG pre-generated, use that, otherwise create a new one
+                // If we have the new cache pre-generated, use that, otherwise create a new one
                 if(future != null && future.Epoch == epoch)
                 {
-                    logger.Debug(() => $"Using pre-generated DAG for epoch {epoch}");
+                    logger.Debug(() => $"Using pre-generated cache for epoch {epoch}");
 
                     result = future;
                     future = null;
@@ -65,8 +66,8 @@ public class EtchashFull : IDisposable
 
                 else
                 {
-                    logger.Info(() => $"No pre-generated DAG available, creating new for epoch {epoch}");
-                    result = new DagEtchash(epoch);
+                    logger.Info(() => $"No pre-generated cache available, creating new for epoch {epoch}");
+                    result = new Cache(epoch);
                 }
 
                 caches[epoch] = result;
@@ -75,11 +76,11 @@ public class EtchashFull : IDisposable
             // If we used up the future cache, or need a refresh, regenerate
             else if(future == null || future.Epoch <= epoch)
             {
-                logger.Info(() => $"Pre-generating DAG for epoch {epoch + 1}");
-                future = new DagEtchash(epoch + 1);
+                logger.Info(() => $"Pre-generating cache for epoch {epoch + 1}");
+                future = new Cache(epoch + 1);
 
 #pragma warning disable 4014
-                future.GenerateAsync(dagDir, dagEpochLength, logger, ct);
+                future.GenerateAsync(logger, epochLength, this.hardForkBlock);
 #pragma warning restore 4014
             }
 
@@ -87,7 +88,7 @@ public class EtchashFull : IDisposable
         }
 
         // get/generate current one
-        await result.GenerateAsync(dagDir, dagEpochLength, logger, ct);
+        await result.GenerateAsync(logger, epochLength, this.hardForkBlock);
 
         return result;
     }

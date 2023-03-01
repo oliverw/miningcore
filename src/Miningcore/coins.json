@@ -4280,7 +4280,8 @@
             "uncle": "https://explorer.callisto.network/blocks/$height$"
         },
         "explorerTxLink": "https://explorer.callisto.network/tx/{0}",
-        "explorerAccountLink": "https://explorer.callisto.network/address/{0}"
+        "explorerAccountLink": "https://explorer.callisto.network/address/{0}",
+		"ethasher": "ethash"
     },
     "ethereum": {
         "name": "Ethereum",
@@ -4297,7 +4298,8 @@
             "uncle": "https://etherscan.io/uncle/$height$"
         },
         "explorerTxLink": "https://etherscan.io/tx/{0}",
-        "explorerAccountLink": "https://etherscan.io/address/{0}"
+        "explorerAccountLink": "https://etherscan.io/address/{0}",
+		"ethasher": "ethash"
     },
     "ethereumclassic": {
         "name": "Ethereum Classic",
@@ -4314,7 +4316,8 @@
             "uncle": "https://blockscout.com/etc/mainnet/block/$height$"
         },
         "explorerTxLink": "https://blockscout.com/etc/mainnet/tx/{0}",
-        "explorerAccountLink": "https://blockscout.com/etc/mainnet/address/{0}"
+        "explorerAccountLink": "https://blockscout.com/etc/mainnet/address/{0}",
+		"ethasher": "etchash"
     },
     "ethereum-pow": {
         "name": "EthereumPoW",
@@ -4331,7 +4334,8 @@
             "uncle": "https://www.oklink.com/en/ethw/uncle/$height$"
         },
         "explorerTxLink": "https://www.oklink.com/en/ethw/tx/{0}",
-        "explorerAccountLink": "https://www.oklink.com/en/ethw/address/{0}"
+        "explorerAccountLink": "https://www.oklink.com/en/ethw/address/{0}",
+		"ethasher": "ethash"
     },
     "etherone": {
         "name": "EtherOne",
@@ -4348,7 +4352,8 @@
             "uncle": "https://blockscout.etherone.one/uncles/$height$"
         },
         "explorerTxLink": "https://blockscout.etherone.one/tx/{0}",
-        "explorerAccountLink": "https://blockscout.etherone.one/address/{0}"
+        "explorerAccountLink": "https://blockscout.etherone.one/address/{0}",
+		"ethasher": "ethash"
     },
     "pinkchain": {
         "name": "PinkChain",
@@ -4365,7 +4370,8 @@
             "uncle": "https://pinkscan.org/uncle/$height$"
         },
         "explorerTxLink": "https://pinkscan.org/tx/{0}",
-        "explorerAccountLink": "https://pinkscan.org/address/{0}"
+        "explorerAccountLink": "https://pinkscan.org/address/{0}",
+		"ethasher": "ethash"
     },
     "ubiq": {
         "name": "Ubiq",
@@ -4382,7 +4388,8 @@
             "uncle": "https://ubiqscan.io/uncle/$height$"
         },
         "explorerTxLink": "https://ubiqscan.io/tx/{0}",
-        "explorerAccountLink": "https://ubiqscan.io/address/{0}"
+        "explorerAccountLink": "https://ubiqscan.io/address/{0}",
+		"ethasher": "ubqhash"
     },
     "ergo": {
         "name": "Ergo",

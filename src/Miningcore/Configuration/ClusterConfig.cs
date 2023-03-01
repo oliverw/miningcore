@@ -24,7 +24,7 @@ public enum CoinFamily
 
     [EnumMember(Value = "conceal")]
     Conceal,
-    
+
     [EnumMember(Value = "cryptonote")]
     Cryptonote,
 
@@ -438,13 +438,13 @@ public partial class ConcealCoinTemplate : CoinTemplate
     /// </summary>
     [JsonProperty(Order = -4, DefaultValueHandling = DefaultValueHandling.Include)]
     public int HashVariant { get; set; }
-    
+
     /// <summary>
     /// Conceal network hashrate = `Difficulty / DifficultyTarget`
     /// See: parameter -> DIFFICULTY_TARGET in src/CryptoNoteConfig.h
     /// </summary>
     public ulong DifficultyTarget { get; set; }
-    
+
     /// <summary>
     /// Smallest unit for Blockreward formatting
     /// </summary>
@@ -581,6 +581,11 @@ public partial class EthereumCoinTemplate : CoinTemplate
     [DefaultValue(EthereumSubfamily.None)]
     [JsonConverter(typeof(StringEnumConverter), true)]
     public EthereumSubfamily Subfamily { get; set; }
+
+    /// <summary>
+    /// Which hashing algorithm to use. (ethash, etchash or ubqhash)
+    /// </summary>
+    public string Ethasher { get; set; } = "ethash";
 }
 
 public partial class ErgoCoinTemplate : CoinTemplate
@@ -830,7 +835,7 @@ public partial class ClusterPaymentProcessingConfig
     /// <summary>
     /// Indentifier used in coinbase transactions to identify the pool
     /// </summary>
-    public string CoinbaseString  { get; set; }
+    public string CoinbaseString { get; set; }
 }
 
 public partial class PersistenceConfig

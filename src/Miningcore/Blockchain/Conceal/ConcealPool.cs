@@ -314,7 +314,7 @@ public class ConcealPool : PoolBase
             disposables.Add(manager.Blocks
                 .Select(_ => Observable.FromAsync(() =>
                     Guard(OnNewJobAsync,
-                        ex=> logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}"))))
+                        ex => logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}"))))
                 .Concat()
                 .Subscribe(_ => { }, ex =>
                 {
@@ -338,7 +338,7 @@ public class ConcealPool : PoolBase
         {
             case CryptonightHashType.CryptonightCCX:
                 return $"cn-ccx";
-            
+
             case CryptonightHashType.CryptonightGPU:
                 return $"cn-gpu";
         }
