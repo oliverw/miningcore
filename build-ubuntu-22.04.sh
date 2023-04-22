@@ -2,6 +2,11 @@
 
 # dotnet 6 or higher is included in Ubuntu 22.04 and up
 
+# add dotnet repo
+wget https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+sudo dpkg -i packages-microsoft-prod.deb
+rm packages-microsoft-prod.deb
+
 # install dev-dependencies
 sudo apt-get update; \
   sudo apt-get -y install dotnet-sdk-6.0 git cmake build-essential libssl-dev pkg-config libboost-all-dev libsodium-dev libzmq5
