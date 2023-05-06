@@ -30,6 +30,9 @@ public enum CoinFamily
 
     [EnumMember(Value = "ergo")]
     Ergo,
+    
+    [EnumMember(Value = "Pandanite")]
+    Pandanite,
 }
 
 public abstract partial class CoinTemplate
@@ -132,6 +135,7 @@ public abstract partial class CoinTemplate
         {CoinFamily.Cryptonote, typeof(CryptonoteCoinTemplate)},
         {CoinFamily.Ethereum, typeof(EthereumCoinTemplate)},
         {CoinFamily.Ergo, typeof(ErgoCoinTemplate)},
+        {CoinFamily.Pandanite, typeof(PandaniteCoinTemplate)},
     };
 }
 
@@ -510,6 +514,15 @@ public partial class EthereumCoinTemplate : CoinTemplate
 public partial class ErgoCoinTemplate : CoinTemplate
 {
 }
+
+public class PandaniteCoinTemplate : CoinTemplate
+{
+    public override string GetAlgorithmName()
+    {
+        return "pufferfish2bmb";
+    }
+}
+
 
 #endregion // Coin Definitions
 

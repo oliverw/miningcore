@@ -61,6 +61,7 @@ public class PayoutManager : BackgroundService
     private readonly ConcurrentDictionary<string, IMiningPool> pools = new();
     private readonly ClusterConfig clusterConfig;
     private readonly CompositeDisposable disposables = new();
+    private SemaphoreSlim _lock = new SemaphoreSlim(1,1);
 
 #if !DEBUG
     private static readonly TimeSpan initialRunDelay = TimeSpan.FromMinutes(1);
@@ -79,13 +80,17 @@ public class PayoutManager : BackgroundService
             AttachPool(notification.Pool);
     }
 
-    private async Task ProcessPoolsAsync(CancellationToken ct)
+    private async Task ProcessPoolsAsync(CancellationToken ct, bool processPayouts)
     {
         foreach(var pool in pools.Values.ToArray().Where(x => x.Config.Enabled && x.Config.PaymentProcessing.Enabled))
         {
             var poolConfig = pool.Config;
 
-            logger.Info(() => $"Processing payments for pool {poolConfig.Id}");
+            
+            var desc1 = processPayouts ? "Payment" : "Block";
+            var desc2 = processPayouts ? "payments" : "blocks";
+
+            logger.Info(() => $"Processing {desc2} for pool {poolConfig.Id}");
 
             try
             {
@@ -102,12 +107,15 @@ public class PayoutManager : BackgroundService
                 var scheme = ctx.ResolveKeyed<IPayoutScheme>(poolConfig.PaymentProcessing.PayoutScheme);
 
                 await UpdatePoolBalancesAsync(pool, poolConfig, handler, scheme, ct);
-                await PayoutPoolBalancesAsync(pool, poolConfig, handler, ct);
+                
+                if (processPayouts) {
+                    await PayoutPoolBalancesAsync(pool, poolConfig, handler, ct);
+                }
             }
 
             catch(InvalidOperationException ex)
             {
-                logger.Error(ex.InnerException ?? ex, () => $"[{poolConfig.Id}] Payment processing failed");
+                logger.Error(ex.InnerException ?? ex, () => $"[{poolConfig.Id}] {desc1} processing failed");
             }
 
             catch(AggregateException ex)
@@ -115,7 +123,7 @@ public class PayoutManager : BackgroundService
                 switch(ex.InnerException)
                 {
                     case HttpRequestException httpEx:
-                        logger.Error(() => $"[{poolConfig.Id}] Payment processing failed: {httpEx.Message}");
+                        logger.Error(() => $"[{poolConfig.Id}] {desc1} processing failed: {httpEx.Message}");
                         break;
 
                     default:
@@ -126,7 +134,7 @@ public class PayoutManager : BackgroundService
 
             catch(Exception ex)
             {
-                logger.Error(ex, () => $"[{poolConfig.Id}] Payment processing failed");
+                logger.Error(ex, () => $"[{poolConfig.Id}] {desc1} processing failed");
             }
         }
     }
@@ -159,7 +167,7 @@ public class PayoutManager : BackgroundService
         {
             foreach(var block in updatedBlocks.OrderBy(x => x.Created))
             {
-                logger.Info(() => $"Processing payments for pool {poolConfig.Id}, block {block.BlockHeight}");
+                logger.Info(() => $"Updating blocks for pool {poolConfig.Id}, block {block.BlockHeight}");
 
                 await cf.RunTx(async (con, tx) =>
                 {
@@ -192,6 +200,8 @@ public class PayoutManager : BackgroundService
 
     private async Task PayoutPoolBalancesAsync(IMiningPool pool, PoolConfig config, IPayoutHandler handler, CancellationToken ct)
     {
+    logger.Info(() => $"Processing payments for pool {config.Id}");
+
         var poolBalancesOverMinimum = await cf.Run(con =>
             balanceRepo.GetPoolBalancesOverThresholdAsync(con, config.Id, config.PaymentProcessing.MinimumPayment));
 
@@ -258,25 +268,68 @@ public class PayoutManager : BackgroundService
             // Allow all pools to actually come up before the first payment processing run
             await Task.Delay(initialRunDelay, ct);
 
-            using var timer = new PeriodicTimer(interval);
-
-            do
+            var updateTask = Task.Run(async () =>
             {
-                try
-                {
-                    await ProcessPoolsAsync(ct);
-                }
+                using var timer = new PeriodicTimer(TimeSpan.FromMinutes(3));
 
-                catch(OperationCanceledException)
+                while(await timer.WaitForNextTickAsync(ct))
                 {
-                    // ignored
+                    bool lockTaken = false;
+                    try
+                    {
+                        await _lock.WaitAsync(ct);
+                        lockTaken = true;
+                        await ProcessPoolsAsync(ct, false);
+                    }
+                    catch(OperationCanceledException)
+                    {
+                        // ignored
+                    }
+                    catch(Exception ex)
+                    {
+                        logger.Error(ex);
+                    } 
+                    finally 
+                    {
+                        if (lockTaken) 
+                        {
+                            _lock.Release();
+                        }
+                    }
                 }
+            });
 
-                catch(Exception ex)
+                var payoutTask = Task.Run(async () =>
+            {
+                using var timer = new PeriodicTimer(interval);
+                do
                 {
-                    logger.Error(ex);
-                }
-            } while(await timer.WaitForNextTickAsync(ct));
+                    bool lockTaken = false;
+                    try
+                    {
+                        await _lock.WaitAsync(ct);
+                        lockTaken = true;
+                        await ProcessPoolsAsync(ct, true);
+                    }
+                    catch(OperationCanceledException)
+                    {
+                        // ignored
+                    }
+                    catch(Exception ex)
+                    {
+                        logger.Error(ex);
+                    }
+                    finally 
+                    {
+                        if (lockTaken) 
+                        {
+                            _lock.Release();
+                        }
+                    }
+                } while(await timer.WaitForNextTickAsync(ct));
+            });
+
+            await Task.WhenAll(updateTask, payoutTask);
 
             logger.Info(() => "Offline");
         }
