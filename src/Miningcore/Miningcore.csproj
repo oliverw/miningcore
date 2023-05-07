@@ -54,7 +54,7 @@
         <PackageReference Include="Microsoft.IO.RecyclableMemoryStream" Version="2.2.1" />
         <PackageReference Include="Newtonsoft.Json.Schema" Version="3.0.14" />
         <PackageReference Include="Npgsql" Version="6.0.7" />
-        <PackageReference Include="NSec.Cryptography" Version="22.4.0"/>
+        <PackageReference Include="NSec.Cryptography" Version="22.4.0" />
         <PackageReference Include="NSwag.AspNetCore" Version="13.17.0" />
         <PackageReference Include="NSwag.CodeGeneration.CSharp" Version="13.17.0" />
         <PackageReference Include="NSwag.MSBuild" Version="13.17.0">
@@ -141,18 +141,18 @@
             <ContentWithTargetPath Include="@(Libs->'%(FullPath)')" RelativePath="%(Libs.Identity)" TargetPath="%(Libs.Filename)%(Libs.Extension)" CopyToPublishDirectory="PreserveNewest" />
         </ItemGroup>
     </Target>
-    
-        <ItemGroup>
-        <Content Include="Blockchain/Pandanite/pufferfish2.dll">
+
+    <ItemGroup>
+        <Content Include="Blockchain/Bamboo/pufferfish2.dll">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </Content>
-        <Content Include="Blockchain/Pandanite/pufferfish2.so">
+        <Content Include="Blockchain/Bamboo/pufferfish2.so">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </Content>
-        <Content Include="Blockchain/Pandanite/sign.dll">
+        <Content Include="Blockchain/Bamboo/sign.dll">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </Content>
-        <Content Include="Blockchain/Pandanite/sign.so">
+        <Content Include="Blockchain/Bamboo/sign.so">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </Content>
     </ItemGroup>

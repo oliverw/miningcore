@@ -374,15 +374,10 @@ public class PoolApiController : ApiControllerBase
             stats = mapper.Map<Responses.MinerStats>(statsResult);
 
             // pre-multiply pending shares to cause less confusion with users
-            switch(pool.Template.Family) {
-                case CoinFamily.Bitcoin:
-                    stats.PendingShares *= pool.Template.As<BitcoinTemplate>().ShareMultiplier;
-                    break;
-                case CoinFamily.Pandanite:
-                    // difficulty of 15 is considered single share
-                    stats.PendingShares /= Math.Pow(2, 15);
-                    break;
-            }
+            if(pool.Template.Family == CoinFamily.Bitcoin)
+                stats.PendingShares *= pool.Template.As<BitcoinTemplate>().ShareMultiplier;
+            if(pool.Template.Family == CoinFamily.Bamboo)
+                stats.PendingShares /= Math.Pow(2, 15);
 
             // optional fields
             if(statsResult.LastPayment != null)

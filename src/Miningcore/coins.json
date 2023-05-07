@@ -1,4 +1,29 @@
 {
+	"bamboo": {
+        "name": "Bamboo",
+        "canonicalName": "Bamboo",
+        "symbol": "BMB",
+        "family": "bamboo",
+        "website": "https://www.bamboocrypto.io/",
+        "market": "",
+        "twitter": "https://twitter.com/bmb_bamboo",
+        "telegram": "",
+        "discord": "https://discord.gg/2m9m2cnBk7",
+        "coinbaseHasher": {
+            "hash": "pufferfish2bmb"
+        },
+        "headerHasher": {
+            "hash": "pufferfish2bmb"
+        },
+        "blockHasher": {
+            "hash": "reverse",
+            "args": [ { "hash": "pufferfish2bmb" } ]
+        },
+        "coinbaseIgnoreAuxFlags": true,
+        "explorerBlockLink": "https://explorer.0xf10.com/block/$height$",
+        "explorerTxLink": "https://explorer.0xf10.com/tx/{0}",
+        "explorerAccountLink": "https://explorer.0xf10.com/account/{0}"
+    },
     "5gcash": {
         "name": "5G Cash",
         "symbol": "VGC",

@@ -44,18 +44,11 @@ public static class VarDiffManager
                 var tMin = options.TargetTime - variance;
                 var tMax = options.TargetTime + variance;
 
-                // Possible New Diff
-
                 if(ts - ctx.LastRetarget < options.RetargetTime || avg >= tMin && avg <= tMax)
                     return null;
 
-                double newDiff = 0d;
-
-                if (context is WorkerContextBase) {
-                    newDiff = Math.Log2((1 << Convert.ToInt32(difficulty)) * options.TargetTime / avg);
-                } else {
-                    newDiff = difficulty * options.TargetTime / avg;
-                }
+                // Possible New Diff
+                var newDiff = difficulty * options.TargetTime / avg;
 
                 if(TryApplyNewDiff(ref newDiff, difficulty, minDiff, maxDiff, ts, ctx, options, clock))
                     return newDiff;
@@ -113,13 +106,8 @@ public static class VarDiffManager
             var timeTotal = (ctx.TimeBuffer?.Sum() ?? 0) + (timeDelta - SafetyMargin);
             var avg = timeTotal / ((ctx.TimeBuffer?.Size ?? 0) + 1);
 
-            double newDiff = 0d;
-
-            if (context is WorkerContextBase) {
-                newDiff = Math.Log2((1 << Convert.ToInt32(difficulty)) * options.TargetTime / avg);
-            } else {
-                newDiff = difficulty * options.TargetTime / avg;
-            }
+            // Possible New Diff
+            var newDiff = difficulty * options.TargetTime / avg;
 
             if(TryApplyNewDiff(ref newDiff, difficulty, minDiff, maxDiff, ts, ctx, options, clock))
                 return newDiff;

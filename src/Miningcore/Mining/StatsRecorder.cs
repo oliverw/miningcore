@@ -228,12 +228,12 @@ public class StatsRecorder : BackgroundService
                         stats.Hashrate = minerHashrate;
                         stats.Worker = item.Worker;
 
-                        stats.SharesPerSecond = Math.Round(item.Count / minerHashTimeFrame, 3);
-                        if (pool.Config.Template.Family == CoinFamily.Pandanite) {
+                        if (pool.Config.Template.Family == CoinFamily.Bamboo) {
                             stats.SharesPerSecond = item.Sum / minerHashTimeFrame / Math.Pow(2, 15);
                         } else {
                             stats.SharesPerSecond = Math.Round(item.Count / minerHashTimeFrame, 3);
                         }
+
                         // persist
                         await statsRepo.InsertMinerWorkerPerformanceStatsAsync(con, tx, stats, ct);
 
