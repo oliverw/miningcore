@@ -2,8 +2,8 @@ using System;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
-using Ed25519;
-using NSec.Cryptography;
+//using Ed25519;
+//using NSec.Cryptography;
 
 namespace Miningcore.Blockchain.Pandanite
 {

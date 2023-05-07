@@ -519,7 +519,7 @@ public class PandaniteCoinTemplate : CoinTemplate
 {
     public override string GetAlgorithmName()
     {
-        return "pufferfish2bmb";
+        return "pufferfish2";
     }
 }
 

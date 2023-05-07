@@ -271,39 +271,9 @@ public class PandanitePayoutHandler : PayoutHandlerBase,
         return difficulty;
     }
 
-    Task IPayoutHandler.ConfigureAsync(ClusterConfig cc, PoolConfig pc, CancellationToken ct)
+    public double AdjustBlockEffort(double effort)
     {
-        throw new NotImplementedException();
-    }
-
-    Task<Block[]> IPayoutHandler.ClassifyBlocksAsync(IMiningPool pool, Block[] blocks, CancellationToken ct)
-    {
-        throw new NotImplementedException();
-    }
-
-    Task<decimal> IPayoutHandler.UpdateBlockRewardBalancesAsync(System.Data.IDbConnection con, System.Data.IDbTransaction tx, IMiningPool pool, Block block, CancellationToken ct)
-    {
-        throw new NotImplementedException();
-    }
-
-    Task IPayoutHandler.PayoutAsync(IMiningPool pool, Balance[] balances, CancellationToken ct)
-    {
-        throw new NotImplementedException();
-    }
-
-    double IPayoutHandler.AdjustShareDifficulty(double difficulty)
-    {
-        throw new NotImplementedException();
-    }
-
-    double IPayoutHandler.AdjustBlockEffort(double effort)
-    {
-        throw new NotImplementedException();
-    }
-
-    string IPayoutHandler.FormatAmount(decimal amount)
-    {
-        throw new NotImplementedException();
+        return effort;
     }
 
     #endregion // IPayoutHandler
