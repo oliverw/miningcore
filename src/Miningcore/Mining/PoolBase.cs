@@ -69,6 +69,7 @@ public abstract class PoolBase : StratumServer,
     protected static readonly TimeSpan maxShareAge = TimeSpan.FromSeconds(6);
     protected static readonly TimeSpan loginFailureBanTimeout = TimeSpan.FromSeconds(10);
     protected static readonly Regex regexStaticDiff = new(@";?d=(\d*(\.\d+)?)", RegexOptions.Compiled);
+    protected static readonly Regex regexMinPayout = new(@";?p=(\d*(\.\d+)?)", RegexOptions.Compiled);
     protected const string PasswordControlVarsSeparator = ";";
 
     protected abstract Task SetupJobManager(CancellationToken ct);
@@ -88,6 +89,26 @@ public abstract class PoolBase : StratumServer,
                 var str = m.Groups[1].Value.Trim();
                 if(double.TryParse(str, NumberStyles.Float, CultureInfo.InvariantCulture, out var diff) &&
                    !double.IsNaN(diff) && !double.IsInfinity(diff))
+                    return diff;
+            }
+        }
+
+        return null;
+    }
+
+    protected decimal? GetMinPayoutFromPassparts(string[] parts)
+    {
+        if(parts == null || parts.Length == 0)
+            return null;
+
+        foreach(var part in parts)
+        {
+            var m = regexMinPayout.Match(part);
+
+            if(m.Success)
+            {
+                var str = m.Groups[1].Value.Trim();
+                if(decimal.TryParse(str, NumberStyles.Float, CultureInfo.InvariantCulture, out var diff))
                     return diff;
             }
         }

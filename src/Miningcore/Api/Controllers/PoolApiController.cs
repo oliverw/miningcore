@@ -376,6 +376,8 @@ public class PoolApiController : ApiControllerBase
             // pre-multiply pending shares to cause less confusion with users
             if(pool.Template.Family == CoinFamily.Bitcoin)
                 stats.PendingShares *= pool.Template.As<BitcoinTemplate>().ShareMultiplier;
+            if(pool.Template.Family == CoinFamily.Bamboo)
+                stats.PendingShares /= Math.Pow(2, 15);
 
             // optional fields
             if(statsResult.LastPayment != null)
