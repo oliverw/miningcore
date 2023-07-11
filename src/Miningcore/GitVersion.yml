@@ -1,8 +1,0 @@
-assembly-versioning-scheme: MajorMinorPatch
-mode: ContinuousDelivery
-branches:
-  develop:
-    regex: ^dev(elop)?(ment)?|oliverw$
-ignore:
-  sha: []
-merge-message-formats: {}
