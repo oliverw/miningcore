@@ -17,7 +17,7 @@
 - [x]  **Skype:**  add this email `onlinebuybiz@gmail.com` in your skype search and you will see **theonly-1**
 
 
-#### MININGCORE SUPPORTED ALGOS
+# MININGCORE SUPPORTED ALGOS
    x16r-v2 | sha256d  | scrypt | skein | qubit  | groestl-myriad
 ------------- | ------------- | ------------- | ------------- | ------------- | -------------
 x11  | x13bcd | verthash | x13 | neoscrypt | geek
