@@ -27,7 +27,3 @@ Verushash  | randomx | EthereumPoW | Ergo  | -  |  -
 
 # Supported Coins by Miningcore
 It's not a complete list just some example but more coins could work with Miningcore mining pool software you just contact us and we shall see what we can do.
-
-  - | - | - | - | -  | -  | - 
-------------- | ------------- | ------------- | ------------- | ------------- | ------------- | ------------- 
-
