@@ -2,7 +2,9 @@
 
 ### We do install, configure Miningcore Pool Software for you.
 
-### Paid professional services to setup new Miningcore pool with a beautiful frontend UI. 
+### Paid professional services to setup new Miningcore pool or fix and troubleshoot existing Miningcore pool already
+
+### We also install frontend for Miningcore, a beautiful web UI.
 
 ### Miningcore also supports Bitcoin SHA256 ASICBOOST 
 
