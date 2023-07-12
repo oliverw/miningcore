@@ -19,8 +19,6 @@
 
 #### MININGCORE SUPPORTED ALGOS
 
-   Algos | Algos  | Algos | Algos | Algos  | Algos
-------------- | ------------- | ------------- | ------------- | ------------- | -------------
 x16r-v2  | sha256d | scrypt | skein | qubit | groestl-myriad
 x11  | x13bcd | verthash | x13 | neoscrypt | geek
 groestl  | lyra2-rev2 | heavyhash | ghostrider | sha512/256d | sha256dt
