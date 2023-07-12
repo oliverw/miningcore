@@ -1,6 +1,6 @@
 # MININGCORE MINING POOL CREATION SERVICES FOR SEVERVAL CRYTPO COINS OF YOUR CHOICE
 
-### We do install, configure Miningcore Pool Software for your
+### We do install, configure Miningcore Pool Software for you.
 
 ### Paid professional services to setup new Miningcore pool with a beautiful frontend UI. 
 
