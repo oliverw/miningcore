@@ -19,13 +19,13 @@
 
 #### MININGCORE SUPPORTED ALGOS
 
-  - | -  | - | - | -  | -
+   Algos | Algos  | Algos | Algos | Algos  | Algos
 ------------- | ------------- | ------------- | ------------- | ------------- | -------------
 x16r-v2  | sha256d | scrypt | skein | qubit | groestl-myriad
 x11  | x13bcd | verthash | x13 | neoscrypt | geek
 groestl  | lyra2-rev2 | heavyhash | ghostrider | sha512/256d | sha256dt
 x17  | blake2s | equihash | BgoldPoW | ZcashPoW | BethdPoW
-Verushash  | randomx | EthereumPoW | Ergo 
+Verushash  | randomx | EthereumPoW | Ergo  | -  |  -
 
 # Supported Coins by Miningcore
 It's not a complete list just some example but more coins could work with Miningcore mining pool software you just contact us and we shall see what we can do.
