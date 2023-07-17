@@ -25,7 +25,8 @@
 x11  | x13bcd | verthash | x13 | neoscrypt | geek
 groestl  | lyra2-rev2 | heavyhash | ghostrider | sha512/256d | sha256dt
 x17  | blake2s | equihash | BgoldPoW | ZcashPoW | BethdPoW
-Verushash  | randomx | EthereumPoW | Ergo  | -  |  -
+Verushash  | randomx | EthereumPoW | Ergo  | Kawpow  |  PepePow
+MinotaurX  | MemeHash | YespowerLTNCG | SHA3  | yespower  |  x21s
 
 # Supported Coins by Miningcore
 It's not a complete list just some example but more coins could work with Miningcore mining pool software you just contact us and we shall see what we can do.
