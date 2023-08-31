@@ -100,5 +100,17 @@ public class BlockTemplate
 
 	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
 	public long CommunityAutonomousValue { get; set; }
+	
+	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+    public string ProofOfGameplayAddress { get; set; }
+
+    [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+    public long ProofOfGameplayValue { get; set; }
+	
+	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+    public string DevFundAddress { get; set; }
+
+    [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+    public long DevFundValue { get; set; }
     
 }

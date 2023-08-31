@@ -251,6 +251,18 @@ public class BitcoinJob
 
         if (coin.HasCommunityAddress)
             rewardToPool = CreateCommunityAddressOutputs(tx, rewardToPool);
+		
+		if (coin.HasCoinbaseDevReward)
+            rewardToPool = CreateCoinbaseDevRewardOutputs(tx, rewardToPool);
+		
+		if(coin.HasFounderReward)
+            rewardToPool = CreateFounderRewardOutputs(tx, rewardToPool);
+		
+		if (coin.HasProofOfGameplayAddress)
+            rewardToPool = CreateProofOfGameplayAddressOutputs(tx, rewardToPool);
+		
+		if (coin.HasDevFundAddress)
+            rewardToPool = CreateDevFundAddressOutputs(tx, rewardToPool);
 
         // Remaining amount goes to pool
         tx.Outputs.Add(rewardToPool, poolAddressDestination);
@@ -523,6 +535,41 @@ public class BitcoinJob
     }
 
     #endregion // Founder
+	
+	#region FounderReward
+
+    protected FounderRewardBlockTemplateExtra founderrewardParameters;
+
+    protected virtual Money CreateFounderRewardOutputs(Transaction tx, Money reward)
+    {
+        if(founderrewardParameters.FounderReward != null)
+        {
+            FounderReward[] founderrewards;
+            if(founderrewardParameters.FounderReward.Type == JTokenType.Array)
+                founderrewards = founderrewardParameters.FounderReward.ToObject<FounderReward[]>();
+            else
+                founderrewards = new[] { founderrewardParameters.FounderReward.ToObject<FounderReward>() };
+
+            if(founderrewards != null)
+            {
+                foreach(var FounderReward in founderrewards)
+                {
+                    if(!string.IsNullOrEmpty(FounderReward.FounderPayee))
+                    {
+                        var payeeAddress = BitcoinUtils.AddressToDestination(FounderReward.FounderPayee, network);
+                        var payeeReward = FounderReward.FounderAmount;
+
+                        tx.Outputs.Add(payeeReward, payeeAddress);
+                        reward -= payeeReward;
+                    }
+                }
+            }
+        }
+
+        return reward;
+    }
+
+    #endregion // FounderReward
 
     #region Minerfund
 
@@ -559,6 +606,62 @@ public class BitcoinJob
         return reward;
     }
     #endregion // CommunityAddress
+	
+	#region CoinbaseDevReward
+
+    protected CoinbaseDevRewardTemplateExtra CoinbaseDevRewardParams;
+
+    protected virtual Money CreateCoinbaseDevRewardOutputs(Transaction tx, Money reward)
+    {
+        if(CoinbaseDevRewardParams.CoinbaseDevReward != null)
+        {
+            CoinbaseDevReward[] CBRewards;
+            CBRewards = new[] { CoinbaseDevRewardParams.CoinbaseDevReward.ToObject<CoinbaseDevReward>() };
+
+            foreach(var CBReward in CBRewards)
+            {
+                if(!string.IsNullOrEmpty(CBReward.ScriptPubkey))
+                {
+                    Script payeeAddress = new (CBReward.ScriptPubkey.HexToByteArray());
+                    var payeeReward = CBReward.Value;
+                    tx.Outputs.Add(payeeReward, payeeAddress);
+                }
+            }
+        }
+        return reward;
+    }
+
+    #endregion // CoinbaseDevReward
+	
+	#region ProofOfGameplayAddress
+
+    protected virtual Money CreateProofOfGameplayAddressOutputs(Transaction tx, Money reward)
+    {
+        if(BlockTemplate.ProofOfGameplayAddress != null && BlockTemplate.ProofOfGameplayValue > 0)
+        {
+        	var payeeReward = BlockTemplate.ProofOfGameplayValue;
+        	reward -= payeeReward;
+        	var payeeAddress = BitcoinUtils.AddressToDestination(BlockTemplate.ProofOfGameplayAddress, network);
+        	tx.Outputs.Add(payeeReward, payeeAddress);
+        }
+        return reward;
+    }
+    #endregion // ProofOfGameplayAddress
+	
+	#region DevFundAddress
+
+    protected virtual Money CreateDevFundAddressOutputs(Transaction tx, Money reward)
+    {
+        if(BlockTemplate.DevFundAddress != null && BlockTemplate.DevFundValue > 0)
+        {
+        	var payeeReward = BlockTemplate.DevFundValue;
+        	reward -= payeeReward;
+        	var payeeAddress = BitcoinUtils.AddressToDestination(BlockTemplate.DevFundAddress, network);
+        	tx.Outputs.Add(payeeReward, payeeAddress);
+        }
+        return reward;
+    }
+    #endregion // DevFundAddress
 
     #region API-Surface
 
@@ -632,9 +735,15 @@ public class BitcoinJob
 
         if(coin.HasFounderFee)
             founderParameters = BlockTemplate.Extra.SafeExtensionDataAs<FounderBlockTemplateExtra>();
+		
+		if(coin.HasFounderReward)
+            founderrewardParameters = BlockTemplate.Extra.SafeExtensionDataAs<FounderRewardBlockTemplateExtra>();
 
         if(coin.HasMinerFund)
-            minerFundParameters = BlockTemplate.Extra.SafeExtensionDataAs<MinerFundTemplateExtra>("coinbasetxn", "minerfund");
+			minerFundParameters = BlockTemplate.Extra.SafeExtensionDataAs<MinerFundTemplateExtra>("coinbasetxn", "minerfund");
+
+        if(coin.HasCoinbaseDevReward)
+            CoinbaseDevRewardParams = BlockTemplate.Extra.SafeExtensionDataAs<CoinbaseDevRewardTemplateExtra>();
 
         this.coinbaseHasher = coinbaseHasher;
         this.headerHasher = headerHasher;

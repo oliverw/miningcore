@@ -2158,6 +2158,69 @@
         "explorerTxLink": "https://explorer.paprikaex.com/tx/{0}",
         "explorerAccountLink": "https://explorer.paprikaex.com/address/{0}"
     },
+    "neoxa": {
+        "name": "Neoxa",
+        "symbol": "NEOX",
+        "family": "ravencoin",
+        "website": "https://www.neoxa.net/",
+        "market": "https://www.coingecko.com/en/coins/neoxa",
+        "twitter": "https://twitter.com/NeoxaNet",
+        "telegram": "https://t.me/Neoxanet",
+        "discord": "https://discord.com/invite/frYkQqrAwR",
+        "coinbaseHasher": {
+            "hash": "sha256d"
+        },
+        "headerHasher": {
+            "hash": "sha256d"
+        },
+        "hasCommunityAddress": true,
+        "shareMultiplier": 1,
+        "explorerBlockLink": "https://explorer.neoxa.net/block/$hash$",
+        "explorerTxLink": "https://explorer.neoxa.net/tx/{0}",
+        "explorerAccountLink": "https://explorer.neoxa.net/address/{0}"
+    },
+	"gamepass": {
+        "name": "Gamepass",
+        "symbol": "GPN",
+        "family": "ravencoin",
+        "website": "https://gamepass.network/",
+        "market": "",
+        "twitter": "",
+        "telegram": "",
+        "discord": "https://discord.com/invite/8TSkNhaDpS",
+        "coinbaseHasher": {
+            "hash": "sha256d"
+        },
+        "headerHasher": {
+            "hash": "sha256d"
+        },
+        "hasProofOfGameplayAddress": true,
+        "hasDevFundAddress": true,
+        "shareMultiplier": 1,
+        "explorerBlockLink": "https://explorer.gamepass.network/block/$hash$",
+        "explorerTxLink": "https://explorer.gamepass.network/tx/{0}",
+        "explorerAccountLink": "https://explorer.gamepass.network/address/{0}"
+    },
+	"neurai": {
+        "name": "Neurai",
+        "symbol": "XNA",
+        "family": "ravencoin",
+        "website": "https://neurai.org/",
+        "market": "https://xeggex.com/market/XNA_USDT",
+        "twitter": "https://twitter.com/neuraiproject",
+        "telegram": "https://t.me/neuraiproject",
+        "discord": "https://discord.com/invite/dxJSrSeXjF",
+        "coinbaseHasher": {
+            "hash": "sha256d"
+        },
+        "headerHasher": {
+            "hash": "sha256d"
+        },
+        "shareMultiplier": 1,
+        "explorerBlockLink": "https://explorer.neurai.org/block/$hash$",
+        "explorerTxLink": "https://explorer.neurai.org/tx/{0}",
+        "explorerAccountLink": "https://explorer.neurai.org/address/{0}"
+    },
     "novo": {
         "name": "Novo",
         "symbol": "NOVO",
