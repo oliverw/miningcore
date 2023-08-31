@@ -45,14 +45,14 @@
 #include <intrin.h>
 #endif
 
-uint64_t ethash_get_datasize(uint64_t const block_number)
+uint64_t ethash_get_datasize(uint64_t const block_number, uint64_t const fork_block)
 {
-    return dag_sizes[etchash_calc_epoch(block_number)];
+    return dag_sizes[etchash_calc_epoch(block_number, fork_block)];
 }
 
-uint64_t ethash_get_cachesize(uint64_t const block_number)
+uint64_t ethash_get_cachesize(uint64_t const block_number, uint64_t const fork_block)
 {
-    return cache_sizes[etchash_calc_epoch(block_number)];
+    return cache_sizes[etchash_calc_epoch(block_number, fork_block)];
 }
 
 // Follows Sergio's "STRICT MEMORY HARD HASHING FUNCTIONS" (2014)
@@ -320,11 +320,11 @@ fail_free_light:
 	return NULL;
 }
 
-ethash_light_t ethash_light_new(uint64_t block_number)
+ethash_light_t ethash_light_new(uint64_t block_number, uint64_t const fork_block)
 {
 	ethash_h256_t seedhash = ethash_get_seedhash(block_number);
 	ethash_light_t ret;
-	ret = ethash_light_new_internal(ethash_get_cachesize(block_number), &seedhash);
+	ret = ethash_light_new_internal(ethash_get_cachesize(block_number, fork_block), &seedhash);
 	ret->block_number = block_number;
 	return ret;
 }
@@ -337,9 +337,9 @@ void ethash_light_delete(ethash_light_t light)
 	free(light);
 }
 
-uint64_t static etchash_calc_epoch(uint64_t const block_number)
+uint64_t static etchash_calc_epoch(uint64_t const block_number, uint64_t const fork_block)
 {
-    uint64_t epochLen = block_number >= ETCHASH_FORK_BLOCK ? ETHASH_EPOCH_LENGTH_NEW : ETHASH_EPOCH_LENGTH;
+    uint64_t epochLen = block_number >= fork_block ? ETHASH_EPOCH_LENGTH_NEW : ETHASH_EPOCH_LENGTH;
     return block_number / epochLen;
 }
 
@@ -361,10 +361,11 @@ ethash_return_value_t ethash_light_compute_internal(
 ethash_return_value_t ethash_light_compute(
 	ethash_light_t light,
 	ethash_h256_t const header_hash,
-	uint64_t nonce
+	uint64_t nonce,
+        uint64_t const fork_block
 )
 {
-	uint64_t full_size = ethash_get_datasize(light->block_number);
+	uint64_t full_size = ethash_get_datasize(light->block_number, fork_block);
 	return ethash_light_compute_internal(light, full_size, header_hash, nonce);
 }
 
@@ -463,13 +464,13 @@ fail_free_full:
 	return NULL;
 }
 
-ethash_full_t ethash_full_new(ethash_light_t light, ethash_callback_t callback)
+ethash_full_t ethash_full_new(ethash_light_t light, uint64_t const fork_block, ethash_callback_t callback)
 {
 	char strbuf[256];
 	if (!ethash_get_default_dirname(strbuf, 256)) {
 		return NULL;
 	}
-	uint64_t full_size = ethash_get_datasize(light->block_number);
+	uint64_t full_size = ethash_get_datasize(light->block_number, fork_block);
 	ethash_h256_t seedhash = ethash_get_seedhash(light->block_number);
 	return ethash_full_new_internal(strbuf, seedhash, full_size, light, callback);
 }

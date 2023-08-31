@@ -27,19 +27,19 @@ extern "C" bool ethash_get_default_dirname(char* strbuf, size_t buffsize);
 #define MODULE_API
 #endif
 
-extern "C" MODULE_API uint64_t ethash_get_datasize_export(uint64_t const block_number)
+extern "C" MODULE_API uint64_t ethash_get_datasize_export(uint64_t const block_number, uint64_t const fork_block)
 {
-	return ethash_get_datasize(block_number);
+	return ethash_get_datasize(block_number, fork_block);
 }
 
-extern "C" MODULE_API uint64_t ethash_get_cachesize_export(uint64_t const block_number)
+extern "C" MODULE_API uint64_t ethash_get_cachesize_export(uint64_t const block_number, uint64_t const fork_block)
 {
-	return ethash_get_cachesize(block_number);
+	return ethash_get_cachesize(block_number, fork_block);
 }
 
-extern "C" MODULE_API ethash_light_t ethash_light_new_export(uint64_t block_number)
+extern "C" MODULE_API ethash_light_t ethash_light_new_export(uint64_t block_number, uint64_t const fork_block)
 {
-	return ethash_light_new(block_number);
+	return ethash_light_new(block_number, fork_block);
 }
 
 extern "C" MODULE_API void ethash_light_delete_export(ethash_light_t light)
@@ -51,14 +51,15 @@ extern "C" MODULE_API void ethash_light_compute_export(
 	ethash_light_t light,
 	ethash_h256_t const *header_hash,
 	uint64_t nonce,
+        uint64_t const fork_block,
 	ethash_return_value_t *result)
 {
-	*result = ethash_light_compute(light, *header_hash, nonce);
+	*result = ethash_light_compute(light, *header_hash, nonce, fork_block);
 }
 
-extern "C" MODULE_API ethash_full_t ethash_full_new_export(const char *dirname, ethash_light_t light, ethash_callback_t callback)
+extern "C" MODULE_API ethash_full_t ethash_full_new_export(const char *dirname, ethash_light_t light, uint64_t const fork_block, ethash_callback_t callback)
 {
-	uint64_t full_size = ethash_get_datasize(light->block_number);
+	uint64_t full_size = ethash_get_datasize(light->block_number, fork_block);
 	ethash_h256_t seedhash = ethash_get_seedhash(light->block_number);
 	return ethash_full_new_internal(dirname, seedhash, full_size, light, callback);
 }

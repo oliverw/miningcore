@@ -27,7 +27,9 @@ using Miningcore.Api.Responses;
 using Miningcore.Configuration;
 using Miningcore.Crypto.Hashing.Algorithms;
 using Miningcore.Crypto.Hashing.Equihash;
-using Miningcore.Crypto.Hashing.Ethash;
+using Miningcore.Crypto.Hashing.Ethash.Etchash;
+using Miningcore.Crypto.Hashing.Ethash.Ethash;
+using Miningcore.Crypto.Hashing.Ethash.Ubqhash;
 using Miningcore.Extensions;
 using Miningcore.Messaging;
 using Miningcore.Mining;
@@ -782,7 +784,13 @@ public class Program : BackgroundService
         EquihashSolver.MaxThreads = clusterConfig.EquihashMaxThreads ?? 1;
 
         // Configure Ethhash
-        Dag.messageBus = messageBus;
+        Miningcore.Crypto.Hashing.Ethash.Ethash.Cache.messageBus = messageBus;
+
+        // Configure Etchash
+        Miningcore.Crypto.Hashing.Ethash.Etchash.Cache.messageBus = messageBus;
+
+        // Configure Ubqhash
+        Miningcore.Crypto.Hashing.Ethash.Ubqhash.Cache.messageBus = messageBus;
 
         // Configure Verthash
         Verthash.messageBus = messageBus;

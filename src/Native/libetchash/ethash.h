@@ -33,7 +33,7 @@
 #define ETHASH_CACHE_BYTES_GROWTH 131072U  // 2**17
 #define ETHASH_EPOCH_LENGTH 30000U
 #define ETHASH_EPOCH_LENGTH_NEW 60000U
-#define ETCHASH_FORK_BLOCK 11700000 // classic mainnet
+//#define ETCHASH_FORK_BLOCK 11700000 // classic mainnet
 //#define ETCHASH_FORK_BLOCK 2520000 // mordor
 #define ETHASH_MIX_BYTES 128
 #define ETHASH_HASH_BYTES 64
@@ -76,10 +76,11 @@ typedef struct ethash_return_value {
  * Allocate and initialize a new ethash_light handler
  *
  * @param block_number   The block number for which to create the handler
+ * @param fork_block     The block number when ETH forked ETC (Useful for mordor)
  * @return               Newly allocated ethash_light handler or NULL in case of
  *                       ERRNOMEM or invalid parameters used for @ref ethash_compute_cache_nodes()
  */
-ethash_light_t ethash_light_new(uint64_t block_number);
+ethash_light_t ethash_light_new(uint64_t block_number, uint64_t const fork_block);
 /**
  * Frees a previously allocated ethash_light handler
  * @param light        The light handler to free
@@ -91,18 +92,21 @@ void ethash_light_delete(ethash_light_t light);
  * @param light          The light client handler
  * @param header_hash    The header hash to pack into the mix
  * @param nonce          The nonce to pack into the mix
+ * @param fork_block     The block number when ETH forked ETC (Useful for mordor)
  * @return               an object of ethash_return_value_t holding the return values
  */
 ethash_return_value_t ethash_light_compute(
 	ethash_light_t light,
 	ethash_h256_t const header_hash,
-	uint64_t nonce
+	uint64_t nonce,
+        uint64_t const fork_block
 );
 
 /**
  * Allocate and initialize a new ethash_full handler
  *
  * @param light         The light handler containing the cache.
+ * @param fork_block    The block number when ETH forked ETC (Useful for mordor)
  * @param callback      A callback function with signature of @ref ethash_callback_t
  *                      It accepts an unsigned with which a progress of DAG calculation
  *                      can be displayed. If all goes well the callback should return 0.
@@ -113,7 +117,7 @@ ethash_return_value_t ethash_light_compute(
  * @return              Newly allocated ethash_full handler or NULL in case of
  *                      ERRNOMEM or invalid parameters used for @ref ethash_compute_full_data()
  */
-ethash_full_t ethash_full_new(ethash_light_t light, ethash_callback_t callback);
+ethash_full_t ethash_full_new(ethash_light_t light, uint64_t const fork_block, ethash_callback_t callback);
 
 /**
  * Frees a previously allocated ethash_full handler

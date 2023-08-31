@@ -153,9 +153,9 @@ void ethash_quick_hash(
 	ethash_h256_t const* mix_hash
 );
 
-uint64_t ethash_get_datasize(uint64_t const block_number);
-uint64_t ethash_get_cachesize(uint64_t const block_number);
-static uint64_t etchash_calc_epoch(uint64_t const block_number);
+uint64_t ethash_get_datasize(uint64_t const block_number, uint64_t const fork_block);
+uint64_t ethash_get_cachesize(uint64_t const block_number, uint64_t const fork_block);
+static uint64_t etchash_calc_epoch(uint64_t const block_number, uint64_t const fork_block);
 
 /**
  * Compute the memory data for a full node's memory

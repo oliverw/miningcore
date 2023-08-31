@@ -11,6 +11,7 @@ using Miningcore.Blockchain.Ravencoin;
 using Miningcore.Configuration;
 using Miningcore.Crypto;
 using Miningcore.Crypto.Hashing.Equihash;
+using Miningcore.Crypto.Hashing.Ethash;
 using Miningcore.Messaging;
 using Miningcore.Mining;
 using Miningcore.Notifications;
@@ -86,6 +87,12 @@ public class AutofacModule : Module
             .Where(t => t.IsAssignableTo<EquihashSolver>())
             .PropertiesAutowired()
             .AsSelf();
+			
+		builder.RegisterAssemblyTypes(ThisAssembly)
+            .Where(t => t.GetCustomAttributes<IdentifierAttribute>().Any() &&
+                t.GetInterfaces().Any(i => i.IsAssignableFrom(typeof(IEthashLight))))
+            .Named<IEthashLight>(t => t.GetCustomAttributes<IdentifierAttribute>().First().Name)
+            .PropertiesAutowired();
 
         builder.RegisterAssemblyTypes(ThisAssembly)
             .Where(t => t.IsAssignableTo<ControllerBase>())
@@ -163,7 +170,6 @@ public class AutofacModule : Module
         //////////////////////
         // Ethereum
 
-        builder.RegisterType<EthereumJobManager>();
         builder.RegisterType<EthereumJobManager>();
 
         //////////////////////

@@ -608,6 +608,11 @@ public partial class EthereumCoinTemplate : CoinTemplate
     [DefaultValue(EthereumSubfamily.None)]
     [JsonConverter(typeof(StringEnumConverter), true)]
     public EthereumSubfamily Subfamily { get; set; }
+	
+    /// <summary>
+    /// Which hashing algorithm to use. (ethash, etchash or ubqhash)
+    /// </summary>
+    public string Ethasher { get; set; } = "ethash";
 }
 
 public partial class ErgoCoinTemplate : CoinTemplate
