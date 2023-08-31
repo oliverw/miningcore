@@ -1,4 +1,3 @@
-using static System.Array;
 using System.Globalization;
 using System.Reactive;
 using System.Reactive.Linq;
@@ -25,8 +24,9 @@ using Miningcore.Util;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NLog;
-using Contract = Miningcore.Contracts.Contract;
+using static System.Array;
 using static Miningcore.Util.ActionUtils;
+using Contract = Miningcore.Contracts.Contract;
 
 namespace Miningcore.Blockchain.Conceal;
 
@@ -145,7 +145,7 @@ public class ConcealJobManager : JobManagerBase<ConcealJob>
     private async Task ShowDaemonSyncProgressAsync(CancellationToken ct)
     {
         var info = await restClient.Get<GetInfoResponse>(ConcealConstants.DaemonRpcGetInfoLocation, ct);
-        
+
         if(info.Status != "OK")
         {
             var lowestHeight = info.Height;
@@ -163,7 +163,7 @@ public class ConcealJobManager : JobManagerBase<ConcealJob>
         {
             var coin = poolConfig.Template.As<ConcealCoinTemplate>();
             var info = await restClient.Get<GetInfoResponse>(ConcealConstants.DaemonRpcGetInfoLocation, ct);
-            
+
             if(info.Status != "OK")
                 logger.Warn(() => $"Error(s) refreshing network stats...");
 
@@ -212,9 +212,9 @@ public class ConcealJobManager : JobManagerBase<ConcealJob>
         clusterConfig = cc;
         extraPoolConfig = pc.Extra.SafeExtensionDataAs<ConcealPoolConfigExtra>();
         coin = pc.Template.As<ConcealCoinTemplate>();
-        
+
         var NetworkTypeOverride = !string.IsNullOrEmpty(extraPoolConfig?.NetworkTypeOverride) ? extraPoolConfig.NetworkTypeOverride : "testnet";
-        
+
         switch(NetworkTypeOverride.ToLower())
         {
             case "mainnet":
@@ -226,7 +226,7 @@ public class ConcealJobManager : JobManagerBase<ConcealJob>
             default:
                 throw new PoolStartupException($"Unsupport net type '{NetworkTypeOverride}'", poolConfig.Id);
         }
-        
+
         // extract standard daemon endpoints
         daemonEndpoints = pc.Daemons
             .Where(x => string.IsNullOrEmpty(x.Category))
@@ -363,7 +363,7 @@ public class ConcealJobManager : JobManagerBase<ConcealJob>
         // find end of message type indicator
         var index = text.IndexOf(":");
 
-        if (index == -1)
+        if(index == -1)
             return null;
 
         var json = text.Substring(index + 1);
@@ -376,7 +376,7 @@ public class ConcealJobManager : JobManagerBase<ConcealJob>
     protected override void ConfigureDaemons()
     {
         var jsonSerializerSettings = ctx.Resolve<JsonSerializerSettings>();
-        
+
         restClient = new SimpleRestClient(httpClientFactory, "http://" + daemonEndpoints.First().Host.ToString() + ":" + daemonEndpoints.First().Port.ToString() + "/");
         rpc = new RpcClient(daemonEndpoints.First(), jsonSerializerSettings, messageBus, poolConfig.Id);
 
@@ -390,7 +390,7 @@ public class ConcealJobManager : JobManagerBase<ConcealJob>
     protected override async Task<bool> AreDaemonsHealthyAsync(CancellationToken ct)
     {
         logger.Debug(() => "Checking if conceald daemon is healthy...");
-        
+
         // test daemons
         var response = await restClient.Get<GetInfoResponse>(ConcealConstants.DaemonRpcGetInfoLocation, ct);
         if(response.Status != "OK")
@@ -398,13 +398,13 @@ public class ConcealJobManager : JobManagerBase<ConcealJob>
             logger.Debug(() => $"conceald daemon did not responded...");
             return false;
         }
-        
+
         logger.Debug(() => $"{response.Status} - Incoming: {response.IncomingConnectionsCount} - Outgoing: {response.OutgoingConnectionsCount})");
-        
+
         if(clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
         {
             logger.Debug(() => "Checking if walletd daemon is healthy...");
-            
+
             // test wallet daemons
             //var response2 = await walletRpc.ExecuteAsync<GetAddressResponse>(logger, ConcealWalletCommands.GetAddress, ct);
             var request2 = new GetBalanceRequest
@@ -413,7 +413,7 @@ public class ConcealJobManager : JobManagerBase<ConcealJob>
             };
 
             var response2 = await walletRpc.ExecuteAsync<GetBalanceResponse>(logger, ConcealWalletCommands.GetBalance, ct, request2);
-            
+
             if(response2.Error != null)
                 logger.Debug(() => $"walletd daemon response: {response2.Error.Message} (Code {response2.Error.Code})");
 
@@ -426,15 +426,15 @@ public class ConcealJobManager : JobManagerBase<ConcealJob>
     protected override async Task<bool> AreDaemonsConnectedAsync(CancellationToken ct)
     {
         logger.Debug(() => "Checking if conceald daemon is connected...");
-        
+
         var response = await restClient.Get<GetInfoResponse>(ConcealConstants.DaemonRpcGetInfoLocation, ct);
-        
+
         if(response.Status != "OK")
             logger.Debug(() => $"conceald daemon is not connected...");
-        
+
         if(response.Status == "OK")
             logger.Debug(() => $"Peers connected - Incoming: {response.IncomingConnectionsCount} - Outgoing: {response.OutgoingConnectionsCount}");
-        
+
         return response.Status == "OK" &&
             (response.OutgoingConnectionsCount + response.IncomingConnectionsCount) > 0;
     }
@@ -442,7 +442,7 @@ public class ConcealJobManager : JobManagerBase<ConcealJob>
     protected override async Task EnsureDaemonsSynchedAsync(CancellationToken ct)
     {
         using var timer = new PeriodicTimer(TimeSpan.FromSeconds(5));
-        
+
         logger.Debug(() => "Checking if conceald daemon is synched...");
 
         var syncPendingNotificationShown = false;
@@ -457,11 +457,11 @@ public class ConcealJobManager : JobManagerBase<ConcealJob>
 
             var response = await rpc.ExecuteAsync<GetBlockTemplateResponse>(logger,
                 ConcealCommands.GetBlockTemplate, ct, request);
-            
+
             if(response.Error != null)
                 logger.Debug(() => $"conceald daemon response: {response.Error.Message} (Code {response.Error.Code})");
 
-            var isSynched = response.Error is not {Code: -9};
+            var isSynched = response.Error is not { Code: -9 };
 
             if(isSynched)
             {
@@ -486,7 +486,7 @@ public class ConcealJobManager : JobManagerBase<ConcealJob>
         // coin config
         var coin = poolConfig.Template.As<ConcealCoinTemplate>();
         var infoResponse = await restClient.Get<GetInfoResponse>(ConcealConstants.DaemonRpcGetInfoLocation, ct);
-        
+
         if(infoResponse.Status != "OK")
             throw new PoolStartupException($"Init RPC failed...", poolConfig.Id);
 
@@ -516,7 +516,7 @@ public class ConcealJobManager : JobManagerBase<ConcealJob>
                 if(poolAddressBase58Prefix != coin.AddressPrefix)
                     throw new PoolStartupException($"Invalid pool address prefix. Expected {coin.AddressPrefix}, got {poolAddressBase58Prefix}", poolConfig.Id);
                 break;
-            
+
             case ConcealNetworkType.Test:
                 if(poolAddressBase58Prefix != coin.AddressPrefixTestnet)
                     throw new PoolStartupException($"Invalid pool address prefix. Expected {coin.AddressPrefixTestnet}, got {poolAddressBase58Prefix}", poolConfig.Id);
@@ -532,8 +532,8 @@ public class ConcealJobManager : JobManagerBase<ConcealJob>
         // Periodically update network stats
         Observable.Interval(TimeSpan.FromMinutes(1))
             .Select(via => Observable.FromAsync(() =>
-                Guard(()=> UpdateNetworkStatsAsync(ct),
-                    ex=> logger.Error(ex))))
+                Guard(() => UpdateNetworkStatsAsync(ct),
+                    ex => logger.Error(ex))))
             .Concat()
             .Subscribe();
 
@@ -607,7 +607,7 @@ public class ConcealJobManager : JobManagerBase<ConcealJob>
                         {
                             var token = GetFrameAsJToken(msg[0].Read());
 
-                            if (token != null)
+                            if(token != null)
                                 return token.Value<long>("first_height").ToString(CultureInfo.InvariantCulture);
 
                             // We just take the second frame's raw data and turn it into a hex string.

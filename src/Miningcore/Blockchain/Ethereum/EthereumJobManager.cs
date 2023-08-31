@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Numerics;
+using System.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
 using System.Text;
@@ -14,19 +15,18 @@ using Miningcore.Crypto.Hashing.Ubqhash;
 using Miningcore.Extensions;
 using Miningcore.JsonRpc;
 using Miningcore.Messaging;
+using Miningcore.Mining;
 using Miningcore.Notifications.Messages;
+using Miningcore.Rpc;
 using Miningcore.Stratum;
 using Miningcore.Time;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using NLog;
+using static Miningcore.Util.ActionUtils;
 using Block = Miningcore.Blockchain.Ethereum.DaemonResponses.Block;
 using Contract = Miningcore.Contracts.Contract;
 using EC = Miningcore.Blockchain.Ethereum.EthCommands;
-using static Miningcore.Util.ActionUtils;
-using System.Reactive;
-using Miningcore.Mining;
-using Miningcore.Rpc;
-using Newtonsoft.Json.Linq;
 
 namespace Miningcore.Blockchain.Ethereum;
 
@@ -350,10 +350,10 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
         if(pc.EnableInternalStratum == true)
         {
             var coin = pc.Template.As<EthereumCoinTemplate>();
-            
+
             // ensure dag location is configured
             string dagDir = null;
-            
+
             if(!string.IsNullOrEmpty(extraPoolConfig?.DagDir))
             {
                 dagDir = Environment.ExpandEnvironmentVariables(extraPoolConfig.DagDir);
@@ -466,13 +466,13 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
         EthereumWorkerContext context, string workerName, EthereumJob job, string nonce, CancellationToken ct)
     {
         var coin = poolConfig.Template.As<EthereumCoinTemplate>();
-        
+
         // validate & process
         switch(coin.Symbol)
         {
             case "ETC":
                 var (shareEtchash, fullNonceHexEtchash, headerHashEtchash, mixHashEtchash) = await job.ProcessShareEtcHashAsync(worker, workerName, nonce, etchash, ct);
-                
+
                 // enrich share with common data
                 shareEtchash.PoolId = poolConfig.Id;
                 shareEtchash.NetworkDifficulty = BlockchainStats.NetworkDifficulty;
@@ -493,11 +493,11 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
                         OnBlockFound();
                     }
                 }
-                
+
                 return shareEtchash;
             case "UBIQ":
                 var (shareUbqhash, fullNonceHexUbqhash, headerHashUbqhash, mixHashUbqhash) = await job.ProcessShareUbqHashAsync(worker, workerName, nonce, ubqhash, ct);
-                
+
                 // enrich share with common data
                 shareUbqhash.PoolId = poolConfig.Id;
                 shareUbqhash.NetworkDifficulty = BlockchainStats.NetworkDifficulty;
@@ -518,11 +518,11 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
                         OnBlockFound();
                     }
                 }
-                
+
                 return shareUbqhash;
             default:
                 var (share, fullNonceHex, headerHash, mixHash) = await job.ProcessShareAsync(worker, workerName, nonce, ethash, ct);
-                
+
                 // enrich share with common data
                 share.PoolId = poolConfig.Id;
                 share.NetworkDifficulty = BlockchainStats.NetworkDifficulty;
@@ -543,7 +543,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
                         OnBlockFound();
                     }
                 }
-                
+
                 return share;
         }
     }
@@ -641,8 +641,8 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
         // Periodically update network stats
         Observable.Interval(TimeSpan.FromMinutes(10))
             .Select(via => Observable.FromAsync(() =>
-                Guard(()=> UpdateNetworkStatsAsync(ct),
-                    ex=> logger.Error(ex))))
+                Guard(() => UpdateNetworkStatsAsync(ct),
+                    ex => logger.Error(ex))))
             .Concat()
             .Subscribe();
 
@@ -658,7 +658,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
                 if(blockTemplate != null)
                 {
                     logger.Info(() => "Loading current DAG ...");
-                    
+
                     // setup dag file
                     switch(coin.Symbol)
                     {
@@ -672,7 +672,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
                             await ethash.GetDagAsync(blockTemplate.Height, logger, ct);
                             break;
                     }
-                    
+
                     logger.Info(() => "Loaded current DAG");
                     break;
                 }
@@ -698,7 +698,7 @@ public class EthereumJobManager : JobManagerBase<EthereumJob>
 
         var endpointExtra = daemonEndpoints
             .Where(x => x.Extra.SafeExtensionDataAs<EthereumDaemonEndpointConfigExtra>() != null)
-            .Select(x=> Tuple.Create(x, x.Extra.SafeExtensionDataAs<EthereumDaemonEndpointConfigExtra>()))
+            .Select(x => Tuple.Create(x, x.Extra.SafeExtensionDataAs<EthereumDaemonEndpointConfigExtra>()))
             .FirstOrDefault();
 
         if(endpointExtra?.Item2?.PortWs.HasValue == true)
