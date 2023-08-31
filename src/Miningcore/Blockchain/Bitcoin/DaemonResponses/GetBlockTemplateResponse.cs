@@ -90,4 +90,15 @@ public class BlockTemplate
 
     [JsonExtensionData]
     public IDictionary<string, object> Extra { get; set; }
+    
+    /// <summary>
+    /// CommunityAutonomous
+    /// </summary>
+
+  	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+	public string CommunityAutonomousAddress { get; set; }
+
+	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+	public long CommunityAutonomousValue { get; set; }
+    
 }
