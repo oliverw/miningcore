@@ -25,6 +25,7 @@ export HAVE_FEATURE="$HAVE_AES $HAVE_SSE2 $HAVE_SSE3 $HAVE_SSSE3 $HAVE_AVX $HAVE
 (cd ../Native/libmultihash && make -j clean && make -j) && mv ../Native/libmultihash/libmultihash.so "$OutDir"
 (cd ../Native/libetchash && make -j clean && make -j) && mv ../Native/libetchash/libetchash.so "$OutDir"
 (cd ../Native/libethhash && make -j clean && make -j) && mv ../Native/libethhash/libethhash.so "$OutDir"
+(cd ../Native/libethhashb3 && make -j clean && make -j) && mv ../Native/libethhashb3/libethhashb3.so "$OutDir"
 (cd ../Native/libubqhash && make -j clean && make -j) && mv ../Native/libubqhash/libubqhash.so "$OutDir"
 (cd ../Native/libcryptonote && make -j clean && make -j) && mv ../Native/libcryptonote/libcryptonote.so "$OutDir"
 (cd ../Native/libcryptonight && make -j clean && make -j) && mv ../Native/libcryptonight/libcryptonight.so "$OutDir"

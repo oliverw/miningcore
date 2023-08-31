@@ -4185,6 +4185,24 @@
         "explorerTxLink": "https://ubiqscan.io/tx/{0}",
         "explorerAccountLink": "https://ubiqscan.io/address/{0}"
     },
+	"rethereum": {
+        "name": "Rethereum",
+        "canonicalName": "Rethereum",
+        "symbol": "RTH",
+        "family": "ethereum",
+		"ethasher": "ethashb3",
+        "website": "https://rethereum.org/",
+        "market": "https://safe.trade/trading/rthusdt",
+        "twitter": "",
+        "telegram": "",
+        "discord": "https://discord.gg/kHgsEcHkGe",
+        "explorerBlockLinks": {
+            "block": "https://explorer.rethereum.org//block/$height$/transactions",
+            "uncle": "https://explorer.rethereum.org//block/$hash$/transactions"
+        },
+        "explorerTxLink": "https://explorer.rethereum.org//tx/{0}",
+        "explorerAccountLink": "https://explorer.rethereum.org//address/{0}"
+    },
     "ergo": {
         "name": "Ergo",
         "canonicalName": "Ergo",

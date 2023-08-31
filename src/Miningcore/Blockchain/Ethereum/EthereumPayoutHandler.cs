@@ -160,7 +160,7 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
                             var gasUsed = blockHashResponse.Response.GasUsed;
 
                             var burnedFee = (decimal) 0;
-                            if(extraPoolConfig?.ChainTypeOverride == "Ethereum" || extraPoolConfig?.ChainTypeOverride == "Main" || extraPoolConfig?.ChainTypeOverride == "MainPow" || extraPoolConfig?.ChainTypeOverride == "Ubiq" || extraPoolConfig?.ChainTypeOverride == "EtherOne" || extraPoolConfig?.ChainTypeOverride == "Pink")
+                            if(extraPoolConfig?.ChainTypeOverride == "Ethereum" || extraPoolConfig?.ChainTypeOverride == "Main" || extraPoolConfig?.ChainTypeOverride == "MainPow" || extraPoolConfig?.ChainTypeOverride == "Ubiq" || extraPoolConfig?.ChainTypeOverride == "EtherOne" || extraPoolConfig?.ChainTypeOverride == "Pink" || extraPoolConfig?.ChainTypeOverride == "OctaSpace" || extraPoolConfig?.ChainTypeOverride == "Rethereum")
                                 burnedFee = (baseGas * gasUsed / EthereumConstants.Wei);
 
                             block.Hash = blockHash;
@@ -291,7 +291,7 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
         // ensure we have peers
         var infoResponse = await rpcClient.ExecuteAsync<string>(logger, EC.GetPeerCount, ct);
 
-        if((networkType == EthereumNetworkType.Main || extraPoolConfig?.ChainTypeOverride == "Classic" || extraPoolConfig?.ChainTypeOverride == "Mordor" || networkType == EthereumNetworkType.MainPow || extraPoolConfig?.ChainTypeOverride == "Ubiq" || extraPoolConfig?.ChainTypeOverride == "EtherOne" || extraPoolConfig?.ChainTypeOverride == "Pink") &&
+        if((networkType == EthereumNetworkType.Main || extraPoolConfig?.ChainTypeOverride == "Classic" || extraPoolConfig?.ChainTypeOverride == "Mordor" || networkType == EthereumNetworkType.MainPow || extraPoolConfig?.ChainTypeOverride == "Ubiq" || extraPoolConfig?.ChainTypeOverride == "EtherOne" || extraPoolConfig?.ChainTypeOverride == "Pink" || extraPoolConfig?.ChainTypeOverride == "OctaSpace" || extraPoolConfig?.ChainTypeOverride == "Rethereum") &&
            (infoResponse.Error != null || string.IsNullOrEmpty(infoResponse.Response) ||
                infoResponse.Response.IntegralFromHex<int>() < EthereumConstants.MinPayoutPeerCount))
         {
@@ -400,6 +400,40 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
                     return UbiqConstants.YearOneBlockReward;
                 
                 return UbiqConstants.BaseRewardInitial;
+			
+			case GethChainType.OctaSpace:
+                if(height >= OctaSpaceConstants.TriangulumHardForkHeight)
+                    return OctaSpaceConstants.TriangulumBlockReward;
+                if(height >= OctaSpaceConstants.VegaHardForkHeight)
+                    return OctaSpaceConstants.VegaBlockReward;
+                if(height >= OctaSpaceConstants.BlackeyeHardForkHeight)
+                    return OctaSpaceConstants.BlackeyeBlockReward;
+                if(height >= OctaSpaceConstants.DneprHardForkHeight)
+                    return OctaSpaceConstants.DneprBlockReward;
+                if(height >= OctaSpaceConstants.MahasimHardForkHeight)
+                    return OctaSpaceConstants.MahasimBlockReward;
+                if(height >= OctaSpaceConstants.PolarisHardForkHeight)
+                    return OctaSpaceConstants.PolarisBlockReward;
+                if(height >= OctaSpaceConstants.SpringwaterHardForkHeight)
+                    return OctaSpaceConstants.SpringwaterBlockReward;
+                if(height >= OctaSpaceConstants.ZagamiHardForkHeight)
+                    return OctaSpaceConstants.ZagamiBlockReward;
+                if(height >= OctaSpaceConstants.OldenburgHardForkHeight)
+                    return OctaSpaceConstants.OldenburgBlockReward;
+                if(height >= OctaSpaceConstants.ArcturusHardForkHeight)
+                    return OctaSpaceConstants.ArcturusBlockReward;
+
+				return OctaSpaceConstants.BaseRewardInitial;
+			
+			case GethChainType.Rethereum:
+                if(height >= RethereumConstants.LondonHeight)
+                    return RethereumConstants.LondonBlockReward;
+                if(height >= RethereumConstants.ArrowGlacierHeight)
+                    return RethereumConstants.ArrowGlacierBlockReward;
+                if(height >= RethereumConstants.GrayGlacierHeight)
+                    return RethereumConstants.GrayGlacierBlockReward;
+
+				return RethereumConstants.BaseRewardInitial;
             
             default:
                 throw new Exception("Unable to determine block reward: Unsupported chain type");
@@ -446,6 +480,7 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
                 }
                 
                 break;
+				
             case GethChainType.Ubiq:
                 reward *= uheight + 2 - height;
                 reward /= 2m;
@@ -454,6 +489,12 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
                     reward = 0;
                 
                 break;
+			
+			case GethChainType.Rethereum:
+				reward -= 3.9m;
+				
+				break;
+				
             default:
                 reward *= uheight + 8 - height;
                 reward /= 8m;
@@ -503,7 +544,7 @@ public class EthereumPayoutHandler : PayoutHandlerBase,
             Value = amount.ToString("x").TrimStart('0'),
         };
         
-        if(extraPoolConfig?.ChainTypeOverride == "Ethereum" || extraPoolConfig?.ChainTypeOverride == "Main" || (extraPoolConfig?.ChainTypeOverride == "Ubiq") || extraPoolConfig?.ChainTypeOverride == "MainPow" || extraPoolConfig?.ChainTypeOverride == "EtherOne" )
+        if(extraPoolConfig?.ChainTypeOverride == "Ethereum" || extraPoolConfig?.ChainTypeOverride == "Main" || (extraPoolConfig?.ChainTypeOverride == "Ubiq") || extraPoolConfig?.ChainTypeOverride == "MainPow" || extraPoolConfig?.ChainTypeOverride == "EtherOne" || extraPoolConfig?.ChainTypeOverride == "OctaSpace" || extraPoolConfig?.ChainTypeOverride == "Rethereum" )
         {
             var maxPriorityFeePerGas = await rpcClient.ExecuteAsync<string>(logger, EC.MaxPriorityFeePerGas, ct);
             
