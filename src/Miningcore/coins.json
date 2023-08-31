@@ -2137,6 +2137,27 @@
         "explorerTxLink": "https://ravencoin.network/rvn/transaction/{0}",
         "explorerAccountLink": "https://ravencoin.network/rvn/address/{0}"
     },
+    "paprikacoin": {
+        "name": "Paprikacoin",
+        "symbol": "PAPRY",
+        "family": "ravencoin",
+        "website": "https://paprikacoin.paprikaex.com/",
+        "market": "",
+        "twitter": "https://twitter.com/paprikaex",
+        "telegram": "",
+        "discord": "https://discord.com/invite/jgrXwraV65",
+        "coinbaseHasher": {
+            "hash": "sha256d"
+        },
+        "headerHasher": {
+            "hash": "sha256d"
+        },
+        "hasCommunityAddress": true,
+        "shareMultiplier": 1,
+        "explorerBlockLink": "https://explorer.paprikaex.com/block/$hash$",
+        "explorerTxLink": "https://explorer.paprikaex.com/tx/{0}",
+        "explorerAccountLink": "https://explorer.paprikaex.com/address/{0}"
+    },
     "novo": {
         "name": "Novo",
         "symbol": "NOVO",
