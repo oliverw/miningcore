@@ -47,7 +47,7 @@ public class EthereumJob
         else
         {
             if(nonces.Contains(nonceLower))
-                throw new StratumException(StratumError.MinusOne, "duplicate share");
+                throw new StratumException(StratumError.DuplicateShare, "duplicate share");
 
             nonces.Add(nonceLower);
         }

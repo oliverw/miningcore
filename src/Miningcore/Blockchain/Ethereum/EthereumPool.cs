@@ -4,7 +4,9 @@ using System.Reactive.Threading.Tasks;
 using Autofac;
 using AutoMapper;
 using Microsoft.IO;
+using Miningcore.Blockchain.Ethereum.Configuration;
 using Miningcore.Configuration;
+using Miningcore.Extensions;
 using Miningcore.JsonRpc;
 using Miningcore.Messaging;
 using Miningcore.Mining;
@@ -37,6 +39,7 @@ public class EthereumPool : PoolBase
 
     private EthereumJobManager manager;
     private EthereumCoinTemplate coin;
+	private EthereumPoolConfigExtra extraPoolConfig;
 
     #region // Protocol V2 handlers - https://github.com/nicehash/Specifications/blob/master/EthereumStratum_NiceHash_v1.0.0.txt
 
@@ -361,6 +364,7 @@ public class EthereumPool : PoolBase
     public override void Configure(PoolConfig pc, ClusterConfig cc)
     {
         coin = pc.Template.As<EthereumCoinTemplate>();
+		extraPoolConfig = pc.Extra.SafeExtensionDataAs<EthereumPoolConfigExtra>();
 
         base.Configure(pc, cc);
     }
@@ -483,6 +487,11 @@ public class EthereumPool : PoolBase
                     break;
 
                 // V1 Stratum methods
+				// There are several reports of bad actors taking advantage of the old "Ethash Stratum V1" protocol in order to perform multiple dangerous attacks like man-in-the-middle (MITM) attacks
+                // https://braiins.com/blog/hashrate-robbery-stratum-v2-fixes-this-and-more
+                // https://eips.ethereum.org/EIPS/eip-1571
+                // https://github.com/AndreaLanfranchi/EthereumStratum-2.0.0/issues/10#issuecomment-595053258
+                // Based on that critical fact, mining pool should be cautious of the risks of using a such deprecated and broken stratum protocol. Used it at your own risks.
                 case EthereumStratumMethods.SubmitLogin:
                     context.ProtocolVersion = 1;    // lock in protocol version
 
@@ -490,15 +499,35 @@ public class EthereumPool : PoolBase
                     break;
 
                 case EthereumStratumMethods.GetWork:
-                    EnsureProtocolVersion(context, 1);
+                    if(!extraPoolConfig.enableEthashStratumV1)
+                    {
+                        logger.Info(() => $"[{connection.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
 
-                    await OnGetWorkAsync(connection, tsRequest);
+                        await connection.RespondErrorAsync(StratumError.Other, $"Unsupported request {request.Method}", request.Id);
+                    }
+                    else
+                    {
+                        EnsureProtocolVersion(context, 1);
+
+                        logger.Warn(() => $"Use of Ethash Stratum V1 method: {request.Method}");
+                        await OnGetWorkAsync(connection, tsRequest);
+                    }
                     break;
 
                 case EthereumStratumMethods.SubmitWork:
-                    EnsureProtocolVersion(context, 1);
+                    if(!extraPoolConfig.enableEthashStratumV1)
+                    {
+                        logger.Info(() => $"[{connection.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
 
-                    await OnSubmitAsync(connection, tsRequest, ct, true);
+                        await connection.RespondErrorAsync(StratumError.Other, $"Unsupported request {request.Method}", request.Id);
+                    }
+                    else
+                    {
+                        EnsureProtocolVersion(context, 1);
+
+                        logger.Warn(() => $"Use of Ethash Stratum V1 method: {request.Method}");
+                        await OnSubmitAsync(connection, tsRequest, ct, true);
+                    }
                     break;
 
                 case EthereumStratumMethods.SubmitHashrate:
