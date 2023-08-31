@@ -249,6 +249,9 @@ public class BitcoinJob
         if(coin.HasMinerFund)
             rewardToPool = CreateMinerFundOutputs(tx, rewardToPool);
 
+        if (coin.HasCommunityAddress)
+            rewardToPool = CreateCommunityAddressOutputs(tx, rewardToPool);
+
         // Remaining amount goes to pool
         tx.Outputs.Add(rewardToPool, poolAddressDestination);
 
@@ -541,6 +544,21 @@ public class BitcoinJob
     }
 
     #endregion // Founder
+        
+    #region CommunityAddress
+
+    protected virtual Money CreateCommunityAddressOutputs(Transaction tx, Money reward)
+    {
+        if(BlockTemplate.CommunityAutonomousAddress != null && BlockTemplate.CommunityAutonomousValue > 0)
+        {
+        var payeeReward = BlockTemplate.CommunityAutonomousValue;
+        reward -= payeeReward;
+        var payeeAddress = BitcoinUtils.AddressToDestination(BlockTemplate.CommunityAutonomousAddress, network);
+        tx.Outputs.Add(payeeReward, payeeAddress);
+        }
+        return reward;
+    }
+    #endregion // CommunityAddress
 
     #region API-Surface
 
