@@ -263,6 +263,9 @@ public class BitcoinJob
 		
 		if (coin.HasDevFundAddress)
             rewardToPool = CreateDevFundAddressOutputs(tx, rewardToPool);
+		
+		if(coin.HasFounderValue)
+			rewardToPool = CreateFounderValueOutputs(tx, rewardToPool);
 
         // Remaining amount goes to pool
         tx.Outputs.Add(rewardToPool, poolAddressDestination);
@@ -662,6 +665,32 @@ public class BitcoinJob
         return reward;
     }
     #endregion // DevFundAddress
+	
+	#region FounderValue
+
+    protected FounderValueBlockTemplateExtra FounderValueParams;
+
+    protected virtual Money CreateFounderValueOutputs(Transaction tx, Money reward)
+    {
+        if(FounderValueParams.FounderValue != null)
+        {
+            FounderValue[] FounderValues;
+            FounderValues = new[] { FounderValueParams.FounderValue.ToObject<FounderValue>() };
+
+            foreach(var FValue in FounderValues)
+            {
+                if(!string.IsNullOrEmpty(FValue.Script))
+                {
+                    Script payeeAddress = new (FValue.Script.HexToByteArray());
+                    var payeeReward = FValue.Value;
+					tx.Outputs.Add(payeeReward, payeeAddress);
+                }
+            }
+        }
+        return reward;
+    }
+	
+    #endregion // FounderValue
 
     #region API-Surface
 
@@ -744,6 +773,9 @@ public class BitcoinJob
 
         if(coin.HasCoinbaseDevReward)
             CoinbaseDevRewardParams = BlockTemplate.Extra.SafeExtensionDataAs<CoinbaseDevRewardTemplateExtra>();
+		
+		if(coin.HasFounderValue)
+			FounderValueParams = BlockTemplate.Extra.SafeExtensionDataAs<FounderValueBlockTemplateExtra>();
 
         this.coinbaseHasher = coinbaseHasher;
         this.headerHasher = headerHasher;
